@@ -1,1 +1,12 @@
 julia 0.6
+CRC
+Distributions
+GLPKMathProgInterface
+HttpServer
+JLD
+JSON
+JuMP
+LightGraphs
+LightXML
+RasterIO
+WebSockets
