@@ -50,10 +50,9 @@ type NetTravel
 	
 	# for use in reduced graph:
 	spTimes::Array{FloatSpTime,2} # spTimes[i,j] = shortest path time between node i and j
+	spFadjIndex::Array{IntFadj,2} # for shortest path from rNode i to j, spFadjIndex[i,j] gives the index (in fadjList[i], see Graph) of the successor rNode of i for this path
 	spNodePairArcIndex::SparseMatrixCSC{Int,Int} # spNodePairArcIndex[i,j] = index of arc incident to nodes i,j, if it provides shortest travel time
 	spFadjArcList::Vector{Vector{Int}} # spFadjArcList[i][j] gives index of rArc from rNode[i] to jth outoing rNode of rNode[i] (i.e. rGraph.fadjList[i][j])
-	spFadjIndexDelta::Vector{SparseVector{IntFadj,IntRNode}} # for shortest path from node i to j, spFadjIndexDelta[i][j] gives the index (in fadjList[i], see type Graph) of the successor node of i, unless the successor node is the same as in spFadjIndexBase[i,j] (see type Network), in which case spFadjIndexDelta[i,j] = 0, and spFadjIndexBase[i,j] should be used instead
-	# spFadjIndexDelta::SparseMatrixCSC{IntFadj,IntRNode} cannot be used for IntRNode = Int16, as the number of entries in the sparse array is also stored with IntRNode, so cannot store more than 2^15 - 1 = 32767 values, which is sometimes not enough
 	
 	# for use in full graph:
 	fNodeToRNodeTime::Vector{Dict{Int,Float}} # fNodeToRNodeTime[i][j] gives time from fNode[i] to rNode[j], as long as rNode[j] is in fNodeToRNodes[i] (see type Network)
@@ -68,7 +67,7 @@ type NetTravel
 	fNodeNearestHospitalIndex::Vector{Int} # fNodeNearestHospitalIndex[i] gives index of nearest hospital from fNode[i]
 	
 	NetTravel(isReduced::Bool) = new(isReduced, nullIndex, [],
-		Array{FloatSpTime,2}(0,0), spzeros(Int, 0, 0), [], [],
+		Array{FloatSpTime,2}(0,0), Array{IntFadj,2}(0,0), spzeros(Int, 0, 0), [],
 		[], [], [],
 		Array{Float,2}(0,0), Array{Float,2}(0,0), Array{Vector{Int},2}(0,0), Array{Vector{Int},2}(0,0), [])
 end
@@ -80,7 +79,6 @@ type Network
 	# travel data for each graph:
 	fNetTravels::Vector{NetTravel} # fNetTravels[i] gives fGraph travel data for travel mode i
 	rNetTravels::Vector{NetTravel} # rNetTravels[i] gives rGraph travel data for travel mode i
-	spFadjIndexBase::Array{IntFadj,2} # for shortest path from rNode i to j, spFadjIndexBase[i,j] gives the index (in fadjList[i], see Graph) of the most common successor rNode of i for this path, over all travel modes; for each rNetTravel, if the shortest path is different, spFadjIndexDelta[i][j] (see type NetTravel) stores the value (unless it is 0) to be used instead of spFadjIndexBase[i,j]
 	
 	# for converting between full and reduced graph:
 	rNodeFNode::Vector{Int} # rNodeFNode[i] returns index of rNode i in fGraph
@@ -98,7 +96,7 @@ type Network
 	fNodeCommonFNodeIndex::Vector{Int} # fNodeCommonFNodeIndex[i] gives index of fNode i in commonFNodes, if isFNodeCommon[i] = true
 	
 	Network() = new(Graph(false), Graph(true),
-		[], [], Array{IntFadj,2}(0,0),
+		[], [],
 		[], [], [], [], [], [], [], [],
 		[], [], [])
 end

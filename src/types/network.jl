@@ -326,229 +326,121 @@ function createRNetTravelsFromFNetTravels!(net::Network)
 				assert(abs(fNodeFromRNodeTime[fNode][startRNode] + fNodeToRNodeTime[fNode][endRNode] - rArcTime) < eps())
 			end
 		end
+		
+		# calculate shortest path data for rNetTravel
+		calcRNetTravelShortestPaths!(net, rNetTravel)
 	end
-	
-	calcRNetTravelsShortestPaths!(net)
 end
 
-# For all rNetTravels, calculate and store shortest path data
+# For a given rNetTravel, calculate and store shortest path data
 # Uses repeated Dijkstra's shortest path algorithm,
 # for sparse graphs, this is faster than Floyd-Warshall algorithm
-function calcRNetTravelsShortestPaths!(net::Network)
+function calcRNetTravelShortestPaths!(net::Network, rNetTravel::NetTravel)
+	assert(rNetTravel.isReduced)
+	
 	# shorthand
 	rGraph = net.rGraph
+	rArcs = rGraph.arcs
+	rArcTimes = rNetTravel.arcTimes
+	fadjList = rGraph.fadjList
 	numRNodes = length(rGraph.nodes)
-	rNetTravels = net.rNetTravels
-	numTravelModes = length(rNetTravels)
-	
-	# initialise sp data
-	for rNetTravel in rNetTravels
-		rNetTravel.spTimes = Array{FloatSpTime,2}(numRNodes, numRNodes)
-		rNetTravel.spFadjIndexDelta = [spzeros(IntFadj, numRNodes) for i = 1:numRNodes]
-	end
-	spFadjIndexBase = net.spFadjIndexBase = Array{IntFadj,2}(numRNodes, numRNodes)
 	
 	# create reverse graph
 	revRGraph = LightGraphs.reverse(rGraph.light)
 	
-	# for each travel mode, create arc time matrix for reverse graph, for use by LightGraphs
-	revArcTimeArrays = [spzeros(FloatSpTime, numRNodes, numRNodes) for i = 1:numTravelModes]
-	for rNetTravel in rNetTravels
-		revArcTimeArray = revArcTimeArrays[rNetTravel.modeIndex]
-		for rArc in rGraph.arcs
-			revArcTimeArray[rArc.toNodeIndex, rArc.fromNodeIndex] = rNetTravel.arcTimes[rArc.index]
-		end
+	# create arc time matrix for reverse graph, for use by LightGraphs Dijkstra SP function
+	revRArcsTimes = spzeros(FloatSpTime, numRNodes, numRNodes)
+	for rArc in rArcs
+		# add time of this arc to revRArcsTimes if first/shortest arc connecting the two nodes
+		# (there can be multiple arcs connecting a pair of nodes)
+		t1 = revRArcsTimes[rArc.toNodeIndex, rArc.fromNodeIndex] # 0 if not yet filled
+		t2 = rArcTimes[rArc.index]
+		revRArcsTimes[rArc.toNodeIndex, rArc.fromNodeIndex] = (t1 == 0 ? t2 : min(t1, t2))
 	end
 	
-	# calculate shortest paths for each possible destination node, within each travel mode
-	# only consider one destination at a time, to reduce memory usage
-	rNetTravelsSpFadjIndex = [Vector{IntFadj}(numRNodes) for i = 1:numTravelModes] # rNetTravelsSpFadjIndex[i][j] will store successor of node j (in fadjList[j]) to the current end node, for rNetTravels[i]
-	fadjList = rGraph.fadjList # shorthand
-	maxFadjLength = maximum([length(fadjList[i]) for i = 1:numRNodes]) # maximum number of arcs outgoing from any node in rGraph
-	fadjIndexFreq = Vector{Int}(maxFadjLength) # fadjIndexFreq[i] will count frequency with which rNetTravelsSpFadjIndex[j][k] is i, for all travel modes
-	for j = 1:numRNodes
-		for rNetTravel in rNetTravels
-			spData = LightGraphs.dijkstra_shortest_paths(revRGraph, j, revArcTimeArrays[rNetTravel.modeIndex])
-			rNetTravel.spTimes[:,j] = spData.dists
-			# spData.parents[i] is the node index to travel to after node i on path from i to j,
-			# need to convert this to the index of the node in fadjList[i]
-			for i = 1:numRNodes
-				if i != j
-					rNetTravelsSpFadjIndex[rNetTravel.modeIndex][i] = findfirst(fadjList[i], spData.parents[i])
-				end
-			end
-		end
-		
-		# for each start node, find most common successor node over all rNetTravels,
-		# (looking at rNetTravelsSpFadjIndex), and place in net.spFadjIndexBase;
-		# for each travel mode with a different successor node, store in rNetTravel.spFadjIndexDelta
-		for i = 1:numRNodes
-			if i == j
-				spFadjIndexBase[i,j] = nullIndex
-			else
-				# find most common fadjIndex among all travel modes
-				fill!(fadjIndexFreq, 0)
-				for rNetTravel in rNetTravels
-					fadjIndexFreq[rNetTravelsSpFadjIndex[rNetTravel.modeIndex][i]] += 1
-				end
-				
-				# set spFadjIndexBase[i,j] to store most common successor for path from node i to j
-				fadjIndexBase = findmax(fadjIndexFreq)[2]
-				spFadjIndexBase[i,j] = fadjIndexBase
-				
-				# for travel modes with a different successor node, set spFadjIndexDelta[i,j]
-				for rNetTravel in rNetTravels
-					fadjIndex = rNetTravelsSpFadjIndex[rNetTravel.modeIndex][i]
-					if fadjIndex != fadjIndexBase
-						rNetTravel.spFadjIndexDelta[i][j] = fadjIndex
-					end
-				end
-			end
-		end
+	# calculate shortest paths for each possible destination node
+	spData = LightGraphs.DijkstraState{Float} # init
+	spTimes = rNetTravel.spTimes = Array{FloatSpTime,2}(numRNodes, numRNodes)
+	spSuccs = Array{IntRNode,2}(numRNodes, numRNodes)
+	for i = 1:numRNodes
+		spData = LightGraphs.dijkstra_shortest_paths(revRGraph, i, revRArcsTimes)
+		spTimes[:,i] = spData.dists
+		spSuccs[:,i] = spData.parents
 	end
 	
-	# change sp successor data where needed
-	# where a path i -> l has spNextNode(i,l) = k, but spNextNode(i,k) = j,
-	# need to change all cases where spNextNode(i,-) = k to instead have spNextNode(i,-) = j
+	# change spSuccs where needed
+	# where a path i -> l has spSuccs[i,l] = k, but spSuccs[i,k] = j,
+	# need to change all cases where spSuccs[i,-] = k to instead have spSuccs[i,-] = j
 	# this case can happen when an arc (i,k) has the same travel time as a path (i,j,k)
-	for rNetTravel in rNetTravels
-		travelModeIndex = rNetTravel.modeIndex # shorthand
-		for rArc in rGraph.arcs
-			i = rArc.fromNodeIndex
-			k = l = rArc.toNodeIndex
-			j = shortestPathNextRNode(net, travelModeIndex, i, k)
-			while j != k
-				k = j
-				j = shortestPathNextRNode(net, travelModeIndex, i, k)
-			end
-			if k != l
-				# for any paths from i that have successor node l, change successor to be k
-				for j = [1:i-1;i+1:numRNodes]
-					if shortestPathNextRNode(net, travelModeIndex, i, j) == l
-						setRNetTravelSpFadjIndexDelta!(net, rNetTravel, i, j, IntFadj(findfirst(fadjList[i], k)))
-					end
-				end
-			end
+	for rArc in rArcs
+		i = rArc.fromNodeIndex
+		j = k = rArc.toNodeIndex
+		while j != spSuccs[i,j]
+			j = spSuccs[i,j]
+		end
+		if j != k
+			# for any paths from i that have successor node k, change successor to be j
+			spSuccs[i, spSuccs[i,:] .== k] = j
 		end
 	end
 	
-	# set spNodePairArcIndex values
-	for rNetTravel in rNetTravels
-		travelModeIndex = rNetTravel.modeIndex # shorthand
-		rNetTravel.spNodePairArcIndex = spzeros(Int, numRNodes, numRNodes)
-		rNetTravel.spFadjArcList = deepcopy(rGraph.fadjList)
-		for rArc in rGraph.arcs
-			i = rArc.fromNodeIndex
-			j = rArc.toNodeIndex
-			if shortestPathNextRNode(net, travelModeIndex, i, j) == j &&
-				rNetTravel.spTimes[i,j] == FloatSpTime(rNetTravel.arcTimes[rArc.index])
-				
-				rNetTravel.spNodePairArcIndex[i,j] = rArc.index
-				rNetTravel.spFadjArcList[i][findfirst(rGraph.fadjList[i], j)] = rArc.index
-			end
+	# set spNodePairArcIndex and spFadjArcList
+	spNodePairArcIndex = rNetTravel.spNodePairArcIndex = spzeros(Int, numRNodes, numRNodes)
+	spFadjArcList = rNetTravel.spFadjArcList = deepcopy(fadjList)
+	for rArc in rArcs
+		i = rArc.fromNodeIndex
+		j = rArc.toNodeIndex
+		t = FloatSpTime(rArcTimes[rArc.index])
+		assert(spTimes[i,j] <= t)
+		if spSuccs[i,j] == j && spTimes[i,j] == t
+			spNodePairArcIndex[i,j] = rArc.index
+			spFadjArcList[i][findfirst(fadjList[i], j)] = rArc.index
 		end
+	end
+	
+	# set spFadjIndex
+	spFadjIndex = rNetTravel.spFadjIndex = Array{IntFadj,2}(numRNodes, numRNodes)
+	for i = 1:numRNodes, j = 1:numRNodes
+		spFadjIndex[i,j] = (i == j ? nullIndex : findfirst(fadjList[i], spSuccs[i,j]))
 	end
 	
 	# check stored shortest path times are same as those from traversing stored shortest paths
 	# this can be slow, and should not be necessary unless shortest path code above has changed
 	if checkMode && false
-		for rNetTravel in rNetTravels
-			checkShortestPathTimes(net, rNetTravel)
-		end
+		checkRNetTravelShortestPathTimes(net, rNetTravel)
 	end
 	
-	# check assumptions
-	for rNetTravel in rNetTravels
-		for i = 1:numRNodes, j = [1:i-1;i+1:numRNodes]
-			assert(0 < rNetTravel.spTimes[i,j] < Inf)
-		end
-	end
-end
-
-# For each rNetTravel, rebalance net.spFadjIndexBase, and rNetTravel.spFadjIndexDelta
-# so that memory used to store shortest path data is minimised
-# Only need to call this if storage of sp data was not minimised during calculation
-function rebalanceRNetTravelsSpFadjIndices!(net::Network)
-	# shorthand:
-	rGraph = net.rGraph
-	numRNodes = length(rGraph.nodes)
-	rNetTravels = net.rNetTravels
-	
-	maxFadjLength = maximum([length(rGraph.fadjList[i]) for i = 1:numRNodes]) # maximum number of arcs outgoing from any node in rGraph
-	fadjIndices = Vector{IntFadj}(maxFadjLength) # fadjIndices[i] will store the fadjIndex for rNetTravel i
-	fadjIndexFreq = Vector{IntFadj}(maxFadjLength) # fadjIndexFreq[i] will count the frequency with which rNetTravel.spFadjIndexDelta[j][k] || net.spFadjIndexBase[j,k] is i, for all travel modes
+	# check assumptions:
 	for i = 1:numRNodes, j = [1:i-1;i+1:numRNodes]
-		# find the most common fadjIndex among all rNetTravels
-		fill!(fadjIndexFreq, 0)
-		for (k, rNetTravel) in enumerate(rNetTravels)
-			fadjIndex = rNetTravel.spFadjIndexDelta[i][j]
-			if fadjIndex == 0
-				fadjIndex = net.spFadjIndexBase[i,j]
-			end
-			fadjIndices[k] = fadjIndex
-			fadjIndexFreq[fadjIndex] += 1
-		end
-		
-		# update fadjIndex values if most common index changed
-		fadjIndexBase = findmax(fadjIndexFreq)[2]
-		if net.spFadjIndexBase[i,j] != fadjIndexBase
-			net.spFadjIndexBase[i,j] = fadjIndexBase
-			
-			# udpate spFadjIndexDelta[i][j] for each rNetTravel
-			for (k, rNetTravel) in enumerate(rNetTravels)
-				setRNetTravelSpFadjIndexDelta!(net, rNetTravel, i, j, fadjIndices[k])
-				## or:
-				# fadjIndex = fadjIndices[k]
-				# if fadjIndex == fadjIndexBase
-					# rNetTravel.spFadjIndexDelta[i][j] = 0
-				# else
-					# rNetTravel.spFadjIndexDelta[i][j] = fadjIndex
-				# end
-			end
-		end
-	end
-	
-	# # remove zero entries from sparse arrays
-	# for rNetTravel in rNetTravels
-		# for i = 1:numRNodes
-			# dropzeros!(rNetTravel.spFadjIndexDelta[i])
-		# end
-	# end
-end
-
-function setRNetTravelSpFadjIndexDelta!(net::Network, rNetTravel::NetTravel, i::Int, j::Int, spFadjIndex::IntFadj)
-	# assert(rNetTravel.isReduced)
-	if net.spFadjIndexBase[i,j] == spFadjIndex && rNetTravel.spFadjIndexDelta[i][j] != 0
-		rNetTravel.spFadjIndexDelta[i][j] = 0
-		dropzeros!(rNetTravel.spFadjIndexDelta[i]) # not sure if this is slow
-	else
-		rNetTravel.spFadjIndexDelta[i][j] = spFadjIndex
+		assert(0 < spTimes[i,j] < Inf)
 	end
 end
 
-# For a given travel mode, check that the spSuccs
-# gives paths with the same travel time as stored in spTimes
-# For a path from node i to j, spSuccs[i,j] gives successor node index of i
-function checkShortestPathTimes(rNetTravel::NetTravel, spSuccs::Array{IntRNode,2})
+# For a given travel mode, check that the stored shortest paths data
+# gives paths with the same travel time as stored in rNetTravel.spTimes
+function checkRNetTravelShortestPathTimes(net::Network, rNetTravel::NetTravel)
 	# shorthand:
+	numRNodes = length(net.rGraph.nodes)
+	travelModeIndex = rNetTravel.modeIndex
 	spTimes = rNetTravel.spTimes
-	numRNodes = size(spSuccs,1)
+	spNodePairArcIndex = rNetTravel.spNodePairArcIndex
 	
-	assert(size(spSuccs) == (numRNodes, numRNodes))
-	assert(size(rNetTravel.spTimes) == (numRNodes, numRNodes))
+	assert(size(spTimes) == (numRNodes, numRNodes))
 	
 	# check each pair of start and end nodes
 	for startRNode = 1:numRNodes, endRNode = 1:numRNodes
 		if startRNode == endRNode
 			assert(spTimes[startRNode, endRNode] == 0.0)
-			assert(spSuccs[startRNode, endRNode] == nullIndex)
+			assert(spNodePairArcIndex[startRNode, endRNode] == 0)
 		else
 			# follow path from start to end node, calculate and compare travel time
 			i = startRNode
 			t = 0.0
 			while i != endRNode
-				j = spSuccs[i,endRNode]
-				rArcIndex = rNetTravel.spNodePairArcIndex[i,j]
+				j = shortestPathNextRNode(net, travelModeIndex, i, endRNode)
+				rArcIndex = shortestPathNextRArc(net, travelModeIndex, i, endRNode)
+				assert(rArcIndex == rNetTravel.spNodePairArcIndex[i,j])
+				# assert(j == net.rGraph.arcs[rArcIndex].toNodeIndex)
 				t += rNetTravel.arcTimes[rArcIndex]
 				i = j # go to next node
 			end
@@ -563,15 +455,9 @@ end
 function shortestPathNextRNode(net::Network, travelModeIndex::Int, startRNode::Int, endRNode::Int)
 	assert(startRNode != endRNode)
 	
-	# shorthand:
-	rNetTravel = net.rNetTravels[travelModeIndex]
-	
-	spFadjIndex = rNetTravel.spFadjIndexDelta[startRNode][endRNode]
-	if spFadjIndex == 0
-		spFadjIndex = net.spFadjIndexBase[startRNode, endRNode]
-	end
-	
-	return net.rGraph.fadjList[startRNode][spFadjIndex]
+	rNetTravel = net.rNetTravels[travelModeIndex] # shorthand
+	fadjIndex = rNetTravel.spFadjIndex[startRNode, endRNode]
+	return net.rGraph.fadjList[startRNode][fadjIndex]
 end
 
 # for the shortest path from startRNode to endRNode,
@@ -580,15 +466,9 @@ end
 function shortestPathNextRArc(net::Network, travelModeIndex::Int, startRNode::Int, endRNode::Int)
 	assert(startRNode != endRNode)
 	
-	# shorthand:
-	rNetTravel = net.rNetTravels[travelModeIndex]
-	
-	spFadjIndex = rNetTravel.spFadjIndexDelta[startRNode][endRNode]
-	if spFadjIndex == 0
-		spFadjIndex = net.spFadjIndexBase[startRNode, endRNode]
-	end
-	
-	return rNetTravel.spFadjArcList[startRNode][spFadjIndex]
+	rNetTravel = net.rNetTravels[travelModeIndex] # shorthand
+	fadjIndex = rNetTravel.spFadjIndex[startRNode, endRNode]
+	return rNetTravel.spFadjArcList[startRNode][fadjIndex]
 end
 
 # Given the travel mode, and indices of start and end node (in full graph),
