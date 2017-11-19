@@ -11,12 +11,13 @@ This package is currently being developed.
 Expect bugs, and backward compatibility issues between commits.
 
 ## Installation
-This package is unregistered so you will need to `Pkg.clone` it as follows:
+This package (and another that it requires) is unregistered so you will need to `Pkg.clone` it as follows:
 ```julia
+Pkg.clone("https://github.com/yeesian/ArchGDAL.jl.git")
 Pkg.clone("https://github.com/samridler/AmbulanceSim.jl.git")
 ```
 
-## Use
+## Usage
 
 ### Simulation
 ```julia
@@ -25,7 +26,7 @@ using AmbulanceSim
 filename = selectXmlFile()
 sim = initSimulation(filename);
 
-simulate!(sim) # run the simulate
+simulate!(sim) # run the simulation
 printSimStats(sim) # some basic statistics
 ```
 For a Windows OS, the function `selectXmlFile()` will open a file selection dialog using powershell, for other operating systems a prompt will be given to enter the filename string.

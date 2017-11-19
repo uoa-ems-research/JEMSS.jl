@@ -17,7 +17,7 @@ using GLPKMathProgInterface # does not use precompile
 # misc
 using Distributions
 using LightGraphs
-using RasterIO # does not use precompile
+using ArchGDAL # does not use precompile
 using JLD
 
 # simulation functions

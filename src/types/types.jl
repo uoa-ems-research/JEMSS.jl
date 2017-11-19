@@ -383,6 +383,8 @@ type Raster
 		assert((nx, ny) == size(z))
 		dx = (maximum(x) - minimum(x))/(nx-1)
 		dy = (maximum(y) - minimum(y))/(ny-1)
+		assert(dx > 0)
+		assert(dy > 0)
 		return new(x, y, z, nx, ny, dx, dy)
 	end
 end
