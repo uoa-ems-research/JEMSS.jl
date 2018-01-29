@@ -1,7 +1,5 @@
 # misc file input/output functions
 
-crc64 = crc(CRC_64)
-
 Base.transpose(s::String) = s # not sure where else to put this
 
 function readDlmFileNextLine!(file::IOStream; delim::Char = delimiter)
@@ -185,10 +183,7 @@ end
 
 # crc checksum
 function fileChecksum(filename::String)
-	file = open(filename)
-	checksum = crc64(file)
-	close(file)
-	return checksum
+	return Base.crc32c(Mmap.mmap(filename))
 end
 
 function serializeToFile(filename::String, data::Any)

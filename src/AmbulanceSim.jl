@@ -8,7 +8,6 @@ using JSON
 
 # files
 using LightXML
-using CRC
 
 # optimisation (move-up)
 using JuMP
