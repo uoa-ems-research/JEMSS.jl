@@ -1,32 +1,38 @@
-# read raster file using RasterIO package, return as custom Raster type
-# note that RasterIO does not automatically check if raster cells are evenly spaced
+# read geographic data from file and apply f to data
+function readGeoFile(f::Function, filename::String)
+	return ArchGDAL.registerdrivers() do
+		ArchGDAL.read(filename) do dataset
+			f(dataset)
+		end
+	end
+end
+
+# read raster file using ArchGDAL package, return as custom Raster type
 function readRasterFile(rasterFilename::String)
 	
 	# open raster, get data, close raster
-	assert(isfile(rasterFilename))
-	raster = RasterIO.openraster(rasterFilename, RasterIO.GA_ReadOnly)
-	z = RasterIO.fetch(raster,1)
-	data = RasterIO.geotransform(raster)
-	RasterIO.closeraster(raster)
+	# only gets first raster band, may change this later
+	(geoTransform, z) = readGeoFile(rasterFilename) do dataset
+		rasterband = ArchGDAL.getband(dataset, 1)
+		return (ArchGDAL.getgeotransform(dataset), ArchGDAL.read(rasterband))
+	end
 	
 	# shorthand:
-	nx = raster.width # number of cells in x direction
-	ny = raster.height # number of cells in y direction
-	dx = data[2] # width of cells in x direction
-	dy = data[6] # height of cells in y direction (may be negative)
+	(nx, ny) = size(z) # number of cells in x and y directions
+	(x1, dxdi, dxdj, y1, dydi, dydj) = geoTransform # dxdi is change in x per change in index i, for z[i,j]; likewise for dxdj, dydi, dydj
+	dx = dxdi # width of cells in x direction
+	dy = dydj # height of cells in y direction (may be negative)
 	
 	# data checks
-	assert(raster.nband == 1) # otherwise would have to choose which band to use
-	assert(nx == size(z,1) && ny == size(z,2))
-	assert(data[3] == 0 && data[5] == 0) # otherwise raster is sloping, so changing x index changes y value, and vice-versa
-	assert(dx > 0) # otherwise RasterIO.openraster should have failed
+	assert(dxdj == 0 && dydi == 0) # otherwise raster is sloping, so changing x index changes y value, and vice-versa
+	assert(dx > 0)
 	assert(dy != 0)
 	
 	# convert data for easier use
 	# find x and y vectors to represent raster cell centres, make sure values are increasing
-	xMin = data[1] + 0.5*dx # we know dx > 0
-	# (xMin, dx, z) = (dx > 0) ? (data[1] + 0.5*dx, dx, z) : (data[1] + (nx-0.5)*dx, -dx, flipdim(z,1))
-	(yMin, dy, z) = (dy > 0) ? (data[4] + 0.5*dy, dy, z) : (data[4] + (ny-0.5)*dy, -dy, flipdim(z,2))
+	xMin = x1 + 0.5*dx # we know dx > 0
+	# (xMin, dx, z) = (dx > 0) ? (x1 + 0.5*dx, dx, z) : (x1 + (nx-0.5)*dx, -dx, flipdim(z,1))
+	(yMin, dy, z) = (dy > 0) ? (y1 + 0.5*dy, dy, z) : (y1 + (ny-0.5)*dy, -dy, flipdim(z,2))
 	x = collect(range(xMin, dx, nx))
 	y = collect(range(yMin, dy, ny))
 	
