@@ -46,10 +46,10 @@
 		
 		<map>
 			<xMin>0</xMin>
-			<xMax>1</xMax>
+			<xMax>0.3</xMax>
 			<xScale>111.32</xScale>
 			<yMin>0</yMin>
-			<yMax>1</yMax>
+			<yMax>0.3</yMax>
 			<yScale>111.32</yScale>
 		</map>
 		
