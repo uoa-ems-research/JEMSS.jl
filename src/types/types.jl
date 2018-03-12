@@ -191,7 +191,7 @@ type Event
 	callIndex::Int
 	stationIndex::Int # for now, only use this for resimulation, otherwise use ambulances[ambIndex].stationIndex
 	
-	Event() = new(nullEvent, nullTime, nullIndex, nullIndex)
+	Event() = new(nullEvent, nullTime, nullIndex, nullIndex, nullIndex)
 end
 
 type Ambulance
@@ -270,7 +270,8 @@ type Hospital
 	# for statistics:
 	numTransfers::Int # total number of patient transfers from ambulances to hospital
 	
-	Hospital() = new(nullIndex, Location(), nullIndex, nullDist, 0)
+	Hospital() = new(nullIndex, Location(), nullIndex, nullDist,
+		0)
 end
 
 type Station
@@ -319,8 +320,12 @@ type GridSearchRect
 	ixSearched::Vector{Int}
 	iySearched::Vector{Int}
 	
-	GridSearchRect() = new([nullDist, nullDist], [nullDist, nullDist], [nullIndex, nullIndex], [nullIndex, nullIndex], [nullIndex, nullIndex], [nullIndex, nullIndex])
-	GridSearchRect(ix, iy) = new([nullDist, nullDist], [nullDist, nullDist], [ix, ix], [iy, iy], [ix, ix], [iy, iy])
+	GridSearchRect() = new([nullDist, nullDist], [nullDist, nullDist],
+		[nullIndex, nullIndex], [nullIndex, nullIndex],
+		[nullIndex, nullIndex], [nullIndex, nullIndex])
+	GridSearchRect(ix, iy) = new([nullDist, nullDist], [nullDist, nullDist],
+		[ix, ix], [iy, iy],
+		[ix, ix], [iy, iy])
 end
 
 # grid rectangle, part of type Grid
@@ -421,7 +426,8 @@ type DmexclpData <: MoveUpDataType
 	nodeCoverCount::Vector{Int} # nodeCoverCount[i] = number of idle ambulances covering node i
 	
 	DmexclpData() = new(nullTime, 0.0,
-		[], [], Array{Bool,2}(0,0), [], [], [])
+		[],
+		[], Array{Bool,2}(0,0), [], [], [])
 end
 
 type PriorityListData <: MoveUpDataType
@@ -513,7 +519,8 @@ type Resimulation
 	events::Vector{Event}
 	prevEventIndex::Int # index of previous event in events field
 	
-	Resimulation() = new(false, 0.0, [], nullIndex)
+	Resimulation() = new(false, 0.0,
+		[], nullIndex)
 end
 
 type Simulation

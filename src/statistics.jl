@@ -1,9 +1,7 @@
 function printSimStats(sim::Simulation)
-	println()
 	printAmbsStats(sim.ambulances)
 	println()
 	printCallsStats(sim.calls)
-	println()
 end
 
 function printTime(t::Float)

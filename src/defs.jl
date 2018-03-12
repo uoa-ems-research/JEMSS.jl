@@ -6,11 +6,11 @@ const Float = Float64
 
 # float and int types for storing all-pairs shortest paths data
 # can reduce precision in order to reduce memory used
-const FloatSpTime = Float32 # precision for storing shortest path travel times
+const FloatSpTime = Float64 # precision for storing shortest path travel times
 const IntRNode = Int16 # precision for storing number of nodes in rGraph
 const IntFadj = Int8 # precision for storing maximum number of nodes adjacent to any node in rGraph (= length of longest vector in network.rGraph.fadjList)
 
-const sourcePath = splitdir(@__FILE__)[1]
+const sourcePath = @__DIR__
 
 # run modes
 const debugMode = false
