@@ -477,7 +477,7 @@ function simulateNextEvent!(sim::Simulation)
 ################
 	
 	if length(eventList) == 0
-		assert(sim.endTime == nullIndex)
+		assert(sim.endTime == nullTime)
 		assert(sim.complete == false)
 		sim.endTime = sim.time
 		sim.complete = true
