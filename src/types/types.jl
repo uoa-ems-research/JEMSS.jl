@@ -544,7 +544,9 @@ type Simulation
 	
 	resim::Resimulation
 	
-	# for move up:
+	# decision logic
+	addCallToQueue!::Function
+	findAmbToDispatch!::Function
 	moveUpData::MoveUpData
 	
 	# for statistics:
@@ -574,7 +576,7 @@ type Simulation
 		[], [], [], [],
 		[], [],
 		Resimulation(),
-		MoveUpData(),
+		nullFunction, nullFunction, MoveUpData(),
 		[],
 		[], [],
 		"", "", Dict(), Dict(), IOStream(""),

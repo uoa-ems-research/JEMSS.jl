@@ -230,8 +230,12 @@ function initSimulation(rootElt::XMLElement;
 	initTime(t)
 	
 	##################
-	# move up
+	# decision logic
 	
+	sim.addCallToQueue! = addCallToQueueSortPriorityThenTime! # default function
+	sim.findAmbToDispatch! = findNearestFreeAmbToCall! # default function
+	
+	# move up
 	mud = sim.moveUpData # shorthand
 	
 	moveUpElt = findElt(rootElt, "moveUp")

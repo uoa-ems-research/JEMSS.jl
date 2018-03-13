@@ -86,6 +86,9 @@ include("file/gen_sim_files.jl")
 include("file/read_sim_files.jl")
 include("file/write_sim_files.jl")
 
+include("decision/call.jl")
+include("decision/dispatch.jl")
+
 include("move_up/comp_table.jl")
 include("move_up/dmexclp.jl")
 include("move_up/move_up_common.jl")
