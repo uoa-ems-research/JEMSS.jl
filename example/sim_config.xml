@@ -29,39 +29,43 @@
 	<!-- resim = true will resimulate events from outputPath/events file, if possible -->
 	<resim>true</resim>
 	
-	<moveUp>
-		<module>none</module>
-		<!-- module: none / comp_table / dmexclp (not implemented) / priority_list / zhang_ip / temp1 / temp2 -->
-		<compTable>
-			<!-- <path>inputPath</path> -->
-			<filename>comp_table.csv</filename>
-		</compTable>
-		<dmexclp>
-			<coverTime>7/(24*60)</coverTime>
-			<busyFraction>0.25</busyFraction>
-		</dmexclp>
-		<priorityList>
-			<!-- <path>inputPath</path> -->
-			<filename>priority_list.csv</filename>
-		</priorityList>
-		<zhangIp>
-			<busyFraction>0.5</busyFraction>
-			<travelTimeCost>10.0</travelTimeCost>
-			<maxIdleAmbTravelTime>0.5/24</maxIdleAmbTravelTime>
-			<maxNumNearestStations>6</maxNumNearestStations>
-		</zhangIp>
-		<temp1>
-			<busyFraction>0.5</busyFraction>
-			<travelTimeCost>10.0</travelTimeCost>
-			<maxIdleAmbTravelTime>0.5/24</maxIdleAmbTravelTime>
-			<maxNumNearestStations>6</maxNumNearestStations>
-		</temp1>
-		<temp2>
-			<busyFraction>0.5</busyFraction>
-			<travelTimeCost>10.0</travelTimeCost>
-			<maxIdleAmbTravelTime>0.5/24</maxIdleAmbTravelTime>
-			<maxNumNearestStations>6</maxNumNearestStations>
-		</temp2>
-	</moveUp>
+	<decision>
+		<callQueueing>addCallToQueueSortPriorityThenTime!</callQueueing>
+		<dispatch>findNearestFreeAmbToCall!</dispatch>
+		<moveUp>
+			<module>none</module>
+			<!-- module: none / comp_table / dmexclp (not implemented) / priority_list / zhang_ip / temp1 / temp2 -->
+			<compTable>
+				<!-- <path>inputPath</path> -->
+				<filename>comp_table.csv</filename>
+			</compTable>
+			<dmexclp>
+				<coverTime>7/(24*60)</coverTime>
+				<busyFraction>0.25</busyFraction>
+			</dmexclp>
+			<priorityList>
+				<!-- <path>inputPath</path> -->
+				<filename>priority_list.csv</filename>
+			</priorityList>
+			<zhangIp>
+				<busyFraction>0.5</busyFraction>
+				<travelTimeCost>10.0</travelTimeCost>
+				<maxIdleAmbTravelTime>0.5/24</maxIdleAmbTravelTime>
+				<maxNumNearestStations>6</maxNumNearestStations>
+			</zhangIp>
+			<temp1>
+				<busyFraction>0.5</busyFraction>
+				<travelTimeCost>10.0</travelTimeCost>
+				<maxIdleAmbTravelTime>0.5/24</maxIdleAmbTravelTime>
+				<maxNumNearestStations>6</maxNumNearestStations>
+			</temp1>
+			<temp2>
+				<busyFraction>0.5</busyFraction>
+				<travelTimeCost>10.0</travelTimeCost>
+				<maxIdleAmbTravelTime>0.5/24</maxIdleAmbTravelTime>
+				<maxNumNearestStations>6</maxNumNearestStations>
+			</temp2>
+		</moveUp>
+	</decision>
 	
 </simConfig>
