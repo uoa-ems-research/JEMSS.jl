@@ -232,13 +232,13 @@ function initSimulation(rootElt::XMLElement;
 	##################
 	# decision logic
 	
-	sim.addCallToQueue! = addCallToQueueSortPriorityThenTime! # default function
-	sim.findAmbToDispatch! = findNearestFreeAmbToCall! # default function
+	decisionElt = findElt(rootElt, "decision")
+	sim.addCallToQueue! = eltContentVal(decisionElt, "callQueueing")
+	sim.findAmbToDispatch! = eltContentVal(decisionElt, "dispatch")
 	
 	# move up
 	mud = sim.moveUpData # shorthand
-	
-	moveUpElt = findElt(rootElt, "moveUp")
+	moveUpElt = findElt(decisionElt, "moveUp")
 	moveUpModuleName = eltContent(moveUpElt, "module")
 	
 	if moveUpModuleName == "none"
