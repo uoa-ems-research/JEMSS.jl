@@ -26,6 +26,7 @@ const nullX = -200 # outside lat/lon range
 const nullY = -200
 const nullTime = -1.0
 const nullDist = -1.0
+nullFunction() = nothing
 
 # call/travel priorities
 @enum Priority nullPriority=0 highPriority=1 medPriority=2 lowPriority=3

@@ -72,9 +72,9 @@ function resimCheckCurrentEvent!(sim::Simulation, event::Event)
 	end
 end
 
-# select ambulance to dispatch to a call
+# find ambulance to dispatch to a call
 # assumes ambulance mobilisation delay is 0
-function resimNearestFreeAmbToCall(sim::Simulation, call::Call)
+function resimFindAmbToDispatch(sim::Simulation, call::Call)
 	resim = sim.resim # shorthand
 	assert(resim.use)
 	

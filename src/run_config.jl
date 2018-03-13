@@ -230,11 +230,15 @@ function initSimulation(rootElt::XMLElement;
 	initTime(t)
 	
 	##################
+	# decision logic
+	
+	decisionElt = findElt(rootElt, "decision")
+	sim.addCallToQueue! = eltContentVal(decisionElt, "callQueueing")
+	sim.findAmbToDispatch! = eltContentVal(decisionElt, "dispatch")
+	
 	# move up
-	
 	mud = sim.moveUpData # shorthand
-	
-	moveUpElt = findElt(rootElt, "moveUp")
+	moveUpElt = findElt(decisionElt, "moveUp")
 	moveUpModuleName = eltContent(moveUpElt, "module")
 	
 	if moveUpModuleName == "none"
