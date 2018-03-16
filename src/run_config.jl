@@ -1,10 +1,7 @@
 # run configuration xml file
 function runConfig(configFilename::String)
-	# read xml
-	rootElt = xmlFileRoot(configFilename)
-	
 	# read input files, initialise simulation
-	sim = initSimulation(rootElt; allowResim = true, createBackup = false, allowWriteOutput = true)
+	sim = initSimulation(configFilename; allowResim = true, createBackup = false, allowWriteOutput = true)
 	
 	# open output files
 	openOutputFiles!(sim)
@@ -21,15 +18,12 @@ function runConfig(configFilename::String)
 	closeOutputFiles!(sim)
 end
 
+# initialise simulation from input files
 function initSimulation(configFilename::String;
 	allowResim::Bool = false, createBackup::Bool = true, allowWriteOutput::Bool = false)
-	return initSimulation(xmlFileRoot(configFilename);
-		allowResim = allowResim, createBackup = createBackup, allowWriteOutput = allowWriteOutput)
-end
-
-# initialise simulation from input files
-function initSimulation(rootElt::XMLElement;
-	allowResim::Bool = false, createBackup::Bool = true, allowWriteOutput::Bool = false)
+	
+	# read sim config xml file
+	rootElt = xmlFileRoot(configFilename)
 	@assert(name(rootElt) == "simConfig", string("xml root has incorrect name: ", name(rootElt)))
 	
 	# for progress messages:
