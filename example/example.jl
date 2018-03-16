@@ -1,6 +1,6 @@
 using AmbulanceSim
 
-path = splitdir(@__FILE__)[1]
+path = @__DIR__
 
 # generate artificial simulation input files
 println("\n=== Generating files ===")
