@@ -1,7 +1,9 @@
 # ambulance simulation animation
 
-# global Dict to store open connections in
-global connections = Dict{Int,WebSocket}()
+# global variables; hacky...
+global animConnections = Dict{Int,WebSocket}() # store open connections
+global animConfigFilenames = Vector{String}() # store filenames between animation request and start
+global animPort = nullIndex # localhost port for animation, to be set
 
 function decodeMessage(msg)
 	return String(msg)
@@ -188,11 +190,13 @@ function updateCallLocation!(sim::Simulation, call::Call)
 end
 
 wsh = WebSocketHandler() do req::Request, client::WebSocket
-	global connections
-	connections[client.id] = client
+	global animConnections, animConfigFilenames
+	
+	animConnections[client.id] = client
 	println("Client ", client.id, " connected")
 	
-	configFilename = selectXmlFile()
+	# get oldest filename from animConfigFilenames, or select file now
+	configFilename = (length(animConfigFilenames) > 0 ? shift!(animConfigFilenames) : selectXmlFile())
 	println("Running from config: ", configFilename)
 	
 	println("Initialising simulation...")
@@ -255,15 +259,48 @@ wsh = WebSocketHandler() do req::Request, client::WebSocket
 	end
 end
 
-function animate(; port::Int = 8001)
+# start the animation, open a browser window for it
+# can set the port for the connection, and the simulation config filename
+# openWindow = false prevents a browser window from opening automatically, will need to open manually
+function animate(; port::Int = 8001, configFilename::String = "", openWindow::Bool = true)
+	global animConfigFilenames
+	if runAnimServer(port)
+		if configFilename != ""
+			push!(animConfigFilenames, configFilename)
+		end
+		openWindow ? openLocalhost(port) : println("waiting for window with port $port to be opened")
+	end
+end
+
+# creates and runs server for given port
+# returns true if server is running, false otherwise
+function runAnimServer(port::Int)
+	# check if port already in use
+	global animPort
+	if port == animPort && port != nullIndex
+		return true # port already used for animation
+	elseif animPort != nullIndex
+		println("use port $animPort instead")
+		return false
+	end
+	try
+		socket = connect(port)
+		if socket.status == 3 # = open
+			println("port $port is already in use, try another")
+			return false
+		end
+	end
+	
+	# create and run server
 	onepage = readstring("$sourcePath/animation/index.html")
 	httph = HttpHandler() do req::Request, res::Response
 		Response(onepage)
 	end
-	
 	server = Server(httph, wsh)
 	@async run(server, port)
-	openLocalhost(port)
+	animPort = port
+	println("opened port $animPort, use this for subsequent animation windows")
+	return true
 end
 
 # opens browser window for url
