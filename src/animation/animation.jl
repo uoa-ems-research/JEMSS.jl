@@ -187,7 +187,7 @@ function updateCallLocation!(sim::Simulation, call::Call)
 	end
 end
 
-wsh = WebSocketHandler() do req, client
+wsh = WebSocketHandler() do req::Request, client::WebSocket
 	global connections
 	connections[client.id] = client
 	println("Client ", client.id, " connected")
@@ -262,5 +262,22 @@ function animate(; port::Int = 8001)
 	end
 	
 	server = Server(httph, wsh)
-	run(server, port)
+	@async run(server, port)
+	openLocalhost(port)
+end
+
+# opens browser window for url
+function openUrl(url::String)
+	if is_windows()
+		run(`$(ENV["COMSPEC"]) /c start $url`)
+	elseif is_apple()
+		run(`open $url`)
+	elseif is_linux() || is_bsd()
+		run(`xdg-open $url`)
+	end
+end
+
+# opens browser window for localhost:port
+function openLocalhost(port::Int)
+	openUrl("http://localhost:$(port)")
 end
