@@ -11,8 +11,9 @@ This package is currently being developed.
 Expect bugs, and backward compatibility issues between commits.
 
 ## Installation
-This package (and another that it requires) is unregistered so you will need to `Pkg.clone` it as follows:
+This package (and others that it requires) is unregistered so you will need to `Pkg.clone` it as follows:
 ```julia
+Pkg.clone("https://github.com/visr/GDAL.jl.git")
 Pkg.clone("https://github.com/yeesian/ArchGDAL.jl.git")
 Pkg.clone("https://github.com/samridler/AmbulanceSim.jl.git")
 ```
