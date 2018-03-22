@@ -99,7 +99,7 @@ function readGenConfig(genConfigFilename::String)
 	
 	# call distributions
 	callDistsElt = findElt(simElt, "callDistributions")
-	distsEltContent(eltString::String) = eval(parse(eltContent(callDistsElt, eltString)))
+	distsEltContent(eltString::String) = eltContentVal(callDistsElt, eltString)
 	genConfig.interarrivalTimeDist = distsEltContent("interarrivalTime")
 	genConfig.priorityDist = distsEltContent("priority")
 	genConfig.dispatchDelayDist = distsEltContent("dispatchDelay")
