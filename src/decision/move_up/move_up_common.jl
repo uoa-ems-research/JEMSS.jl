@@ -85,5 +85,5 @@ function createStationPairs(sim::Simulation, travelMode::TravelMode;
 end
 
 function moveUpNull()
-	return [], []
+	return Ambulance[], Station[]
 end
