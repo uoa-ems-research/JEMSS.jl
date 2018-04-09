@@ -134,17 +134,22 @@ function readGenConfig(genConfigFilename::String)
 	return genConfig
 end
 
-function runGenConfig(genConfigFilename::String)
+function runGenConfig(genConfigFilename::String; overwriteOutputPath::Bool = false)
 	genConfig = readGenConfig(genConfigFilename)
 	
-	if isdir(genConfig.outputPath)
+	if isdir(genConfig.outputPath) && !overwriteOutputPath
 		println("Output path already exists: ", genConfig.outputPath)
 		print("Delete folder contents and continue anyway? (y = yes): ")
 		response = chomp(readline())
 		if response != "y"
 			println("stopping")
 			return
+		else
+			overwriteOutputPath = true
 		end
+	end
+	if isdir(genConfig.outputPath) && overwriteOutputPath
+		println("Deleting folder contents: ", genConfig.outputPath)
 		rm(genConfig.outputPath; recursive=true)
 	end
 	if !isdir(genConfig.outputPath)
