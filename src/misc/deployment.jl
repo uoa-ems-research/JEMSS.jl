@@ -1,7 +1,5 @@
 # deployment (allocation) of ambulances to stations
 
-const Depol = Vector{Int} # short for "deployment policy"; depol[i] gives index of station to deploy ambulance i to
-
 # make a single random deployment policy
 # ignores station capacities, assumes ambulances are homogeneous
 function makeRandDeploymentPolicy(numAmbs::Int, numStations::Int)::Depol
