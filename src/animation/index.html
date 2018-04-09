@@ -104,8 +104,9 @@
 			maxZoom: 18
 		}).setView([0, 0], 12);
 		
-		function setMapView(minLat, maxLat, minLon, maxLon) {
-			map.fitBounds([[minLat, minLon], [maxLat, maxLon]]);
+		var mapBounds = map.getBounds()
+		function resetMapView() {
+			map.fitBounds(mapBounds);
 		}
 		
 		////////////////////////////////////////////////////////////////
@@ -118,8 +119,9 @@
 			msgObj = JSON.parse(message.data)
 			switch (msgObj.message) {
 				case "set_map_view":
-					var map = msgObj.map
-					setMapView(map.yMin, map.yMax, map.xMin, map.xMax)
+					var m = msgObj.map // var 'map' is taken
+					mapBounds = L.latLngBounds([m.yMin, m.xMin], [m.yMax, m.xMax]);
+					resetMapView()
 					break;
 				case "set_start_time":
 					setSimStartTime(msgObj.time)
