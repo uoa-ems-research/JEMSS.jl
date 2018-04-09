@@ -155,3 +155,16 @@ function writeStatsFiles!(sim::Simulation)
 	writeTablesToFile(outputFilePath("hospitals"), Table("hospitalStats", ["index", "numTransfers"];
 		rows = [[h.index, h.numTransfers] for h in sim.hospitals]))
 end
+
+# write deployment policies to file
+function writeDeploymentPoliciesFile(filename::String, depols::Vector{Depol}, numStations::Int)
+	numAmbs = length(depols[1])
+	assert(numStations >= maximum([maximum(d) for d in depols]))
+	numDepols = length(depols)
+	
+	miscTable = Table("miscData", ["numStations", "numDepols"]; rows = [[numStations, numDepols]])
+	deploymentPoliciesTable = Table("deploymentPolicies",
+		["ambIndex", ["policy $i, stationIndex" for i = 1:numDepols]...];
+		cols = [collect(1:numAmbs), depols...])
+	writeTablesToFile(filename, [miscTable, deploymentPoliciesTable])
+end

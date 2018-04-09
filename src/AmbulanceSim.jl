@@ -29,8 +29,8 @@ export
 export
 	readDlmFileNextLine!, readDlmFile, openNewFile, writeDlmLine!, arrayDict, writeTablesToFile!, writeTablesToFile, readTablesFromFile, readTablesFromData, fileChecksum, serializeToFile, deserializeFile, interpolateString, xmlFileRoot, findElt, eltContent, eltContentVal, eltContentInterpVal, childrenNodeNames, selectXmlFile, # file_io
 	runGenConfig, # gen_sim_files
-	readAmbsFile, readArcsFile, readCallsFile, readCompTableFile, readEventsFile, readHospitalsFile, readMapFile, readNodesFile, readPrioritiesFile, readPriorityListFile, readStationsFile, readTravelFile, # read_sim_files
-	writeAmbsFile, writeArcsFile, writeCallsFile, writeHospitalsFile, writeMapFile, writeNodesFile, writePrioritiesFile, writeStationsFile, writeTravelFile, openOutputFiles!, closeOutputFiles!, writeEventToFile!, writeStatsFiles! # write_sim_files
+	readAmbsFile, readArcsFile, readCallsFile, readCompTableFile, readEventsFile, readHospitalsFile, readMapFile, readNodesFile, readPrioritiesFile, readPriorityListFile, readStationsFile, readTravelFile, readDeploymentPoliciesFile, # read_sim_files
+	writeAmbsFile, writeArcsFile, writeCallsFile, writeHospitalsFile, writeMapFile, writeNodesFile, writePrioritiesFile, writeStationsFile, writeTravelFile, openOutputFiles!, closeOutputFiles!, writeEventToFile!, writeStatsFiles!, writeDeploymentPoliciesFile # write_sim_files
 
 # move up initialisation functions
 export
@@ -45,6 +45,7 @@ export
 	isFNodeInRGraph, shortestPathNextRNode, shortestPathNextRArc, shortestPathTravelTime, shortestPath, findRArcFromFNodeToFNode, # network
 	readRasterFile, rasterRandLocations, printRasterSize, # raster
 	printSimStats, printAmbsStats, printCallsStats, calcBatchMeans, calcBatchMeanResponseTimes # statistics
+	makeRandDeploymentPolicy, makeRandDeploymentPolicies, setAmbStation!, applyDeploymentPolicy!, simulateDeploymentPolicy!, simulateDeploymentPolicies! # deployment
 
 # types
 export
@@ -57,7 +58,8 @@ export
 # defs - consts
 export
 	Float, FloatSpTime, IntRNode, IntFadj, # type alias
-	nullIndex, nullX, nullY, nullTime, nullDist # nulls
+	nullIndex, nullX, nullY, nullTime, nullDist, # nulls
+	Depol
 
 # defs - enums
 export
@@ -103,5 +105,7 @@ include("simulation.jl")
 include("statistics.jl")
 
 include("animation/animation.jl")
+
+include("misc/deployment.jl")
 
 end
