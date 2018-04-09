@@ -3,9 +3,13 @@ ArchGDAL
 Distributions
 GLPKMathProgInterface
 HttpServer
+HypothesisTests
 JLD
 JSON
 JuMP
 LightGraphs
 LightXML
+Plots
+Stats
+StatsFuns
 WebSockets

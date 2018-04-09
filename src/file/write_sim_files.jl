@@ -155,3 +155,34 @@ function writeStatsFiles!(sim::Simulation)
 	writeTablesToFile(outputFilePath("hospitals"), Table("hospitalStats", ["index", "numTransfers"];
 		rows = [[h.index, h.numTransfers] for h in sim.hospitals]))
 end
+
+# write deployment policies to file
+function writeDeploymentPoliciesFile(filename::String, depols::Vector{Depol}, numStations::Int)
+	numAmbs = length(depols[1])
+	assert(numStations >= maximum([maximum(d) for d in depols]))
+	numDepols = length(depols)
+	
+	miscTable = Table("miscData", ["numStations", "numDepols"]; rows = [[numStations, numDepols]])
+	deploymentPoliciesTable = Table("deploymentPolicies",
+		["ambIndex", ["policy $i, stationIndex" for i = 1:numDepols]...];
+		cols = [collect(1:numAmbs), depols...])
+	writeTablesToFile(filename, [miscTable, deploymentPoliciesTable])
+end
+
+# save batch mean response times to file
+function writeBatchMeanResponseTimesFile(filename::String, batchMeanResponseTimes::Array{Float,2};
+	batchTime = nullTime, startTime = nullTime, endTime = nullTime, responseTimeUnits::String = "minutes")
+	assert(batchTime != nullTime && startTime != nullTime && endTime != nullTime)
+	x = batchMeanResponseTimes # shorthand
+	(numRows, numCols) = size(x) # numRows = numSims, numCols = numBatches
+	miscTable = Table("misc_data",
+		["numSims", "numBatches", "batchTime", "startTime", "endTime", "response_time_units"];
+		rows=[[numRows, numCols, batchTime, startTime, endTime, responseTimeUnits]])
+	avgBatchMeansTable = Table("avg_batch_mean_response_times",
+		["sim_index", "avg_batch_mean_response_time", "standard_error"];
+		rows = [[i, mean(x[i,:]), Stats.sem(x[i,:])] for i = 1:numRows])
+	batchMeansTable = Table("batch_mean_response_times",
+		["batch_index", ["sim_$i" for i = 1:numRows]...];
+		rows = [[i, x[:,i]...] for i = 1:numCols])
+	writeTablesToFile(filename, [miscTable, avgBatchMeansTable, batchMeansTable])
+end
