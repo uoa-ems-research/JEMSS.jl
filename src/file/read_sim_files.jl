@@ -421,3 +421,35 @@ function readTravelFile(filename::String)
 	
 	return travel
 end
+
+# read deployment policies from file
+function readDeploymentPoliciesFile(filename::String)
+	tables = readTablesFromFile(filename)
+	
+	# get counts
+	table = tables["miscData"]
+	numStations = table.columns["numStations"][1]
+	numDepols = table.columns["numDepols"][1]
+	
+	# deployment policies
+	table = tables["deploymentPolicies"]
+	columns = table.columns # shorthand
+	# check number of ambulances
+	ambIndexCol = columns["ambIndex"]
+	assert(ambIndexCol == collect(1:length(ambIndexCol)))
+	# check that table header has all deployment policies
+	for i = 1:numDepols
+		@assert(in("policy $i, stationIndex", table.header), "Missing deployment policy $i")
+	end
+	# create deployment policies from table
+	depols = Vector{Depol}(numDepols)
+	for i = 1:numDepols
+		depols[i] = columns["policy $i, stationIndex"]
+		
+		for value in depols[i]
+			assert(in(value, 1:numStations))
+		end
+	end
+	
+	return depols, numStations
+end
