@@ -13,11 +13,17 @@ using LightXML
 using JuMP
 using GLPKMathProgInterface # does not use precompile
 
-# misc
+# statistics
 using Distributions
+using HypothesisTests
+using Stats
+using StatsFuns
+
+# misc
 using LightGraphs
 using ArchGDAL # does not use precompile
 using JLD
+import Plots
 
 # simulation functions
 export
@@ -30,7 +36,7 @@ export
 	readDlmFileNextLine!, readDlmFile, openNewFile, writeDlmLine!, arrayDict, writeTablesToFile!, writeTablesToFile, readTablesFromFile, readTablesFromData, fileChecksum, serializeToFile, deserializeFile, interpolateString, xmlFileRoot, findElt, eltContent, eltContentVal, eltContentInterpVal, childrenNodeNames, selectXmlFile, # file_io
 	runGenConfig, # gen_sim_files
 	readAmbsFile, readArcsFile, readCallsFile, readCompTableFile, readEventsFile, readHospitalsFile, readMapFile, readNodesFile, readPrioritiesFile, readPriorityListFile, readStationsFile, readTravelFile, readDeploymentPoliciesFile, # read_sim_files
-	writeAmbsFile, writeArcsFile, writeCallsFile, writeHospitalsFile, writeMapFile, writeNodesFile, writePrioritiesFile, writeStationsFile, writeTravelFile, openOutputFiles!, closeOutputFiles!, writeEventToFile!, writeStatsFiles!, writeDeploymentPoliciesFile # write_sim_files
+	writeAmbsFile, writeArcsFile, writeCallsFile, writeHospitalsFile, writeMapFile, writeNodesFile, writePrioritiesFile, writeStationsFile, writeTravelFile, openOutputFiles!, closeOutputFiles!, writeEventToFile!, writeStatsFiles!, writeDeploymentPoliciesFile, writeBatchMeanResponseTimesFile # write_sim_files
 
 # move up initialisation functions
 export
@@ -44,7 +50,7 @@ export
 	isSameLocation, squareDist, normDist, offRoadTravelTime, linearInterpLocation, randLocation, # location
 	isFNodeInRGraph, shortestPathNextRNode, shortestPathNextRArc, shortestPathTravelTime, shortestPath, findRArcFromFNodeToFNode, # network
 	readRasterFile, rasterRandLocations, printRasterSize, # raster
-	printSimStats, printAmbsStats, printCallsStats, calcBatchMeans, calcBatchMeanResponseTimes, # statistics
+	printSimStats, printAmbsStats, printCallsStats, calcBatchMeans, calcBatchMeanResponseTimes, meanErrorPlot, calcAR0DurbinWatsonTestPValue, # statistics
 	makeRandDeploymentPolicy, makeRandDeploymentPolicies, setAmbStation!, applyDeploymentPolicy!, simulateDeploymentPolicy!, simulateDeploymentPolicies! # deployment
 
 # types

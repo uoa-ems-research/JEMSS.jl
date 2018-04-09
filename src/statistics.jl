@@ -97,3 +97,36 @@ function calcBatchMeanResponseTimes(sim::Simulation;
 	return calcBatchMeans(; values = values, times = times, batchTime = batchTime,
 		startTime = sim.startTime + warmUpTime, endTime = sim.endTime - coolDownTime)
 end
+
+# calculate Stats.sem for each row of x
+function Stats.sem{T<:Real}(x::Array{T,2})
+	return [Stats.sem(x[i,:]) for i = 1:size(x,1)]
+end
+
+# For each x[i], plot mean of y[i,:] with two sided confidence interval.
+# Assumes that values in y[i,:] are from a normal distribution with unknown standard deviation.
+function meanErrorPlot(x::Vector{Float}, y::Array{Float,2}, conf::Float=0.95)
+	assert(length(x) == size(y,1))
+	assert(0 < conf < 1)
+	t = StatsFuns.tdistinvcdf(size(y,2)-1, 1-(1-conf)/2) # t-value, for two sided confidence interval
+	# StatsFuns.tdistinvcdf(dof, p) # for n samples, dof = n - 1
+	return Plots.scatter(x, mean(y,2), yerror=repmat(t*Stats.sem(y), 1, 2),
+		xaxis=("x"), yaxis=("y"), m=(:hline), lab="")
+end
+function meanErrorPlot(x, y, conf::Float=0.95)
+	meanErrorPlot(convert(Vector{Float},x), convert(Array{Float,2},y), conf)
+end
+# plot y values against indices (y[i,:] plotted at x = i)
+function meanErrorPlot(y, conf::Float=0.95)
+	meanErrorPlot(1:size(y,1), y, conf)
+end
+
+# For a vector of values, fit an AR(0) model, and return a p-value for the Durbin-Watson test.
+# From wikipedia: "the Durbin–Watson statistic is a test statistic used to detect the presence
+# of autocorrelation at lag 1 in the residuals (prediction errors) from a regression analysis".
+function calcAR0DurbinWatsonTestPValue{T<:Real}(x::Vector{T})
+	xFit = repmat([mean(x)], length(x))
+	residuals = x - xFit
+	dwTest = HypothesisTests.DurbinWatsonTest(xFit, residuals)
+	return HypothesisTests.pvalue(dwTest)
+end

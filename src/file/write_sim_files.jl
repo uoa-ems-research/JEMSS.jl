@@ -168,3 +168,21 @@ function writeDeploymentPoliciesFile(filename::String, depols::Vector{Depol}, nu
 		cols = [collect(1:numAmbs), depols...])
 	writeTablesToFile(filename, [miscTable, deploymentPoliciesTable])
 end
+
+# save batch mean response times to file
+function writeBatchMeanResponseTimesFile(filename::String, batchMeanResponseTimes::Array{Float,2};
+	batchTime = nullTime, startTime = nullTime, endTime = nullTime, responseTimeUnits::String = "minutes")
+	assert(batchTime != nullTime && startTime != nullTime && endTime != nullTime)
+	x = batchMeanResponseTimes # shorthand
+	(numRows, numCols) = size(x) # numRows = numSims, numCols = numBatches
+	miscTable = Table("misc_data",
+		["numSims", "numBatches", "batchTime", "startTime", "endTime", "response_time_units"];
+		rows=[[numRows, numCols, batchTime, startTime, endTime, responseTimeUnits]])
+	avgBatchMeansTable = Table("avg_batch_mean_response_times",
+		["sim_index", "avg_batch_mean_response_time", "standard_error"];
+		rows = [[i, mean(x[i,:]), Stats.sem(x[i,:])] for i = 1:numRows])
+	batchMeansTable = Table("batch_mean_response_times",
+		["batch_index", ["sim_$i" for i = 1:numRows]...];
+		rows = [[i, x[:,i]...] for i = 1:numCols])
+	writeTablesToFile(filename, [miscTable, avgBatchMeansTable, batchMeansTable])
+end
