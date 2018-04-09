@@ -1,10 +1,7 @@
 # run configuration xml file
 function runConfig(configFilename::String)
-	# read xml
-	rootElt = xmlFileRoot(configFilename)
-	
 	# read input files, initialise simulation
-	sim = initSimulation(rootElt; allowResim = true, createBackup = false, allowWriteOutput = true)
+	sim = initSimulation(configFilename; allowResim = true, createBackup = false, allowWriteOutput = true)
 	
 	# open output files
 	openOutputFiles!(sim)
@@ -21,15 +18,12 @@ function runConfig(configFilename::String)
 	closeOutputFiles!(sim)
 end
 
+# initialise simulation from input files
 function initSimulation(configFilename::String;
 	allowResim::Bool = false, createBackup::Bool = true, allowWriteOutput::Bool = false)
-	return initSimulation(xmlFileRoot(configFilename);
-		allowResim = allowResim, createBackup = createBackup, allowWriteOutput = allowWriteOutput)
-end
-
-# initialise simulation from input files
-function initSimulation(rootElt::XMLElement;
-	allowResim::Bool = false, createBackup::Bool = true, allowWriteOutput::Bool = false)
+	
+	# read sim config xml file
+	rootElt = xmlFileRoot(configFilename)
 	@assert(name(rootElt) == "simConfig", string("xml root has incorrect name: ", name(rootElt)))
 	
 	# for progress messages:
@@ -190,7 +184,7 @@ function initSimulation(rootElt::XMLElement;
 	
 	# create ambulance wake up events
 	for a in sim.ambulances
-		initAmbulance!(sim.eventList, a, sim.stations[a.stationIndex], sim.startTime, sim.startTime)
+		initAmbulance!(sim, a)
 		# currently, this sets ambulances to wake up at start of sim, since wake up and sleep events are not in ambulances file yet
 	end
 	
@@ -330,12 +324,15 @@ function initSimulation(rootElt::XMLElement;
 	return sim
 end
 
-# initialise ambulance to start at given station
-# call function after reading ambulance file, sets ambulance as sleeping, creates wake up event
-function initAmbulance!(eventList::Vector{Event}, ambulance::Ambulance, ambStation::Station, startTime::Float, wakeUpTime::Float)
+# initialise given ambulance
+# sets ambulance as sleeping, creates wake up event
+function initAmbulance!(sim::Simulation, ambulance::Ambulance;
+	wakeUpTime::Float = nullTime)
+	wakeUpTime = (wakeUpTime == nullTime ? sim.startTime : wakeUpTime)
+	
 	assert(ambulance.index != nullIndex)
 	assert(ambulance.stationIndex != nullIndex)
-	assert(startTime <= wakeUpTime)
+	assert(sim.startTime <= wakeUpTime)
 	
 	ambulance.status = ambSleeping
 	# ambulance.stationIndex
@@ -346,10 +343,11 @@ function initAmbulance!(eventList::Vector{Event}, ambulance::Ambulance, ambStati
 	ambulance.route = Route()
 	ambulance.route.startLoc = Location()
 	# ambulance.route.startTime = nullTime
+	ambStation = sim.stations[ambulance.stationIndex]
 	ambulance.route.endLoc = ambStation.location
-	ambulance.route.endTime = startTime
+	ambulance.route.endTime = sim.startTime
 	ambulance.route.endFNode = ambStation.nearestNodeIndex
 	
 	# add wake up event
-	addEvent!(eventList; form = ambWakesUp, time = wakeUpTime, ambulance = ambulance)
+	addEvent!(sim.eventList; form = ambWakesUp, time = wakeUpTime, ambulance = ambulance)
 end

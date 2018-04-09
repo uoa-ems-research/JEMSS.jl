@@ -83,7 +83,7 @@ immutable Table
 end
 
 function writeTablesToFile!(file::IOStream, table::Table;
-	writeNumRows = true, writeNumCols = false)
+	writeNumRows::Bool = true, writeNumCols::Bool = false)
 	
 	(numRows, numCols) = size(table.data)
 	writeDlmLine!(file, table.name, writeNumRows ? numRows : "", writeNumCols ? numCols : "")

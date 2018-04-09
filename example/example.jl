@@ -1,11 +1,11 @@
 using AmbulanceSim
 
-path = splitdir(@__FILE__)[1]
+path = @__DIR__
 
 # generate artificial simulation input files
 println("\n=== Generating files ===")
 genConfigFilename = joinpath(path, "gen_config.xml")
-runGenConfig(genConfigFilename)
+runGenConfig(genConfigFilename; overwriteOutputPath = true)
 
 # create and run simulation using generated files
 println("\n=== Simulating with generated files ===")
