@@ -185,13 +185,16 @@ type Route
 end
 
 type Event
+	index::Int # index of event in list of events that have occurred (not for sim.eventList)
+	parentIndex::Int # index of parent event
 	form::EventForm # "type" is taken
 	time::Float
 	ambIndex::Int
 	callIndex::Int
 	stationIndex::Int # for now, only use this for resimulation, otherwise use ambulances[ambIndex].stationIndex
 	
-	Event() = new(nullEvent, nullTime, nullIndex, nullIndex, nullIndex)
+	
+	Event() = new(nullIndex, nullIndex, nullEvent, nullTime, nullIndex, nullIndex, nullIndex)
 end
 
 type Ambulance
@@ -517,10 +520,11 @@ type Resimulation
 	timeTolerance::Float
 	
 	events::Vector{Event}
+	eventsChildren::Vector{Vector{Event}} # eventsChildren[i] gives events that are children of event i
 	prevEventIndex::Int # index of previous event in events field
 	
 	Resimulation() = new(false, 0.0,
-		[], nullIndex)
+		[], [], nullIndex)
 end
 
 type Simulation
@@ -539,7 +543,8 @@ type Simulation
 	hospitals::Vector{Hospital}
 	stations::Vector{Station}
 	
-	eventList::Vector{Event}
+	eventList::Vector{Event} # events to occur now or in future
+	eventIndex::Int # index of event in events that have occurred
 	queuedCallList::Vector{Call} # keep track of queued calls. Calls can be queued after call arrivalTime + dispatchDelay
 	
 	resim::Resimulation
@@ -574,7 +579,7 @@ type Simulation
 	Simulation() = new(nullTime, nullTime, nullTime,
 		Network(), Travel(), Map(), Grid(),
 		[], [], [], [],
-		[], [],
+		[], 0, [],
 		Resimulation(),
 		nullFunction, nullFunction, MoveUpData(),
 		[],

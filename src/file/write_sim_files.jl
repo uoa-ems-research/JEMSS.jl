@@ -104,7 +104,7 @@ function openOutputFiles!(sim::Simulation)
 		
 		# write events table name and header
 		writeDlmLine!(sim.eventsFileIO, "events")
-		writeDlmLine!(sim.eventsFileIO, "time", "eventKey", "ambIndex", "callIndex", "stationIndex")
+		writeDlmLine!(sim.eventsFileIO, "index", "parentIndex", "time", "eventKey", "ambIndex", "callIndex", "stationIndex")
 	end
 end
 
@@ -126,9 +126,8 @@ function writeEventToFile!(sim::Simulation, event::Event)
 		stationIndex = sim.ambulances[event.ambIndex].stationIndex
 	end
 	
-	writeDlmLine!(sim.eventsFileIO, @sprintf("%0.5f", event.time), Int(event.form),
-		event.ambIndex, event.callIndex, stationIndex)
-		
+	writeDlmLine!(sim.eventsFileIO, event.index, event.parentIndex, @sprintf("%0.5f", event.time), Int(event.form), event.ambIndex, event.callIndex, stationIndex)
+	
 	# flush(sim.eventsFileIO)
 end
 

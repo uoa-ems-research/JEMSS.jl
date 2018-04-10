@@ -1,9 +1,9 @@
 # add new event to list, maintain sorting by time
 function addEvent!(eventList::Vector{Event};
-	form::EventForm = nullEvent, time::Float = nullTime, ambulance::Ambulance = Ambulance(), call::Call = Call(),
-	addEventToAmb::Bool = true)
+	parentEvent::Event = Event(), form::EventForm = nullEvent, time::Float = nullTime, ambulance::Ambulance = Ambulance(), call::Call = Call(), addEventToAmb::Bool = true)
 	
 	event = Event()
+	event.parentIndex = parentEvent.index
 	event.form = form
 	event.time = time
 	event.ambIndex = ambulance.index

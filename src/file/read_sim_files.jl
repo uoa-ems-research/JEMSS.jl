@@ -201,13 +201,15 @@ function readEventsFile(filename::String)
 	# create events from data in events table
 	table = tables["events"]
 	c = table.columns # shorthand
-	(eventKeyCol = c["eventKey"]); (timeCol = c["time"]); (ambIndexCol = c["ambIndex"]); (callIndexCol = c["callIndex"]); (stationIndexCol = c["stationIndex"]) # shorthand, to avoid repeated dict lookups
+	(eventIndexCol = c["index"]); (parentIndexCol = c["parentIndex"]); (eventKeyCol = c["eventKey"]); (timeCol = c["time"]); (ambIndexCol = c["ambIndex"]); (callIndexCol = c["callIndex"]); (stationIndexCol = c["stationIndex"]) # shorthand, to avoid repeated dict lookups
 	data = table.data # shorthand
 	fileEnded = (data[end,1] == "end") # true if writing all events to file ended before file was closed
 	n = size(data,1) - fileEnded # number of events
 	events = Vector{Event}(n)
 	for i = 1:n
 		events[i] = Event()
+		events[i].index = eventIndexCol[i]
+		events[i].parentIndex = parentIndexCol[i]
 		events[i].form = eventDict[eventKeyCol[i]]
 		events[i].time = timeCol[i]
 		events[i].ambIndex = ambIndexCol[i]
@@ -219,7 +221,16 @@ function readEventsFile(filename::String)
 		assert(events[i].ambIndex != nullIndex || events[i].callIndex != nullIndex)
 	end
 	
-	return events, fileEnded, inputFiles, fileChecksums
+	# set eventsChildren; eventsChildren[i] gives events that are children of the ith event that occurred
+	eventsChildren = [Vector{Event}() for i = 1:n]
+	for i = 1:n
+		j = events[i].parentIndex
+		if j != nullIndex
+			push!(eventsChildren[j], events[i])
+		end
+	end
+	
+	return events, eventsChildren, fileEnded, inputFiles, fileChecksums
 end
 
 function readHospitalsFile(filename::String)
