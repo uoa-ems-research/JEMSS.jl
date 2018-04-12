@@ -28,8 +28,9 @@ function removeCallFromCurrentCalls!(currentCallList::Vector{Call}, call::Call)
 end
 
 # reset simulation calls from sim.backup
+# only reset calls with arrival time <= simTime
 # faster than sim.calls = deepcopy(sim.backup.calls)
-function resetCalls!(sim::Simulation)
+function resetCalls!(sim::Simulation; simTime::Float = Inf)
 	assert(!sim.backup.used)
 	
 	# shorthand:
@@ -41,19 +42,20 @@ function resetCalls!(sim::Simulation)
 	
 	assert(length(calls) == length(backupCalls))
 	
-	# # from fnames, remove constant parameters
-	# fnamesConst = Set([:index, :priority, :transfer, :location,
-		# :arrivalTime, :dispatchDelay, :onSceneDuration, :transferDuration,
-		# :nearestNodeIndex, :nearestNodeDist])
-	# setdiff!(fnames, fnamesConst)
+	# from fnames, remove fixed parameters
+	fnamesFixed = Set([:index, :priority, :transfer, :location,
+		:arrivalTime, :dispatchDelay, :onSceneDuration, :transferDuration,
+		:nearestNodeIndex, :nearestNodeDist])
+	setdiff!(fnames, fnamesFixed)
 	
+	recentCallIndex = findlast(call -> call.arrivalTime <= simTime, calls)
 	for fname in fnames
 		if typeof(getfield(nullCall, fname)) <: Number
-			for i = 1:numCalls
+			for i = 1:recentCallIndex
 				setfield!(calls[i], fname, getfield(backupCalls[i], fname))
 			end
 		else
-			for i = 1:numCalls
+			for i = 1:recentCallIndex
 				setfield!(calls[i], fname, deepcopy(getfield(backupCalls[i], fname)))
 			end
 		end
