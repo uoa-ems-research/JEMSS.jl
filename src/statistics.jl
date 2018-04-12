@@ -125,7 +125,7 @@ end
 # From wikipedia: "the Durbin–Watson statistic is a test statistic used to detect the presence
 # of autocorrelation at lag 1 in the residuals (prediction errors) from a regression analysis".
 function calcAR0DurbinWatsonTestPValue{T<:Real}(x::Vector{T})
-	xFit = repmat([mean(x)], length(x))
+	xFit = repmat([mean(x)], length(x), 1)
 	residuals = x - xFit
 	dwTest = HypothesisTests.DurbinWatsonTest(xFit, residuals)
 	return HypothesisTests.pvalue(dwTest)
