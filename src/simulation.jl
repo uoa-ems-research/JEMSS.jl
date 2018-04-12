@@ -46,6 +46,8 @@ function resetSim!(sim::Simulation)
 	assert(!sim.backup.used)
 	
 	if sim.used
+		resetCalls!(sim) # reset calls from sim.backup, need to do this before resetting sim.time
+		
 		fnames = Set(fieldnames(sim))
 		fnamesDontCopy = Set([:backup, :net, :travel, :grid, :resim, :calls]) # will not (yet) copy these fields from sim.backup to sim
 		# note that sim.backup does not contain net, travel, grid, or resim
@@ -61,9 +63,6 @@ function resetSim!(sim::Simulation)
 		
 		# reset travel state
 		sim.travel.recentSetsStartTimesIndex = 1
-		
-		# reset calls from sim.backup
-		resetCalls!(sim)
 	end
 end
 
