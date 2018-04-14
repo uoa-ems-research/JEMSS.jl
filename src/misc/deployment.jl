@@ -2,13 +2,15 @@
 
 # make a single random deployment policy
 # ignores station capacities, assumes ambulances are homogeneous
-function makeRandDeploymentPolicy(numAmbs::Int, numStations::Int)::Depol
-	return sort(rand(1:numStations, numAmbs))
+function makeRandDeploymentPolicy(numAmbs::Int, numStations::Int;
+	rng::AbstractRNG = Base.GLOBAL_RNG)::Depol
+	return sort(rand(rng, 1:numStations, numAmbs))
 end
 
 # generate a number of unique random deployment policies
 # ignores station capacities, assumes ambulances are homogeneous
-function makeRandDeploymentPolicies(numAmbs::Int, numStations::Int, numDepols::Int)
+function makeRandDeploymentPolicies(numAmbs::Int, numStations::Int, numDepols::Int;
+	rng::AbstractRNG = Base.GLOBAL_RNG)
 	assert(numAmbs >= 1)
 	assert(numStations >= 1)
 	assert(numDepols >= 1)
@@ -16,7 +18,7 @@ function makeRandDeploymentPolicies(numAmbs::Int, numStations::Int, numDepols::I
 	
 	depols = Vector{Depol}() # deployment policies, depols[i][j] gives station index that ambulance j should be deployed to, for ith deployment policy
 	while length(depols) < numDepols
-		newDepol = makeRandDeploymentPolicy(numAmbs, numStations)
+		newDepol = makeRandDeploymentPolicy(numAmbs, numStations; rng = rng)
 		if !in(newDepol, depols)
 			push!(depols, newDepol)
 		end
