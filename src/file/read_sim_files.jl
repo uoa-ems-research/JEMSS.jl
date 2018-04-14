@@ -439,12 +439,12 @@ function readDeploymentPoliciesFile(filename::String)
 	assert(ambIndexCol == collect(1:length(ambIndexCol)))
 	# check that table header has all deployment policies
 	for i = 1:numDepols
-		@assert(in("policy $i, stationIndex", table.header), "Missing deployment policy $i")
+		@assert(in("policy_$i stationIndex", table.header), "Missing deployment policy $i")
 	end
 	# create deployment policies from table
 	depols = Vector{Depol}(numDepols)
 	for i = 1:numDepols
-		depols[i] = columns["policy $i, stationIndex"]
+		depols[i] = columns["policy_$i stationIndex"]
 		
 		for value in depols[i]
 			assert(in(value, 1:numStations))

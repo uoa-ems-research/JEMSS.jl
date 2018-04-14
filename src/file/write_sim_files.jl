@@ -164,7 +164,7 @@ function writeDeploymentPoliciesFile(filename::String, depols::Vector{Depol}, nu
 	
 	miscTable = Table("miscData", ["numStations", "numDepols"]; rows = [[numStations, numDepols]])
 	deploymentPoliciesTable = Table("deploymentPolicies",
-		["ambIndex", ["policy $i, stationIndex" for i = 1:numDepols]...];
+		["ambIndex", ["policy_$i stationIndex" for i = 1:numDepols]...];
 		cols = [collect(1:numAmbs), depols...])
 	writeTablesToFile(filename, [miscTable, deploymentPoliciesTable])
 end
