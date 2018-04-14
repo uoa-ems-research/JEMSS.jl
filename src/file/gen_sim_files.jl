@@ -39,13 +39,13 @@ type GenConfig
 	callDensityRasterFilename::String
 	cropRaster::Bool
 	
-	# call related distributions
-	interarrivalTimeDist::Distribution
-	priorityDist::Distribution
-	dispatchDelayDist::Distribution
-	onSceneDurationDist::Distribution
-	transferDist::Distribution
-	transferDurationDist::Distribution
+	# call related distributions and random number generators
+	interarrivalTimeDistrRng::DistrRng
+	priorityDistrRng::DistrRng
+	dispatchDelayDistrRng::DistrRng
+	onSceneDurationDistrRng::DistrRng
+	transferDistrRng::DistrRng
+	transferDurationDistrRng::DistrRng
 	
 	GenConfig() = new("", "",
 		"", "", "", "", "", "", "", "", "",
@@ -97,15 +97,21 @@ function readGenConfig(genConfigFilename::String)
 	assert(map.xRange > 0 && map.yRange > 0)
 	genConfig.map = map
 	
-	# call distributions
-	callDistsElt = findElt(simElt, "callDistributions")
-	distsEltContent(eltString::String) = eltContentVal(callDistsElt, eltString)
-	genConfig.interarrivalTimeDist = distsEltContent("interarrivalTime")
-	genConfig.priorityDist = distsEltContent("priority")
-	genConfig.dispatchDelayDist = distsEltContent("dispatchDelay")
-	genConfig.onSceneDurationDist = distsEltContent("onSceneDuration")
-	genConfig.transferDist = distsEltContent("transfer")
-	genConfig.transferDurationDist = distsEltContent("transferDuration")
+	# call distributions and random number generators
+	callDistrsElt = findElt(simElt, "callDistributions")
+	function callDistrsEltContent(distrName::String)
+		distrElt = findElt(callDistrsElt, distrName)
+		distr = eltContentVal(distrElt)
+		seedAttr = attribute(distrElt, "seed")
+		seed = (seedAttr == nothing ? nullIndex : eval(parse(seedAttr)))
+		return DistrRng(distr; seed = seed)
+	end
+	genConfig.interarrivalTimeDistrRng = callDistrsEltContent("interarrivalTime")
+	genConfig.priorityDistrRng = callDistrsEltContent("priority")
+	genConfig.dispatchDelayDistrRng = callDistrsEltContent("dispatchDelay")
+	genConfig.onSceneDurationDistrRng = callDistrsEltContent("onSceneDuration")
+	genConfig.transferDistrRng = callDistrsEltContent("transfer")
+	genConfig.transferDurationDistrRng = callDistrsEltContent("transferDuration")
 	
 	# number of ambulances, calls, hospitals, stations
 	genConfig.numAmbs = eltContentVal(simElt, "numAmbs")
@@ -256,20 +262,20 @@ function makeCalls(genConfig::GenConfig)
 	calls = Vector{Call}(genConfig.numCalls)
 	
 	currentTime = genConfig.startTime
-	# first call will arrive at genConfig.startTime + rand(genConfig.interarrivalTimeDist)
+	# first call will arrive at genConfig.startTime + rand(genConfig.interarrivalTimeDistrRng)
 	for i = 1:genConfig.numCalls
-		currentTime += rand(genConfig.interarrivalTimeDist) # apply time step
+		currentTime += rand(genConfig.interarrivalTimeDistrRng) # apply time step
 		
 		calls[i] = Call()
 		calls[i].index = i
-		calls[i].priority = Priority(rand(genConfig.priorityDist))
+		calls[i].priority = Priority(rand(genConfig.priorityDistrRng))
 		calls[i].location = randLocation(genConfig.map; trim = genConfig.mapTrim)
 		calls[i].arrivalTime = currentTime
-		calls[i].dispatchDelay = rand(genConfig.dispatchDelayDist)
-		calls[i].onSceneDuration = rand(genConfig.onSceneDurationDist)
-		calls[i].transfer = (rand(genConfig.transferDist) == 1)
+		calls[i].dispatchDelay = rand(genConfig.dispatchDelayDistrRng)
+		calls[i].onSceneDuration = rand(genConfig.onSceneDurationDistrRng)
+		calls[i].transfer = (rand(genConfig.transferDistrRng) == 1)
 		calls[i].hospitalIndex = nullIndex
-		calls[i].transferDuration = rand(genConfig.transferDurationDist)
+		calls[i].transferDuration = rand(genConfig.transferDurationDistrRng)
 	end
 	
 	return calls
