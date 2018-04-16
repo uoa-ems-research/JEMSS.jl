@@ -19,7 +19,7 @@ const debugMode = false
 const checkMode = true # for data checking, e.g. assertions that are checked frequently
 
 # file chars
-const delimiter = ';'
+const delimiter = ','
 const newline = "\r\n"
 
 # misc null values
