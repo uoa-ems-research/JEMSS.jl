@@ -39,13 +39,23 @@ type GenConfig
 	callDensityRasterFilename::String
 	cropRaster::Bool
 	
-	# call related distributions
-	interarrivalTimeDist::Distribution
-	priorityDist::Distribution
-	dispatchDelayDist::Distribution
-	onSceneDurationDist::Distribution
-	transferDist::Distribution
-	transferDurationDist::Distribution
+	# call related distributions and random number generators
+	interarrivalTimeDistrRng::DistrRng
+	priorityDistrRng::DistrRng
+	dispatchDelayDistrRng::DistrRng
+	onSceneDurationDistrRng::DistrRng
+	transferDistrRng::DistrRng
+	transferDurationDistrRng::DistrRng
+	
+	# misc RNGs
+	ambStationRng::AbstractRNG
+	callLocRng::AbstractRNG
+	callRasterRng::AbstractRNG
+	callRasterCellLocRng::AbstractRNG
+	hospitalLocRng::AbstractRNG
+	stationLocRng::AbstractRNG
+	
+	travelTimeFactorDistrRng::DistrRng
 	
 	GenConfig() = new("", "",
 		"", "", "", "", "", "", "", "", "",
@@ -97,15 +107,21 @@ function readGenConfig(genConfigFilename::String)
 	assert(map.xRange > 0 && map.yRange > 0)
 	genConfig.map = map
 	
-	# call distributions
-	callDistsElt = findElt(simElt, "callDistributions")
-	distsEltContent(eltString::String) = eltContentVal(callDistsElt, eltString)
-	genConfig.interarrivalTimeDist = distsEltContent("interarrivalTime")
-	genConfig.priorityDist = distsEltContent("priority")
-	genConfig.dispatchDelayDist = distsEltContent("dispatchDelay")
-	genConfig.onSceneDurationDist = distsEltContent("onSceneDuration")
-	genConfig.transferDist = distsEltContent("transfer")
-	genConfig.transferDurationDist = distsEltContent("transferDuration")
+	# call distributions and random number generators
+	callDistrsElt = findElt(simElt, "callDistributions")
+	function callDistrsEltContent(distrName::String)
+		distrElt = findElt(callDistrsElt, distrName)
+		distr = eltContentVal(distrElt)
+		seedAttr = attribute(distrElt, "seed")
+		seed = (seedAttr == nothing ? nullIndex : eval(parse(seedAttr)))
+		return DistrRng(distr; seed = seed)
+	end
+	genConfig.interarrivalTimeDistrRng = callDistrsEltContent("interarrivalTime")
+	genConfig.priorityDistrRng = callDistrsEltContent("priority")
+	genConfig.dispatchDelayDistrRng = callDistrsEltContent("dispatchDelay")
+	genConfig.onSceneDurationDistrRng = callDistrsEltContent("onSceneDuration")
+	genConfig.transferDistrRng = callDistrsEltContent("transfer")
+	genConfig.transferDurationDistrRng = callDistrsEltContent("transferDuration")
 	
 	# number of ambulances, calls, hospitals, stations
 	genConfig.numAmbs = eltContentVal(simElt, "numAmbs")
@@ -130,6 +146,15 @@ function readGenConfig(genConfigFilename::String)
 	callDensityRasterElt = findElt(simElt, "callDensityRaster")
 	genConfig.callDensityRasterFilename = abspath(eltContentInterpVal(callDensityRasterElt, "filename"))
 	genConfig.cropRaster = eltContentVal(callDensityRasterElt, "cropRaster")
+	
+	# some defaults - should move to config file sometime
+	genConfig.ambStationRng = MersenneTwister(0)
+	genConfig.callLocRng = MersenneTwister(1)
+	genConfig.callRasterRng = MersenneTwister(2)
+	genConfig.callRasterCellLocRng = MersenneTwister(3)
+	genConfig.hospitalLocRng = MersenneTwister(4)
+	genConfig.stationLocRng = MersenneTwister(5)
+	genConfig.travelTimeFactorDistrRng = DistrRng(Uniform(1.0, 1.1); seed = 99)
 	
 	return genConfig
 end
@@ -209,7 +234,8 @@ function runGenConfigCalls(genConfig::GenConfig)
 		end
 	end
 	
-	randLocations = rasterRandLocations(raster, numCalls)
+	randLocations = rasterRandLocations(raster, numCalls;
+		rasterRng = genConfig.callRasterRng, rasterCellLocRng = genConfig.callRasterCellLocRng)
 	for i = 1:numCalls
 		calls[i].location = randLocations[i]
 	end
@@ -223,7 +249,7 @@ function makeAmbs(genConfig::GenConfig)
 	for i = 1:genConfig.numAmbs
 		ambulances[i] = Ambulance()
 		ambulances[i].index = i
-		ambulances[i].stationIndex = rand(1:genConfig.numStations)
+		ambulances[i].stationIndex = rand(genConfig.ambStationRng, 1:genConfig.numStations)
 		ambulances[i].class = als
 	end
 	return ambulances
@@ -244,7 +270,7 @@ function makeArcs(genConfig::GenConfig, graph::LightGraphs.Graph, nodes::Vector{
 		arcs[i].toNodeIndex = edge.dst
 		
 		dist = normDist(genConfig.map, nodes[edge.src].location, nodes[edge.dst].location)
-		travelTimes[i] = dist / speed * (1 + rand()/10)
+		travelTimes[i] = dist / speed * rand(genConfig.travelTimeFactorDistrRng)
 		i = i + 1
 	end
 	
@@ -256,20 +282,20 @@ function makeCalls(genConfig::GenConfig)
 	calls = Vector{Call}(genConfig.numCalls)
 	
 	currentTime = genConfig.startTime
-	# first call will arrive at genConfig.startTime + rand(genConfig.interarrivalTimeDist)
+	# first call will arrive at genConfig.startTime + rand(genConfig.interarrivalTimeDistrRng)
 	for i = 1:genConfig.numCalls
-		currentTime += rand(genConfig.interarrivalTimeDist) # apply time step
+		currentTime += rand(genConfig.interarrivalTimeDistrRng) # apply time step
 		
 		calls[i] = Call()
 		calls[i].index = i
-		calls[i].priority = Priority(rand(genConfig.priorityDist))
-		calls[i].location = randLocation(genConfig.map; trim = genConfig.mapTrim)
+		calls[i].priority = Priority(rand(genConfig.priorityDistrRng))
+		calls[i].location = randLocation(genConfig.map; trim = genConfig.mapTrim, rng = genConfig.callLocRng)
 		calls[i].arrivalTime = currentTime
-		calls[i].dispatchDelay = rand(genConfig.dispatchDelayDist)
-		calls[i].onSceneDuration = rand(genConfig.onSceneDurationDist)
-		calls[i].transfer = (rand(genConfig.transferDist) == 1)
+		calls[i].dispatchDelay = rand(genConfig.dispatchDelayDistrRng)
+		calls[i].onSceneDuration = rand(genConfig.onSceneDurationDistrRng)
+		calls[i].transfer = (rand(genConfig.transferDistrRng) == 1)
 		calls[i].hospitalIndex = nullIndex
-		calls[i].transferDuration = rand(genConfig.transferDurationDist)
+		calls[i].transferDuration = rand(genConfig.transferDurationDistrRng)
 	end
 	
 	return calls
@@ -280,7 +306,7 @@ function makeHospitals(genConfig::GenConfig)
 	for i = 1:genConfig.numHospitals
 		hospitals[i] = Hospital()
 		hospitals[i].index = i
-		hospitals[i].location = randLocation(genConfig.map; trim = genConfig.mapTrim)
+		hospitals[i].location = randLocation(genConfig.map; trim = genConfig.mapTrim, rng = genConfig.hospitalLocRng)
 	end
 	return hospitals
 end
@@ -305,7 +331,7 @@ function makeStations(genConfig::GenConfig)
 	for i = 1:genConfig.numStations
 		stations[i] = Station()
 		stations[i].index = i
-		stations[i].location = randLocation(genConfig.map; trim = genConfig.mapTrim)
+		stations[i].location = randLocation(genConfig.map; trim = genConfig.mapTrim, rng = genConfig.stationLocRng)
 		stations[i].capacity = genConfig.stationCapacity
 	end
 	return stations

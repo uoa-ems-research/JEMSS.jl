@@ -206,6 +206,9 @@ end
 # some convenient functions for reading xml files
 xmlFileRoot(filename::String) = root(parse_file(filename))
 findElt = find_element # shorthand
+eltContent(elt::XMLElement) = content(elt)
+eltContentVal(elt::XMLElement) = eval(parse(eltContent(elt)))
+eltContentInterpVal(elt::XMLElement) = interpolateString(eltContent(elt))
 eltContent(parentElt::XMLElement, eltString::String) = try content(findElt(parentElt, eltString));
 	catch error("Element not found: $eltString"); end
 eltContentVal(parentElt::XMLElement, eltString::String) = eval(parse(eltContent(parentElt, eltString)))

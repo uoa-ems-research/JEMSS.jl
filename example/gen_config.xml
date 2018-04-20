@@ -25,12 +25,12 @@
 		<numStations>12</numStations>
 		
 		<callDistributions>
-			<interarrivalTime>Exponential(1/200)</interarrivalTime>
-			<priority>Categorical([0.57, 0.245, 0.185])</priority>
-			<dispatchDelay>Truncated(Normal(2/60/24, 1/60/24), 20/60/60/24, 5/60/24)</dispatchDelay>
-			<onSceneDuration>Truncated(Exponential(12/60/24), 2/60/24, 30/60/24)</onSceneDuration>
-			<transfer>Bernoulli(0.8)</transfer>
-			<transferDuration>Truncated(Exponential(12/60/24), 2/60/24, 30/60/24)</transferDuration>
+			<interarrivalTime seed="0">Exponential(1/200)</interarrivalTime>
+			<priority seed="0">Categorical([0.57, 0.245, 0.185])</priority>
+			<dispatchDelay seed="0">Truncated(Normal(2/60/24, 1/60/24), 20/60/60/24, 5/60/24)</dispatchDelay>
+			<onSceneDuration seed="0">Truncated(Exponential(12/60/24), 2/60/24, 30/60/24)</onSceneDuration>
+			<transfer seed="0">Bernoulli(0.8)</transfer>
+			<transferDuration seed="1">Truncated(Exponential(12/60/24), 2/60/24, 30/60/24)</transferDuration>
 		</callDistributions>
 		
 		<!-- if mode = calls, will only generate calls, using call density raster -->

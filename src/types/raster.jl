@@ -99,10 +99,11 @@ end
 # given raster and x and y indices (i, j) for a cell,
 # generate a random location within the cell
 # (x[i] +/- 0.5*dx, y[j] +/- 0.5*dy)
-function rasterCellRandLocation(raster::Raster, i::Int, j::Int)
+function rasterCellRandLocation(raster::Raster, i::Int, j::Int;
+	rng::AbstractRNG = Base.GLOBAL_RNG)
 	randLocation = Location()
-	randLocation.x = raster.x[i] + (rand() - 0.5) * raster.dx
-	randLocation.y = raster.y[j] + (rand() - 0.5) * raster.dy
+	randLocation.x = raster.x[i] + (rand(rng) - 0.5) * raster.dx
+	randLocation.y = raster.y[j] + (rand(rng) - 0.5) * raster.dy
 	return randLocation
 end
 
@@ -125,7 +126,8 @@ end
 # given a raster where z values are proportional to location (x,y) probabilities
 # for each raster cell, return n (=numLocations) many random locations,
 # each uniformly spatially distributed within the corresponding cell
-function rasterRandLocations(raster::Raster, numLocations::Int)
+function rasterRandLocations(raster::Raster, numLocations::Int;
+	rasterRng::AbstractRNG = Base.GLOBAL_RNG, rasterCellLocRng::AbstractRNG = Base.GLOBAL_RNG)
 	
 	# check that probabilities are non-negative
 	for z in raster.z
@@ -143,8 +145,9 @@ function rasterRandLocations(raster::Raster, numLocations::Int)
 	# y = repmat(raster.y', raster.nx, 1)
 	
 	# use inverse transform sampling to randomly select cells
-	u = sort(1-rand(numLocations)) # sorted uniform samples from (0,1], to be matched to zcdf
-	randOrder = randperm(numLocations) # u[i] is for location[randOrder[i]]
+	u = 1-rand(rasterRng, numLocations) # uniform samples from (0,1], to be matched to zcdf
+	randOrder = sortperm(u) # location index randOrder[i] will correspond with u[i]
+	u = u[randOrder] # sort u values
 	randLocations = Vector{Location}(numLocations)
 	zi = 1 # current index in z
 	for i = 1:numLocations
@@ -154,7 +157,7 @@ function rasterRandLocations(raster::Raster, numLocations::Int)
 		end
 		# put location somewhere in cell zi
 		(xi, yi) = rasterZIndexToXYIndices(raster, zi)
-		randLocations[randOrder[i]] = rasterCellRandLocation(raster, xi, yi) # do not use randLocations[i] = location
+		randLocations[randOrder[i]] = rasterCellRandLocation(raster, xi, yi; rng = rasterCellLocRng) # do not use randLocations[i] = location
 	end
 	
 	return randLocations

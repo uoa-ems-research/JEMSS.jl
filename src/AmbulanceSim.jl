@@ -59,7 +59,8 @@ export
 	Event, Ambulance, Call, Hospital, Station,
 	Map, GridSearchRect, GridRect, Grid, Raster,
 	CompTableData, DmexclpData, PriorityListData, ZhangIpData, Temp1Data, Temp2Data, MoveUpData,
-	File, Table, Resimulation, Simulation
+	File, Table, Resimulation, Simulation,
+	DistrRng
 
 # defs - consts
 export
@@ -88,6 +89,8 @@ include("types/network.jl")
 include("types/raster.jl")
 include("types/route.jl")
 include("types/travel.jl")
+
+include("misc/rand.jl")
 
 include("file/file_io.jl")
 include("file/gen_sim_files.jl")
