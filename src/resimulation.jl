@@ -14,7 +14,7 @@ function initResimulation!(sim::Simulation)
 	end
 	
 	# read events file
-	(events, fileEnded, inputFiles, fileChecksums) = readEventsFile(eventsFilename)
+	(events, eventsChildren, fileEnded, inputFiles, fileChecksums) = readEventsFile(eventsFilename)
 	
 	if !fileEnded
 		println("cannot resimulate, events file closed before end")
@@ -37,6 +37,7 @@ function initResimulation!(sim::Simulation)
 	# all checks have passed, can resimulate
 	resim.use = true
 	resim.events = events
+	resim.eventsChildren = eventsChildren
 	resim.prevEventIndex = 0
 	resim.timeTolerance = 1e-5 / 2 + 10*eps()
 end
@@ -83,13 +84,13 @@ function resimFindAmbToDispatch(sim::Simulation, call::Call)
 	assert(resimEvent.form == considerDispatch)
 	assert(resimEvent.callIndex == call.index)
 	
-	resimEvent = resim.events[resim.prevEventIndex + 1] # go to next event, should be dispatch event (assuming ambulance mobilisation delay is 0)
-	if resimEvent.form == ambDispatched
-		assert(resimEvent.callIndex == call.index)
-		assert(abs(sim.time - resimEvent.time) <= resim.timeTolerance)
-		ambIndex = resimEvent.ambIndex
-	else
-		ambIndex = nullIndex
+	# find child event for dispatch
+	eventChildren = resim.eventsChildren[resimEvent.index]
+	dispatchEvents = filter(event -> event.form == ambDispatched, eventChildren)
+	assert(length(dispatchEvents) <= 1)
+	ambIndex = nullIndex
+	if length(dispatchEvents) == 1
+		ambIndex = dispatchEvents[1].ambIndex
 	end
 	
 	return ambIndex
@@ -108,20 +109,12 @@ function resimMoveUp(sim::Simulation)
 	# find all ambulances to move up
 	movableAmbs = Vector{Ambulance}(0)
 	ambStations = Vector{Station}(0)
-	i = resim.prevEventIndex + 1 # next event, should be move up event (assuming ambulance move up delay is 0)
-	resimEvent = resim.events[i]
-	while abs(sim.time - resimEvent.time) <= resim.timeTolerance && resimEvent.form == ambMoveUp
-		push!(movableAmbs, sim.ambulances[resimEvent.ambIndex])
-		push!(ambStations, sim.stations[resimEvent.stationIndex])
-		
-		# go to next event, multiple ambulances may be involved in a single move up
-		i += 1
-		resimEvent = resim.events[i]
+	eventChildren = resim.eventsChildren[resimEvent.index]
+	for event in reverse(eventChildren)
+		assert(event.form == ambMoveUp)
+		push!(movableAmbs, sim.ambulances[event.ambIndex])
+		push!(ambStations, sim.stations[event.stationIndex])
 	end
-	
-	# reverse order of move up events...
-	movableAmbs = flipdim(movableAmbs, 1)
-	ambStations = flipdim(ambStations, 1)
 	
 	return movableAmbs, ambStations
 end
