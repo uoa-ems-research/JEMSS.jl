@@ -227,14 +227,14 @@ wsh = WebSocketHandler() do req::Request, client::WebSocket
 		
 		if msgType == "prepare_next_frame"
 			simTime = Float(msgData[1])
-			simEnd = simulateToTime!(sim, simTime)
+			simulateToTime!(sim, simTime)
 			messageDict["time"] = simTime
 			writeClient!(client, messageDict, "prepared_next_frame")
 			
 		elseif msgType == "get_next_frame"
 			simTime = Float(msgData[1])
 			updateFrame!(client, sim, simTime) # show updated amb locations, etc
-			if length(sim.eventList) > 0
+			if !sim.complete
 				messageDict["time"] = simTime
 				writeClient!(client, messageDict, "got_next_frame")
 			else

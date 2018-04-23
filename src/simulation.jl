@@ -4,7 +4,7 @@ function simulate!(sim::Simulation; timeStep::Float = 1.0)
 	startTime = time()
 	nextTime = startTime + timeStep
 	printProgress() = print(@sprintf("\rsim duration: %-9.2f real duration: %.2f seconds", sim.time - sim.startTime, time()-startTime))
-	while length(sim.eventList) > 0
+	while !sim.complete
 		simulateNextEvent!(sim)
 		if time() > nextTime
 			printProgress()
@@ -15,12 +15,11 @@ function simulate!(sim::Simulation; timeStep::Float = 1.0)
 	println("\n...simulation complete")
 end
 
-# simulate up until given time, return true if no events are left to simulate, otherwise false
+# simulate up until given time
 function simulateToTime!(sim::Simulation, time::Float)
-	while length(sim.eventList) > 0 && sim.eventList[end].time <= time # eventList must remain sorted by non-decreasing time
+	while !sim.complete && sim.eventList[end].time <= time # eventList must remain sorted by non-increasing time
 		simulateNextEvent!(sim)
 	end
-	return length(sim.eventList) == 0
 end
 
 function simulateToEnd!(sim::Simulation)
@@ -68,9 +67,40 @@ end
 
 # simulate next event in list
 function simulateNextEvent!(sim::Simulation)
+	# get next event, update event index and sim time
+	event = getNextEvent!(sim.eventList)
+	if event.form == nullEvent
+		error()
+	end
+	sim.used = true
+	sim.eventIndex += 1
+	event.index = sim.eventIndex
+	sim.time = event.time
+	
+	if sim.resim.use
+		resimCheckCurrentEvent!(sim, event)
+	elseif sim.writeOutput
+		writeEventToFile!(sim, event)
+	end
+	
+	simulateEvent!(sim, event)
+	
+	if length(sim.eventList) == 0
+		# simulation complete
+		assert(sim.endTime == nullTime)
+		assert(sim.complete == false)
+		sim.endTime = sim.time
+		sim.complete = true
+	end
+end
+
+# simulate event
+function simulateEvent!(sim::Simulation, event::Event)
 	# format:
 	# next event may change relevant ambulance / call fields at event.time
 	# event may then trigger future events / cancel scheduled events
+	
+	assert(sim.time == event.time)
 	
 	# shorthand names:
 	net = sim.net
@@ -86,15 +116,6 @@ function simulateNextEvent!(sim::Simulation)
 	currentCallList = sim.currentCallList
 	mud = sim.moveUpData
 	
-	# get next event, update event index and sim time
-	event = getNextEvent!(eventList)
-	sim.eventIndex += 1
-	event.index = sim.eventIndex
-	if event.form == nullEvent
-		error()
-	end
-	sim.time = event.time
-	
 	ambulance = nothing
 	if event.ambIndex != nullIndex
 		ambulance = ambulances[event.ambIndex]
@@ -104,14 +125,6 @@ function simulateNextEvent!(sim::Simulation)
 	if event.callIndex != nullIndex
 		call = calls[event.callIndex]
 	end
-	
-	if sim.resim.use
-		resimCheckCurrentEvent!(sim, event)
-	elseif sim.writeOutput
-		writeEventToFile!(sim, event)
-	end
-	
-	sim.used = true
 	
 	eventForm = event.form
 	if eventForm == nullEvent
@@ -473,15 +486,6 @@ function simulateNextEvent!(sim::Simulation)
 		if doConsiderMoveUp
 			addEvent!(eventList; parentEvent = event, form = considerMoveUp, time = sim.time, ambulance = ambulance, addEventToAmb = false)
 		end
-	end
-	
-################
-	
-	if length(eventList) == 0
-		assert(sim.endTime == nullTime)
-		assert(sim.complete == false)
-		sim.endTime = sim.time
-		sim.complete = true
 	end
 	
 end
