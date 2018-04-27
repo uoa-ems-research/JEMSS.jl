@@ -1,4 +1,4 @@
-using AmbulanceSim
+using JEMSS
 using Base.Test
 
 # todo

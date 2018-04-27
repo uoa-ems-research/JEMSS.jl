@@ -18,9 +18,9 @@ script:
   # note that ArchGDAL uses GDAL
   - julia --color=yes -e 'Pkg.clone("https://github.com/visr/GDAL.jl.git"); Pkg.build("GDAL")'
   - julia --color=yes -e 'Pkg.clone("https://github.com/yeesian/ArchGDAL.jl.git"); Pkg.build("ArchGDAL")'
-  - julia --color=yes -e 'Pkg.clone(pwd()); Pkg.build("AmbulanceSim"); Pkg.test("AmbulanceSim"; coverage=true)'
+  - julia --color=yes -e 'Pkg.clone(pwd()); Pkg.build("JEMSS"); Pkg.test("JEMSS"; coverage=true)'
 after_success:
   # push coverage results to Coveralls
-  - julia -e 'cd(Pkg.dir("AmbulanceSim")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
+  - julia -e 'cd(Pkg.dir("JEMSS")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
   # push coverage results to Codecov
-  - julia -e 'cd(Pkg.dir("AmbulanceSim")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
+  - julia -e 'cd(Pkg.dir("JEMSS")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'

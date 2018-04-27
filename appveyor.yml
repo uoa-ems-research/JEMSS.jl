@@ -43,7 +43,7 @@ build_script:
   - C:\projects\julia\bin\julia -e "versioninfo();
       Pkg.clone(\"https://github.com/visr/GDAL.jl.git\"); Pkg.build(\"GDAL\");
       Pkg.clone(\"https://github.com/yeesian/ArchGDAL.jl.git\"); Pkg.build(\"ArchGDAL\");
-      Pkg.clone(pwd(), \"AmbulanceSim\"); Pkg.build(\"AmbulanceSim\")"
+      Pkg.clone(pwd(), \"JEMSS\"); Pkg.build(\"JEMSS\")"
 
 test_script:
-  - C:\projects\julia\bin\julia -e "Pkg.test(\"AmbulanceSim\")"
+  - C:\projects\julia\bin\julia -e "Pkg.test(\"JEMSS\")"

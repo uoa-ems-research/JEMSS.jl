@@ -1,10 +1,10 @@
-# AmbulanceSim.jl
+# JEMSS.jl
 
-[![Build Status](https://travis-ci.org/samridler/AmbulanceSim.jl.svg?branch=master)](https://travis-ci.org/samridler/AmbulanceSim.jl)
+[![Build Status](https://travis-ci.org/samridler/JEMSS.jl.svg?branch=master)](https://travis-ci.org/samridler/JEMSS.jl)
 
-[![Coverage Status](https://coveralls.io/repos/samridler/AmbulanceSim.jl/badge.svg?branch=master&service=github)](https://coveralls.io/github/samridler/AmbulanceSim.jl?branch=master)
+[![Coverage Status](https://coveralls.io/repos/samridler/JEMSS.jl/badge.svg?branch=master&service=github)](https://coveralls.io/github/samridler/JEMSS.jl?branch=master)
 
-[![codecov.io](http://codecov.io/github/samridler/AmbulanceSim.jl/coverage.svg?branch=master)](http://codecov.io/github/samridler/AmbulanceSim.jl?branch=master)
+[![codecov.io](http://codecov.io/github/samridler/JEMSS.jl/coverage.svg?branch=master)](http://codecov.io/github/samridler/JEMSS.jl?branch=master)
 
 ## Warning
 This package is currently being developed.
@@ -15,14 +15,14 @@ This package (and others that it requires) is unregistered so you will need to `
 ```julia
 Pkg.clone("https://github.com/visr/GDAL.jl.git")
 Pkg.clone("https://github.com/yeesian/ArchGDAL.jl.git")
-Pkg.clone("https://github.com/samridler/AmbulanceSim.jl.git")
+Pkg.clone("https://github.com/samridler/JEMSS.jl.git")
 ```
 
 ## Usage
 
 ### Simulation
 ```julia
-using AmbulanceSim
+using JEMSS
 
 filename = selectXmlFile()
 sim = initSimulation(filename);
@@ -35,7 +35,7 @@ The simulation is initialised from an xml configuration file which contains a li
 
 ### Animation
 ```julia
-using AmbulanceSim
+using JEMSS
 animate(port = 8001, configFilename = filename)
 ```
 This will open a web browser window to `localhost:8001` (other port numbers may be used) and load the simulation for the given configuration file.

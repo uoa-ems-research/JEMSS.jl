@@ -1,5 +1,5 @@
 __precompile__()
-module AmbulanceSim
+module JEMSS
 
 # animation
 using HttpServer
