@@ -1,4 +1,4 @@
-# ambulance simulation animation
+# EMS simulation animation
 
 # global variables; hacky...
 global animConnections = Dict{Int,WebSocket}() # store open connections
