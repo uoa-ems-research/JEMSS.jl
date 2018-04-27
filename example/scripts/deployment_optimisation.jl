@@ -3,7 +3,7 @@
 # ARGS = [simConfigFilename, numDepols] # these are optional; depol = deployment policy
 # include("deployment_optimisation.jl")
 
-using AmbulanceSim
+using JEMSS
 
 # load sim
 configFilename = (length(ARGS) >= 1 ? ARGS[1] : selectXmlFile())
