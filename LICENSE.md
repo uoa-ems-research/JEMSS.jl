@@ -1,4 +1,4 @@
-The AmbulanceSim.jl package is licensed under the MIT "Expat" License:
+The JEMSS.jl package is licensed under the MIT "Expat" License:
 
 > Copyright (c) 2017: Samuel Ridler.
 >
