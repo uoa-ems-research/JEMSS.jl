@@ -172,10 +172,10 @@ function simulateEvent!(sim::Simulation, event::Event)
 			# remove any previously scheduled events
 			ambWasOnRoute = true
 			if ambulance.status == ambGoingToStation
-				assert(deleteEvent!(sim.eventList, ambulance.event))
+				deleteEvent!(sim.eventList, ambulance.event)
 			elseif ambulance.status == ambGoingToCall
 				# if ambulance was going to call, redirect ambulance
-				assert(deleteEvent!(sim.eventList, ambulance.event))
+				deleteEvent!(sim.eventList, ambulance.event)
 				
 				# bumped call has no ambulance assigned yet
 				sim.calls[ambulance.callIndex].ambIndex = nullIndex
@@ -322,7 +322,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		assert(call.status == callOnSceneCare || call.status == callAtHospital)
 		
 		# remove call, processing is finished
-		assert(removeCallFromCurrentCalls!(sim.currentCallList, call))
+		removeCallFromCurrentCalls!(sim.currentCallList, call)
 		call.status = callProcessed
 		
 		ambulance.totalBusyTime += call.onSceneDuration + call.transfer * call.transferDuration # stats
@@ -330,7 +330,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		# if queued call exists, respond
 		# otherwise return to station
 		if length(sim.queuedCallList) > 0
-			call = getCall!(sim.queuedCallList)
+			call = getNextCall!(sim.queuedCallList)
 			assert(call != nothing)
 
 			# dispatch ambulance
@@ -408,7 +408,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 				
 				if ambulance.status == ambGoingToStation # ambulance.event.form == ambReachesStation
 					# delete station arrival event for this ambulance
-					assert(deleteEvent!(sim.eventList, ambulance.event))
+					deleteEvent!(sim.eventList, ambulance.event)
 					
 					ambulance.totalTravelTime += sim.time - ambulance.route.startTime # stats
 				end

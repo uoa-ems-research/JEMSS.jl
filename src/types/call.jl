@@ -1,30 +1,17 @@
 # get next call from list
-function getCall!(queuedCallList::Vector{Call})
-	nextCall = nothing
-	if length(queuedCallList) > 0
-		nextCall = pop!(queuedCallList)
-	end
-	return nextCall
+function getNextCall!(queuedCallList::Vector{Call})
+	return length(queuedCallList) > 0 ? pop!(queuedCallList) : nothing
 end
 
 # remove call from current calls, maintain sorting by call index
-# return true if found, false otherwise
 function removeCallFromCurrentCalls!(currentCallList::Vector{Call}, call::Call)
 	# use linear search to find and then remove call
 	# could use binary search since calls should be sorted by indices,
 	# but there may not be enough calls in list to justify using it
-	i = 1
-	numCalls = length(currentCallList)
-	while i <= numCalls
-		if currentCallList[i].index == call.index
-			# remove call from list
-			deleteat!(currentCallList, i)
-			return true
-		end
-		i += 1
-	end
-	
-	return false
+	i = findfirst(c -> c.index == call.index, currentCallList)
+	assert(i != 0)
+	assert(findnext(c -> c.index == call.index, currentCallList, i + 1) == 0)
+	deleteat!(currentCallList, i)
 end
 
 # reset simulation calls from sim.backup
