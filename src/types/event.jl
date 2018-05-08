@@ -21,7 +21,10 @@ function addEvent!(eventList::Vector{Event};
 	
 	if checkMode
 		# check time ordering of events
-		assert(issorted(eventList, by = e -> e.time, rev = true))
+		for i = 1:length(eventList)-1
+			assert(eventList[i].time >= eventList[i+1].time)
+		end
+		# assert(issorted(eventList, by = e -> e.time, rev = true)) # slow
 	end
 	
 	return event
