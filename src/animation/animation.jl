@@ -302,3 +302,9 @@ end
 function openLocalhost(port::Int)
 	openUrl("http://localhost:$(port)")
 end
+
+# JSON.lower for various types, to reduce length of string returned from json function
+JSON.lower(a::Ambulance) = Dict("index" => a.index, "currentLoc" => a.currentLoc)
+JSON.lower(c::Call) = Dict("index" => c.index, "currentLoc" => c.currentLoc, "priority" => c.priority)
+JSON.lower(h::Hospital) = Dict("index" => h.index, "location" => h.location)
+JSON.lower(s::Station) = Dict("index" => s.index, "location" => s.location)
