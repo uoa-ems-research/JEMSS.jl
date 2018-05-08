@@ -137,7 +137,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		call = sim.calls[event.callIndex]
 		assert(call.status == callNullStatus)
 		
-		push!(sim.currentCallList, sim.calls[event.callIndex])
+		push!(sim.currentCalls, sim.calls[event.callIndex])
 		call.status = callScreening
 		
 		addEvent!(sim.eventList; parentEvent = event, form = considerDispatch, time = sim.time + call.dispatchDelay, call = call)
@@ -322,7 +322,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		assert(call.status == callOnSceneCare || call.status == callAtHospital)
 		
 		# remove call, processing is finished
-		removeCallFromCurrentCalls!(sim.currentCallList, call)
+		delete!(sim.currentCalls, call)
 		call.status = callProcessed
 		
 		ambulance.totalBusyTime += call.onSceneDuration + call.transfer * call.transferDuration # stats

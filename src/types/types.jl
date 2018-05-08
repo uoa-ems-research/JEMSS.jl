@@ -558,8 +558,8 @@ type Simulation
 	targetResponseTimes::Vector{Float} # targetResponseTimes[Int(priority)] gives maximum desired response time for call of given priority
 	
 	# for animation:
-	currentCallList::Vector{Call} # all calls between arrival and service finish at current time
-	previousCallList::Vector{Call} # calls in currentCallList for previous frame
+	currentCalls::Set{Call} # all calls between arrival and service finish at current time
+	previousCalls::Set{Call} # calls in currentCalls for previous frame
 	
 	# files/folders:
 	inputPath::String
@@ -583,7 +583,7 @@ type Simulation
 		Resimulation(),
 		nullFunction, nullFunction, MoveUpData(),
 		[],
-		[], [],
+		Set(), Set(),
 		"", "", Dict(), Dict(), IOStream(""),
 		false,
 		false, false)

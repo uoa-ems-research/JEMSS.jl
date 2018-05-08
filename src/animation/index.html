@@ -425,12 +425,15 @@
 		////////////////////////////////////////////////////////////////
 		// calls
 		
-		var calls = []
+		var calls = {}
 		
-		// add call, maintain sorting by increasing call id
+		// add call
 		function addCall(id, lat, lon, priority) {
-			// calls should already be added in order of increasing id
-			calls[calls.length] = new call(id, lat, lon, priority)
+			if (id in calls) {
+				console.log("error: call with id", id, "exists already") // debugging
+				return
+			}
+			calls[id] = new call(id, lat, lon, priority)
 		}
 		
 		function call(id, lat, lon, priority) {
@@ -449,41 +452,30 @@
 		}
 		
 		function moveCall(id, lat, lon) {
-			i = 0
-			while (calls[i].id != id) {
-				i++
-				if (i > calls.length) {
-					console.log("call not found") // debugging
-				}
+			if (!(id in calls)) {
+				console.log("call id", id, "not found") // debugging
+				return
 			}
 			latlng = new L.LatLng(lat, lon)
-			if (calls[i].marker.getLatLng() != latlng) {
-				calls[i].marker.setLatLng(latlng);
+			if (calls[id].marker.getLatLng() != latlng) {
+				calls[id].marker.setLatLng(latlng);
 			}
 		}
 		
 		function removeCall(id) {
-			i = 0
-			var numCalls = calls.length
-			while (i < numCalls) {
-				if (calls[i].id == id) {
-					// remove call
-					map.removeLayer(calls[i].marker)
-					while (i < numCalls - 1) {
-						calls[i] = calls[i+1]
-						i++
-					}
-					calls.pop()
-				}
-				i++
+			if (!(id in calls)) {
+				console.log("call id", id, "not found") // debugging
+				return
 			}
+			map.removeLayer(calls[id].marker)
+			delete calls[id]
 		}
 		
 		function removeCalls() {
-			for (i = 0; i < calls.length; i++) {
-				map.removeLayer(calls[i].marker)
+			for (id in calls) {
+				removeCall(id)
 			}
-			calls = []
+			// calls = {}
 		}
 		
 		////////////////////////////////////////////////////////////////
