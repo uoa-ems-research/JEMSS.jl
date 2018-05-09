@@ -276,8 +276,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		# if hospital not specified for call, find closest hospital
 		hospitalIndex = call.hospitalIndex
 		if hospitalIndex == nullIndex
-			travelMode = getTravelMode!(sim.travel, lowPriority, sim.time)
-			hospitalIndex = nearestHospitalToCall(travelMode, call)
+			hospitalIndex = nearestHospitalToCall!(sim, call, lowPriority)
 		end
 		assert(hospitalIndex != nullIndex)
 		hospital = sim.hospitals[hospitalIndex]
@@ -455,9 +454,4 @@ function simulateEvent!(sim::Simulation, event::Event)
 		error()
 	end
 	
-end
-
-# find nearest hospital to call location, given the travel mode to use
-function nearestHospitalToCall(travelMode::TravelMode, call::Call)
-	return travelMode.fNetTravel.fNodeNearestHospitalIndex[call.nearestNodeIndex]
 end
