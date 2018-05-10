@@ -130,51 +130,35 @@ function updateFrame!(client::WebSocket, sim::Simulation, time::Float)
 	end
 	delete!(messageDict, "ambulance")
 	
-	# display current calls by comparing sim.previousCallList and sim.currentCallList
+	# determine which calls to remove, update, and add
 	# need to do this after finding new ambulance locations
 	# shorthand variable names:
-	previousCallList = sim.previousCallList
-	currentCallList = sim.currentCallList
-	numPreviousCalls = length(previousCallList)
-	numCurrentCalls = length(currentCallList)
-	if checkMode
-		# code expects call lists to remain sorted by call indices
-		assert(all(previousCallList[i].index < previousCallList[i+1].index for i = 1:numPreviousCalls - 1))
-		assert(all(currentCallList[i].index < currentCallList[i+1].index for i = 1:numCurrentCalls - 1))
+	previousCalls = sim.previousCalls
+	currentCalls = sim.currentCalls
+	removeCalls = setdiff(previousCalls, currentCalls)
+	updateCalls = intersect(previousCalls, currentCalls)
+	addCalls = setdiff(currentCalls, previousCalls)
+	changeMessageDict!(messageDict, "remove_call")
+	for call in removeCalls
+		call.currentLoc = Location()
+		messageDict["call"] = call
+		write(client, json(messageDict))
 	end
-	changeMessageDict!(messageDict, "")
-	j = 1 # for indexing currentCallList
-	for i = 1:numPreviousCalls
-		if j <= numCurrentCalls && previousCallList[i].index == currentCallList[j].index
-			# call still exists, consider moving it if call status indicates location other than call origin
-			call = currentCallList[j]
-			updateCallLocation!(sim, call)
-			changeMessageDict!(messageDict, "move_call")
-			messageDict["call"] = call
-			write(client, json(messageDict))
-			# move to comparing next call in current call list
-			j += 1
-		else
-			# previous call does not exist in current call list, remove
-			call = previousCallList[i]
-			call.currentLoc = Location()
-			changeMessageDict!(messageDict, "remove_call")
-			messageDict["call"] = call
-			write(client, json(messageDict))
-		end
+	changeMessageDict!(messageDict, "move_call")
+	for call in updateCalls
+		updateCallLocation!(sim, call)
+		messageDict["call"] = call
+		write(client, json(messageDict))
 	end
 	changeMessageDict!(messageDict, "add_call")
-	for i = j:numCurrentCalls
-		# new call - set current location to origin, move if needed
-		call = currentCallList[i]
+	for call in addCalls
 		call.currentLoc = deepcopy(call.location)
 		call.movedLoc = false
 		updateCallLocation!(sim, call)
 		messageDict["call"] = call
 		write(client, json(messageDict))
 	end
-	# update previousCallList
-	sim.previousCallList = copy(sim.currentCallList)
+	sim.previousCalls = copy(sim.currentCalls) # update previousCalls
 end
 
 # update call current location
@@ -318,3 +302,9 @@ end
 function openLocalhost(port::Int)
 	openUrl("http://localhost:$(port)")
 end
+
+# JSON.lower for various types, to reduce length of string returned from json function
+JSON.lower(a::Ambulance) = Dict("index" => a.index, "currentLoc" => a.currentLoc)
+JSON.lower(c::Call) = Dict("index" => c.index, "currentLoc" => c.currentLoc, "priority" => c.priority)
+JSON.lower(h::Hospital) = Dict("index" => h.index, "location" => h.location)
+JSON.lower(s::Station) = Dict("index" => s.index, "location" => s.location)

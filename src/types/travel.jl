@@ -36,3 +36,10 @@ function updateTravelToTime!(travel::Travel, startTime::Float)
 	
 	travel.recentSetsStartTimesIndex = i
 end
+
+# find nearest hospital to call location, given the travel priority
+function nearestHospitalToCall!(sim::Simulation, call::Call, priority::Priority)
+	travelMode = getTravelMode!(sim.travel, priority, sim.time)
+	hospitalIndex = travelMode.fNetTravel.fNodeNearestHospitalIndex[call.nearestNodeIndex]
+	return hospitalIndex
+end

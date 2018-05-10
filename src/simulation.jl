@@ -137,7 +137,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		call = sim.calls[event.callIndex]
 		assert(call.status == callNullStatus)
 		
-		push!(sim.currentCallList, sim.calls[event.callIndex])
+		push!(sim.currentCalls, sim.calls[event.callIndex])
 		call.status = callScreening
 		
 		addEvent!(sim.eventList; parentEvent = event, form = considerDispatch, time = sim.time + call.dispatchDelay, call = call)
@@ -172,10 +172,10 @@ function simulateEvent!(sim::Simulation, event::Event)
 			# remove any previously scheduled events
 			ambWasOnRoute = true
 			if ambulance.status == ambGoingToStation
-				assert(deleteEvent!(sim.eventList, ambulance.event))
+				deleteEvent!(sim.eventList, ambulance.event)
 			elseif ambulance.status == ambGoingToCall
 				# if ambulance was going to call, redirect ambulance
-				assert(deleteEvent!(sim.eventList, ambulance.event))
+				deleteEvent!(sim.eventList, ambulance.event)
 				
 				# bumped call has no ambulance assigned yet
 				sim.calls[ambulance.callIndex].ambIndex = nullIndex
@@ -276,8 +276,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		# if hospital not specified for call, find closest hospital
 		hospitalIndex = call.hospitalIndex
 		if hospitalIndex == nullIndex
-			travelMode = getTravelMode!(sim.travel, lowPriority, sim.time)
-			hospitalIndex = nearestHospitalToCall(travelMode, call)
+			hospitalIndex = nearestHospitalToCall!(sim, call, lowPriority)
 		end
 		assert(hospitalIndex != nullIndex)
 		hospital = sim.hospitals[hospitalIndex]
@@ -322,7 +321,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		assert(call.status == callOnSceneCare || call.status == callAtHospital)
 		
 		# remove call, processing is finished
-		assert(removeCallFromCurrentCalls!(sim.currentCallList, call))
+		delete!(sim.currentCalls, call)
 		call.status = callProcessed
 		
 		ambulance.totalBusyTime += call.onSceneDuration + call.transfer * call.transferDuration # stats
@@ -330,7 +329,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		# if queued call exists, respond
 		# otherwise return to station
 		if length(sim.queuedCallList) > 0
-			call = getCall!(sim.queuedCallList)
+			call = getNextCall!(sim.queuedCallList)
 			assert(call != nothing)
 
 			# dispatch ambulance
@@ -408,7 +407,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 				
 				if ambulance.status == ambGoingToStation # ambulance.event.form == ambReachesStation
 					# delete station arrival event for this ambulance
-					assert(deleteEvent!(sim.eventList, ambulance.event))
+					deleteEvent!(sim.eventList, ambulance.event)
 					
 					ambulance.totalTravelTime += sim.time - ambulance.route.startTime # stats
 				end
@@ -455,9 +454,4 @@ function simulateEvent!(sim::Simulation, event::Event)
 		error()
 	end
 	
-end
-
-# find nearest hospital to call location, given the travel mode to use
-function nearestHospitalToCall(travelMode::TravelMode, call::Call)
-	return travelMode.fNetTravel.fNodeNearestHospitalIndex[call.nearestNodeIndex]
 end
