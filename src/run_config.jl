@@ -48,7 +48,9 @@ function initSimulation(configFilename::String;
 		file = File()
 		file.name = eltContent(simFilesElt, inputFile)
 		file.path = joinpath(sim.inputPath, file.name)
-		file.checksum = fileChecksum(file.path)
+		if inputFile != "rNetTravels" # do not need checksum of rNetTravels file
+			file.checksum = fileChecksum(file.path)
+		end
 		sim.inputFiles[inputFile] = file
 	end
 	
@@ -88,6 +90,21 @@ function initSimulation(configFilename::String;
 	fGraph.nodes = readNodesFile(simFilePath("nodes"))
 	(fGraph.arcs, arcTravelTimes) = readArcsFile(simFilePath("arcs"))
 	
+	# read rNetTravels from file, if saved
+	rNetTravelsLoaded = NetTravel[]
+	rNetTravelsFilename = ""
+	if haskey(sim.inputFiles, "rNetTravels")
+		rNetTravelsFilename = simFilePath("rNetTravels")
+		if isfile(rNetTravelsFilename)
+			rNetTravelsLoaded = readRNetTravelsFile(rNetTravelsFilename)
+		elseif !isdir(dirname(rNetTravelsFilename)) || splitdir(rNetTravelsFilename)[2] == ""
+			# rNetTravelsFilename is invalid
+			rNetTravelsFilename = ""
+		else
+			# save net.rNetTravels to file once calculated
+		end
+	end
+	
 	# read misc
 	sim.map = readMapFile(simFilePath("map"))
 	map = sim.map # shorthand
@@ -120,9 +137,29 @@ function initSimulation(configFilename::String;
 	checkGraph(net.rGraph, map)
 	initTime(t)
 	
-	initMessage(t, "creating rNetTravels from fNetTravels, and shortest paths")
-	createRNetTravelsFromFNetTravels!(net)
-	initTime(t)
+	if rNetTravelsLoaded != []
+		println("using data from rNetTravels file")
+		try
+			initMessage(t, "creating rNetTravels from fNetTravels")
+			createRNetTravelsFromFNetTravels!(net; rNetTravelsLoaded = rNetTravelsLoaded)
+			initTime(t)
+		catch
+			println()
+			warn("failed to use data from rNetTravels file")
+			rNetTravelsLoaded = []
+			rNetTravelsFilename = ""
+		end
+	end
+	if rNetTravelsLoaded == []
+		initMessage(t, "creating rNetTravels from fNetTravels, and shortest paths")
+		createRNetTravelsFromFNetTravels!(net)
+		initTime(t)
+		if rNetTravelsFilename != ""
+			initMessage(t, "saving rNetTravels to file")
+			writeRNetTravelsFile(rNetTravelsFilename, net.rNetTravels)
+			initTime(t)
+		end
+	end
 	
 	##################
 	# travel

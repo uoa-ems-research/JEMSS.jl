@@ -40,6 +40,11 @@ function writeNodesFile(filename::String, nodes::Vector{Node})
 	writeTablesToFile(filename, table)
 end
 
+function writeRNetTravelsFile(filename::String, rNetTravels::Vector{NetTravel})
+	assert(all([rNetTravel.isReduced for rNetTravel in rNetTravels]))
+	serializeToFile(filename, rNetTravels)
+end
+
 function writePrioritiesFile(filename::String, targetResponseTimes::Vector{Float})
 	table = Table("priorities", ["priority", "name", "targetResponseTime"];
 		rows = [[i, string(Priority(i)), targetResponseTimes[i]] for i = 1:length(targetResponseTimes)])

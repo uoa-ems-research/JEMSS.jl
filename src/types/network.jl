@@ -238,7 +238,8 @@ end
 # calculate arcTimes, spTimes, and spSuccs, for rNetTravels
 # also, calculate fNodeToRNodeTime, and fNodeFromRNodeTime, for fNetTravels...
 # can only call after rGraph is created
-function createRNetTravelsFromFNetTravels!(net::Network)
+function createRNetTravelsFromFNetTravels!(net::Network;
+	rNetTravelsLoaded::Vector{NetTravel} = NetTravel[])
 	
 	# shorthand names:
 	fGraph = net.fGraph
@@ -327,8 +328,19 @@ function createRNetTravelsFromFNetTravels!(net::Network)
 			end
 		end
 		
-		# calculate shortest path data for rNetTravel
-		calcRNetTravelShortestPaths!(net, rNetTravel)
+		if rNetTravelsLoaded == []
+			# calculate shortest path data for rNetTravel
+			calcRNetTravelShortestPaths!(net, rNetTravel)
+		else
+			rNetTravelLoaded = rNetTravelsLoaded[travelModeIndex]
+			assert(all(rNetTravel.arcTimes .== rNetTravelLoaded.arcTimes))
+			
+			# set rNetTravel values by rNetTravelLoaded
+			for fname in [:spTimes, :spFadjIndex, :spNodePairArcIndex, :spFadjArcList]
+				setfield!(rNetTravel, fname, getfield(rNetTravelLoaded, fname))
+			end
+		end
+		
 	end
 end
 

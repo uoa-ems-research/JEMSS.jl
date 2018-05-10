@@ -13,6 +13,7 @@
 		<map>map.csv</map>
 		<nodes>nodes.csv</nodes>
 		<priorities>priorities.csv</priorities>
+		<rNetTravels>r_net_travels.jls</rNetTravels>
 		<stations>stations.csv</stations>
 		<travel>travel.csv</travel>
 	</simFiles>

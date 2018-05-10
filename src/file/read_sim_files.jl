@@ -350,6 +350,17 @@ function readPriorityListFile(filename::String)
 	return priorityList
 end
 
+function readRNetTravelsFile(filename::String)
+	rNetTravels = deserializeFile(filename)
+	for rNetTravel in rNetTravels
+		assert(isa(rNetTravel, NetTravel))
+		assert(rNetTravel.isReduced)
+		assert(isa(rNetTravel.spTimes, Array{FloatSpTime,2}))
+		assert(isa(rNetTravel.spFadjIndex, Array{IntFadj,2}))
+	end
+	return rNetTravels
+end
+
 function readStationsFile(filename::String)
 	tables = readTablesFromFile(filename)
 	
