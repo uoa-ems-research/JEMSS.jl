@@ -413,6 +413,11 @@ type RasterSampler
 		cellDistrRng = DistrRng(cellSampler, cellRng)
 		return new(raster, cellDistrRng, cellLocRng)
 	end
+	function RasterSampler(raster::Raster, cellSeed::Int, cellLocSeed::Int)
+		cellRng = (cellSeed >= 0 ? MersenneTwister(cellSeed) : MersenneTwister(rand(UInt32)))
+		cellLocRng = (cellLocSeed >= 0 ? MersenneTwister(cellLocSeed) : MersenneTwister(rand(UInt32)))
+		return RasterSampler(raster, cellRng, cellLocRng)
+	end
 end
 
 # move up data types

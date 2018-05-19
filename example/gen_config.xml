@@ -34,7 +34,7 @@
 		</callDistributions>
 		
 		<!-- if mode = calls, will only generate calls, using call density raster -->
-		<callDensityRaster>
+		<callDensityRaster cellSeed="2" cellLocSeed="3">
 			<filename></filename>
 			<cropRaster>false</cropRaster> <!-- crop raster to be within map -->
 		</callDensityRaster>
