@@ -234,8 +234,8 @@ function runGenConfigCalls(genConfig::GenConfig)
 		end
 	end
 	
-	randLocations = rasterRandLocations(raster, numCalls;
-		rasterRng = genConfig.callRasterRng, rasterCellLocRng = genConfig.callRasterCellLocRng)
+	rasterSampler = RasterSampler(raster, genConfig.callRasterRng, genConfig.callRasterCellLocRng)
+	randLocations = rasterRandLocations(rasterSampler, numCalls)
 	for i = 1:numCalls
 		calls[i].location = randLocations[i]
 	end

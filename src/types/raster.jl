@@ -123,43 +123,15 @@ function rasterZIndexToXYIndices(raster::Raster, i::Int)
 	return ind2sub(raster.z, i)
 end
 
-# given a raster where z values are proportional to location (x,y) probabilities
-# for each raster cell, return n (=numLocations) many random locations,
-# each uniformly spatially distributed within the corresponding cell
-function rasterRandLocations(raster::Raster, numLocations::Int;
-	rasterRng::AbstractRNG = Base.GLOBAL_RNG, rasterCellLocRng::AbstractRNG = Base.GLOBAL_RNG)
-	
-	# check that probabilities are non-negative
-	for z in raster.z
-		assert(z >= 0)
+# generate n random locations for a given raster sampler
+function rasterRandLocations(rasterSampler::RasterSampler, n::Int)
+	randLocations = Vector{Location}(n)
+	zis = rand(rasterSampler.cellDistrRng, n) # z indices of random locations
+	for i = 1:n
+		zi = zis[i]
+		(xi, yi) = rasterZIndexToXYIndices(rasterSampler.raster, zi)
+		randLocations[i] = rasterCellRandLocation(rasterSampler.raster, xi, yi; rng = rasterSampler.cellLocRng)
 	end
-	
-	# cumulative distribution function for z
-	zcdf = cumsum(raster.z[:])
-	assert(zcdf[end] > 0)
-	zcdf /= zcdf[end] # scale to 1
-	# zcdf[i] = probability of generating a location within cells for z[1:i]
-	
-	# # convert x, y data to format where z[i,j] is for x[i,j], y[i,j]
-	# x = repmat(raster.x, 1, raster.ny)
-	# y = repmat(raster.y', raster.nx, 1)
-	
-	# use inverse transform sampling to randomly select cells
-	u = 1-rand(rasterRng, numLocations) # uniform samples from (0,1], to be matched to zcdf
-	randOrder = sortperm(u) # location index randOrder[i] will correspond with u[i]
-	u = u[randOrder] # sort u values
-	randLocations = Vector{Location}(numLocations)
-	zi = 1 # current index in z
-	for i = 1:numLocations
-		# set location of randLocations[randOrder[i]]
-		while u[i] > zcdf[zi] || raster.z[zi] == 0
-			zi += 1
-		end
-		# put location somewhere in cell zi
-		(xi, yi) = rasterZIndexToXYIndices(raster, zi)
-		randLocations[randOrder[i]] = rasterCellRandLocation(raster, xi, yi; rng = rasterCellLocRng) # do not use randLocations[i] = location
-	end
-	
 	return randLocations
 end
 
