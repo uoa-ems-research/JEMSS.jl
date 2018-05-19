@@ -397,6 +397,29 @@ type Raster
 	end
 end
 
+# for generating random locations within a raster,
+# where raster z values are proportional to probability of location being
+# within corresponding cell (i.e. z values are for categorical distribution),
+# and locations are generated uniformly within the cell
+type RasterSampler
+	raster::Raster
+	cellDistrRng::DistrRng # to generate index of raster cell
+	cellLocRng::AbstractRNG # rng used when generating location within raster cell
+	
+	function RasterSampler(raster::Raster, cellRng::AbstractRNG, cellLocRng::AbstractRNG)
+		assert(all(raster.z .>= 0)) # otherwise probability values will be negative
+		p = raster.z[:] / sum(raster.z) # pdf for z
+		cellSampler = sampler(Categorical(p))
+		cellDistrRng = DistrRng(cellSampler, cellRng)
+		return new(raster, cellDistrRng, cellLocRng)
+	end
+	function RasterSampler(raster::Raster, cellSeed::Int, cellLocSeed::Int)
+		cellRng = (cellSeed >= 0 ? MersenneTwister(cellSeed) : MersenneTwister(rand(UInt32)))
+		cellLocRng = (cellLocSeed >= 0 ? MersenneTwister(cellLocSeed) : MersenneTwister(rand(UInt32)))
+		return RasterSampler(raster, cellRng, cellLocRng)
+	end
+end
+
 # move up data types
 abstract type MoveUpDataType end
 type EmptyMoveUpData <: MoveUpDataType end

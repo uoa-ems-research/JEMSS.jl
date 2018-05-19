@@ -57,7 +57,7 @@ export
 export
 	Location, Node, Arc, Graph, NetTravel, Network, TravelMode, Travel, Route,
 	Event, Ambulance, Call, Hospital, Station,
-	Map, GridSearchRect, GridRect, Grid, Raster,
+	Map, GridSearchRect, GridRect, Grid, Raster, RasterSampler,
 	CompTableData, DmexclpData, PriorityListData, ZhangIpData, Temp1Data, Temp2Data, MoveUpData,
 	File, Table, Resimulation, Simulation,
 	DistrRng
@@ -79,6 +79,8 @@ export
 
 include("defs.jl")
 
+include("misc/rand.jl")
+
 include("types/types.jl")
 include("types/call.jl")
 include("types/event.jl")
@@ -89,8 +91,6 @@ include("types/network.jl")
 include("types/raster.jl")
 include("types/route.jl")
 include("types/travel.jl")
-
-include("misc/rand.jl")
 
 include("file/file_io.jl")
 include("file/gen_sim_files.jl")

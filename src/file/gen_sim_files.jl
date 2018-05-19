@@ -38,6 +38,8 @@ type GenConfig
 	# call density raster
 	callDensityRasterFilename::String
 	cropRaster::Bool
+	callRasterCellSeed::Int # seed for rng, will generate raster cell index
+	callRasterCellLocSeed::Int # seed for rng, will generate location within raster cell
 	
 	# call related distributions and random number generators
 	interarrivalTimeDistrRng::DistrRng
@@ -50,8 +52,6 @@ type GenConfig
 	# misc RNGs
 	ambStationRng::AbstractRNG
 	callLocRng::AbstractRNG
-	callRasterRng::AbstractRNG
-	callRasterCellLocRng::AbstractRNG
 	hospitalLocRng::AbstractRNG
 	stationLocRng::AbstractRNG
 	
@@ -63,7 +63,7 @@ type GenConfig
 		nullIndex, nullIndex,
 		Map(), 1e-6,
 		nullTime, nullTime, nullTime, nullIndex,
-		"", false)
+		"", false, nullIndex, nullIndex)
 end
 
 function readGenConfig(genConfigFilename::String)
@@ -146,12 +146,17 @@ function readGenConfig(genConfigFilename::String)
 	callDensityRasterElt = findElt(simElt, "callDensityRaster")
 	genConfig.callDensityRasterFilename = abspath(eltContentInterpVal(callDensityRasterElt, "filename"))
 	genConfig.cropRaster = eltContentVal(callDensityRasterElt, "cropRaster")
+	# seeds
+	function callRasterSeedVal(seedName::String)
+		seedAttr = attribute(callDensityRasterElt, seedName)
+		return seedAttr == nothing ? nullIndex : eval(parse(seedAttr))
+	end
+	genConfig.callRasterCellSeed = callRasterSeedVal("cellSeed")
+	genConfig.callRasterCellLocSeed = callRasterSeedVal("cellLocSeed")
 	
 	# some defaults - should move to config file sometime
 	genConfig.ambStationRng = MersenneTwister(0)
 	genConfig.callLocRng = MersenneTwister(1)
-	genConfig.callRasterRng = MersenneTwister(2)
-	genConfig.callRasterCellLocRng = MersenneTwister(3)
 	genConfig.hospitalLocRng = MersenneTwister(4)
 	genConfig.stationLocRng = MersenneTwister(5)
 	genConfig.travelTimeFactorDistrRng = DistrRng(Uniform(1.0, 1.1); seed = 99)
@@ -234,8 +239,8 @@ function runGenConfigCalls(genConfig::GenConfig)
 		end
 	end
 	
-	randLocations = rasterRandLocations(raster, numCalls;
-		rasterRng = genConfig.callRasterRng, rasterCellLocRng = genConfig.callRasterCellLocRng)
+	rasterSampler = RasterSampler(raster, genConfig.callRasterCellSeed, genConfig.callRasterCellLocSeed)
+	randLocations = rasterRandLocations(rasterSampler, numCalls)
 	for i = 1:numCalls
 		calls[i].location = randLocations[i]
 	end
