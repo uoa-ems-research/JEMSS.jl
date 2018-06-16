@@ -30,14 +30,14 @@
 	"hospital": {
 		"options": {
 			"iconSize":[23,23],
-			"iconAnchor":[12,14],
+			"iconAnchor":[12,13],
 			"popupAnchor":[0,0]
 		}
 	},
 	"station": {
 		"options": {
 			"iconSize":[23,23],
-			"iconAnchor":[12,14],
+			"iconAnchor":[12,13],
 			"popupAnchor":[0,0]
 		}
 	}
