@@ -248,6 +248,9 @@ wsh = WebSocketHandler() do req::Request, client::WebSocket
 			resetSim!(sim)
 			animAddAmbs!(client, sim)
 			
+		elseif msgType == "update_icons"
+			animSetIcons(client)
+			
 		elseif msgType == "disconnect"
 			close(client)
 			println("Client ", client.id, " disconnected")

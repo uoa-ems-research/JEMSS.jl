@@ -400,6 +400,8 @@
 				// set icon image in map legend
 				setImgSrc("image_" + iconName, options.iconUrl);
 			}
+			
+			updateMarkerIcons();
 		}
 		
 		function setImgSrc(imgId, src) {
@@ -411,6 +413,27 @@
 			return L.marker([lat, lon],
 					{icon: icon}
 				).addTo(map).bindPopup(popup);
+		}
+		
+		function updateIcons() {
+			connection.send("update_icons");
+		}
+		
+		function updateMarkerIcons() {
+			// set icons of existing markers
+			for (i in ambs) {
+				ambs[i].marker.setIcon(icons.ambulance);
+			}
+			for (i in calls) {
+				callIcon = icons[calls[i].iconName];
+				calls[i].marker.setIcon(callIcon);
+			}
+			for (i in hospitals) {
+				hospitals[i].marker.setIcon(icons.hospital);
+			}
+			for (i in stations) {
+				stations[i].marker.setIcon(icons.station);
+			}
 		}
 		
 		////////////////////////////////////////////////////////////////
