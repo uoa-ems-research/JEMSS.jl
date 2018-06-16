@@ -36,6 +36,20 @@ function writeClient!(client::WebSocket, messageDict::Dict, message::String)
 	write(client, json(messageDict))
 end
 
+# set icons for ambulances, hospitals, etc.
+function animSetIcons(client::WebSocket)
+	messageDict = createMessageDict("set_icons")
+	pngFileUrl(filename) = string("data:image/png;base64,", filename |> read |> base64encode)
+	iconPath = joinpath(@__DIR__, "..", "..", "assets", "animation", "icons")
+	icons = JSON.parsefile(joinpath(iconPath, "icons.json"))
+	# set iconUrl for each icon
+	for (name, icon) in icons
+		icon["options"]["iconUrl"] = pngFileUrl(joinpath(iconPath, string(name, ".png")))
+	end
+	merge!(messageDict, icons)
+	write(client, json(messageDict))
+end
+
 # adds nodes from fGraph
 function animAddNodes(client::WebSocket, nodes::Vector{Node})
 	messageDict = createMessageDict("add_node")
@@ -197,6 +211,7 @@ wsh = WebSocketHandler() do req::Request, client::WebSocket
 	messageDict["time"] = sim.startTime
 	write(client, json(messageDict))
 	
+	animSetIcons(client) # set icons before adding items to map
 	animAddNodes(client, sim.net.fGraph.nodes)
 	animAddArcs(client, sim.net) # add first, should be underneath other objects
 	animSetArcSpeeds(client, sim.map, sim.net)
@@ -232,6 +247,14 @@ wsh = WebSocketHandler() do req::Request, client::WebSocket
 			# reset
 			resetSim!(sim)
 			animAddAmbs!(client, sim)
+			
+		elseif msgType == "update_icons"
+			try
+				animSetIcons(client)
+			catch e
+				warn("Could not update animation icons")
+				warn(e)
+			end
 			
 		elseif msgType == "disconnect"
 			close(client)

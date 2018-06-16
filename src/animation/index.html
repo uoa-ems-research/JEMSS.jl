@@ -32,12 +32,11 @@
 			padding-right: 15px;
 			z-index: 1;
 		}
-		.legend div span {
-			border-radius: 50%;
+		.legend div img {
 			display: inline-block;
-			height: 10px;
+			height: 15px;
 			margin-right: 5px;
-			width: 10px;
+			width: 15px;
 		}
 		.menu {
 			bottom: 30px;
@@ -70,13 +69,13 @@
 	<div id="map_id" class="map"></div>
 	<div id="map_legend" class="legend">
 		<div><h3>Legend</h3></div>
-		<div><span style='background-color: #0b0'></span>ambulance</div>
-		<div><span style='background-color: blue'></span>hospital</div>
-		<div><span style='background-color: black'></span>station</div>
+		<div><img id="image_ambulance"/>ambulance</div>
+		<div><img id="image_hospital"/>hospital</div>
+		<div><img id="image_station"/>station</div>
 		<div>call priorities:</div>
-		<div><span style='background-color: purple'></span>high</div>
-		<div><span style='background-color: red'></span>medium</div>
-		<div><span style='background-color: orange'></span>low</div>
+		<div><img id="image_call_high"/>high</div>
+		<div><img id="image_call_med"/>medium</div>
+		<div><img id="image_call_low"/>low</div>
 	</div>
 	<div id="menu" class="menu">
 		<div align="center">
@@ -125,6 +124,10 @@
 					break;
 				case "set_start_time":
 					setSimStartTime(msgObj.time)
+					break;
+				case "set_icons":
+					delete msgObj.message
+					setIcons(msgObj)
 					break;
 				case "add_node":
 					var node = msgObj.node
@@ -380,16 +383,61 @@
 		}
 		
 		////////////////////////////////////////////////////////////////
-		// ambulances
+		// icons
 		
-		/*
-		var ambulanceIcon = L.icon({
-			iconUrl: 'ambulance_icon.png',
-			iconSize:     [15, 15],
-			iconAnchor:   [8, 8],
-			popupAnchor:  [0, 0]
-		});
-		*/
+		var icons = {};
+		function setIcons(iconsObj) {
+			for (iconName in iconsObj)
+			{
+				// create icon
+				icon = L.icon();
+				options = iconsObj[iconName]["options"];
+				for (optionName in options) {
+					icon.options[optionName] = options[optionName];
+				}
+				icons[iconName] = icon;
+				
+				// set icon image in map legend
+				setImgSrc("image_" + iconName, options.iconUrl);
+			}
+			
+			updateMarkerIcons();
+		}
+		
+		function setImgSrc(imgId, src) {
+			var elt = document.getElementById(imgId);
+			elt.src = src
+		}
+		
+		function markerIcon(icon, lat, lon, popup) {
+			return L.marker([lat, lon],
+					{icon: icon}
+				).addTo(map).bindPopup(popup);
+		}
+		
+		function updateIcons() {
+			connection.send("update_icons");
+		}
+		
+		function updateMarkerIcons() {
+			// set icons of existing markers
+			for (i in ambs) {
+				ambs[i].marker.setIcon(icons.ambulance);
+			}
+			for (i in calls) {
+				callIcon = icons[calls[i].iconName];
+				calls[i].marker.setIcon(callIcon);
+			}
+			for (i in hospitals) {
+				hospitals[i].marker.setIcon(icons.hospital);
+			}
+			for (i in stations) {
+				stations[i].marker.setIcon(icons.station);
+			}
+		}
+		
+		////////////////////////////////////////////////////////////////
+		// ambulances
 		
 		var ambs = []
 		
@@ -399,7 +447,7 @@
 		
 		function ambulance(id, lat, lon) {
 			this.id = id;
-			this.marker = circleMarker(lat, lon, 130, '#0b0', 0.9, "Ambulance " + id)
+			this.marker = markerIcon(icons.ambulance, lat, lon, "Ambulance " + id);
 		}
 		
 		function moveAmb(id, lat, lon) {
@@ -438,17 +486,18 @@
 		
 		function call(id, lat, lon, priority) {
 			this.id = id;
-			markerColor = 'white'
+			this.iconName = "";
 			if (priority == "highPriority") {
-				markerColor = 'purple'
+				this.iconName = "call_high"
 			} else if (priority == "medPriority") {
-				markerColor = 'red'
+				this.iconName = "call_med"
 			} else if (priority == "lowPriority") {
-				markerColor = 'orange'
+				this.iconName = "call_low"
 			} else {
 				throw new Error("Undefined call priority: " + priority)
 			}
-			this.marker = circleMarker(lat, lon, 60, markerColor, 1, "Call " + id)
+			callIcon = icons[this.iconName]
+			this.marker = markerIcon(callIcon, lat, lon, "Call " + id);
 		}
 		
 		function moveCall(id, lat, lon) {
@@ -489,7 +538,7 @@
 		
 		function hospital(id, lat, lon) {
 			this.id = id;
-			this.marker = circleMarker(lat, lon, 200, 'blue', 0.9, "Hospital " + id)
+			this.marker = markerIcon(icons.hospital, lat, lon, "Hospital " + id);
 		}
 		
 		////////////////////////////////////////////////////////////////
@@ -503,7 +552,7 @@
 		
 		function station(id, lat, lon) {
 			this.id = id;
-			this.marker = circleMarker(lat, lon, 200, 'black', 0.9, "Station " + id)
+			this.marker = markerIcon(icons.station, lat, lon, "Station " + id);
 		}
 		
 		////////////////////////////////////////////////////////////////
