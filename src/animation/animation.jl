@@ -249,7 +249,12 @@ wsh = WebSocketHandler() do req::Request, client::WebSocket
 			animAddAmbs!(client, sim)
 			
 		elseif msgType == "update_icons"
-			animSetIcons(client)
+			try
+				animSetIcons(client)
+			catch e
+				warn("Could not update animation icons")
+				warn(e)
+			end
 			
 		elseif msgType == "disconnect"
 			close(client)
