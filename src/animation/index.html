@@ -398,7 +398,9 @@
 				icons[iconName] = icon;
 				
 				// set icon image in map legend
-				setImgSrc("image_" + iconName, options.iconUrl);
+				imgId = "image_" + iconName;
+				setImgSrc(imgId, options.iconUrl);
+				scaleDownImgWithinMaxDims(imgId, options.iconSize, [15,15]);
 			}
 			
 			updateMarkerIcons();
@@ -407,6 +409,18 @@
 		function setImgSrc(imgId, src) {
 			var elt = document.getElementById(imgId);
 			elt.src = src
+		}
+		
+		function scaleDownImgWithinMaxDims(imgId, dims, maxDims) {
+			// scale down height and width (dims) to fit in maxDims
+			// resulting dims have min value 1 (pixel)
+			// no scaling if dims already fits in maxDims
+			var s = Math.min(1, maxDims[0]/dims[0], maxDims[1]/dims[1]); // scale factor
+			var width = Math.max(1, dims[0]*s);
+			var height = Math.max(1, dims[1]*s);
+			var elt = document.getElementById(imgId);
+			elt.style.width = width + "px";
+			elt.style.height = height + "px";
 		}
 		
 		function markerIcon(icon, lat, lon, popup) {
