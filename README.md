@@ -44,7 +44,7 @@ Once the simulation has been initialised, the browser window, using [Mapbox](htt
 Controlling the animation is done with buttons and text input in a box at the bottom right of the window.
 The 'show arcs' check-box is provided so that the road arcs can be hidden, which is useful for reducing computation of drawing while the animation is running.
 
-![animation_frame](https://i.imgur.com/TzLbcev.png)
+![animation_frame](https://i.imgur.com/CN6Yeak.png)
 
 Notes on animation:
 
