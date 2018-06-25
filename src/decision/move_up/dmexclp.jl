@@ -62,6 +62,33 @@ function initDmexclp!(sim::Simulation;
 		dcd.stationCoverNodes[i] = find(dcd.stationCoverNode[i,:])
 	end
 	
+	# group nodes with coverage by same set of stations
+	dcd.nodeSets = Vector{Set{Int}}() # nodeSets[i] has set of all node indices covered by the same unique set of stations
+	dcd.stationSets = Vector{Set{Int}}() # stationSets[i] = unique set of stations for nodeSets[i]
+	dcd.nodeSetDemand = Vector{Float}() # nodeSetDemand[i] = demand at node set i
+	for j = 1:numNodes
+		stationsCoverNode = Set(find(dcd.stationCoverNode[:,j])) # indices of stations that cover node j
+		if stationsCoverNode != Set() # otherwise node is never covered
+			if !in(stationsCoverNode, dcd.stationSets)
+				push!(dcd.stationSets, stationsCoverNode)
+				push!(dcd.nodeSets, Set())
+				push!(dcd.nodeSetDemand, 0.0)
+			end
+			# stationsCoverNode already exists in stationSets
+			k = findfirst(dcd.stationSets, stationsCoverNode)
+			push!(dcd.nodeSets[k], j)
+			dcd.nodeSetDemand[k] += dcd.nodeDemand[j]
+		end
+	end
+	
+	dcd.stationCoverNodeSets = Vector{Vector{Int}}(numStations) # stationCoverNodeSets[i] = list of node set indices covered by station i
+	for i = 1:numStations
+		dcd.stationCoverNodeSets[i] = find(stationSet -> in(i,stationSet), dcd.stationSets)
+	end
+	
+	numNodeSets = length(dcd.nodeSets)
+	dcd.nodeSetCoverCount = zeros(Int,numNodeSets) # nodeSetCoverCount[i] = number of idle ambulances covering node set i
+	
 	# testing: will set this to 0 for now, and calculate it each time it is needed
 	dcd.stationNumIdleAmbs = Vector{Int}(numStations)
 	dcd.stationNumIdleAmbs[:] = 0
@@ -91,11 +118,11 @@ function dmexclpMoveUp(sim::Simulation, newlyIdleAmb::Ambulance)
 		end
 	end
 	
-	# ignoring new idle amb, count number of ambulances covering each node
-	dcd.nodeCoverCount[:] = 0
+	# ignoring new idle amb, count number of ambulances covering each node set
+	dcd.nodeSetCoverCount[:] = 0
 	for i = 1:numStations
-		for j = dcd.stationCoverNodes[i]
-			dcd.nodeCoverCount[j] += dcd.stationNumIdleAmbs[i]
+		for j = dcd.stationCoverNodeSets[i]
+			dcd.nodeSetCoverCount[j] += dcd.stationNumIdleAmbs[i]
 		end
 	end
 	
@@ -107,15 +134,9 @@ function dmexclpMoveUp(sim::Simulation, newlyIdleAmb::Ambulance)
 	for i = 1:numStations
 		# calculate additional expected coverage if new idle amb placed at station i
 		extraCover = 0
-		for j = dcd.stationCoverNodes[i]
-			if dcd.nodeDemand[j] > 0
-				extraCover += dcd.nodeDemand[j] * dcd.marginalBenefit[dcd.nodeCoverCount[j]+1]
-			end
+		for j = dcd.stationCoverNodeSets[i]
+			extraCover += dcd.nodeSetDemand[j] * dcd.marginalBenefit[dcd.nodeSetCoverCount[j]+1]
 		end
-		# slow:
-		# for j = dcd.stationCoverNodes[i]
-			# extraCover += dcd.nodeDemand[j] * dcd.marginalBenefit[dcd.nodeCoverCount[j]+1]
-		# end
 		
 		if extraCover > bestExtraCover
 			bestExtraCover = extraCover
