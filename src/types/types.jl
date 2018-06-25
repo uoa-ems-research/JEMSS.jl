@@ -383,6 +383,8 @@ type Raster
 	dx::Float # x step size
 	dy::Float # y step size
 	
+	Raster() = new([], [], Array{Float,2}(0,0),
+		0, 0, 0.0, 0.0)
 	function Raster(x, y, z)
 		nx = length(x)
 		ny = length(y)
@@ -441,17 +443,18 @@ type DmexclpData <: MoveUpDataType
 	# parameters:
 	coverTime::Float # ambulance 'covers' a location if it can reach the location in this time
 	busyFraction::Float # fraction for which each ambulance is busy, approximate
+	demandRaster::Raster
 	
 	marginalBenefit::Vector{Float} # marginalBenefit[i] = benefit of adding an ith ambulance to cover single demand
 	
 	# arrays for recycling:
-	nodeDemand::Vector{Int} # nodeDemand[i] = demand at node i
+	nodeDemand::Vector{Float} # nodeDemand[i] = demand at node i
 	stationCoverNode::Array{Bool,2} # stationCoverNode[i,j] = true if station i 'covers' node j
 	stationCoverNodes::Vector{Vector{Int}} # stationCoverNodes[i] = list of node indices covered by station i
 	stationNumIdleAmbs::Vector{Int} # number of idle ambulances assigned to each station
 	nodeCoverCount::Vector{Int} # nodeCoverCount[i] = number of idle ambulances covering node i
 	
-	DmexclpData() = new(nullTime, 0.0,
+	DmexclpData() = new(nullTime, 0.0, Raster(),
 		[],
 		[], Array{Bool,2}(0,0), [], [], [])
 end

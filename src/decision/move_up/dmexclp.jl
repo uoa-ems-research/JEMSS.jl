@@ -2,7 +2,9 @@
 
 # initialise data relevant to move up
 function initDmexclp!(sim::Simulation;
-	coverTime::Float = 8/(24*60), busyFraction::Float = 0.5)
+	coverTime::Float = 8/(24*60), busyFraction::Float = 0.5, demandRasterFilename::String = "")
+	
+	assert(isfile(demandRasterFilename))
 	
 	# shorthand names:
 	dcd = sim.moveUpData.dmexclpData
@@ -22,29 +24,38 @@ function initDmexclp!(sim::Simulation;
 	q = dcd.busyFraction # shorthand
 	dcd.marginalBenefit = (q.^[0:numAmbs-1;])*(1-q)
 	
-	# function requires some changes:
-	# - should require input of demand locations and demands, rather than using actual future demand
-	# - need to use network to calculate travel times to demand locations
-	error("dmexclp not complete")
+	warn("Have not yet accounted for travel time from each demand location to the nearest node.")
 	
-	# testing: get demand at each node by adding number of future calls
-	dcd.nodeDemand = Vector{Int}(numNodes)
-	dcd.nodeDemand[:] = 0
-	for i = 1:numCalls
-		dcd.nodeDemand[sim.calls[i].nearestNodeIndex] += 1
+	# read demand raster, set node demands
+	raster = dcd.demandRaster = readRasterFile(demandRasterFilename) # shorthand
+	dcd.nodeDemand = zeros(Float, numNodes)
+	for i = 1:raster.nx, j = 1:raster.ny
+		if raster.z[i,j] != 0
+			location = Location(raster.x[i], raster.y[j])
+			(nearestNodeIndex, dist) = findNearestNodeInGrid(sim.map, sim.grid, fGraph.nodes, location)
+			dcd.nodeDemand[nearestNodeIndex] += raster.z[i,j]
+		end
 	end
 	
-	# testing: determine node coverage
+	# determine node coverage
 	dcd.stationCoverNode = Array{Bool,2}(numStations, numNodes)
 	dcd.stationCoverNode[:] = false
 	assert(travel.numSets == 1) # otherwise, would need coverage and busy fraction to change with time
-	travelMode = getTravelMode!(travel, lowPriority, sim.time)
-	# spTimes = travelMode.rNetTravel.spTimes
+	travelMode = getTravelMode!(travel, highPriority, sim.time) # or lowPriority?
 	for i = 1:numStations
-		startNode = sim.stations[i].nearestNodeIndex
-		startTime = offRoadTravelTime(travelMode, sim.stations[i].nearestNodeDist) # time to reach node nearest station
+		station = sim.stations[i] # shorthand
 		
-		dcd.stationCoverNode[i,:] = ((spTimes[startNode,:] + startTime) .<= dcd.coverTime)
+		# get travel time from station to nearest node
+		(node1, dist1) = (station.nearestNodeIndex, station.nearestNodeDist)
+		time1 = offRoadTravelTime(travelMode, dist1) # time to reach nearest node
+		
+		for j = 1:numNodes
+			# get shortest path travel time
+			(travelTime, rNodes) = shortestPathTravelTime(net, travelMode.index, node1, j)
+			if time1 + travelTime <= dcd.coverTime
+				dcd.stationCoverNode[i,j] = true
+			end
+		end
 	end
 	dcd.stationCoverNodes = Vector{Vector{Int}}(numStations)
 	for i = 1:numStations
