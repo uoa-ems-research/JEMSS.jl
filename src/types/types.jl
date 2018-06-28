@@ -442,6 +442,7 @@ end
 type DmexclpData <: MoveUpDataType
 	# parameters:
 	coverTime::Float # ambulance 'covers' a location if it can reach the location in this time
+	coverTravelPriority::Priority # priority of travel for which coverTime applies
 	busyFraction::Float # fraction for which each ambulance is busy, approximate
 	demandRaster::Raster
 	
@@ -460,7 +461,7 @@ type DmexclpData <: MoveUpDataType
 	stationCoverNodeSets::Vector{Vector{Int}} # stationCoverNodeSets[i] = list of node set indices covered by station i
 	nodeSetCoverCount::Vector{Int} # nodeSetCoverCount[i] = number of idle ambulances covering node set i
 	
-	DmexclpData() = new(nullTime, 0.0, Raster(),
+	DmexclpData() = new(nullTime, nullPriority, 0.0, Raster(),
 		[],
 		[], Array{Bool,2}(0,0), [], [], [],
 		[], [], [], Array{Bool,2}(0,0), [], [])

@@ -292,6 +292,7 @@ function initSimulation(configFilename::String;
 			dmexclpElt = findElt(moveUpElt, "dmexclp")
 			initDmexclp!(sim;
 				coverTime = eltContentVal(dmexclpElt, "coverTime"),
+				coverTravelPriority = eltContentVal(dmexclpElt, "coverTravelPriority"),
 				busyFraction = eltContentVal(dmexclpElt, "busyFraction"),
 				demandRasterFilename = eltContent(dmexclpElt, "demandRasterFilename"))
 			

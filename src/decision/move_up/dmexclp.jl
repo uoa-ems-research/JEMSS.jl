@@ -1,8 +1,13 @@
 # dmexclp - dynamic maximum expected coverage location problem
 
+# to do:
+# - account for travel time from each demand location to the nearest node
+# - allow for each travel priority, rather than having to specify a single priority (coverTravelPriority)
+# - allow for temporally varying travel times (unlikely to make this change)
+
 # initialise data relevant to move up
 function initDmexclp!(sim::Simulation;
-	coverTime::Float = 8/(24*60), busyFraction::Float = 0.5, demandRasterFilename::String = "")
+	coverTime::Float = 8/(24*60), coverTravelPriority::Priority = lowPriority, busyFraction::Float = 0.5, demandRasterFilename::String = "")
 	
 	assert(isfile(demandRasterFilename))
 	
@@ -13,6 +18,7 @@ function initDmexclp!(sim::Simulation;
 	fGraph = net.fGraph
 	
 	dcd.coverTime = coverTime # (days)
+	dcd.coverTravelPriority = coverTravelPriority
 	dcd.busyFraction = busyFraction
 	
 	numAmbs = length(sim.ambulances)
@@ -41,7 +47,7 @@ function initDmexclp!(sim::Simulation;
 	dcd.stationCoverNode = Array{Bool,2}(numStations, numNodes)
 	dcd.stationCoverNode[:] = false
 	assert(travel.numSets == 1) # otherwise, would need coverage and busy fraction to change with time
-	travelMode = getTravelMode!(travel, highPriority, sim.time) # or lowPriority?
+	travelMode = getTravelMode!(travel, dcd.coverTravelPriority, sim.time)
 	for i = 1:numStations
 		station = sim.stations[i] # shorthand
 		
