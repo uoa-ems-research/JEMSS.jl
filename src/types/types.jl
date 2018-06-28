@@ -383,6 +383,8 @@ type Raster
 	dx::Float # x step size
 	dy::Float # y step size
 	
+	Raster() = new([], [], Array{Float,2}(0,0),
+		0, 0, 0.0, 0.0)
 	function Raster(x, y, z)
 		nx = length(x)
 		ny = length(y)
@@ -440,20 +442,27 @@ end
 type DmexclpData <: MoveUpDataType
 	# parameters:
 	coverTime::Float # ambulance 'covers' a location if it can reach the location in this time
+	coverTravelPriority::Priority # priority of travel for which coverTime applies
 	busyFraction::Float # fraction for which each ambulance is busy, approximate
+	demandRaster::Raster
 	
 	marginalBenefit::Vector{Float} # marginalBenefit[i] = benefit of adding an ith ambulance to cover single demand
 	
-	# arrays for recycling:
-	nodeDemand::Vector{Int} # nodeDemand[i] = demand at node i
+	nodeDemand::Vector{Float} # nodeDemand[i] = demand at node i
 	stationCoverNode::Array{Bool,2} # stationCoverNode[i,j] = true if station i 'covers' node j
-	stationCoverNodes::Vector{Vector{Int}} # stationCoverNodes[i] = list of node indices covered by station i
-	stationNumIdleAmbs::Vector{Int} # number of idle ambulances assigned to each station
-	nodeCoverCount::Vector{Int} # nodeCoverCount[i] = number of idle ambulances covering node i
+	nodeSets::Vector{Set{Int}} # nodeSets[i] has set of all node indices covered by the same unique set of stations
+	stationSets::Vector{Set{Int}} # stationSets[i] = unique set of stations for nodeSets[i]
+	nodeSetDemand::Vector{Float} # nodeSetDemand[i] = demand at node set i
+	stationCoverNodeSets::Vector{Vector{Int}} # stationCoverNodeSets[i] = list of node set indices covered by station i
 	
-	DmexclpData() = new(nullTime, 0.0,
+	# arrays for recycling:
+	stationNumIdleAmbs::Vector{Int} # stationNumIdleAmbs[i] = number of idle ambulances assigned to station i
+	nodeSetCoverCount::Vector{Int} # nodeSetCoverCount[i] = number of idle ambulances covering node set i
+	
+	DmexclpData() = new(nullTime, nullPriority, 0.0, Raster(),
 		[],
-		[], Array{Bool,2}(0,0), [], [], [])
+		[], Array{Bool,2}(0,0), [], [], [], [],
+		[], [])
 end
 
 type PriorityListData <: MoveUpDataType

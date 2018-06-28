@@ -288,12 +288,13 @@ function initSimulation(configFilename::String;
 			initCompTable!(sim, joinpath(sim.inputPath, compTableFilename))
 			
 		elseif moveUpModuleName == "dmexclp"
-			error("dmexclp not implemented")
 			mud.moveUpModule = dmexclpModule
 			dmexclpElt = findElt(moveUpElt, "dmexclp")
 			initDmexclp!(sim;
 				coverTime = eltContentVal(dmexclpElt, "coverTime"),
-				busyFraction = eltContentVal(dmexclpElt, "busyFraction"))
+				coverTravelPriority = eltContentVal(dmexclpElt, "coverTravelPriority"),
+				busyFraction = eltContentVal(dmexclpElt, "busyFraction"),
+				demandRasterFilename = eltContent(dmexclpElt, "demandRasterFilename"))
 			
 		elseif moveUpModuleName == "priority_list"
 			mud.moveUpModule = priorityListModule

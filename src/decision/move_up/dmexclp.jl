@@ -1,8 +1,15 @@
 # dmexclp - dynamic maximum expected coverage location problem
 
+# to do:
+# - account for travel time from each demand location to the nearest node
+# - allow for each travel priority, rather than having to specify a single priority (coverTravelPriority)
+# - allow for temporally varying travel times (unlikely to make this change)
+
 # initialise data relevant to move up
 function initDmexclp!(sim::Simulation;
-	coverTime::Float = 8/(24*60), busyFraction::Float = 0.5)
+	coverTime::Float = 8/(24*60), coverTravelPriority::Priority = lowPriority, busyFraction::Float = 0.5, demandRasterFilename::String = "")
+	
+	assert(isfile(demandRasterFilename))
 	
 	# shorthand names:
 	dcd = sim.moveUpData.dmexclpData
@@ -11,6 +18,7 @@ function initDmexclp!(sim::Simulation;
 	fGraph = net.fGraph
 	
 	dcd.coverTime = coverTime # (days)
+	dcd.coverTravelPriority = coverTravelPriority
 	dcd.busyFraction = busyFraction
 	
 	numAmbs = length(sim.ambulances)
@@ -22,41 +30,68 @@ function initDmexclp!(sim::Simulation;
 	q = dcd.busyFraction # shorthand
 	dcd.marginalBenefit = (q.^[0:numAmbs-1;])*(1-q)
 	
-	# function requires some changes:
-	# - should require input of demand locations and demands, rather than using actual future demand
-	# - need to use network to calculate travel times to demand locations
-	error("dmexclp not complete")
+	warn("Have not yet accounted for travel time from each demand location to the nearest node.")
 	
-	# testing: get demand at each node by adding number of future calls
-	dcd.nodeDemand = Vector{Int}(numNodes)
-	dcd.nodeDemand[:] = 0
-	for i = 1:numCalls
-		dcd.nodeDemand[sim.calls[i].nearestNodeIndex] += 1
+	# read demand raster, set node demands
+	raster = dcd.demandRaster = readRasterFile(demandRasterFilename) # shorthand
+	dcd.nodeDemand = zeros(Float, numNodes)
+	for i = 1:raster.nx, j = 1:raster.ny
+		if raster.z[i,j] != 0
+			location = Location(raster.x[i], raster.y[j])
+			(nearestNodeIndex, dist) = findNearestNodeInGrid(sim.map, sim.grid, fGraph.nodes, location)
+			dcd.nodeDemand[nearestNodeIndex] += raster.z[i,j]
+		end
 	end
 	
-	# testing: determine node coverage
+	# determine node coverage
 	dcd.stationCoverNode = Array{Bool,2}(numStations, numNodes)
 	dcd.stationCoverNode[:] = false
 	assert(travel.numSets == 1) # otherwise, would need coverage and busy fraction to change with time
-	travelMode = getTravelMode!(travel, lowPriority, sim.time)
-	# spTimes = travelMode.rNetTravel.spTimes
+	travelMode = getTravelMode!(travel, dcd.coverTravelPriority, sim.time)
 	for i = 1:numStations
-		startNode = sim.stations[i].nearestNodeIndex
-		startTime = offRoadTravelTime(travelMode, sim.stations[i].nearestNodeDist) # time to reach node nearest station
+		station = sim.stations[i] # shorthand
 		
-		dcd.stationCoverNode[i,:] = ((spTimes[startNode,:] + startTime) .<= dcd.coverTime)
+		# get travel time from station to nearest node
+		(node1, dist1) = (station.nearestNodeIndex, station.nearestNodeDist)
+		time1 = offRoadTravelTime(travelMode, dist1) # time to reach nearest node
+		
+		for j = 1:numNodes
+			# get shortest path travel time
+			(travelTime, rNodes) = shortestPathTravelTime(net, travelMode.index, node1, j)
+			if time1 + travelTime <= dcd.coverTime
+				dcd.stationCoverNode[i,j] = true
+			end
+		end
 	end
-	dcd.stationCoverNodes = Vector{Vector{Int}}(numStations)
+	
+	# group nodes with coverage by same set of stations
+	dcd.nodeSets = Vector{Set{Int}}() # nodeSets[i] has set of all node indices covered by the same unique set of stations
+	dcd.stationSets = Vector{Set{Int}}() # stationSets[i] = unique set of stations for nodeSets[i]
+	dcd.nodeSetDemand = Vector{Float}() # nodeSetDemand[i] = demand at node set i
+	for j = 1:numNodes
+		stationsCoverNode = Set(find(dcd.stationCoverNode[:,j])) # indices of stations that cover node j
+		if stationsCoverNode != Set() # otherwise node is never covered
+			if !in(stationsCoverNode, dcd.stationSets)
+				push!(dcd.stationSets, stationsCoverNode)
+				push!(dcd.nodeSets, Set())
+				push!(dcd.nodeSetDemand, 0.0)
+			end
+			# stationsCoverNode already exists in stationSets
+			k = findfirst(dcd.stationSets, stationsCoverNode)
+			push!(dcd.nodeSets[k], j)
+			dcd.nodeSetDemand[k] += dcd.nodeDemand[j]
+		end
+	end
+	
+	dcd.stationCoverNodeSets = Vector{Vector{Int}}(numStations) # stationCoverNodeSets[i] = list of node set indices covered by station i
 	for i = 1:numStations
-		dcd.stationCoverNodes[i] = find(dcd.stationCoverNode[i,:])
+		dcd.stationCoverNodeSets[i] = find(stationSet -> in(i,stationSet), dcd.stationSets)
 	end
 	
-	# testing: will set this to 0 for now, and calculate it each time it is needed
-	dcd.stationNumIdleAmbs = Vector{Int}(numStations)
-	dcd.stationNumIdleAmbs[:] = 0
-	
-	dcd.nodeCoverCount = Vector{Int}(numNodes)
-	dcd.nodeCoverCount[:] = 0
+	# values that will be calculated when needed:
+	numNodeSets = length(dcd.nodeSets)
+	dcd.nodeSetCoverCount = zeros(Int,numNodeSets) # nodeSetCoverCount[i] = number of idle ambulances covering node set i
+	dcd.stationNumIdleAmbs = zeros(Int, numStations)
 end
 
 function dmexclpMoveUp(sim::Simulation, newlyIdleAmb::Ambulance)
@@ -80,11 +115,11 @@ function dmexclpMoveUp(sim::Simulation, newlyIdleAmb::Ambulance)
 		end
 	end
 	
-	# ignoring new idle amb, count number of ambulances covering each node
-	dcd.nodeCoverCount[:] = 0
+	# ignoring new idle amb, count number of ambulances covering each node set
+	dcd.nodeSetCoverCount[:] = 0
 	for i = 1:numStations
-		for j = dcd.stationCoverNodes[i]
-			dcd.nodeCoverCount[j] += dcd.stationNumIdleAmbs[i]
+		for j = dcd.stationCoverNodeSets[i]
+			dcd.nodeSetCoverCount[j] += dcd.stationNumIdleAmbs[i]
 		end
 	end
 	
@@ -96,15 +131,9 @@ function dmexclpMoveUp(sim::Simulation, newlyIdleAmb::Ambulance)
 	for i = 1:numStations
 		# calculate additional expected coverage if new idle amb placed at station i
 		extraCover = 0
-		for j = dcd.stationCoverNodes[i]
-			if dcd.nodeDemand[j] > 0
-				extraCover += dcd.nodeDemand[j] * dcd.marginalBenefit[dcd.nodeCoverCount[j]+1]
-			end
+		for j = dcd.stationCoverNodeSets[i]
+			extraCover += dcd.nodeSetDemand[j] * dcd.marginalBenefit[dcd.nodeSetCoverCount[j]+1]
 		end
-		# slow:
-		# for j = dcd.stationCoverNodes[i]
-			# extraCover += dcd.nodeDemand[j] * dcd.marginalBenefit[dcd.nodeCoverCount[j]+1]
-		# end
 		
 		if extraCover > bestExtraCover
 			bestExtraCover = extraCover
