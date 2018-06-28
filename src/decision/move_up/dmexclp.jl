@@ -63,10 +63,6 @@ function initDmexclp!(sim::Simulation;
 			end
 		end
 	end
-	dcd.stationCoverNodes = Vector{Vector{Int}}(numStations)
-	for i = 1:numStations
-		dcd.stationCoverNodes[i] = find(dcd.stationCoverNode[i,:])
-	end
 	
 	# group nodes with coverage by same set of stations
 	dcd.nodeSets = Vector{Set{Int}}() # nodeSets[i] has set of all node indices covered by the same unique set of stations
@@ -92,15 +88,10 @@ function initDmexclp!(sim::Simulation;
 		dcd.stationCoverNodeSets[i] = find(stationSet -> in(i,stationSet), dcd.stationSets)
 	end
 	
+	# values that will be calculated when needed:
 	numNodeSets = length(dcd.nodeSets)
 	dcd.nodeSetCoverCount = zeros(Int,numNodeSets) # nodeSetCoverCount[i] = number of idle ambulances covering node set i
-	
-	# testing: will set this to 0 for now, and calculate it each time it is needed
-	dcd.stationNumIdleAmbs = Vector{Int}(numStations)
-	dcd.stationNumIdleAmbs[:] = 0
-	
-	dcd.nodeCoverCount = Vector{Int}(numNodes)
-	dcd.nodeCoverCount[:] = 0
+	dcd.stationNumIdleAmbs = zeros(Int, numStations)
 end
 
 function dmexclpMoveUp(sim::Simulation, newlyIdleAmb::Ambulance)
