@@ -265,7 +265,7 @@ function makeArcs(genConfig::GenConfig, graph::LightGraphs.Graph, nodes::Vector{
 	
 	speed = 1.5 * genConfig.offRoadSpeed
 	
-	travelTimes = Vector{Float}(length(arcs))
+	travelTimes = Array{Float,2}(1,length(arcs))
 	
 	i = 1
 	for edge in LightGraphs.edges(graph)
@@ -275,7 +275,7 @@ function makeArcs(genConfig::GenConfig, graph::LightGraphs.Graph, nodes::Vector{
 		arcs[i].toNodeIndex = edge.dst
 		
 		dist = normDist(genConfig.map, nodes[edge.src].location, nodes[edge.dst].location)
-		travelTimes[i] = dist / speed * rand(genConfig.travelTimeFactorDistrRng)
+		travelTimes[1,i] = dist / speed * rand(genConfig.travelTimeFactorDistrRng)
 		i = i + 1
 	end
 	

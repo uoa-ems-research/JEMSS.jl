@@ -11,7 +11,10 @@ type Node
 	location::Location
 	offRoadAccess::Bool # if node can be used to get on-road and off-road
 	
-	Node() = new(nullIndex, Location(), true)
+	fields::Dict{String,Any} # additional data, not used by simulation
+	
+	Node() = new(nullIndex, Location(), true,
+		Dict{String,Any}())
 end
 
 type Arc
@@ -19,7 +22,10 @@ type Arc
 	fromNodeIndex::Int
 	toNodeIndex::Int
 	
-	Arc() = new(nullIndex, nullIndex, nullIndex)
+	fields::Dict{String,Any} # additional data, not used by simulation
+	
+	Arc() = new(nullIndex, nullIndex, nullIndex,
+		Dict{String,Any}())
 end
 
 # graph data for network (actually a digraph)
