@@ -152,7 +152,7 @@ function graphKeepLargestComponent!(nodes::Vector{Node}, arcs::Vector{Arc};
 	arcFilter(arc::Arc) = arc.fields[lsccHeader]
 	graphRemoveElts!(nodes, arcs, nodeFilter = nodeFilter, arcFilter = arcFilter)
 	for node in nodes delete!(node.fields, lsccHeader) end
-	for arc in arcs delete!(node.fields, lsccHeader) end
+	for arc in arcs delete!(arc.fields, lsccHeader) end
 	return
 end
 
@@ -248,11 +248,6 @@ function graphTagSpElts!(nodes::Vector{Node}, arcs::Vector{Arc};
 	
 	# keep track of all tagged nodes and arcs
 	nodeTagged = fill(false, numNodes)
-	for nodeIndices in [chosenNodes, originNodes, destNodes]
-		for i in nodeIndices
-			nodeTagged[i] = true
-		end
-	end
 	arcTagged = fill(false, numArcs)
 	
 	# to be used, and reset, for each SP tree:
@@ -324,10 +319,8 @@ function graphTagSpElts!(nodes::Vector{Node}, arcs::Vector{Arc};
 				end
 			end
 		end
-		for j = 1:numNodes
-			nodeTagged[j] |= tagNode[j]
-			arcTagged[j] |= tagArc[j]
-		end
+		nodeTagged .|= tagNode
+		arcTagged .|= tagArc
 		return
 	end
 	
