@@ -1,10 +1,72 @@
 # for converting OpenStreetMap files with road networks to format usable for JEMSS
 
 using JEMSS
+using Geodesy # need v0.0.1 for type Bounds
 import OpenStreetMap
-using Geodesy
-
 const OSM = OpenStreetMap
+
+# Read OSM file with road network, return nodes and arcs
+# kwargs:
+# - levels: highway types that will be kept, see ROAD_CLASSES in OSM for more details.
+# - boundsLLA: to cut map within given bounds; may be needed if osm file is missing map bounds.
+# Output may need further processing, such as only keeping the largest strongly connected component, and removing duplicate arcs.
+# Note that distance calculations done here are different (more accurate) than those in JEMSS.
+function readOsmNetworkFile(osmFilename::String;
+	levels::Union{Set{Int},Void} = nothing, boundsLLA::Union{Geodesy.Bounds{LLA},Void} = nothing)
+	
+	# read osm file
+	assert(isfile(osmFilename))
+	(nodesLLA, highways, buildings, features) = OSM.getOSMData(osmFilename)
+	
+	# get map bounds from file, or use custom bounds (useful if file is missing bounds)
+	if boundsLLA == nothing
+		xdoc = OSM.parseMapXML(osmFilename)
+		boundsLLA = OSM.getBounds(xdoc)
+	else
+		OSM.cropMap!(nodesLLA, boundsLLA; highways=highways, buildings=buildings, features=features)
+	end
+	
+	# convert from LLA to ENU coordinates
+	lla_reference = Geodesy.center(boundsLLA)
+	nodesENU = ENU(nodesLLA, lla_reference)
+	
+	# create network
+	if levels == nothing levels = OSM.ROAD_CLASSES |> values |> Set end
+	classes = OSM.roadways(highways)
+	network = OSM.createGraph(nodesENU, highways, classes, levels)
+	
+	graph = network.g # graph type: Graphs.GenericIncidenceList
+	assert(graph.is_directed)
+	edges = OSM.getEdges(network)
+	
+	# create nodes from graph.vertices
+	numNodes = length(graph.vertices)
+	nodes = Vector{Node}(numNodes)
+	for i = 1:numNodes
+		vertex = graph.vertices[i]
+		nodes[i] = Node()
+		nodes[i].index = i
+		nodes[i].location.x = nodesLLA[vertex.key].lon
+		nodes[i].location.y = nodesLLA[vertex.key].lat
+		nodes[i].fields["osm_key"] = vertex.key
+	end
+	
+	# create arcs from edges
+	numArcs = graph.nedges
+	arcs = Vector{Arc}(numArcs)
+	for i = 1:numArcs
+		edge = edges[i]
+		arcs[i] = Arc()
+		arcs[i].index = i
+		arcs[i].fromNodeIndex = edge.source.index
+		arcs[i].toNodeIndex = edge.target.index
+		arcs[i].fields["osm_class"] = network.class[edge.index]
+		arcs[i].fields["osm_weight"] = network.w[edge.index] # edge weight = length
+		assert(network.w[edge.index] == distance(nodesENU, edge.source.key, edge.target.key))
+	end
+	
+	return nodes, arcs
+end
 
 # read osm file with road network, convert to format for use by JEMSS
 # processing performed:
@@ -17,10 +79,10 @@ const OSM = OpenStreetMap
 # - classSpeeds - dict of the speed (km/hr) of each class of arc
 # - classOffRoadAccess - dict indicating which nodes of different arc classes can be used to get on and off road; node will not have off-road access if all connecting arcs have class returning false in dict
 # note that distance calculations done here are different (more accurate) from those in JEMSS
-function convertOsmNetwork(OsmFilename::String;
+function convertOsmNetwork(osmFilename::String;
 	levels::Set{Int} = Set{Int}(), classSpeeds::Dict{Int,Int} = OSM.SPEED_ROADS_RURAL, classOffRoadAccess::Dict{Int,Bool} = Dict{Int,Bool}())
 	
-	assert(isfile(OsmFilename))
+	assert(isfile(osmFilename))
 	
 	if levels == Set()
 		levels = OSM.ROAD_CLASSES |> values |> unique |> sort
@@ -48,8 +110,8 @@ function convertOsmNetwork(OsmFilename::String;
 	
 	## read osm file
 	
-	(nodesLLA, highways, buildings, features) = OSM.getOSMData(OsmFilename)
-	xdoc = OSM.parseMapXML(OsmFilename)
+	(nodesLLA, highways, buildings, features) = OSM.getOSMData(osmFilename)
+	xdoc = OSM.parseMapXML(osmFilename)
 	boundsLLA = OSM.getBounds(xdoc)
 	
 	# convert from LLA to ENU coordinates
@@ -193,7 +255,7 @@ function convertOsmNetwork(OsmFilename::String;
 end
 
 # example use of convertOsmNetwork function
-function convertOsmNetworkExample(OsmFilename::String)
+function convertOsmNetworkExample(osmFilename::String)
 	# the 'levels' of highways that will be kept, see ROAD_CLASSES in OSM for more details
 	# e.g., levels = Set(1:5) are motorway to tertiary, including links
 	# levels = Set(1:6) # roads 1:6 are motorway to residential and unclassified, including links
@@ -222,7 +284,7 @@ function convertOsmNetworkExample(OsmFilename::String)
 		6 => true, # residential + link
 	)
 	
-	(nodes, arcs, travelTimes) = convertOsmNetwork(OsmFilename;
+	(nodes, arcs, travelTimes) = convertOsmNetwork(osmFilename;
 		levels = levels, classSpeeds = classSpeeds, classOffRoadAccess = classOffRoadAccess)
 	
 	# # save arcs and nodes files
