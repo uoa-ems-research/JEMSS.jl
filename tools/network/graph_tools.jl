@@ -157,11 +157,11 @@ function graphKeepLargestComponent!(nodes::Vector{Node}, arcs::Vector{Arc};
 end
 
 # remove arcs from graph that are connected to/from nodes outside of range
-function graphRemoveDisconnectedArcs!(numNodes::Int, arcs::Vector{Arc})
+function graphRemoveDisconnectedArcs!(nodes::Vector{Node}, arcs::Vector{Arc})
+	numNodes = length(nodes)
 	arcFilter(arc::Arc) = (1 <= arc.fromNodeIndex <= numNodes) && (1 <= arc.toNodeIndex <= numNodes)
 	graphRemoveElts!(nodes, arcs, arcFilter = arcFilter)
 end
-graphRemoveDisconnectedArcs!(nodes::Vector{Node}, arcs::Vector{Arc}) = graphRemoveDisconnectedArcs!(length(nodes), arcs)
 
 # return dict with tuple of node indices (from, to) as keys, and vector of arc indices as values
 function graphNodePairArcIndices(arcs::Vector{Arc})
