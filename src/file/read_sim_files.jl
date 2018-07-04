@@ -21,7 +21,8 @@ function readAmbsFile(filename::String)
 	return ambulances
 end
 
-function readArcsFile(filename::String)
+function readArcsFile(filename::String;
+	keepAllFields::Bool = false)
 	tables = readTablesFromFile(filename)
 	
 	# get arcForm, numModes
@@ -56,7 +57,7 @@ function readArcsFile(filename::String)
 	c = table.columns # shorthand
 	(indexCol = c["index"]); (fromNodeCol = c["fromNode"]); (toNodeCol = c["toNode"]) # shorthand, to avoid repeated dict lookups
 	modeCols = [c[string("mode_", i)] for i = 1:numModes] # shorthand
-	fieldNames = setdiff(table.header, ["index", "fromNode", "toNode", [string("mode_", i) for i = 1:numModes]...])
+	fieldNames = setdiff(table.header, keepAllFields ? [] : ["index", "fromNode", "toNode", [string("mode_", i) for i = 1:numModes]...])
 	rowsFields = tableRowsFieldDicts(table, fieldNames)
 	# get arc data from table
 	for i = 1:numArcs
