@@ -5,10 +5,12 @@ using Geodesy # need v0.0.1 for type Bounds
 import OpenStreetMap
 const OSM = OpenStreetMap
 
+include("graph_tools.jl")
+
 # Read OSM file with road network, return nodes and arcs
 # kwargs:
 # - levels: highway types that will be kept, see ROAD_CLASSES in OSM for more details.
-# - boundsLLA: to cut map within given bounds; may be needed if osm file is missing map bounds.
+# - boundsLLA: crop map within given bounds.
 # Output may need further processing, such as only keeping the largest strongly connected component, and removing duplicate arcs.
 # Note that distance calculations done here are different (more accurate) than those in JEMSS.
 function readOsmNetworkFile(osmFilename::String;
@@ -18,13 +20,24 @@ function readOsmNetworkFile(osmFilename::String;
 	assert(isfile(osmFilename))
 	(nodesLLA, highways, buildings, features) = OSM.getOSMData(osmFilename)
 	
-	# get map bounds from file, or use custom bounds (useful if file is missing bounds)
 	if boundsLLA == nothing
-		xdoc = OSM.parseMapXML(osmFilename)
-		boundsLLA = OSM.getBounds(xdoc)
-	else
-		OSM.cropMap!(nodesLLA, boundsLLA; highways=highways, buildings=buildings, features=features)
+		try
+			# get map bounds from file (may be missing bounds)
+			xdoc = OSM.parseMapXML(osmFilename)
+			boundsLLA = OSM.getBounds(xdoc)
+		catch
+			# set map bounds to fit nodesLLA
+			nodeCoords = collect(values(nodesLLA))
+			minLat = minimum(c->c.lat, nodeCoords)
+			maxLat = maximum(c->c.lat, nodeCoords)
+			minLon = minimum(c->c.lon, nodeCoords)
+			maxLon = maximum(c->c.lon, nodeCoords)
+			boundsLLA = Geodesy.Bounds{LLA}(minLat, maxLat, minLon, maxLon)
+		end
 	end
+	# crop map within bounds
+	# even if cropping is not required, it is useful to remove highway references to nodes that may not exist
+	OSM.cropMap!(nodesLLA, boundsLLA; highways=highways, buildings=buildings, features=features)
 	
 	# convert from LLA to ENU coordinates
 	lla_reference = Geodesy.center(boundsLLA)
@@ -68,25 +81,33 @@ function readOsmNetworkFile(osmFilename::String;
 	return nodes, arcs
 end
 
-# read osm file with road network, convert to format for use by JEMSS
-# processing performed:
+# merge arc2 into arc1, keeping minimum class (should have higher speed) in arc1
+# arc2 will need to be removed in separate step
+function mergeDuplicateOsmArcs!(arc1::Arc, arc2::Arc; classFieldName::String = "osm_class")
+	assert(arc1.fromNodeIndex == arc2.fromNodeIndex)
+	assert(arc1.toNodeIndex == arc2.toNodeIndex)
+	arc1.fields[classFieldName] = min(arc1.fields[classFieldName], arc2.fields[classFieldName])
+	# arcs should already have same weight (length)
+end
+mergeDuplicateOsmArcs!(arcs::Vector{Arc}, i::Int, j::Int) = mergeDuplicateOsmArcs!(arcs[i], arcs[j])
+
+# Process nodes and arcs from OSM, processing performed:
 # - only keep specified highway types (levels)
 # - keep only the largest strongly connected component
-# - remove duplicate arcs (same start and end node), keep arcs with shortest travel time
+# - merge duplicate arcs (same start and end node) according to kwarg mergeArcsFunction
+# - set offRoadAccess field of nodes, according to kwarg classOffRoadAccess
 # - calculate travel time for each arc
 # kwargs:
-# - levels - the types of highways that will be kept, see ROAD_CLASSES in OSM for more details
-# - classSpeeds - dict of the speed (km/hr) of each class of arc
-# - classOffRoadAccess - dict indicating which nodes of different arc classes can be used to get on and off road; node will not have off-road access if all connecting arcs have class returning false in dict
-# note that distance calculations done here are different (more accurate) from those in JEMSS
-function convertOsmNetwork(osmFilename::String;
-	levels::Set{Int} = Set{Int}(), classSpeeds::Dict{Int,Int} = OSM.SPEED_ROADS_RURAL, classOffRoadAccess::Dict{Int,Bool} = Dict{Int,Bool}())
+# - levels: highway types that will be kept, see ROAD_CLASSES in OSM for more details.
+# - classSpeeds: classSpeeds[i] has dict of the speed (km/hr) of each class of arc, for travel mode i
+# - classOffRoadAccess: dict indicating which nodes of different arc classes can be used to get on and off road; node will not have off-road access if all connecting arcs have class returning false in dict
+# - mergeArcsFunction: function to merge any duplicate arcs found, given the arcs and two arc indices
+function convertOsmNetwork!(nodes::Vector{Node}, arcs::Vector{Arc};
+	levels::Union{Set{Int},Void} = nothing, classSpeeds::Vector{Dict{Int,Float}} = [], classOffRoadAccess::Dict{Int,Bool} = Dict{Int,Bool}(), mergeArcsFunction::Function = mergeDuplicateOsmArcs!)
 	
-	assert(isfile(osmFilename))
+	numTravelModes = length(classSpeeds)
 	
-	if levels == Set()
-		levels = OSM.ROAD_CLASSES |> values |> unique |> sort
-	end
+	if levels == nothing levels = OSM.ROAD_CLASSES |> values |> Set end
 	
 	# if classOffRoadAccess not given, assume it is true for all levels
 	if classOffRoadAccess == Dict()
@@ -95,183 +116,58 @@ function convertOsmNetwork(osmFilename::String;
 	
 	# check that input dicts contain all levels
 	for level in levels
-		assert(haskey(classSpeeds, level))
+		assert(all(c -> haskey(c, level), classSpeeds))
 		assert(haskey(classOffRoadAccess, level))
 	end
 	
 	# convert classSpeeds (km/hr) to classInvSpeeds (days/metre)
-	# this is needed as the edge weights (network.w) are in metres
-	classInvSpeeds = Dict() # days / metre
-	for (class, speed) in classSpeeds
-		classInvSpeeds[class] = 1 / (speed * 1000 * 24)
-	end
-	
-	#############################################
-	
-	## read osm file
-	
-	(nodesLLA, highways, buildings, features) = OSM.getOSMData(osmFilename)
-	xdoc = OSM.parseMapXML(osmFilename)
-	boundsLLA = OSM.getBounds(xdoc)
-	
-	# convert from LLA to ENU coordinates
-	lla_reference = center(boundsLLA)
-	nodesENU = ENU(nodesLLA, lla_reference)
-	
-	# create graph/network of only specified highway levels
-	classes = OSM.roadways(highways)
-	network = OSM.createGraph(nodesENU, highways, classes, levels)
-	
-	graph = network.g # graph type: Graphs.GenericIncidenceList
-	assert(graph.is_directed)
-	edges = OSM.getEdges(network)
-	
-	revNetwork = OSM.createGraph(nodesENU, highways, classes, levels, true)
-	revGraph = revNetwork.g
-	
-	#############################################
-	
-	## find largest strongly connected component in graph, will only keep vertices and edges from this
-	
-	# create lightGraph from graph
-	assert(graph.is_directed)
-	numVertices = length(graph.vertices)
-	lightGraph = LightGraphs.DiGraph(numVertices)
-	# add vertices and edges
-	for i = 1:numVertices
-		# add edges outgoing from vertex i
-		for edge in graph.inclist[i]
-			LightGraphs.add_edge!(lightGraph, i, edge.target.index)
-		end
-	end
-	# find connected components; note that Graphs.strongly_connected_components() did not work correctly (the output was not what I expected), so LightGraphs.strongly_connected_components() is needed instead
-	components = LightGraphs.strongly_connected_components(lightGraph)
-	componentSizes = [length(component) for component in components]
-	(largestComponentSize, componentIndex) = findmax(componentSizes)
-	largestComponent = components[componentIndex] # largest strongly connected component
-	rmComponents = components[vcat(1:componentIndex-1, componentIndex+1:length(components))]
-	
-	# # show some summary info on strongly connected components
-	# @show largestComponentSize
-	# @show size(rmComponents) # number of components to remove
-	# @show maximum([length(rmComponents[i]) for i = 1:length(rmComponents)]) # size of largest component to remove
-	
-	# find nodes and arcs to remove
-	# remove nodes outside of largestComponent, and remove arcs connected to these nodes
-	numVertices = length(graph.vertices)
-	numEdges = graph.nedges # length(edges)
-	keepVertex = fill(true, numVertices) # keepVertex[i] = true if vertex i is in largestComponent, false otherwise
-	keepEdge = fill(true, numEdges) # keepEdge[i] = true if edge i is in largestComponent, false otherwise
-	for rmComponent in rmComponents
-		for i in rmComponent
-			keepVertex[i] = false
-			for edge in graph.inclist[i]
-				keepEdge[edge.index] = false
-			end
-			for edge in revGraph.inclist[i]
-				keepEdge[edge.index] = false
-			end
+	# this is needed as the arc lengths (arc field "osm_weight") are in metres
+	classInvSpeeds = deepcopy(classSpeeds) # will be days / metre
+	for i = 1:numTravelModes
+		for (class, speed) in classSpeeds[i]
+			classInvSpeeds[i][class] = 1 / (speed * 1000 * 24) # days / metre
 		end
 	end
 	
-	# remove duplicate arcs in largestComponent, keep arc with shortest travel time
-	t(edgeIndex::Int) = network.w[edgeIndex] * classInvSpeeds[network.class[edgeIndex]] # travel time of edge, days
-	for i in largestComponent
-		vertexEdges = graph.inclist[i]
-		n = length(vertexEdges)
-		for j = 1:n-1, k = j+1:n
-			edge1 = vertexEdges[j]
-			if keepEdge[edge1.index]
-				edge2 = vertexEdges[k]
-				if edge1.target.index == edge2.target.index
-					# remove either edge1 or edge2, keep the edge with shorter travel time
-					if t(edge1.index) <= t(edge2.index)
-						keepEdge[edge2.index] = false
-					else
-						keepEdge[edge1.index] = false
-					end
-				end
-			end
+	# edit nodes and arcs as needed
+	graphRemoveElts!(nodes, arcs, arcFilter = arc -> in(arc.fields["osm_class"], levels)) # keep only specified levels
+	graphRemoveDisconnectedArcs!(nodes, arcs) # probably not needed, but use just in case
+	graphKeepLargestComponent!(nodes, arcs) # keep only the largest strongly connected component
+	graphMergeDuplicateArcs!(nodes, arcs; mergeArcsFunction = mergeArcsFunction)
+	
+	# set node offRoadAccess values
+	for node in nodes
+		node.offRoadAccess = false
+	end
+	for arc in arcs
+		if classOffRoadAccess[arc.fields["osm_class"]]
+			nodes[arc.fromNodeIndex].offRoadAccess = true
+			nodes[arc.toNodeIndex].offRoadAccess = true
 		end
 	end
 	
-	# keep track of new and old vertex and edge indices
-	numKeepVertices = sum(keepVertex) # = length(largestComponent)
-	vertexNewIndex = fill(nullIndex, numVertices)
-	vertexNewIndex[keepVertex] = 1:numKeepVertices
-	# vertexOldIndex = find(keepVertex)
-	numKeepEdges = sum(keepEdge)
-	edgeNewIndex = fill(nullIndex, numEdges)
-	edgeNewIndex[keepEdge] = 1:numKeepEdges
-	# edgeOldIndex = find(keepEdge)
-	
-	#############################################
-	
-	## convert network into new format, only keeping nodes and edges in largestComponent
-	
-	numNodes = numKeepVertices
-	numArcs = numKeepEdges
-	
-	nodes = Vector{Node}(numNodes)
-	for v in graph.vertices[keepVertex]
-		i = vertexNewIndex[v.index]
-		assert(i != nullIndex)
-		nodes[i] = Node()
-		nodes[i].index = i
-		nodes[i].location = Location()
-		nodes[i].location.x = nodesLLA[v.key].lon
-		nodes[i].location.y = nodesLLA[v.key].lat
-		nodes[i].offRoadAccess = false # will later change to true where relevant
-	end
-	
-	arcs = Vector{Arc}(numArcs)
-	travelTimes = Vector{Float}(numArcs) # travelTimes[i] = travel time along arcs[i]
-	for edge in edges[keepEdge]
-		i = edgeNewIndex[edge.index]
-		assert(i != nullIndex)
-		arcs[i] = Arc()
-		arcs[i].index = i
-		arcs[i].fromNodeIndex = vertexNewIndex[edge.source.index]
-		arcs[i].toNodeIndex = vertexNewIndex[edge.target.index]
-		assert(arcs[i].fromNodeIndex != nullIndex)
-		assert(arcs[i].toNodeIndex != nullIndex)
-		
-		weight = network.w[edge.index]
-		class = network.class[edge.index]
-		assert(weight == distance(nodesENU, edge.source.key, edge.target.key))
-		travelTimes[i] = weight * classInvSpeeds[class]
-		
-		if classOffRoadAccess[class]
-			nodes[arcs[i].fromNodeIndex].offRoadAccess = true
-			nodes[arcs[i].toNodeIndex].offRoadAccess = true
-		end
-		
-		if travelTimes[i] <= 0
-			warn("output arc ", i, " has travel time <= 0")
+	# set arc travel times
+	for i = 1:numTravelModes
+		modeFieldName = travelModeString(i)
+		for arc in arcs
+			class = arc.fields["osm_class"]
+			arc.fields[modeFieldName] = arc.fields["osm_weight"] * classInvSpeeds[i][class]
 		end
 	end
-	
-	return nodes, arcs, travelTimes # travelTimes has days as units
 end
 
-# example use of convertOsmNetwork function
-function convertOsmNetworkExample(osmFilename::String)
+function convertOsmNetworkExample!(nodes::Vector{Node}, arcs::Vector{Arc})
 	# the 'levels' of highways that will be kept, see ROAD_CLASSES in OSM for more details
 	# e.g., levels = Set(1:5) are motorway to tertiary, including links
 	# levels = Set(1:6) # roads 1:6 are motorway to residential and unclassified, including links
 	levels = Set(1:6)
 	
-	# speed of each class of highway, in km/hr
-	classSpeeds = Dict(
-		1 => 105,
-		2 => 105,
-		3 => 85,
-		4 => 65,
-		5 => 55,
-		6 => 55
-	)
-	# classSpeeds = OSM.SPEED_ROADS_RURAL # km/hr
-	# classSpeeds = OSM.SPEED_ROADS_URBAN # km/hr
+	# arc speed (km/hr) for each travel mode and each arc class
+	v = [
+		[110, 110, 60, 60, 60, 60, 60, 60], # travel mode 1, classes 1:8
+		[ 90, 90, 45, 45, 45, 45, 45, 45] # travl mode 2, classes 1:8
+	]
+	classSpeeds = [Dict([j => Float(v[i][j]) for j = 1:length(v[i])]) for i = 1:length(v)]
 	
 	# whether nodes along road can be used to get on-road and off-road
 	# where set to true, will set both ends of arc to be accessible
@@ -284,12 +180,21 @@ function convertOsmNetworkExample(osmFilename::String)
 		6 => true, # residential + link
 	)
 	
-	(nodes, arcs, travelTimes) = convertOsmNetwork(osmFilename;
-		levels = levels, classSpeeds = classSpeeds, classOffRoadAccess = classOffRoadAccess)
+	convertOsmNetwork!(nodes, arcs; levels=levels, classSpeeds=classSpeeds, classOffRoadAccess=classOffRoadAccess)
+end
+
+function convertOsmNetworkFile(osmFilename::String;
+	levels::Union{Set{Int},Void} = nothing, boundsLLA::Union{Geodesy.Bounds{LLA},Void} = nothing, classSpeeds::Vector{Dict{Int,Float}} = [], classOffRoadAccess::Dict{Int,Bool} = Dict{Int,Bool}(), mergeArcsFunction::Function = mergeDuplicateOsmArcs!)
 	
-	# # save arcs and nodes files
-	# writeArcsFile(arcsFilename, arcs, travelTimes, "directed")
-	# writeNodesFile(nodesFilename, nodes)
-	
-	return nodes, arcs, travelTimes
+	(nodes, arcs) = readOsmNetworkFile(osmFilename; levels = levels, boundsLLA = boundsLLA)
+	convertOsmNetwork!(nodes, arcs; levels = levels, classSpeeds = classSpeeds, classOffRoadAccess = classOffRoadAccess, mergeArcsFunction = mergeArcsFunction)
+	return nodes, arcs
+end
+
+# example use of convertOsmNetwork function
+function convertOsmNetworkFileExample(osmFilename::String)
+	levels = Set(1:6) # roads 1:6 are motorway to residential and unclassified, including links
+	(nodes, arcs) = readOsmNetworkFile(osmFilename; levels = levels)
+	convertOsmNetworkExample!(nodes, arcs)
+	return nodes, arcs
 end
