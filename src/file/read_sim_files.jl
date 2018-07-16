@@ -21,7 +21,8 @@ function readAmbsFile(filename::String)
 	return ambulances
 end
 
-function readArcsFile(filename::String)
+function readArcsFile(filename::String;
+	keepAllFields::Bool = false)
 	tables = readTablesFromFile(filename)
 	
 	# get arcForm, numModes
@@ -56,13 +57,15 @@ function readArcsFile(filename::String)
 	c = table.columns # shorthand
 	(indexCol = c["index"]); (fromNodeCol = c["fromNode"]); (toNodeCol = c["toNode"]) # shorthand, to avoid repeated dict lookups
 	modeCols = [c[string("mode_", i)] for i = 1:numModes] # shorthand
-	data = table.data # shorthand
+	fieldNames = setdiff(table.header, keepAllFields ? [] : ["index", "fromNode", "toNode", [string("mode_", i) for i = 1:numModes]...])
+	rowsFields = tableRowsFieldDicts(table, fieldNames)
 	# get arc data from table
 	for i = 1:numArcs
 		arcs[i] = Arc()
 		arcs[i].index = indexCol[i]
 		arcs[i].fromNodeIndex = fromNodeCol[i]
 		arcs[i].toNodeIndex = toNodeCol[i]
+		arcs[i].fields = rowsFields[i]
 		# read travel times
 		for j = 1:numModes
 			travelTimes[j,i] = modeCols[j][i]
@@ -79,6 +82,7 @@ function readArcsFile(filename::String)
 			arcs[j].index = j
 			arcs[j].fromNodeIndex = arcs[i].toNodeIndex
 			arcs[j].toNodeIndex = arcs[i].fromNodeIndex
+			arcs[j].fields = deepcopy(arcs[i].fields)
 		end
 		# copy travel times
 		travelTimes[:, (1:numArcs) + numArcs] = travelTimes[:, 1:numArcs]
@@ -289,9 +293,10 @@ function readNodesFile(filename::String)
 	c = table.columns # shorthand
 	(indexCol = c["index"]); (xCol = c["x"]); (yCol = c["y"]) # shorthand, to avoid repeated dict lookups
 	accessCol = (haskey(c, "offRoadAccess") ? convert(Vector{Bool}, c["offRoadAccess"]) : fill(true, n))
+	fieldNames = setdiff(table.header, ["index", "x", "y", "offRoadAccess"])
+	rowsFields = tableRowsFieldDicts(table, fieldNames)
 	
 	# create nodes from data in table
-	data = table.data # shorthand
 	nodes = Vector{Node}(n)
 	for i = 1:n
 		nodes[i] = Node()
@@ -299,6 +304,7 @@ function readNodesFile(filename::String)
 		nodes[i].location.x = xCol[i]
 		nodes[i].location.y = yCol[i]
 		nodes[i].offRoadAccess = accessCol[i]
+		nodes[i].fields = rowsFields[i]
 		
 		assert(nodes[i].index == i)
 	end

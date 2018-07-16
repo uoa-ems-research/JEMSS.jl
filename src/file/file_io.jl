@@ -1,6 +1,6 @@
 # misc file input/output functions
 
-Base.transpose(s::String) = s # not sure where else to put this
+Base.transpose(s::T) where T <: AbstractString = s # not sure where else to put this
 
 function readDlmFileNextLine!(file::IOStream; delim::Char = delimiter)
 	try
@@ -179,6 +179,23 @@ function readTablesFromData(data::Array{Any,2})
 	end
 	
 	return tables
+end
+
+# given a table and names of fields from table header to use,
+# return a vector of dicts for each row, with each dict mapping from
+# a field name to the value for that row and field
+function tableRowsFieldDicts(table::Table, fieldNames::Vector{T}) where T
+	fieldNames = convert(Vector{String}, fieldNames)
+	fieldsDict = Dict{String,Any}([f => nothing for f in fieldNames])
+	numRows = size(table.data, 1)
+	rowsFieldDicts = [deepcopy(fieldsDict) for i = 1:numRows] # rowsFieldDicts[i] = dict with fieldName => table.data[i,table.headerDict[fieldName]] for fieldName in fieldNames
+	for fieldName in fieldNames
+		j = table.headerDict[fieldName]
+		for i = 1:numRows
+			rowsFieldDicts[i][fieldName] = table.data[i,j]
+		end
+	end
+	return rowsFieldDicts
 end
 
 # crc checksum

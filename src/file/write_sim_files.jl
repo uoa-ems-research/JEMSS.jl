@@ -6,12 +6,14 @@ function writeAmbsFile(filename::String, ambulances::Vector{Ambulance})
 	writeTablesToFile(filename, table)
 end
 
-function writeArcsFile(filename::String, arcs::Vector{Arc}, travelTimes::Array{Float}, arcForm::String)
+function writeArcsFile(filename::String, arcs::Vector{Arc}, travelTimes::Array{Float,2}, arcForm::String)
 	assert(arcForm == "directed" || arcForm == "undirected")
-	numModes = size(travelTimes,2)
+	numModes = size(travelTimes,1)
 	miscTable = Table("miscData", ["arcForm", "numModes"]; rows = [[arcForm, numModes]])
-	arcsTable = Table("arcs", vcat("index", "fromNode", "toNode", ["mode_$i" for i = 1:numModes]);
-		rows = [vcat(a.index, a.fromNodeIndex, a.toNodeIndex, travelTimes[a.index,:]...) for a in arcs])
+	mainHeaders = ["index", "fromNode", "toNode", ["mode_$i" for i = 1:numModes]...]
+	fieldNames = setdiff(collect(keys(arcs[1].fields)), mainHeaders) # assume fields are same for all arcs
+	arcsTable = Table("arcs", [mainHeaders..., fieldNames...];
+		rows = [vcat(a.index, a.fromNodeIndex, a.toNodeIndex, travelTimes[:,a.index]..., [a.fields[f] for f in fieldNames]...) for a in arcs])
 	writeTablesToFile(filename, [miscTable, arcsTable])
 end
 
@@ -35,8 +37,10 @@ function writeMapFile(filename::String, map::Map)
 end
 
 function writeNodesFile(filename::String, nodes::Vector{Node})
-	table = Table("nodes", ["index", "x", "y", "offRoadAccess"];
-		rows = [[n.index, n.location.x, n.location.y, Int(n.offRoadAccess)] for n in nodes])
+	mainHeaders = ["index", "x", "y", "offRoadAccess"]
+	fieldNames = setdiff(collect(keys(nodes[1].fields)), mainHeaders) # assume fields are same for all nodes
+	table = Table("nodes", [mainHeaders..., fieldNames...];
+		rows = [[n.index, n.location.x, n.location.y, Int(n.offRoadAccess), [n.fields[f] for f in fieldNames]...] for n in nodes])
 	writeTablesToFile(filename, table)
 end
 
