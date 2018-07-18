@@ -75,7 +75,7 @@ export
 	EventForm, nullEvent, ambGoesToSleep, ambWakesUp, callArrives, considerDispatch, ambDispatched, ambReachesCall, ambGoesToHospital, ambReachesHospital, ambBecomesIdle, ambReachesStation, ambRedirected, considerMoveUp, ambMoveUp,
 	AmbStatus, ambNullStatus, ambSleeping, ambIdleAtStation, ambGoingToCall, ambAtCall, ambGoingToHospital, ambAtHospital, ambGoingToStation, ambMovingUp,
 	CallStatus, callNullStatus, callScreening, callQueued, callWaitingForAmb, callOnSceneCare, callGoingToHospital, callAtHospital, callProcessed,
-	MoveUpModule, nullMoveUpModule, compTableModule, dmexclpModule, priorityListModule, zhangIpModule, temp1Module, temp2Module
+	MoveUpModule, nullMoveUpModule, compTableModule, dmexclpModule, priorityListModule, zhangIpModule, temp0Module, temp1Module, temp2Module
 
 include("defs.jl")
 
@@ -104,6 +104,7 @@ include("decision/move_up/comp_table.jl")
 include("decision/move_up/dmexclp.jl")
 include("decision/move_up/move_up_common.jl")
 include("decision/move_up/priority_list.jl")
+include("decision/move_up/temp0.jl")
 include("decision/move_up/temp1.jl")
 include("decision/move_up/temp2.jl")
 include("decision/move_up/zhang_ip.jl")
