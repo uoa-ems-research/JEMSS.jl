@@ -1,7 +1,7 @@
 # return true if ambulance is available for dispatch
 function isAmbAvailableForDispatch(ambulance::Ambulance, calls::Vector{Call}, call::Call)
 	status = ambulance.status
-	if status == ambIdleAtStation || status == ambGoingToStation # || status == ambMovingUp
+	if status == ambIdleAtStation || status == ambGoingToStation
 		return true
 	elseif status == ambGoingToCall && calls[ambulance.callIndex].priority != highPriority && call.priority == highPriority
 		return true

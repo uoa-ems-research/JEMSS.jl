@@ -2,7 +2,7 @@
 
 function isAmbAvailableForMoveUp(ambulance::Ambulance)
 	status = ambulance.status
-	if status == ambIdleAtStation || status == ambGoingToStation # || status == ambMovingUp
+	if status == ambIdleAtStation || status == ambGoingToStation
 		return true
 	end
 	return false
