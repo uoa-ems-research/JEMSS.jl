@@ -40,7 +40,7 @@ export
 
 # move up initialisation functions
 export
-	initCompTable!, initDmexclp!, initPriorityList!, initTemp1!, initTemp2, initZhangIp!
+	initCompTable!, initDmexclp!, initPriorityList!, initZhangIp!, initTemp0!, initTemp1!, initTemp2!
 
 # misc functions
 export
@@ -58,7 +58,7 @@ export
 	Location, Node, Arc, Graph, NetTravel, Network, TravelMode, Travel, Route,
 	Event, Ambulance, Call, Hospital, Station,
 	Map, GridSearchRect, GridRect, Grid, Raster, RasterSampler,
-	CompTableData, DmexclpData, PriorityListData, ZhangIpData, Temp1Data, Temp2Data, MoveUpData,
+	CompTableData, DmexclpData, PriorityListData, ZhangIpData, Temp0Data, Temp1Data, Temp2Data, MoveUpData,
 	File, Table, Resimulation, Simulation,
 	DistrRng
 

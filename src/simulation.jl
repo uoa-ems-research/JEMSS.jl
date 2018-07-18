@@ -389,6 +389,8 @@ function simulateEvent!(sim::Simulation, event::Event)
 				(movableAmbs, ambStations) = priorityListMoveUp(sim, ambulance)
 			elseif mud.moveUpModule == zhangIpModule
 				(movableAmbs, ambStations) = zhangIpMoveUp(sim)
+			elseif mud.moveUpModule == temp0Module
+				(movableAmbs, ambStations) = temp0MoveUp(sim)
 			elseif mud.moveUpModule == temp1Module
 				(movableAmbs, ambStations) = temp1MoveUp(sim)
 			elseif mud.moveUpModule == temp2Module

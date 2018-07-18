@@ -1,38 +1,31 @@
-# integer program by Oddo Zhang, for move-up
-
-# todo: should allow move up of soon to be idle ambulances, as done by Zhang
+# temp0 move up
 
 # initialise data relevant to move up
-function initZhangIp!(sim::Simulation;
+function initTemp0!(sim::Simulation;
 	busyFraction::Float = 0.5, travelTimeCost::Float = 10.0, maxIdleAmbTravelTime::Float = 1.0, maxNumNearestStations::Int = 99)
-	
-	error("Zhang's IP not yet implemented.")
-	
 	# shorthand names:
-	zid = sim.moveUpData.zhangIpData
+	tmp = sim.moveUpData.temp0Data
 	numAmbs = length(sim.ambulances)
 	
 	# parameters:
-	zid.busyFraction = busyFraction
-	zid.travelTimeCost = travelTimeCost
-	zid.maxIdleAmbTravelTime = maxIdleAmbTravelTime # (days)
-	zid.maxNumNearestStations = maxNumNearestStations
+	tmp.busyFraction = busyFraction
+	tmp.travelTimeCost = travelTimeCost
+	tmp.maxIdleAmbTravelTime = maxIdleAmbTravelTime # (days)
+	tmp.maxNumNearestStations = maxNumNearestStations
 	
-	zid.marginalBenefit  = (busyFraction.^[0:numAmbs-1;])*(1-busyFraction)
+	tmp.marginalBenefit  = (busyFraction.^[0:numAmbs-1;])*(1-busyFraction)
 end
 
 # determine move ups to make at current time
 # returns list of ambulances to be moved, and list of their destinations (stations)
-function zhangIpMoveUp(sim::Simulation)
-	
-	error("Zhang's IP not yet implemented.")
-	
+function temp0MoveUp(sim::Simulation)
+
 	# shorthand names:
-	zid = sim.moveUpData.zhangIpData
-	travelTimeCost = zid.travelTimeCost
-	maxIdleAmbTravelTime = zid.maxIdleAmbTravelTime
-	maxNumNearestStations = zid.maxNumNearestStations
-	marginalBenefit = zid.marginalBenefit
+	tmp = sim.moveUpData.temp0Data
+	travelTimeCost = tmp.travelTimeCost
+	maxIdleAmbTravelTime = tmp.maxIdleAmbTravelTime
+	maxNumNearestStations = tmp.maxNumNearestStations
+	marginalBenefit = tmp.marginalBenefit
 	ambulances = sim.ambulances
 	stations = sim.stations
 	

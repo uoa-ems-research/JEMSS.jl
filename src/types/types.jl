@@ -495,6 +495,19 @@ type ZhangIpData <: MoveUpDataType
 		[])
 end
 
+type Temp0Data <: MoveUpDataType
+	# parameters:
+	busyFraction::Float # ambulance busy fraction - should remove this, make marginalBenefit a parameter
+	travelTimeCost::Float # travel time cost multiplier
+	maxIdleAmbTravelTime::Float # max travel time for idle ambulances. 0.021 (days) is about 30 minutes
+	maxNumNearestStations::Int # number of nearest stations to consider for each ambulance (may include ambulance's station)
+	
+	marginalBenefit::Vector{Float} # marginalBenefit[i] = benefit of adding an ith ambulance to a station
+	
+	Temp0Data() = new(0.0, 0.0, Inf, 0,
+		[])
+end
+
 type Temp1Data <: MoveUpDataType
 	# parameters:
 	benefit::Array{Vector{Float},2} # benefit[i1,i2][k] = benefit from having k ambulances collectively at stations i1 and i2
@@ -535,11 +548,12 @@ type MoveUpData
 	dmexclpData::DmexclpData
 	priorityListData::PriorityListData
 	zhangIpData::ZhangIpData
+	temp0Data::Temp0Data
 	temp1Data::Temp1Data
 	temp2Data::Temp2Data
 	
 	MoveUpData() = new(false, nullMoveUpModule,
-		CompTableData(), DmexclpData(), PriorityListData(), ZhangIpData(), Temp1Data(), Temp2Data())
+		CompTableData(), DmexclpData(), PriorityListData(), ZhangIpData(), Temp0Data(), Temp1Data(), Temp2Data())
 end
 
 type File
