@@ -481,3 +481,36 @@ function readDeploymentPoliciesFile(filename::String)
 	
 	return depols, numStations
 end
+
+function readZhangIpParamsFile(filename::String)
+	tables = readTablesFromFile(filename)
+	
+	zid = ZhangIpData()
+	
+	table = tables["miscParams"]
+	assert(size(table.data,1) == 1) # table should have one data row
+	for fname in [:travelTimeCost, :onRoadMoveUpDiscountFactor, :regretTravelTimeThreshold, :expectedHospitalTransferDuration]
+		# setfield!(zid, fname, table.columns[string(fname)][1])
+		setfield!(zid, fname, convert(fieldtype(typeof(zid), fname), table.columns[string(fname)][1]))
+	end
+	
+	table = tables["stationCapacities"]
+	n = numStations = size(table.data, 1) # number of stations
+	for i = 1:n
+		assert(table.columns["stationIndex"][i] == i)
+		push!(zid.stationCapacities, table.columns["capacity"][i])
+	end
+	
+	table = tables["stationMarginalBenefits"]
+	n = size(table.data, 1) # number of stations
+	assert(n == numStations)
+	for i = 1:n
+		assert(table.columns["stationIndex"][i] == i)
+		push!(zid.marginalBenefits, [])
+		for j = 1:zid.stationCapacities[i]
+			push!(zid.marginalBenefits[i], table.columns["slot_$j"][i])
+		end
+	end
+	
+	return zid
+end

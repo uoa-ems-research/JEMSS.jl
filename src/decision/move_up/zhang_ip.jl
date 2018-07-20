@@ -1,157 +1,174 @@
-# integer program by Oddo Zhang, for move-up
-
-# todo: should allow move up of soon to be idle ambulances, as done by Zhang
+# integer program formulation by Oddo Zhang, for move-up
 
 # initialise data relevant to move up
 function initZhangIp!(sim::Simulation;
-	busyFraction::Float = 0.5, travelTimeCost::Float = 10.0, maxIdleAmbTravelTime::Float = 1.0, maxNumNearestStations::Int = 99)
+	paramsFilename::String = "")
 	
-	error("Zhang's IP not yet implemented.")
+	# read parameters from file
+	zid = sim.moveUpData.zhangIpData = readZhangIpParamsFile(paramsFilename)
 	
-	# shorthand names:
-	zid = sim.moveUpData.zhangIpData
-	numAmbs = length(sim.ambulances)
+	# check number of stations
+	numStations = length(sim.stations)
+	assert(length(zid.marginalBenefits) == numStations)
+	assert(length(zid.stationCapacities) == numStations)
 	
-	# parameters:
-	zid.busyFraction = busyFraction
-	zid.travelTimeCost = travelTimeCost
-	zid.maxIdleAmbTravelTime = maxIdleAmbTravelTime # (days)
-	zid.maxNumNearestStations = maxNumNearestStations
+	# check station capacities
+	for i = 1:numStations
+		assert(zid.stationCapacities[i] <= sim.stations[i].capacity)
+	end
 	
-	zid.marginalBenefit  = (busyFraction.^[0:numAmbs-1;])*(1-busyFraction)
+	for i = 1:numStations
+		for j = 1:zid.stationCapacities[i]
+			push!(zid.stationSlots, i)
+			push!(zid.benefitSlots, zid.marginalBenefits[i][j])
+		end
+	end
+	
+	zid.marginalBenefitsDecreasing = all(i -> issorted(zid.marginalBenefits[i], lt=<=, rev=true), 1:numStations)
+	if !zid.marginalBenefitsDecreasing
+		p1 = vcat([find(zid.stationSlots .== j)[1:end-1] for j = 1:numStations]...)
+		p2 = vcat([find(zid.stationSlots .== j)[2:end] for j = 1:numStations]...)
+		zid.stationSlotsOrderPairs = hcat(p1, p2)
+	end
+	
+	assert(sim.travel.numSets == 1) # otherwise, need to be careful in calculating the regret travel time for move up of on-road ambulances
 end
 
 # determine move ups to make at current time
 # returns list of ambulances to be moved, and list of their destinations (stations)
 function zhangIpMoveUp(sim::Simulation)
 	
-	error("Zhang's IP not yet implemented.")
-	
 	# shorthand names:
 	zid = sim.moveUpData.zhangIpData
-	travelTimeCost = zid.travelTimeCost
-	maxIdleAmbTravelTime = zid.maxIdleAmbTravelTime
-	maxNumNearestStations = zid.maxNumNearestStations
-	marginalBenefit = zid.marginalBenefit
+	stationSlots = zid.stationSlots
+	benefitSlots = zid.benefitSlots
 	ambulances = sim.ambulances
 	stations = sim.stations
-	
-	numAmbs = length(ambulances)
 	numStations = length(stations)
-
-	# get movable ambulances (movableAmbs)
-	ambMovable = Vector{Bool}(numAmbs) # ambMovable[i] = true if ambulances[i] can move-up
-	for i = 1:numAmbs
-		ambMovable[i] = isAmbAvailableForMoveUp(ambulances[i])
+	
+	# get currently movable ambulances, and at-hospital ambulances
+	movableAmbs = filter(a -> isAmbAvailableForMoveUp(a), ambulances)
+	atHospitalAmbs = filter(a -> a.status == ambAtHospital, ambulances)
+	assert(intersect(movableAmbs, atHospitalAmbs) == [])
+	
+	# let "move-up ambulances" be the ambulances that can be moved now, and those that can be moved later (currently at-hospital)
+	moveUpAmbs = vcat(movableAmbs, atHospitalAmbs)
+	numMoveUpAmbs = length(moveUpAmbs)
+	
+	# calculate travel time for each move-up ambulance to reach every station
+	ambToStationTimes = Array{Float,2}(numMoveUpAmbs, numStations)
+	for i = 1:numMoveUpAmbs
+		ambToStationTimes[i,:] = ambMoveUpTravelTimes!(sim, moveUpAmbs[i])
 	end
-	movableAmbs = ambulances[ambMovable]
-	numMovableAmbs = length(movableAmbs)
-
-	# calculate travel time for each available ambulance to reach every station
-	ambToStationTimes = Array{Float,2}(numMovableAmbs, numStations)
-	for i = 1:numMovableAmbs
-		ambToStationTimes[i,:] = ambMoveUpTravelTimes!(sim, movableAmbs[i])
-	end
-	# edit travel times so that an ambulance travelling to its own station has no travel time
-	for i = 1:numMovableAmbs
-		j = movableAmbs[i].stationIndex
-		ambToStationTimes[i,j] = 0.0
-	end
-
-	# restrict which stations each ambulance can be moved to
-	# ambMovableToStation[i,j] = true if movableAmbs[i] can be moved to stations[j]; false otherwise
-	ambMovableToStation = Array{Bool,2}(numMovableAmbs, numStations)
-	ambMovableToStation[:,:] = true
-
-	# limit ambulance move-up to nearest stations
-	numNearestStations = min(maxNumNearestStations, numStations)
-	sortedTimes = sort(ambToStationTimes, 2) # sortedTimes[i,:] gives travel times for ith movable ambulance to all other stations, sorted
-	ambMovableToStation = (ambMovableToStation .* (ambToStationTimes .<= sortedTimes[:, numNearestStations]))
-
-	# for ambulances idle at station, limit travel time
-	for i = 1:numMovableAmbs
-		ambulance = movableAmbs[i]
-		if ambulance.status == ambIdleAtStation
-			ambMovableToStation[i,:] = (ambMovableToStation[i,:] .* (ambToStationTimes[i,:] .<= maxIdleAmbTravelTime))
+	
+	# calculate adjustedAmbToStationTimes from ambToStationTimes, according to Zhang's thesis
+	# for at-station or newly-freed ambulances: adjusted time = original time
+	# for on-road ambulances: adjusted time = original time * ( time spent on route + time to drive to station - time from route origin to station <= regret-travel-time threshold ? discount factor : 1 )
+	# for at-hospital ambulances: adjusted time = original time + expected remaining transfer duration
+	adjustedAmbToStationTimes = deepcopy(ambToStationTimes)
+	ambIsNewlyIdle(a::Ambulance) = (a.status == ambGoingToStation && a.route.startTime == sim.time)
+	travelMode = getTravelMode!(sim.travel, lowPriority, sim.time)
+	for i = 1:numMoveUpAmbs
+		ambulance = moveUpAmbs[i]
+		if ambulance.status == ambIdleAtStation || ambIsNewlyIdle(ambulance)
+			# no change, adjustedAmbToStationTimes[i,:] = ambToStationTimes[i,:]
+		elseif ambulance.status == ambGoingToStation
+			for j = 1:numStations
+				# calculate "regret" travel time
+				if ambulance.stationIndex == j
+					regretTravelTime = 0.0
+				else
+					# get travel time from ambulance.route.startLoc to station j
+					time1 = ambulance.route.startFNodeTime - ambulance.route.startTime
+					(travelTime, rNodes) = shortestPathTravelTime(sim.net, travelMode.index, ambulance.route.startFNode, stations[j].nearestNodeIndex)
+					time2 = offRoadTravelTime(travelMode, stations[j].nearestNodeDist)
+					tob = time1 + travelTime + time2 # on and off road travel times
+					
+					tox = sim.time - ambulance.route.startTime # time spent on current route
+					txb = ambToStationTimes[i,j]
+					regretTravelTime = tox + txb - tob
+				end
+				
+				# apply discount if regret travel time is within threshold
+				if regretTravelTime <= zid.regretTravelTimeThreshold
+					adjustedAmbToStationTimes[i,j] *= zid.onRoadMoveUpDiscountFactor
+				end
+			end
+		elseif ambulance.status == ambAtHospital
+			adjustedAmbToStationTimes[i,:] += zid.expectedHospitalTransferDuration
+		else
+			error()
 		end
 	end
-
-	# useful lists for IP
-	(ambList, stationList) = findn(ambMovableToStation)
-	# ambList and stationList together have all the information of ambMovableToStation:
-	# - movableAmbs[i] can move to stations stationList[ambList .== i]
-	# - stations[j] can have any of the ambulances in ambList[stationList .== j]
-	m = length(ambList) # number of variables needed for assignment of ambulances to stations
-	travelCostList = Vector{Float}(m)
-	for k = 1:m
-		travelCostList[k] = ambToStationTimes[ambList[k], stationList[k]] * travelTimeCost
-	end
-
-	# counting number of ambulances at each station
-	stationSlots = Vector{Int}(0)
-	benefitSlots = Vector{Float}(0)
-	for j = 1:numStations
-		numSlots = min(stations[j].capacity, sum(stationList .== j))
-		for i = 1:numSlots
-			push!(stationSlots, j)
-			push!(benefitSlots, marginalBenefit[i])
-		end
-	end
-
+	
+	travelCosts = adjustedAmbToStationTimes * zid.travelTimeCost
+	
 	######################
 	# IP
-
+	
 	# shorthand variable names:
-	a = numMovableAmbs
+	a = numMoveUpAmbs
+	ai = findin(moveUpAmbs, movableAmbs) # indices of movableAmbs in moveUpAmbs
+	aj = findin(moveUpAmbs, atHospitalAmbs) # indices of atHospitalAmbs in moveUpAmbs
 	s = numStations
-	m = length(stationList)
-	n = length(stationSlots) # <= m
-
+	n = length(stationSlots) # = length(benefitSlots)
+	
 	# using JuMP
 	model = Model()
 	
 	setsolver(model, GLPKSolverMIP(presolve=true))
 	
 	@variables(model, begin
-		(x[k=1:m], Bin) # x[k] = 1 if ambulance: ambList[k] should be moved to station: stationList[k]
-		(0 <= y[l=1:n] <= 1) # y should be naturally binary; sum(y[stationSlots .== k]) = number of ambulances assigned to stations[k]
+		(x[i=1:a,j=1:s], Bin) # x[i,j] = 1 if ambulance moveUpAmbs[i] should be moved to station j
+		(y[k=1:n]) # sum(y[stationSlots .== j]) = number of ambulances assigned to station j
 	end)
-
+	if zid.marginalBenefitsDecreasing
+		# y should be naturally binary
+		for k = 1:n setlowerbound(y[k], 0); setupperbound(y[k], 1) end
+	else
+		for k = 1:n setcategory(y[k], :Bin) end
+	end
+	
 	@constraints(model, begin
-		(ambAtOneLocation[i=1:a], sum(x[k] for k=find(ambList .== i)) == 1) # each ambulance must be assigned to one station
-		(stationAmbCounts[j=1:s], sum(x[k] for k=find(stationList .== j)) == sum(y[l] for l=find(stationSlots .== j)))
+		(movableAmbAtOneLocation[i=ai], sum(x[i,:]) == 1) # each movable ambulance must be assigned to one station
+		(atHospitalAmbAtMostOneLocation[i=aj], sum(x[i,:]) <= 1) # each at-hospital ambulance may be assigned to zero or one station
+		(stationAmbCounts[j=1:s], sum(x[:,j]) == sum(y[k] for k=find(stationSlots .== j)))
+		# (stationAmbCounts[j=1:s], sum(x[:,j]) >= sum(y[k] for k=find(stationSlots .== j))) # should have same effect as "==" constraint (instead of ">="), but may be faster?
 	end)
-
+	
+	if !zid.marginalBenefitsDecreasing
+		# need to enforce station slot filling order
+		p = zid.stationSlotsOrderPairs # shorthand
+		@constraint(model, stationSlotsFillingOrder[k=1:size(p,1)], y[p[k,1]] >= y[p[k,2]])
+	end
+	
 	@expressions(model, begin
-		totalAmbTravelCosts, sum(x[k] * travelCostList[k] for k=1:m)
-		totalBenefitAtStations, sum(y[l] * benefitSlots[l] for l=1:n)
+		totalBenefitAtStations, sum(y .* benefitSlots)
+		totalAmbTravelCosts, sum(x .* travelCosts)
 	end)
-
+	
 	@objective(model, :Max, totalBenefitAtStations - totalAmbTravelCosts)
-
+	
 	# # testing: giving back fake results, for testing runtime without solving IP model
 	# if true
 		# return moveUpNull()
 	# end
-
+	
 	solve(model)
-
+	
 	# extract solution
-	sol = convert(Vector{Bool}, round.(getvalue(x)))
-	ambStations = Vector{Station}(numMovableAmbs)
-	for k = 1:m
-		if sol[k] == 1
-			ambStations[ambList[k]] = stations[stationList[k]]
+	sol = convert(Array{Bool,2}, round.(getvalue(x)))
+	ambStations = [stations[findfirst(sol[i,:])] for i = ai] # only consider movableAmbs (ignore atHospitalAmbs)
+	
+	if checkMode
+		assert(all(sum(sol,2) .<= 1)) # each ambulance can be used in move up at most once
+		
+		# check that y values are ordered correctly
+		stationSlotsFilled = convert(Vector{Bool}, round.(getvalue(y)))
+		for j = 1:numStations
+			assert(issorted(stationSlotsFilled[stationSlots .== j], rev=true))
 		end
 	end
 	
-	if checkMode
-		# check that y values are ordered correctly
-		stationSlotsFilled = convert(Vector{Bool}, round.(getvalue(y)))
-		for i = 1:numStations
-			assert(issorted(stationSlotsFilled[stationSlots .== i], rev=true))
-		end
-	end
-
 	return movableAmbs, ambStations
 end

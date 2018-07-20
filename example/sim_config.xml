@@ -51,8 +51,7 @@
 				<filename>priority_list.csv</filename>
 			</priorityList>
 			<zhangIp>
-				<!-- todo -->
-				<travelTimeCost>10.0</travelTimeCost>
+				<paramsFilename></paramsFilename>
 			</zhangIp>
 			<temp0>
 				<busyFraction>0.5</busyFraction>

@@ -306,7 +306,7 @@ function initSimulation(configFilename::String;
 			mud.moveUpModule = zhangIpModule
 			zhangIpElt = findElt(moveUpElt, "zhangIp")
 			initZhangIp!(sim;
-				travelTimeCost = eltContentVal(zhangIpElt, "travelTimeCost"))
+				paramsFilename = eltContent(zhangIpElt, "paramsFilename"))
 			
 		elseif moveUpModuleName == "temp0"
 			mud.moveUpModule = temp0Module
