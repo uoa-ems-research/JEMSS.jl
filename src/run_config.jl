@@ -306,10 +306,16 @@ function initSimulation(configFilename::String;
 			mud.moveUpModule = zhangIpModule
 			zhangIpElt = findElt(moveUpElt, "zhangIp")
 			initZhangIp!(sim;
-				busyFraction = eltContentVal(zhangIpElt, "busyFraction"),
-				travelTimeCost = eltContentVal(zhangIpElt, "travelTimeCost"),
-				maxIdleAmbTravelTime = eltContentVal(zhangIpElt, "maxIdleAmbTravelTime"),
-				maxNumNearestStations = eltContentVal(zhangIpElt, "maxNumNearestStations"))
+				paramsFilename = eltContent(zhangIpElt, "paramsFilename"))
+			
+		elseif moveUpModuleName == "temp0"
+			mud.moveUpModule = temp0Module
+			temp0Elt = findElt(moveUpElt, "temp0")
+			initTemp0!(sim;
+				busyFraction = eltContentVal(temp0Elt, "busyFraction"),
+				travelTimeCost = eltContentVal(temp0Elt, "travelTimeCost"),
+				maxIdleAmbTravelTime = eltContentVal(temp0Elt, "maxIdleAmbTravelTime"),
+				maxNumNearestStations = eltContentVal(temp0Elt, "maxNumNearestStations"))
 			
 		elseif moveUpModuleName == "temp1"
 			mud.moveUpModule = temp1Module

@@ -35,12 +35,12 @@ export
 export
 	readDlmFileNextLine!, readDlmFile, openNewFile, writeDlmLine!, arrayDict, writeTablesToFile!, writeTablesToFile, readTablesFromFile, readTablesFromData, tableRowsFieldDicts, fileChecksum, serializeToFile, deserializeFile, interpolateString, xmlFileRoot, findElt, eltContent, eltContentVal, eltContentInterpVal, childrenNodeNames, selectXmlFile, # file_io
 	runGenConfig, # gen_sim_files
-	readAmbsFile, readArcsFile, readCallsFile, readCompTableFile, readEventsFile, readHospitalsFile, readMapFile, readNodesFile, readPrioritiesFile, readPriorityListFile, readRNetTravelsFile, readStationsFile, readTravelFile, readDeploymentPoliciesFile, # read_sim_files
+	readAmbsFile, readArcsFile, readCallsFile, readCompTableFile, readEventsFile, readHospitalsFile, readMapFile, readNodesFile, readPrioritiesFile, readPriorityListFile, readRNetTravelsFile, readStationsFile, readTravelFile, readDeploymentPoliciesFile, readZhangIpParamsFile, # read_sim_files
 	writeAmbsFile, writeArcsFile, writeCallsFile, writeHospitalsFile, writeMapFile, writeNodesFile, writePrioritiesFile, writeRNetTravelsFile, writeStationsFile, writeTravelFile, openOutputFiles!, closeOutputFiles!, writeEventToFile!, writeStatsFiles!, writeDeploymentPoliciesFile, writeBatchMeanResponseTimesFile # write_sim_files
 
 # move up initialisation functions
 export
-	initCompTable!, initDmexclp!, initPriorityList!, initTemp1!, initTemp2, initZhangIp!
+	initCompTable!, initDmexclp!, initPriorityList!, initZhangIp!, initTemp0!, initTemp1!, initTemp2!
 
 # misc functions
 export
@@ -58,7 +58,7 @@ export
 	Location, Node, Arc, Graph, NetTravel, Network, TravelMode, Travel, Route,
 	Event, Ambulance, Call, Hospital, Station,
 	Map, GridSearchRect, GridRect, Grid, Raster, RasterSampler,
-	CompTableData, DmexclpData, PriorityListData, ZhangIpData, Temp1Data, Temp2Data, MoveUpData,
+	CompTableData, DmexclpData, PriorityListData, ZhangIpData, Temp0Data, Temp1Data, Temp2Data, MoveUpData,
 	File, Table, Resimulation, Simulation,
 	DistrRng
 
@@ -73,9 +73,9 @@ export
 	Priority, nullPriority, highPriority, medPriority, lowPriority, # priorities
 	AmbClass, nullAmbClass, als, bls, # ambulance classes
 	EventForm, nullEvent, ambGoesToSleep, ambWakesUp, callArrives, considerDispatch, ambDispatched, ambReachesCall, ambGoesToHospital, ambReachesHospital, ambBecomesIdle, ambReachesStation, ambRedirected, considerMoveUp, ambMoveUp,
-	AmbStatus, ambNullStatus, ambSleeping, ambIdleAtStation, ambGoingToCall, ambAtCall, ambGoingToHospital, ambAtHospital, ambGoingToStation, ambMovingUp,
+	AmbStatus, ambNullStatus, ambSleeping, ambIdleAtStation, ambGoingToCall, ambAtCall, ambGoingToHospital, ambAtHospital, ambGoingToStation,
 	CallStatus, callNullStatus, callScreening, callQueued, callWaitingForAmb, callOnSceneCare, callGoingToHospital, callAtHospital, callProcessed,
-	MoveUpModule, nullMoveUpModule, compTableModule, dmexclpModule, priorityListModule, zhangIpModule, temp1Module, temp2Module
+	MoveUpModule, nullMoveUpModule, compTableModule, dmexclpModule, priorityListModule, zhangIpModule, temp0Module, temp1Module, temp2Module
 
 include("defs.jl")
 
@@ -104,6 +104,7 @@ include("decision/move_up/comp_table.jl")
 include("decision/move_up/dmexclp.jl")
 include("decision/move_up/move_up_common.jl")
 include("decision/move_up/priority_list.jl")
+include("decision/move_up/temp0.jl")
 include("decision/move_up/temp1.jl")
 include("decision/move_up/temp2.jl")
 include("decision/move_up/zhang_ip.jl")

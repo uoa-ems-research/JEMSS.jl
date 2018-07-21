@@ -35,7 +35,7 @@
 		<dispatch>findNearestFreeAmbToCall!</dispatch>
 		<moveUp>
 			<module>none</module>
-			<!-- module: none / comp_table / dmexclp (not implemented) / priority_list / zhang_ip / temp1 / temp2 -->
+			<!-- module: none / comp_table / dmexclp / priority_list / zhang_ip / temp0 / temp1 / temp2 -->
 			<compTable>
 				<!-- <path>inputPath</path> -->
 				<filename>comp_table.csv</filename>
@@ -44,17 +44,21 @@
 				<coverTime>7/(24*60)</coverTime>
 				<coverTravelPriority>lowPriority</coverTravelPriority>
 				<busyFraction>0.25</busyFraction>
+				<demandRasterFilename>demand.tif</demandRasterFilename>
 			</dmexclp>
 			<priorityList>
 				<!-- <path>inputPath</path> -->
 				<filename>priority_list.csv</filename>
 			</priorityList>
 			<zhangIp>
+				<paramsFilename></paramsFilename>
+			</zhangIp>
+			<temp0>
 				<busyFraction>0.5</busyFraction>
 				<travelTimeCost>10.0</travelTimeCost>
 				<maxIdleAmbTravelTime>0.5/24</maxIdleAmbTravelTime>
 				<maxNumNearestStations>6</maxNumNearestStations>
-			</zhangIp>
+			</temp0>
 			<temp1>
 				<busyFraction>0.5</busyFraction>
 				<travelTimeCost>10.0</travelTimeCost>

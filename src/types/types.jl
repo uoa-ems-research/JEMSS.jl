@@ -484,6 +484,24 @@ end
 
 type ZhangIpData <: MoveUpDataType
 	# parameters:
+	marginalBenefits::Vector{Vector{Float}} # marginalBenefits[i][j] = benefit of adding a jth ambulance to station i
+	stationCapacities::Vector{Int} # stationCapacities[i] is the number of ambulances that station i can hold on completion of move up, should be <= stations[i].capacity
+	travelTimeCost::Float # travel time cost multiplier
+	onRoadMoveUpDiscountFactor::Float # discount of travel cost of move up of ambulance on-road and with "regret" travel time <= regretTravelTimeThreshold
+	regretTravelTimeThreshold::Float
+	expectedHospitalTransferDuration::Float
+	
+	stationSlots::Vector{Int}
+	benefitSlots::Vector{Float}
+	marginalBenefitsDecreasing::Bool # true if benefit of adding ambulance j to a station is < benefit of adding ambulance j-1, for all stations
+	stationSlotsOrderPairs::Array{Int,2} # stationSlotsOrderConstraintPairs[i,1:2] gives two stationSlots indices, first should be filled (with ambulance) before second
+	
+	ZhangIpData() = new([], [], 1.0, 1.0, nullTime, nullTime,
+		[], [], false, Array{Int,2}(0,0))
+end
+
+type Temp0Data <: MoveUpDataType
+	# parameters:
 	busyFraction::Float # ambulance busy fraction - should remove this, make marginalBenefit a parameter
 	travelTimeCost::Float # travel time cost multiplier
 	maxIdleAmbTravelTime::Float # max travel time for idle ambulances. 0.021 (days) is about 30 minutes
@@ -491,7 +509,7 @@ type ZhangIpData <: MoveUpDataType
 	
 	marginalBenefit::Vector{Float} # marginalBenefit[i] = benefit of adding an ith ambulance to a station
 	
-	ZhangIpData() = new(0.0, 0.0, Inf, 0,
+	Temp0Data() = new(0.0, 0.0, Inf, 0,
 		[])
 end
 
@@ -535,11 +553,12 @@ type MoveUpData
 	dmexclpData::DmexclpData
 	priorityListData::PriorityListData
 	zhangIpData::ZhangIpData
+	temp0Data::Temp0Data
 	temp1Data::Temp1Data
 	temp2Data::Temp2Data
 	
 	MoveUpData() = new(false, nullMoveUpModule,
-		CompTableData(), DmexclpData(), PriorityListData(), ZhangIpData(), Temp1Data(), Temp2Data())
+		CompTableData(), DmexclpData(), PriorityListData(), ZhangIpData(), Temp0Data(), Temp1Data(), Temp2Data())
 end
 
 type File
