@@ -29,8 +29,8 @@
 	},
 	"hospital": {
 		"options": {
-			"iconSize":[23,23],
-			"iconAnchor":[10,14],
+			"iconSize":[25,25],
+			"iconAnchor":[11,16],
 			"popupAnchor":[0,0]
 		}
 	},
