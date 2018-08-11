@@ -1,44 +1,44 @@
 {
 	"ambulance": {
 		"options": {
-			"iconSize":[17,17],
-			"iconAnchor":[9,8],
-			"popupAnchor":[0,0]
+			"iconSize":[19,15],
+			"iconAnchor":[8,7],
+			"popupAnchor":[2,-4]
 		}
 	},
 	"call_low": {
 		"options": {
-			"iconSize":[9,9],
+			"iconSize":[8,8],
 			"iconAnchor":[5,5],
-			"popupAnchor":[0,0]
+			"popupAnchor":[-1,-2]
 		}
 	},
 	"call_med": {
 		"options": {
-			"iconSize":[9,9],
+			"iconSize":[8,8],
 			"iconAnchor":[5,5],
-			"popupAnchor":[0,0]
+			"popupAnchor":[-1,-2]
 		}
 	},
 	"call_high": {
 		"options": {
-			"iconSize":[9,9],
+			"iconSize":[8,8],
 			"iconAnchor":[5,5],
-			"popupAnchor":[0,0]
+			"popupAnchor":[-1,-2]
 		}
 	},
 	"hospital": {
 		"options": {
-			"iconSize":[23,23],
-			"iconAnchor":[12,13],
-			"popupAnchor":[0,0]
+			"iconSize":[25,25],
+			"iconAnchor":[11,16],
+			"popupAnchor":[2,-13]
 		}
 	},
 	"station": {
 		"options": {
 			"iconSize":[23,23],
-			"iconAnchor":[12,13],
-			"popupAnchor":[0,0]
+			"iconAnchor":[10,14],
+			"popupAnchor":[2,-11]
 		}
 	}
 }
