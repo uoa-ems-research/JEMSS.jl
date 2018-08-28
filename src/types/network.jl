@@ -324,7 +324,7 @@ function createRNetTravelsFromFNetTravels!(net::Network;
 			endRNode = fNodeRNode[fNodesOnRArc[end]]
 			for i = 2:length(fNodesOnRArc)-1
 				fNode = fNodesOnRArc[i]
-				assert(abs(fNodeFromRNodeTime[fNode][startRNode] + fNodeToRNodeTime[fNode][endRNode] - rArcTime) < eps())
+				assert(isapprox(fNodeFromRNodeTime[fNode][startRNode] + fNodeToRNodeTime[fNode][endRNode], rArcTime; rtol = eps(Float)))
 			end
 		end
 		
@@ -456,7 +456,7 @@ function checkRNetTravelShortestPathTimes(net::Network, rNetTravel::NetTravel)
 				t += rNetTravel.arcTimes[rArcIndex]
 				i = j # go to next node
 			end
-			assert(abs(spTimes[startRNode, endRNode] - t) < eps(FloatSpTime))
+			assert(isapprox(spTimes[startRNode, endRNode], t; rtol = eps(FloatSpTime)))
 		end
 	end
 end
@@ -530,7 +530,7 @@ function shortestPathTravelTime(net::Network, travelModeIndex::Int, startFNode::
 			toRNode = net.rGraph.arcs[rArc].toNodeIndex
 			travelTime = fNodeFromRNodeTime[endFNode][fromRNode] - fNodeFromRNodeTime[startFNode][fromRNode]
 			assert(travelTime > 0)
-			assert(abs(travelTime - (fNodeToRNodeTime[startFNode][toRNode] - fNodeToRNodeTime[endFNode][toRNode])) < eps())
+			assert(isapprox(travelTime + fNodeToRNodeTime[endFNode][toRNode], fNodeToRNodeTime[startFNode][toRNode]; rtol = eps(Float)))
 			
 			shortestTravelTime = travelTime # not necessarily shortest travel time, still need to check paths that use rNodes
 			rNodes = [nullIndex, nullIndex]
