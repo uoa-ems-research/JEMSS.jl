@@ -59,8 +59,8 @@ function readJldRasterFile(rasterFilename::String)
 	
 	# check that x and y values have (roughly) constant step sizes
 	for (v, dv) in [(raster.x, raster.dx), (raster.y, raster.dy)]
-		if length(v) > 1
-			assert(maximum(abs(v[1:end-1] - (v[2:end] - dv))) .<= eps() * maximum(abs(v)))
+		for i = 1:length(v)-1
+			assert(isapprox(v[i] + dv, v[i+1]; rtol = eps(Float)))
 		end
 	end
 	

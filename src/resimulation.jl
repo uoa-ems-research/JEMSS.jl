@@ -39,7 +39,7 @@ function initResimulation!(sim::Simulation)
 	resim.events = events
 	resim.eventsChildren = eventsChildren
 	resim.prevEventIndex = 0
-	resim.timeTolerance = 1e-5 / 2 + 10*eps()
+	resim.timeTolerance = 1e-5 / 2
 end
 
 function resimCheckCurrentEvent!(sim::Simulation, event::Event)
@@ -50,7 +50,7 @@ function resimCheckCurrentEvent!(sim::Simulation, event::Event)
 	
 	resimEvent = resim.events[resim.prevEventIndex] # shorthand
 	eventsMatch = true
-	if abs(event.time - resimEvent.time) > resim.timeTolerance
+	if !isapprox(event.time, resimEvent.time; rtol = eps(Float), atol = resim.timeTolerance)
 		println("mismatching event time")
 		eventsMatch = false
 	elseif event.form != resimEvent.form
