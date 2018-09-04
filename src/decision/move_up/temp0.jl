@@ -142,7 +142,7 @@ function temp0MoveUp(sim::Simulation)
 		# check that y values are ordered correctly
 		stationSlotsFilled = convert(Vector{Bool}, round.(getvalue(y)))
 		for i = 1:numStations
-			assert(issorted(stationSlotsFilled[stationSlots .== i], rev=true))
+			@assert(issorted(stationSlotsFilled[stationSlots .== i], rev=true))
 		end
 	end
 

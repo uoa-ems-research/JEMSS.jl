@@ -9,12 +9,12 @@ function initZhangIp!(sim::Simulation;
 	
 	# check number of stations
 	numStations = length(sim.stations)
-	assert(length(zid.marginalBenefits) == numStations)
-	assert(length(zid.stationCapacities) == numStations)
+	@assert(length(zid.marginalBenefits) == numStations)
+	@assert(length(zid.stationCapacities) == numStations)
 	
 	# check station capacities
 	for i = 1:numStations
-		assert(zid.stationCapacities[i] <= sim.stations[i].capacity)
+		@assert(zid.stationCapacities[i] <= sim.stations[i].capacity)
 	end
 	
 	for i = 1:numStations
@@ -31,7 +31,7 @@ function initZhangIp!(sim::Simulation;
 		zid.stationSlotsOrderPairs = hcat(p1, p2)
 	end
 	
-	assert(sim.travel.numSets == 1) # otherwise, need to be careful in calculating the regret travel time for move up of on-road ambulances
+	@assert(sim.travel.numSets == 1) # otherwise, need to be careful in calculating the regret travel time for move up of on-road ambulances
 end
 
 # determine move ups to make at current time
@@ -49,7 +49,7 @@ function zhangIpMoveUp(sim::Simulation)
 	# get currently movable ambulances, and at-hospital ambulances
 	movableAmbs = filter(a -> isAmbAvailableForMoveUp(a), ambulances)
 	atHospitalAmbs = filter(a -> a.status == ambAtHospital, ambulances)
-	assert(intersect(movableAmbs, atHospitalAmbs) == [])
+	@assert(intersect(movableAmbs, atHospitalAmbs) == [])
 	
 	# let "move-up ambulances" be the ambulances that can be moved now, and those that can be moved later (currently at-hospital)
 	moveUpAmbs = vcat(movableAmbs, atHospitalAmbs)
@@ -161,12 +161,12 @@ function zhangIpMoveUp(sim::Simulation)
 	ambStations = [stations[findfirst(sol[i,:])] for i = ai] # only consider movableAmbs (ignore atHospitalAmbs)
 	
 	if checkMode
-		assert(all(sum(sol,2) .<= 1)) # each ambulance can be used in move up at most once
+		@assert(all(sum(sol,2) .<= 1)) # each ambulance can be used in move up at most once
 		
 		# check that y values are ordered correctly
 		stationSlotsFilled = convert(Vector{Bool}, round.(getvalue(y)))
 		for j = 1:numStations
-			assert(issorted(stationSlotsFilled[stationSlots .== j], rev=true))
+			@assert(issorted(stationSlotsFilled[stationSlots .== j], rev=true))
 		end
 	end
 	

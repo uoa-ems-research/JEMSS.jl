@@ -16,7 +16,7 @@ function initTemp1!(sim::Simulation;
 	tmp.maxNumNearestStations = maxNumNearestStations
 	
 	# create station pairs
-	assert(sim.travel.numSets == 1) # otherwise, would need to create station pairs for each travel set
+	@assert(sim.travel.numSets == 1) # otherwise, would need to create station pairs for each travel set
 	travelMode = getTravelMode!(sim.travel, lowPriority, sim.time)
 	stationPairs = createStationPairs(sim, travelMode;
 		maxPairsPerStation = 5, maxPairSeparation = 50/(24*60))
@@ -196,7 +196,7 @@ function temp1MoveUp(sim::Simulation)
 		# check that y values are ordered correctly
 		stationSlotsFilled = convert(Vector{Bool}, round.(getvalue(y)))
 		for i = 1:numStations
-			assert(issorted(stationSlotsFilled[stationSlots .== i], rev=true))
+			@assert(issorted(stationSlotsFilled[stationSlots .== i], rev=true))
 		end
 		
 		# check that z values are ordered correctly
@@ -205,7 +205,7 @@ function temp1MoveUp(sim::Simulation)
 			f(k) = mapmbz[i,j][k] == nullIndex ? 0 : stationPairSlotsFilled[mapmbz[i,j][k]]
 			n = length(marginalBenefit[i,j])
 			for k = 2:n
-				assert(f(k) <= f(k-1))
+				@assert(f(k) <= f(k-1))
 			end
 		end
 	end

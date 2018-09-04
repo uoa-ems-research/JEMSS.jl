@@ -7,7 +7,7 @@ end
 # only reset calls with arrival time <= sim.time
 # faster than sim.calls = deepcopy(sim.backup.calls)
 function resetCalls!(sim::Simulation)
-	assert(!sim.backup.used)
+	@assert(!sim.backup.used)
 	
 	# shorthand:
 	calls = sim.calls
@@ -16,7 +16,7 @@ function resetCalls!(sim::Simulation)
 	nullCall = Call()
 	fnames = Set(fieldnames(nullCall))
 	
-	assert(length(calls) == length(backupCalls))
+	@assert(length(calls) == length(backupCalls))
 	
 	# from fnames, remove fixed parameters
 	fnamesFixed = Set([:index, :priority, :transfer, :location,
@@ -25,7 +25,7 @@ function resetCalls!(sim::Simulation)
 	setdiff!(fnames, fnamesFixed)
 	
 	recentCallIndex = findlast(call -> call.arrivalTime <= sim.time, calls)
-	assert(all(i -> calls[i].status == callNullStatus, recentCallIndex+1:numCalls))
+	@assert(all(i -> calls[i].status == callNullStatus, recentCallIndex+1:numCalls))
 	
 	# reset calls that arrived before (or at) sim.time
 	for fname in fnames

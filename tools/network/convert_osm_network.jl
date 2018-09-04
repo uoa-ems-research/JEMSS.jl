@@ -17,7 +17,7 @@ function readOsmNetworkFile(osmFilename::String;
 	levels::Union{Set{Int},Void} = nothing, boundsLLA::Union{Geodesy.Bounds{LLA},Void} = nothing)
 	
 	# read osm file
-	assert(isfile(osmFilename))
+	@assert(isfile(osmFilename))
 	(nodesLLA, highways, buildings, features) = OSM.getOSMData(osmFilename)
 	
 	if boundsLLA == nothing
@@ -49,7 +49,7 @@ function readOsmNetworkFile(osmFilename::String;
 	network = OSM.createGraph(nodesENU, highways, classes, levels)
 	
 	graph = network.g # graph type: Graphs.GenericIncidenceList
-	assert(graph.is_directed)
+	@assert(graph.is_directed)
 	edges = OSM.getEdges(network)
 	
 	# create nodes from graph.vertices
@@ -75,7 +75,7 @@ function readOsmNetworkFile(osmFilename::String;
 		arcs[i].toNodeIndex = edge.target.index
 		arcs[i].fields["osm_class"] = network.class[edge.index]
 		arcs[i].fields["osm_weight"] = network.w[edge.index] # edge weight = length
-		assert(network.w[edge.index] == distance(nodesENU, edge.source.key, edge.target.key))
+		@assert(network.w[edge.index] == distance(nodesENU, edge.source.key, edge.target.key))
 	end
 	
 	return nodes, arcs
@@ -84,8 +84,8 @@ end
 # merge arc2 into arc1, keeping minimum class (should have higher speed) in arc1
 # arc2 will need to be removed in separate step
 function mergeDuplicateOsmArcs!(arc1::Arc, arc2::Arc; classFieldName::String = "osm_class")
-	assert(arc1.fromNodeIndex == arc2.fromNodeIndex)
-	assert(arc1.toNodeIndex == arc2.toNodeIndex)
+	@assert(arc1.fromNodeIndex == arc2.fromNodeIndex)
+	@assert(arc1.toNodeIndex == arc2.toNodeIndex)
 	arc1.fields[classFieldName] = min(arc1.fields[classFieldName], arc2.fields[classFieldName])
 	# arcs should already have same weight (length)
 end
@@ -116,8 +116,8 @@ function convertOsmNetwork!(nodes::Vector{Node}, arcs::Vector{Arc};
 	
 	# check that input dicts contain all levels
 	for level in levels
-		assert(all(c -> haskey(c, level), classSpeeds))
-		assert(haskey(classOffRoadAccess, level))
+		@assert(all(c -> haskey(c, level), classSpeeds))
+		@assert(haskey(classOffRoadAccess, level))
 	end
 	
 	# convert classSpeeds (km/hr) to classInvSpeeds (days/metre)

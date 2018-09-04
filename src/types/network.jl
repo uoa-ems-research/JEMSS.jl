@@ -2,7 +2,7 @@
 # arcTravelTimes[i,j] gives travel time along arc j (in fGraph) for travel mode i
 function initFNetTravels!(net::Network, arcTravelTimes::Array{Float,2})
 	numModes = size(arcTravelTimes, 1) # shorthand
-	assert(length(net.fGraph.arcs) == size(arcTravelTimes, 2)) # check number of arcs
+	@assert(length(net.fGraph.arcs) == size(arcTravelTimes, 2)) # check number of arcs
 	
 	# create fNetTravels
 	net.fNetTravels = [NetTravel(false) for i = 1:numModes]
@@ -44,7 +44,7 @@ function createRGraphFromFGraph!(net::Network)
 	
 	# check that no node is connected to itself
 	for i = 1:numFNodes
-		assert(!in(i, fNodesIn[i]))
+		@assert(!in(i, fNodesIn[i]))
 	end
 	
 	##############################################################################
@@ -106,11 +106,11 @@ function createRGraphFromFGraph!(net::Network)
 	rNodeFNode = net.rNodeFNode
 	numRNodes = length(rNodes)
 	
-	assert(numRNodes > 0) # may need a different createRGraphFromFGraph!() function if numRNodes == 0
+	@assert(numRNodes > 0) # may need a different createRGraphFromFGraph!() function if numRNodes == 0
 	
 	# check index conversion between fNodes and rNodes
-	assert(all([i == fNodeRNode[rNodeFNode[rNodes[i].index]] for i = 1:numRNodes]))
-	# assert(all([i == fNodeRNode[rNodeFNode[i]] for i = 1:numRNodes]))
+	@assert(all([i == fNodeRNode[rNodeFNode[rNodes[i].index]] for i = 1:numRNodes]))
+	# @assert(all([i == fNodeRNode[rNodeFNode[i]] for i = 1:numRNodes]))
 	
 	##############################################################################
 	
@@ -141,8 +141,8 @@ function createRGraphFromFGraph!(net::Network)
 			end
 			push!(fNodesOnRArc, fNode)
 			rj = fNodeRNode[fNode] # rNode at end of rArc, fNodeRNode[fNode] = nullIndex if fNode[fNode] is not in rGraph
-			assert(rj != nullIndex) # should not happen; earlier we put all leaf nodes in fGraph in rGraph
-			assert(ri != rj) # ri == rj would mean that arc is a loop, should have added enough rNodes to remove this problem earlier
+			@assert(rj != nullIndex) # should not happen; earlier we put all leaf nodes in fGraph in rGraph
+			@assert(ri != rj) # ri == rj would mean that arc is a loop, should have added enough rNodes to remove this problem earlier
 			
 			# add rArc
 			arc = Arc()
@@ -154,7 +154,7 @@ function createRGraphFromFGraph!(net::Network)
 		end
 	end
 	
-	assert(numRArcs > 0)
+	@assert(numRArcs > 0)
 	
 	# calculate rArcFNodeIndex from rArcFNodes
 	net.rArcFNodeIndex = [Dict{Int,Int}() for i = 1:numRArcs]
@@ -175,17 +175,17 @@ function createRGraphFromFGraph!(net::Network)
 	# check that fNodeRArcs is not empty for rNodes, and other nodes have 1-2 entries
 	for fi = 1:numFNodes
 		if isFNodeInRGraph(net, fi)
-			assert(!isempty(fNodeRArcs[fi]))
+			@assert(!isempty(fNodeRArcs[fi]))
 		else
-			assert(length(fNodeRArcs[fi]) >= 1 && length(fNodeRArcs[fi]) <= 2)
+			@assert(length(fNodeRArcs[fi]) >= 1 && length(fNodeRArcs[fi]) <= 2)
 		end
 	end
 	
 	# check that start and end fNodes on each rArc are also in rGraph, and arcs are numbered 1 to n
 	for i = 1:numRArcs
-		assert(isFNodeInRGraph(net, rArcFNodes[i][1]))
-		assert(isFNodeInRGraph(net, rArcFNodes[i][end]))
-		assert(rArcs[i].index == i)
+		@assert(isFNodeInRGraph(net, rArcFNodes[i][1]))
+		@assert(isFNodeInRGraph(net, rArcFNodes[i][end]))
+		@assert(rArcs[i].index == i)
 	end
 	
 	##############################################################################
@@ -204,8 +204,8 @@ function createRGraphFromFGraph!(net::Network)
 	# traverse each rArc
 	for rArc = rArcs
 		fNodesOnRArc = rArcFNodes[rArc.index]
-		assert(isFNodeInRGraph(net, fNodesOnRArc[1]))
-		assert(isFNodeInRGraph(net, fNodesOnRArc[end]))
+		@assert(isFNodeInRGraph(net, fNodesOnRArc[1]))
+		@assert(isFNodeInRGraph(net, fNodesOnRArc[end]))
 		startRNode = fNodeRNode[fNodesOnRArc[1]]
 		endRNode = fNodeRNode[fNodesOnRArc[end]]
 		# for fNodes on arc (excluding rNodes):
@@ -225,8 +225,8 @@ function createRGraphFromFGraph!(net::Network)
 	
 	# check that fNodeFromRNodes and fNodeToRNodes have been filled
 	for i = 1:numFNodes
-		assert(!isempty(fNodeFromRNodes[i]))
-		assert(!isempty(fNodeToRNodes[i]))
+		@assert(!isempty(fNodeFromRNodes[i]))
+		@assert(!isempty(fNodeToRNodes[i]))
 	end
 	
 	##############################################################################
@@ -256,7 +256,7 @@ function createRNetTravelsFromFNetTravels!(net::Network;
 	
 	rNetTravels = net.rNetTravels = [NetTravel(true) for i = 1:numTravelModes]
 	
-	assert(length(fGraph.arcs) == length(fNetTravels[1].arcTimes))
+	@assert(length(fGraph.arcs) == length(fNetTravels[1].arcTimes))
 	
 	for travelModeIndex = 1:numTravelModes
 		# shorthand:
@@ -299,7 +299,7 @@ function createRNetTravelsFromFNetTravels!(net::Network;
 			fNodeToRNodeTime[fNodesOnRArc[end]][endRNode] = 0.0 # time to self is 0
 			
 			# check length of rArcFNodesTimes is same as length of rArcFNodes for current arc
-			assert(length(fNodesOnRArc) == length(rArcFNodesTimes[rArcIndex]))
+			@assert(length(fNodesOnRArc) == length(rArcFNodesTimes[rArcIndex]))
 		end
 		
 		# # for rNodes, set corresponding fNode to have fNodeFromRNodeTime and fNodeToRNodeTime return 0
@@ -312,8 +312,8 @@ function createRNetTravelsFromFNetTravels!(net::Network;
 		# for rNodes, check that corresponding fNode has fNodeFromRNodeTime and fNodeToRNodeTime return 0
 		for ri = 1:numRNodes
 			fi = rNodeFNode[ri]
-			assert(fNodeToRNodeTime[fi][ri] == 0.0)
-			assert(fNodeFromRNodeTime[fi][ri] == 0.0)
+			@assert(fNodeToRNodeTime[fi][ri] == 0.0)
+			@assert(fNodeFromRNodeTime[fi][ri] == 0.0)
 		end
 		
 		# for fNodes along each rArc, fNodeFromRNodeTime and fNodeToRNodeTime should add to rArc time
@@ -324,7 +324,7 @@ function createRNetTravelsFromFNetTravels!(net::Network;
 			endRNode = fNodeRNode[fNodesOnRArc[end]]
 			for i = 2:length(fNodesOnRArc)-1
 				fNode = fNodesOnRArc[i]
-				assert(isapprox(fNodeFromRNodeTime[fNode][startRNode] + fNodeToRNodeTime[fNode][endRNode], rArcTime; rtol = eps(Float)))
+				@assert(isapprox(fNodeFromRNodeTime[fNode][startRNode] + fNodeToRNodeTime[fNode][endRNode], rArcTime; rtol = eps(Float)))
 			end
 		end
 		
@@ -333,7 +333,7 @@ function createRNetTravelsFromFNetTravels!(net::Network;
 			calcRNetTravelShortestPaths!(net, rNetTravel)
 		else
 			rNetTravelLoaded = rNetTravelsLoaded[travelModeIndex]
-			assert(all(rNetTravel.arcTimes .== rNetTravelLoaded.arcTimes))
+			@assert(all(rNetTravel.arcTimes .== rNetTravelLoaded.arcTimes))
 			
 			# set rNetTravel values by rNetTravelLoaded
 			for fname in [:spTimes, :spFadjIndex, :spNodePairArcIndex, :spFadjArcList]
@@ -348,7 +348,7 @@ end
 # Uses repeated Dijkstra's shortest path algorithm,
 # for sparse graphs, this is faster than Floyd-Warshall algorithm
 function calcRNetTravelShortestPaths!(net::Network, rNetTravel::NetTravel)
-	assert(rNetTravel.isReduced)
+	@assert(rNetTravel.isReduced)
 	
 	# shorthand
 	rGraph = net.rGraph
@@ -403,7 +403,7 @@ function calcRNetTravelShortestPaths!(net::Network, rNetTravel::NetTravel)
 		i = rArc.fromNodeIndex
 		j = rArc.toNodeIndex
 		t = FloatSpTime(rArcTimes[rArc.index])
-		assert(spTimes[i,j] <= t)
+		@assert(spTimes[i,j] <= t)
 		if spSuccs[i,j] == j && spTimes[i,j] == t
 			spNodePairArcIndex[i,j] = rArc.index
 			spFadjArcList[i][findfirst(fadjList[i], j)] = rArc.index
@@ -424,7 +424,7 @@ function calcRNetTravelShortestPaths!(net::Network, rNetTravel::NetTravel)
 	
 	# check assumptions:
 	for i = 1:numRNodes, j = [1:i-1;i+1:numRNodes]
-		assert(0 < spTimes[i,j] < Inf)
+		@assert(0 < spTimes[i,j] < Inf)
 	end
 end
 
@@ -437,13 +437,13 @@ function checkRNetTravelShortestPathTimes(net::Network, rNetTravel::NetTravel)
 	spTimes = rNetTravel.spTimes
 	spNodePairArcIndex = rNetTravel.spNodePairArcIndex
 	
-	assert(size(spTimes) == (numRNodes, numRNodes))
+	@assert(size(spTimes) == (numRNodes, numRNodes))
 	
 	# check each pair of start and end nodes
 	for startRNode = 1:numRNodes, endRNode = 1:numRNodes
 		if startRNode == endRNode
-			assert(spTimes[startRNode, endRNode] == 0.0)
-			assert(spNodePairArcIndex[startRNode, endRNode] == 0)
+			@assert(spTimes[startRNode, endRNode] == 0.0)
+			@assert(spNodePairArcIndex[startRNode, endRNode] == 0)
 		else
 			# follow path from start to end node, calculate and compare travel time
 			i = startRNode
@@ -451,12 +451,12 @@ function checkRNetTravelShortestPathTimes(net::Network, rNetTravel::NetTravel)
 			while i != endRNode
 				j = shortestPathNextRNode(net, travelModeIndex, i, endRNode)
 				rArcIndex = shortestPathNextRArc(net, travelModeIndex, i, endRNode)
-				assert(rArcIndex == rNetTravel.spNodePairArcIndex[i,j])
-				# assert(j == net.rGraph.arcs[rArcIndex].toNodeIndex)
+				@assert(rArcIndex == rNetTravel.spNodePairArcIndex[i,j])
+				# @assert(j == net.rGraph.arcs[rArcIndex].toNodeIndex)
 				t += rNetTravel.arcTimes[rArcIndex]
 				i = j # go to next node
 			end
-			assert(isapprox(spTimes[startRNode, endRNode], t; rtol = eps(FloatSpTime)))
+			@assert(isapprox(spTimes[startRNode, endRNode], t; rtol = eps(FloatSpTime)))
 		end
 	end
 end
@@ -465,7 +465,7 @@ end
 # travelling with the given travel mode,
 # return the index of the successor rNode of startRNode
 function shortestPathNextRNode(net::Network, travelModeIndex::Int, startRNode::Int, endRNode::Int)
-	assert(startRNode != endRNode)
+	@assert(startRNode != endRNode)
 	
 	rNetTravel = net.rNetTravels[travelModeIndex] # shorthand
 	fadjIndex = rNetTravel.spFadjIndex[startRNode, endRNode]
@@ -476,7 +476,7 @@ end
 # travelling with the given travel mode,
 # return the index of the rArc to travel along from startRNode
 function shortestPathNextRArc(net::Network, travelModeIndex::Int, startRNode::Int, endRNode::Int)
-	assert(startRNode != endRNode)
+	@assert(startRNode != endRNode)
 	
 	rNetTravel = net.rNetTravels[travelModeIndex] # shorthand
 	fadjIndex = rNetTravel.spFadjIndex[startRNode, endRNode]
@@ -529,8 +529,8 @@ function shortestPathTravelTime(net::Network, travelModeIndex::Int, startFNode::
 			fromRNode = net.rGraph.arcs[rArc].fromNodeIndex
 			toRNode = net.rGraph.arcs[rArc].toNodeIndex
 			travelTime = fNodeFromRNodeTime[endFNode][fromRNode] - fNodeFromRNodeTime[startFNode][fromRNode]
-			assert(travelTime > 0)
-			assert(isapprox(travelTime + fNodeToRNodeTime[endFNode][toRNode], fNodeToRNodeTime[startFNode][toRNode]; rtol = eps(Float)))
+			@assert(travelTime > 0)
+			@assert(isapprox(travelTime + fNodeToRNodeTime[endFNode][toRNode], fNodeToRNodeTime[startFNode][toRNode]; rtol = eps(Float)))
 			
 			shortestTravelTime = travelTime # not necessarily shortest travel time, still need to check paths that use rNodes
 			rNodes = [nullIndex, nullIndex]
@@ -588,10 +588,10 @@ function shortestPath(net::Network, travelModeIndex::Int, startFNode::Int, endFN
 	endRNode = rNodes[2]
 	
 	if startRNode == nullIndex
-		assert(endRNode == nullIndex)
+		@assert(endRNode == nullIndex)
 		# no nodes from rGraph are used, travel along a single rArc from startFNode to endFNode
 		rArcIndices = fNodeRArcs[startFNode]
-		assert(length(rArcIndices) <= 2)
+		@assert(length(rArcIndices) <= 2)
 		toRNode = rArcs[rArcIndices[1]].toNodeIndex
 		if fNodeToRNodeTime[startFNode][toRNode] - fNodeToRNodeTime[endFNode][toRNode] < 0 # negative travel time
 			toRNode = rArcs[rArcIndices[2]].toNodeIndex
@@ -615,7 +615,7 @@ function shortestPath(net::Network, travelModeIndex::Int, startFNode::Int, endFN
 	
 	# travel using rGraph
 	if startRNode != nullIndex
-		assert(endRNode != nullIndex)
+		@assert(endRNode != nullIndex)
 		currentTime = startTime
 		
 		# find path from startFNode to startRNode
@@ -659,7 +659,7 @@ function shortestPath(net::Network, travelModeIndex::Int, startFNode::Int, endFN
 		fNode = rNodeFNode[endRNode]
 		if fNode != endFNode
 			rArcIndices = fNodeRArcs[endFNode]
-			assert(length(rArcIndices) <= 2) # endFNode should only be on at most two rArcs, as it is not in rGraph
+			@assert(length(rArcIndices) <= 2) # endFNode should only be on at most two rArcs, as it is not in rGraph
 			rArc = nullIndex
 			for rArcIndex in rArcIndices
 				if rArcFNodes[rArcIndex][1] == fNode
@@ -688,8 +688,8 @@ function setCommonFNodes!(net::Network, commonFNodes::Vector{Int})
 	numFNodes = length(net.fGraph.nodes) # shorthand
 	
 	commonFNodes = sort(unique(commonFNodes))
-	assert(length(commonFNodes) >= 1)
-	assert(1 <= commonFNodes[1] && commonFNodes[end] <= numFNodes)
+	@assert(length(commonFNodes) >= 1)
+	@assert(1 <= commonFNodes[1] && commonFNodes[end] <= numFNodes)
 	numCommonFNodes = length(commonFNodes)
 	
 	# add common fNodes to net after calculating shortest path data
@@ -733,8 +733,8 @@ end
 # return nullIndex if no such arc found
 function findRArcFromFNodeToFNode(net::Network, fromFNode::Int, toFNode::Int)
 	
-	assert(fromFNode != toFNode)
-	assert(isFNodeInRGraph(net, fromFNode) + isFNodeInRGraph(net, toFNode) < 2) # otherwise result may not be unique, as multiple rArcs can connect two rNodes
+	@assert(fromFNode != toFNode)
+	@assert(isFNodeInRGraph(net, fromFNode) + isFNodeInRGraph(net, toFNode) < 2) # otherwise result may not be unique, as multiple rArcs can connect two rNodes
 	
 	rArcIndices = intersect(net.fNodeRArcs[fromFNode], net.fNodeRArcs[toFNode])
 	rArc = nullIndex
@@ -745,7 +745,7 @@ function findRArcFromFNodeToFNode(net::Network, fromFNode::Int, toFNode::Int)
 			numRArcsFound += 1
 		end
 	end
-	assert(numRArcsFound <= 1) # result should be unique
+	@assert(numRArcsFound <= 1) # result should be unique
 	
 	return rArc
 end

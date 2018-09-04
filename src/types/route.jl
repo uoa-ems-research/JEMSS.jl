@@ -38,7 +38,7 @@ function changeRoute!(sim::Simulation, route::Route, priority::Priority, startTi
 	route.startRNode = rNodes[1]
 	route.endRNode = rNodes[2]
 	if route.startRNode != nullIndex
-		assert(route.endRNode != nullIndex)
+		@assert(route.endRNode != nullIndex)
 		route.startRNodeTime = startFNodeTime + fNodeToRNodeTime[startFNode][route.startRNode]
 		route.endRNodeTime = route.endFNodeTime - fNodeFromRNodeTime[endFNode][route.endRNode]
 	else
@@ -133,8 +133,8 @@ function getRouteNextNode!(sim::Simulation, route::Route, travelModeIndex::Int, 
 	end
 	
 	if checkMode
-		assert(nextFNode != nullIndex)
-		assert(travelTime >= 0)
+		@assert(nextFNode != nullIndex)
+		@assert(travelTime >= 0)
 	end
 	
 	return nextFNode, travelTime
@@ -144,11 +144,11 @@ end
 function updateRouteToTime!(net::Network, route::Route, time::Float)
 	
 	if time <= route.startFNodeTime
-		assert(route.nextFNode == route.startFNode) # see setRouteStateBeforeStartFNode!()
+		@assert(route.nextFNode == route.startFNode) # see setRouteStateBeforeStartFNode!()
 		return
 	elseif time >= route.endFNodeTime
 		setRouteStateAfterEndFNode!(route, time)
-		assert(route.recentFNode == route.endFNode) # see setRouteStateAfterEndFNode!()
+		@assert(route.recentFNode == route.endFNode) # see setRouteStateAfterEndFNode!()
 		return
 	else
 		# currently somewhere on network
@@ -167,7 +167,7 @@ function updateRouteRecentRArc!(net::Network, route::Route, time::Float)
 	end
 	
 	# should be on network
-	assert(route.startFNodeTime <= time < route.endFNodeTime)
+	@assert(route.startFNodeTime <= time < route.endFNodeTime)
 	
 	if route.recentFNode == nullIndex
 		# previously not on route, set to be at startFNode
@@ -185,7 +185,7 @@ function updateRouteRecentRArc!(net::Network, route::Route, time::Float)
 	rNetTravel = net.rNetTravels[route.travelModeIndex]
 	rNodeFNode = net.rNodeFNode
 	
-	assert(route.startRNode != nullIndex != route.endRNode)
+	@assert(route.startRNode != nullIndex != route.endRNode)
 	
 	if route.endRNodeTime <= time
 		# on last rArc
@@ -227,8 +227,8 @@ function updateRouteRecentRArcFNode!(net::Network, route::Route, time::Float)
 	end
 	
 	# check that recent rArc is still current
-	assert(route.recentFNodeTime != nullTime)
-	assert(route.recentFNodeTime <= time < min(route.recentRArcEndTime, route.endFNodeTime))
+	@assert(route.recentFNodeTime != nullTime)
+	@assert(route.recentFNodeTime <= time < min(route.recentRArcEndTime, route.endFNodeTime))
 	
 	if time < route.nextFNodeTime
 		return # do nothing
@@ -240,7 +240,7 @@ function updateRouteRecentRArcFNode!(net::Network, route::Route, time::Float)
 	recentRArcFNodesTimes = fNetTravel.rArcFNodesTimes[route.recentRArc]
 	
 	route.recentRArcRecentFNode = findMaxIndexLeqTime(recentRArcFNodesTimes, time - route.recentRArcStartTime, route.recentRArcRecentFNode)
-	assert(route.recentRArcRecentFNode < length(rArcFNodes))
+	@assert(route.recentRArcRecentFNode < length(rArcFNodes))
 	route.recentFNode = rArcFNodes[route.recentRArcRecentFNode]
 	route.recentFNodeTime = route.recentRArcStartTime + recentRArcFNodesTimes[route.recentRArcRecentFNode]
 	
@@ -255,15 +255,15 @@ end
 function findMaxIndexLeqTime(times::Vector{Float}, time::Float, minIndex::Int = 1)
 	
 	if checkMode
-		assert(issorted(times, lt=<=)) # values should be strictly increasing
+		@assert(issorted(times, lt=<=)) # values should be strictly increasing
 	end
 	
 	n = length(times)
-	assert(1 <= minIndex < n)
+	@assert(1 <= minIndex < n)
 	if times[n] <= time
 		return n
 	end
-	assert(times[minIndex] <= time < times[n])
+	@assert(times[minIndex] <= time < times[n])
 	
 	# find range that contains given time
 	# start at minIndex and step with increasing step sizes
@@ -290,7 +290,7 @@ end
 # given a route with the start and end fNodes and rNodes already set,
 # set the firstRArc of the route
 function setRouteFirstRArc!(net::Network, route::Route)
-	assert(route.startFNode != nullIndex != route.endFNode)
+	@assert(route.startFNode != nullIndex != route.endFNode)
 	
 	rNodeFNode = net.rNodeFNode # shorthand
 	
@@ -300,7 +300,7 @@ function setRouteFirstRArc!(net::Network, route::Route)
 		return
 		
 	elseif route.startRNode == nullIndex # and route.startFNode != route.endFNode
-		assert(route.endRNode == nullIndex)
+		@assert(route.endRNode == nullIndex)
 		# find single rArc which contains path from startFNode to endFNode
 		route.firstRArc = findRArcFromFNodeToFNode(net, route.startFNode, route.endFNode)
 		
@@ -309,7 +309,7 @@ function setRouteFirstRArc!(net::Network, route::Route)
 		route.firstRArc = findRArcFromFNodeToFNode(net, route.startFNode, rNodeFNode[route.startRNode])
 		
 	elseif route.startRNode == route.endRNode # and route.startFNode == rNodeFNode[route.startRNode]
-		assert(rNodeFNode[route.endRNode] != route.endFNode)
+		@assert(rNodeFNode[route.endRNode] != route.endFNode)
 		# find arc from startRNode to endFNode
 		route.firstRArc = findRArcFromFNodeToFNode(net, rNodeFNode[route.startRNode], route.endFNode)
 		
@@ -318,12 +318,12 @@ function setRouteFirstRArc!(net::Network, route::Route)
 		route.firstRArc = shortestPathNextRArc(net, route.travelModeIndex, route.startRNode, route.endRNode)
 	end
 	
-	assert(route.firstRArc != nullIndex)
+	@assert(route.firstRArc != nullIndex)
 end
 
 # set temporally varying fields of route to represent state before reaching startFNode
 function setRouteStateBeforeStartFNode!(route::Route, time::Float)
-	assert(time <= route.startFNodeTime) # assert(time < route.startFNodeTime) does not always work
+	@assert(time <= route.startFNodeTime) # @assert(time < route.startFNodeTime) does not always work
 	
 	# recent rArc
 	route.recentRArc = nullIndex
@@ -343,8 +343,8 @@ end
 
 # set temporally varying fields of route to represent state just after leaving startFNode
 function setRouteStateAfterStartFNode!(net::Network, route::Route, time::Float)
-	assert(route.startFNodeTime <= time < route.endFNodeTime)
-	assert(route.firstRArc != nullIndex)
+	@assert(route.startFNodeTime <= time < route.endFNodeTime)
+	@assert(route.firstRArc != nullIndex)
 	# or: if (route.firstRArc == nullIndex) setRouteStateBeforeStartFNode!(route, time); return; end
 	
 	# shorthand:
@@ -368,7 +368,7 @@ function setRouteStateAfterStartFNode!(net::Network, route::Route, time::Float)
 	route.recentFNode = route.startFNode
 	route.recentFNodeTime = route.startFNodeTime
 	if checkMode
-		assert(firstRArcFNodes[route.recentRArcRecentFNode] == route.startFNode)
+		@assert(firstRArcFNodes[route.recentRArcRecentFNode] == route.startFNode)
 	end
 	
 	# next fNode
@@ -379,7 +379,7 @@ end
 
 # set temporally varying fields of route to represent state after leaving endFNode
 function setRouteStateAfterEndFNode!(route::Route, time::Float)
-	assert(route.endFNodeTime <= time)
+	@assert(route.endFNodeTime <= time)
 	
 	# recent rArc
 	route.recentRArc = nullIndex

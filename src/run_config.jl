@@ -167,8 +167,8 @@ function initSimulation(configFilename::String;
 	initMessage(t, "initialising travel")
 	
 	travel = sim.travel # shorthand
-	assert(travel.setsStartTimes[1] <= sim.startTime)
-	assert(length(net.fNetTravels) == travel.numModes)
+	@assert(travel.setsStartTimes[1] <= sim.startTime)
+	@assert(length(net.fNetTravels) == travel.numModes)
 	for travelMode in travel.modes
 		travelMode.fNetTravel = net.fNetTravels[travelMode.index]
 		travelMode.rNetTravel = net.rNetTravels[travelMode.index]
@@ -374,9 +374,9 @@ function initAmbulance!(sim::Simulation, ambulance::Ambulance;
 	wakeUpTime::Float = nullTime)
 	wakeUpTime = (wakeUpTime == nullTime ? sim.startTime : wakeUpTime)
 	
-	assert(ambulance.index != nullIndex)
-	assert(ambulance.stationIndex != nullIndex)
-	assert(sim.startTime <= wakeUpTime)
+	@assert(ambulance.index != nullIndex)
+	@assert(ambulance.stationIndex != nullIndex)
+	@assert(sim.startTime <= wakeUpTime)
 	
 	ambulance.status = ambSleeping
 	# ambulance.stationIndex

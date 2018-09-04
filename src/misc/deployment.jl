@@ -11,10 +11,10 @@ end
 # ignores station capacities, assumes ambulances are homogeneous
 function makeRandDeploymentPolicies(numAmbs::Int, numStations::Int, numDepols::Int;
 	rng::AbstractRNG = Base.GLOBAL_RNG)
-	assert(numAmbs >= 1)
-	assert(numStations >= 1)
-	assert(numDepols >= 1)
-	assert(numDepols <= binomial(numAmbs + numStations - 1, numStations - 1))
+	@assert(numAmbs >= 1)
+	@assert(numStations >= 1)
+	@assert(numDepols >= 1)
+	@assert(numDepols <= binomial(numAmbs + numStations - 1, numStations - 1))
 	
 	depols = Vector{Depol}() # deployment policies, depols[i][j] gives station index that ambulance j should be deployed to, for ith deployment policy
 	while length(depols) < numDepols
@@ -43,9 +43,9 @@ end
 # mutates: sim.ambulances
 function applyDeploymentPolicy!(sim::Simulation, depol::Depol)
 	n = length(depol)
-	assert(n == length(sim.ambulances))
-	assert(all(d -> in(d, 1:length(sim.stations)), depol))
-	# assert(all(1 .<= depol .<= length(sim.stations)))
+	@assert(n == length(sim.ambulances))
+	@assert(all(d -> in(d, 1:length(sim.stations)), depol))
+	# @assert(all(1 .<= depol .<= length(sim.stations)))
 	for i = 1:n
 		setAmbStation!(sim.ambulances[i], sim.stations[depol[i]])
 	end

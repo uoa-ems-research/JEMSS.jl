@@ -1,7 +1,7 @@
 # get travel mode for given time and priority
 function getTravelMode!(travel::Travel, priority::Priority, startTime::Float)
-	assert(startTime != nullTime)
-	assert(priority != nullPriority)
+	@assert(startTime != nullTime)
+	@assert(priority != nullPriority)
 	
 	updateTravelToTime!(travel, startTime) # update travel.recentSetsStartTimesIndex for given start time
 	travelSetIndex = travel.setsTimeOrder[travel.recentSetsStartTimesIndex]
@@ -23,7 +23,7 @@ function updateTravelToTime!(travel::Travel, startTime::Float)
 	i = travel.recentSetsStartTimesIndex
 	n = length(setsStartTimes)
 	
-	assert(setsStartTimes[i] <= startTime) # otherwise, have gone back in time?
+	@assert(setsStartTimes[i] <= startTime) # otherwise, have gone back in time?
 	
 	if i == n || startTime < setsStartTimes[i+1]
 		return # do nothing

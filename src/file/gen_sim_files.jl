@@ -104,7 +104,7 @@ function readGenConfig(genConfigFilename::String)
 	map.yMax = eltContentVal(mapElt, "yMax")
 	map.yScale = eltContentVal(mapElt, "yScale")
 	map.yRange = map.yMax - map.yMin
-	assert(map.xRange > 0 && map.yRange > 0)
+	@assert(map.xRange > 0 && map.yRange > 0)
 	genConfig.map = map
 	
 	# call distributions and random number generators
@@ -136,7 +136,7 @@ function readGenConfig(genConfigFilename::String)
 	
 	# misc values
 	genConfig.startTime = eltContentVal(simElt, "startTime")
-	assert(genConfig.startTime >= 0)
+	@assert(genConfig.startTime >= 0)
 	genConfig.targetResponseTime = eltContentVal(simElt, "targetResponseTime")
 	genConfig.offRoadSpeed = eltContentVal(simElt, "offRoadSpeed") # km / day
 	genConfig.stationCapacity = eltContentVal(simElt, "stationCapacity")

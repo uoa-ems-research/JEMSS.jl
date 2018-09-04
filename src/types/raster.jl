@@ -24,9 +24,9 @@ function readRasterFile(rasterFilename::String)
 	dy = dydj # height of cells in y direction (may be negative)
 	
 	# data checks
-	assert(dxdj == 0 && dydi == 0) # otherwise raster is sloping, so changing x index changes y value, and vice-versa
-	assert(dx > 0)
-	assert(dy != 0)
+	@assert(dxdj == 0 && dydi == 0) # otherwise raster is sloping, so changing x index changes y value, and vice-versa
+	@assert(dx > 0)
+	@assert(dy != 0)
 	
 	# convert data for easier use
 	# find x and y vectors to represent raster cell centres, make sure values are increasing
@@ -91,7 +91,7 @@ end
 
 function rasterZIndexToXYIndices(raster::Raster, i::Int)
 	# return (x,y) indices for raster.z[i]
-	assert(1 <= i && i <= length(raster.z)) # ind2sub does not check this
+	@assert(1 <= i && i <= length(raster.z)) # ind2sub does not check this
 	return ind2sub(raster.z, i)
 end
 

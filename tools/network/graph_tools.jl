@@ -195,8 +195,8 @@ graphContainsDuplicateArcs(arcs::Vector{Arc}) = graphFindDuplicateArcs(arcs) != 
 # merge arc2 into arc1, keeping minimum travel time (from both arcs) for each travel mode in arc1
 # arc2 will need to be removed in separate step
 function mergeDuplicateArcs!(arc1::Arc, arc2::Arc)
-	assert(arc1.fromNodeIndex == arc2.fromNodeIndex)
-	assert(arc1.toNodeIndex == arc2.toNodeIndex)
+	@assert(arc1.fromNodeIndex == arc2.fromNodeIndex)
+	@assert(arc1.toNodeIndex == arc2.toNodeIndex)
 	numModes = getNumTravelModes(arc1)
 	for i = 1:numModes
 		modeString = travelModeString(i)

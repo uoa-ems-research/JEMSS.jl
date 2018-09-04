@@ -59,8 +59,8 @@ immutable Table
 		data = convert(Array{Any,2}, data)
 		
 		(numRows, numCols) = size(data)
-		assert(length(header) == numCols)
-		assert(allunique(header))
+		@assert(length(header) == numCols)
+		@assert(allunique(header))
 		
 		headerDict = arrayDict(header)
 		columns = Dict{Any,Vector{Any}}()
@@ -73,7 +73,7 @@ immutable Table
 	end
 	
 	function Table(name, header; rows = [], cols = [])
-		assert(isempty(rows) + isempty(cols) == 1)
+		@assert(isempty(rows) + isempty(cols) == 1)
 		if !isempty(rows)
 			return Table(name, header, ctranspose(hcat(rows...)))
 		elseif !isempty(cols)
@@ -151,7 +151,7 @@ function readTablesFromData(data::Array{Any,2})
 		while j <= numDataCols && !isempty(data[i,j])
 			j += 1
 		end
-		numCols == nullIndex ? numCols = j - 1 : assert(numCols == j - 1)
+		numCols == nullIndex ? numCols = j - 1 : @assert(numCols == j - 1)
 		
 		# read table header
 		tableHeader = data[i,1:numCols]
@@ -163,19 +163,19 @@ function readTablesFromData(data::Array{Any,2})
 		while j <= numDataRows && !isempty(data[j,1])
 			j += 1
 		end
-		numRows == nullIndex ? numRows = j - i : assert(numRows == j - i)
+		numRows == nullIndex ? numRows = j - i : @assert(numRows == j - i)
 		
 		# create table
 		tableData = data[i-1+(1:numRows), 1:numCols]
 		table = Table(convert(String,tableName), tableHeader, tableData)
 		
 		# add table to tables
-		assert(!haskey(tables, table.name))
+		@assert(!haskey(tables, table.name))
 		tables[table.name] = table
 		
 		# go to next table
 		i += numRows # i = j
-		assert(i > numDataRows || isempty(data[i,1]))
+		@assert(i > numDataRows || isempty(data[i,1]))
 	end
 	
 	return tables
