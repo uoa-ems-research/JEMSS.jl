@@ -9,11 +9,11 @@ function initCompTable!(sim::Simulation, compTableFilename::String)
 	
 	# read compliance table
 	ctd.compTable = readCompTableFile(compTableFilename)
-	assert(size(ctd.compTable) == (numAmbs, numStations))
+	@assert(size(ctd.compTable) == (numAmbs, numStations))
 	
 	# compliance table should not violate station capacities
 	for j = 1:numStations
-		assert(all(ctd.compTable[:,j] .<= sim.stations[j].capacity))
+		@assert(all(ctd.compTable[:,j] .<= sim.stations[j].capacity))
 	end
 	
 	# set array sizes
@@ -21,7 +21,7 @@ function initCompTable!(sim::Simulation, compTableFilename::String)
 end
 
 function compTableMoveUp(sim::Simulation)
-	assert(sim.moveUpData.useMoveUp)
+	@assert(sim.moveUpData.useMoveUp)
 	
 	# shorthand:
 	ambulances = sim.ambulances
@@ -103,11 +103,11 @@ function compTableMoveUp(sim::Simulation)
 	if checkMode
 		# check that followCompTable constraint was met
 		for j = 1:numStations
-			assert(sum(sol[:,j]) == compTable[numMovableAmbs,j])
+			@assert(sum(sol[:,j]) == compTable[numMovableAmbs,j])
 		end
 		# check that ambAtOneLocation constraint was met
 		for i = 1:numMovableAmbs
-			assert(sum(sol[i,:]) == 1)
+			@assert(sum(sol[i,:]) == 1)
 		end
 	end
 	

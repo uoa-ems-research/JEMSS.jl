@@ -24,7 +24,7 @@ function readTntpNodesFile(tntpNodesFilename::String; delim::Char = '\t')
 		nodes[i].index = table.columns["node"][i]
 		nodes[i].location.x = table.columns["x"][i]
 		nodes[i].location.y = table.columns["y"][i]
-		assert(nodes[i].index == i)
+		@assert(nodes[i].index == i)
 	end
 	
 	return nodes
@@ -51,7 +51,7 @@ function readTntpNetworkFile(tntpNetworkFilename::String; delim::Char = '\t')
 	numZones = f(r"<NUMBER OF ZONES> (\d+)", data[1,1])
 	numNodes = f(r"<NUMBER OF NODES> (\d+)", data[2,1])
 	firstThruNode = f(r"<FIRST THRU NODE> (\d+)", data[3,1])
-	assert(firstThruNode == numZones + 1)
+	@assert(firstThruNode == numZones + 1)
 	numArcs = f(r"<NUMBER OF LINKS> (\d+)", data[4,1])
 	
 	# find and read table data
@@ -79,7 +79,7 @@ end
 # - keep the largest strongly connected component
 function convertTntpNetwork!(nodes::Vector{Node}, arcs::Vector{Arc}, numZones::Int)
 	
-	assert(!graphContainsDuplicateArcs(arcs))
+	@assert(!graphContainsDuplicateArcs(arcs))
 	
 	# remove all zones and their connected arcs
 	nodeFilter(node::Node) = node.index > numZones

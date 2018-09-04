@@ -9,7 +9,7 @@
 function initDmexclp!(sim::Simulation;
 	coverTime::Float = 8/(24*60), coverTravelPriority::Priority = lowPriority, busyFraction::Float = 0.5, demandRasterFilename::String = "")
 	
-	assert(isfile(demandRasterFilename))
+	@assert(isfile(demandRasterFilename))
 	
 	# shorthand names:
 	dcd = sim.moveUpData.dmexclpData
@@ -46,7 +46,7 @@ function initDmexclp!(sim::Simulation;
 	# determine node coverage
 	dcd.stationCoverNode = Array{Bool,2}(numStations, numNodes)
 	dcd.stationCoverNode[:] = false
-	assert(travel.numSets == 1) # otherwise, would need coverage and busy fraction to change with time
+	@assert(travel.numSets == 1) # otherwise, would need coverage and busy fraction to change with time
 	travelMode = getTravelMode!(travel, dcd.coverTravelPriority, sim.time)
 	for i = 1:numStations
 		station = sim.stations[i] # shorthand
@@ -95,8 +95,8 @@ function initDmexclp!(sim::Simulation;
 end
 
 function dmexclpMoveUp(sim::Simulation, newlyIdleAmb::Ambulance)
-	assert(sim.moveUpData.useMoveUp)
-	assert(newlyIdleAmb.status != ambGoingToCall)
+	@assert(sim.moveUpData.useMoveUp)
+	@assert(newlyIdleAmb.status != ambGoingToCall)
 	
 	# shorthand names:
 	ambulances = sim.ambulances

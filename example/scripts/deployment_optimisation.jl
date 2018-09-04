@@ -9,13 +9,13 @@ using JEMSS
 configFilename = (length(ARGS) >= 1 ? ARGS[1] : selectXmlFile())
 sim = initSimulation(configFilename)
 (numAmbs, numStations) = (length(sim.ambulances), length(sim.stations))
-assert(numAmbs > 0 && numStations > 1) # otherwise only one deployment policy is possible
+@assert(numAmbs > 0 && numStations > 1) # otherwise only one deployment policy is possible
 
 # read deployment policies file
 if haskey(sim.inputFiles, "deploymentPolicies")
 	(depols, numStations2) = readDeploymentPoliciesFile(sim.inputFiles["deploymentPolicies"].path)
 	numDepols = length(depols)
-	assert(numStations == numStations2)
+	@assert(numStations == numStations2)
 else
 	# generate unique random deployment policies
 	numDepols = (length(ARGS) >= 2 ? ARGS[2] : 100) # number of deployment policies to test

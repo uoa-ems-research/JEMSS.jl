@@ -29,7 +29,7 @@ end
 # set sim.backup to copy of sim (before running)
 # note that for reducing memory usage, sim.backup does not contain: net, travel, grid, resim
 function backupSim!(sim::Simulation)
-	assert(!sim.used)
+	@assert(!sim.used)
 	
 	# remove net, travel, grid, and resim from sim before copying sim
 	(net, travel, grid, resim) = (sim.net, sim.travel, sim.grid, sim.resim)
@@ -42,7 +42,7 @@ end
 
 # reset sim from sim.backup
 function resetSim!(sim::Simulation)
-	assert(!sim.backup.used)
+	@assert(!sim.backup.used)
 	
 	if sim.used
 		resetCalls!(sim) # reset calls from sim.backup, need to do this before resetting sim.time
@@ -87,8 +87,8 @@ function simulateNextEvent!(sim::Simulation)
 	
 	if length(sim.eventList) == 0
 		# simulation complete
-		assert(sim.endTime == nullTime)
-		assert(sim.complete == false)
+		@assert(sim.endTime == nullTime)
+		@assert(sim.complete == false)
 		sim.endTime = sim.time
 		sim.complete = true
 	end
@@ -100,7 +100,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 	# next event may change relevant ambulance / call fields at event.time
 	# event may then trigger future events / cancel scheduled events
 	
-	assert(sim.time == event.time)
+	@assert(sim.time == event.time)
 	
 	eventForm = event.form
 	if eventForm == nullEvent
@@ -110,8 +110,8 @@ function simulateEvent!(sim::Simulation, event::Event)
 
 	elseif eventForm == ambGoesToSleep
 		ambulance = sim.ambulances[event.ambIndex]
-		assert(ambulance.status == ambIdleAtStation) # ambulance should be at station before sleeping
-		assert(event.callIndex == nullIndex)
+		@assert(ambulance.status == ambIdleAtStation) # ambulance should be at station before sleeping
+		@assert(event.callIndex == nullIndex)
 	
 		ambulance.status = ambSleeping
 		# ambulance.stationIndex
@@ -123,8 +123,8 @@ function simulateEvent!(sim::Simulation, event::Event)
 
 	elseif eventForm == ambWakesUp
 		ambulance = sim.ambulances[event.ambIndex]
-		assert(ambulance.status == ambSleeping) # ambulance should have been sleeping
-		assert(event.callIndex == nullIndex)
+		@assert(ambulance.status == ambSleeping) # ambulance should have been sleeping
+		@assert(event.callIndex == nullIndex)
 		
 		ambulance.status = ambIdleAtStation
 		# ambulance.stationIndex
@@ -133,9 +133,9 @@ function simulateEvent!(sim::Simulation, event::Event)
 ################
 
 	elseif eventForm == callArrives
-		assert(event.ambIndex == nullIndex) # no ambulance should be assigned yet
+		@assert(event.ambIndex == nullIndex) # no ambulance should be assigned yet
 		call = sim.calls[event.callIndex]
-		assert(call.status == callNullStatus)
+		@assert(call.status == callNullStatus)
 		
 		push!(sim.currentCalls, sim.calls[event.callIndex])
 		call.status = callScreening
@@ -150,9 +150,9 @@ function simulateEvent!(sim::Simulation, event::Event)
 ################
 
 	elseif eventForm == considerDispatch
-		assert(event.ambIndex == nullIndex) # no ambulance should be assigned yet
+		@assert(event.ambIndex == nullIndex) # no ambulance should be assigned yet
 		call = sim.calls[event.callIndex]
-		assert(call.status == callScreening || call.status == callWaitingForAmb) # callWaitingForAmb if call bumped
+		@assert(call.status == callScreening || call.status == callWaitingForAmb) # callWaitingForAmb if call bumped
 		
 		# find ambulance to respond
 		if sim.resim.use
@@ -205,10 +205,10 @@ function simulateEvent!(sim::Simulation, event::Event)
 	elseif eventForm == ambDispatched
 		ambulance = sim.ambulances[event.ambIndex]
 		status = ambulance.status # shorthand
-		assert(status == ambIdleAtStation || status == ambGoingToCall ||
+		@assert(status == ambIdleAtStation || status == ambGoingToCall ||
 			status == ambGoingToStation || status == ambAtCall || status == ambAtHospital)
 		call = sim.calls[event.callIndex]
-		assert(call.status == callScreening || call.status == callQueued || call.status == callWaitingForAmb) # callWaitingForAmb if call bumped
+		@assert(call.status == callScreening || call.status == callQueued || call.status == callWaitingForAmb) # callWaitingForAmb if call bumped
 		
 		# stats:
 		if status == ambIdleAtStation
@@ -241,9 +241,9 @@ function simulateEvent!(sim::Simulation, event::Event)
 
 	elseif eventForm == ambReachesCall
 		ambulance = sim.ambulances[event.ambIndex]
-		assert(ambulance.status == ambGoingToCall)
+		@assert(ambulance.status == ambGoingToCall)
 		call = sim.calls[event.callIndex]
-		assert(call.status == callWaitingForAmb)
+		@assert(call.status == callWaitingForAmb)
 		
 		ambulance.status = ambAtCall
 		# ambulance.stationIndex
@@ -269,16 +269,16 @@ function simulateEvent!(sim::Simulation, event::Event)
 
 	elseif eventForm == ambGoesToHospital
 		ambulance = sim.ambulances[event.ambIndex]
-		assert(ambulance.status == ambAtCall)
+		@assert(ambulance.status == ambAtCall)
 		call = sim.calls[event.callIndex]
-		assert(call.status == callOnSceneCare)
+		@assert(call.status == callOnSceneCare)
 		
 		# if hospital not specified for call, find closest hospital
 		hospitalIndex = call.hospitalIndex
 		if hospitalIndex == nullIndex
 			hospitalIndex = nearestHospitalToCall!(sim, call, lowPriority)
 		end
-		assert(hospitalIndex != nullIndex)
+		@assert(hospitalIndex != nullIndex)
 		hospital = sim.hospitals[hospitalIndex]
 		
 		ambulance.status = ambGoingToHospital
@@ -295,9 +295,9 @@ function simulateEvent!(sim::Simulation, event::Event)
 
 	elseif eventForm == ambReachesHospital
 		ambulance = sim.ambulances[event.ambIndex]
-		assert(ambulance.status == ambGoingToHospital)
+		@assert(ambulance.status == ambGoingToHospital)
 		call = sim.calls[event.callIndex]
-		assert(call.status == callGoingToHospital)
+		@assert(call.status == callGoingToHospital)
 
 		ambulance.status = ambAtHospital
 		# ambulance.stationIndex
@@ -316,9 +316,9 @@ function simulateEvent!(sim::Simulation, event::Event)
 
 	elseif eventForm == ambBecomesIdle
 		ambulance = sim.ambulances[event.ambIndex]
-		assert(ambulance.status == ambAtCall || ambulance.status == ambAtHospital)
+		@assert(ambulance.status == ambAtCall || ambulance.status == ambAtHospital)
 		call = sim.calls[event.callIndex]
-		assert(call.status == callOnSceneCare || call.status == callAtHospital)
+		@assert(call.status == callOnSceneCare || call.status == callAtHospital)
 		
 		# remove call, processing is finished
 		delete!(sim.currentCalls, call)
@@ -330,7 +330,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		# otherwise return to station
 		if length(sim.queuedCallList) > 0
 			call = getNextCall!(sim.queuedCallList)
-			assert(call != nothing)
+			@assert(call != nothing)
 
 			# dispatch ambulance
 			addEvent!(sim.eventList; parentEvent = event, form = ambDispatched, time = sim.time, ambulance = ambulance, call = call)
@@ -356,8 +356,8 @@ function simulateEvent!(sim::Simulation, event::Event)
 
 	elseif eventForm == ambReachesStation
 		ambulance = sim.ambulances[event.ambIndex]
-		assert(ambulance.status == ambGoingToStation)
-		assert(event.callIndex == nullIndex)
+		@assert(ambulance.status == ambGoingToStation)
+		@assert(event.callIndex == nullIndex)
 		
 		ambulance.status = ambIdleAtStation
 		# ambulance.stationIndex
@@ -370,9 +370,9 @@ function simulateEvent!(sim::Simulation, event::Event)
 
 	elseif eventForm == considerMoveUp
 		ambulance = sim.ambulances[event.ambIndex] # ambulance that triggered consideration of move up
-		assert(event.callIndex == nullIndex)
+		@assert(event.callIndex == nullIndex)
 		mud = sim.moveUpData # shorthand
-		assert(mud.useMoveUp)
+		@assert(mud.useMoveUp)
 		
 		# call move up function
 		movableAmbs = [] # init
@@ -426,7 +426,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 
 	elseif eventForm == ambMoveUp
 		ambulance = sim.ambulances[event.ambIndex]
-		assert(event.callIndex == nullIndex)
+		@assert(event.callIndex == nullIndex)
 		
 		station = sim.stations[ambulance.stationIndex] # station to move up to
 		
@@ -442,7 +442,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 	# elseif eventForm == ambRedirected
 		# ambulance = sim.ambulances[event.ambIndex]
 		# call = sim.calls[event.callIndex]
-		# assert(ambulance.status == ambGoingToCall)
+		# @assert(ambulance.status == ambGoingToCall)
 		
 		# # may alter ambDispatched event to deal with redirects
 		

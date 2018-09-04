@@ -22,9 +22,9 @@ function addEvent!(eventList::Vector{Event};
 	if checkMode
 		# check time ordering of events
 		for i = 1:length(eventList)-1
-			assert(eventList[i].time >= eventList[i+1].time)
+			@assert(eventList[i].time >= eventList[i+1].time)
 		end
-		# assert(issorted(eventList, by = e -> e.time, rev = true)) # slow
+		# @assert(issorted(eventList, by = e -> e.time, rev = true)) # slow
 	end
 	
 	return event
@@ -51,7 +51,7 @@ end
 # delete event in eventList
 function deleteEvent!(eventList::Vector{Event}, event::Event)
 	i = findfirst(e -> e == event, eventList)
-	assert(i != 0)
-	assert(findnext(e -> e == event, eventList, i + 1) == 0)
+	@assert(i != 0)
+	@assert(findnext(e -> e == event, eventList, i + 1) == 0)
 	deleteat!(eventList, i)
 end

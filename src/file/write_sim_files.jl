@@ -7,7 +7,7 @@ function writeAmbsFile(filename::String, ambulances::Vector{Ambulance})
 end
 
 function writeArcsFile(filename::String, arcs::Vector{Arc}, travelTimes::Array{Float,2}, arcForm::String)
-	assert(arcForm == "directed" || arcForm == "undirected")
+	@assert(arcForm == "directed" || arcForm == "undirected")
 	numModes = size(travelTimes,1)
 	miscTable = Table("miscData", ["arcForm", "numModes"]; rows = [[arcForm, numModes]])
 	mainHeaders = ["index", "fromNode", "toNode", ["mode_$i" for i = 1:numModes]...]
@@ -45,7 +45,7 @@ function writeNodesFile(filename::String, nodes::Vector{Node})
 end
 
 function writeRNetTravelsFile(filename::String, rNetTravels::Vector{NetTravel})
-	assert(all([rNetTravel.isReduced for rNetTravel in rNetTravels]))
+	@assert(all([rNetTravel.isReduced for rNetTravel in rNetTravels]))
 	serializeToFile(filename, rNetTravels)
 end
 
@@ -68,7 +68,7 @@ function writeTravelFile(filename::String, travel::Travel)
 	
 	# travel sets table
 	tml = travel.modeLookup # shorthand
-	assert(size(tml) == (length(travel.modes), 3)) # should have value for each combination of travel mode and priority
+	@assert(size(tml) == (length(travel.modes), 3)) # should have value for each combination of travel mode and priority
 	travelSetsTable = Table("travelSets", ["travelSetIndex", "priority", "travelModeIndex"];
 		rows = [[ind2sub(tml,i)[1], string(Priority(ind2sub(tml,i)[2])), tml[i]] for i = 1:length(tml)])
 	
@@ -167,7 +167,7 @@ end
 # write deployment policies to file
 function writeDeploymentPoliciesFile(filename::String, depols::Vector{Depol}, numStations::Int)
 	numAmbs = length(depols[1])
-	assert(numStations >= maximum([maximum(d) for d in depols]))
+	@assert(numStations >= maximum([maximum(d) for d in depols]))
 	numDepols = length(depols)
 	
 	miscTable = Table("miscData", ["numStations", "numDepols"]; rows = [[numStations, numDepols]])
@@ -180,7 +180,7 @@ end
 # save batch mean response times to file
 function writeBatchMeanResponseTimesFile(filename::String, batchMeanResponseTimes::Array{Float,2};
 	batchTime = nullTime, startTime = nullTime, endTime = nullTime, responseTimeUnits::String = "minutes")
-	assert(batchTime != nullTime && startTime != nullTime && endTime != nullTime)
+	@assert(batchTime != nullTime && startTime != nullTime && endTime != nullTime)
 	x = batchMeanResponseTimes # shorthand
 	(numRows, numCols) = size(x) # numRows = numSims, numCols = numBatches
 	miscTable = Table("misc_data",

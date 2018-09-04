@@ -5,7 +5,7 @@ function readAmbsFile(filename::String)
 	
 	table = tables["ambulances"]
 	n = size(table.data,1) # number of ambulances
-	assert(n >= 1)
+	@assert(n >= 1)
 	
 	# create ambulances from data in table
 	ambulances = Vector{Ambulance}(n)
@@ -15,7 +15,7 @@ function readAmbsFile(filename::String)
 		ambulances[i].index = columns["index"][i]
 		ambulances[i].stationIndex = columns["stationIndex"][i]
 		ambulances[i].class = AmbClass(columns["class"][i])
-		assert(ambulances[i].index == i)
+		@assert(ambulances[i].index == i)
 	end
 	
 	return ambulances
@@ -28,16 +28,16 @@ function readArcsFile(filename::String;
 	# get arcForm, numModes
 	table = tables["miscData"]
 	arcForm = table.columns["arcForm"][1] # "directed" or "undirected" arcs
-	assert(in(arcForm, ["directed", "undirected"]))
+	@assert(in(arcForm, ["directed", "undirected"]))
 	numModes = table.columns["numModes"][1]
-	assert(numModes >= 1)
+	@assert(numModes >= 1)
 	
 	# swap to arcs table
 	table = tables["arcs"]
 	
 	# initialise arcs, travelTimes
 	numArcs = size(table.data,1) # number of arcs, this may double if arcForm == "undirected"
-	assert(numArcs >= 1)
+	@assert(numArcs >= 1)
 	arcs = []
 	travelTimes = []
 	if arcForm == "directed"
@@ -70,7 +70,7 @@ function readArcsFile(filename::String;
 		for j = 1:numModes
 			travelTimes[j,i] = modeCols[j][i]
 		end
-		assert(arcs[i].index == i)
+		@assert(arcs[i].index == i)
 	end
 	
 	# if arcs are undirected, make them directed
@@ -89,7 +89,7 @@ function readArcsFile(filename::String;
 	end
 	
 	# travel times should be positive
-	assert(all(travelTimes .> 0))
+	@assert(all(travelTimes .> 0))
 	
 	return arcs, travelTimes
 end
@@ -99,13 +99,13 @@ function readCallsFile(filename::String)
 	
 	# calls file has sim start time
 	startTime = tables["miscData"].columns["startTime"][1]
-	assert(startTime > nullTime)
+	@assert(startTime > nullTime)
 	
 	# create calls from data in calls table
 	table = tables["calls"]
 	data = table.data # shorthand
 	n = size(data,1) # number of calls
-	assert(n >= 1)
+	@assert(n >= 1)
 	c = table.columns # shorthand
 	(indexCol = c["index"]); (priorityCol = c["priority"]); (xCol = c["x"]); (yCol = c["y"]); (arrivalTimeCol = c["arrivalTime"]); (dispatchDelayCol = c["dispatchDelay"]); (onSceneDurationCol = c["onSceneDuration"]); (transferDurationCol = c["transferDuration"]); (transferCol = c["transfer"]); (hospitalIndexCol = c["hospitalIndex"]) # shorthand, to avoid repeated dict lookups
 	calls = Vector{Call}(n)
@@ -122,28 +122,28 @@ function readCallsFile(filename::String)
 		calls[i].transfer = transferCol[i]
 		calls[i].hospitalIndex = hospitalIndexCol[i]
 		
-		assert(calls[i].index == i)
-		assert(calls[i].priority != nullPriority)
-		assert(calls[i].arrivalTime >= 0)
-		assert(calls[i].dispatchDelay >= 0)
-		assert(calls[i].onSceneDuration >= 0)
+		@assert(calls[i].index == i)
+		@assert(calls[i].priority != nullPriority)
+		@assert(calls[i].arrivalTime >= 0)
+		@assert(calls[i].dispatchDelay >= 0)
+		@assert(calls[i].onSceneDuration >= 0)
 		if calls[i].transfer
-			assert(calls[i].transferDuration >= 0)
+			@assert(calls[i].transferDuration >= 0)
 		end
 	end
 	
 	# check that calls are ordered by arrival time
 	for i = 1:n-1
-		assert(calls[i].arrivalTime <= calls[i+1].arrivalTime)
+		@assert(calls[i].arrivalTime <= calls[i+1].arrivalTime)
 	end
 	
 	# check that first call is not before start time
-	assert(startTime <= calls[1].arrivalTime)
+	@assert(startTime <= calls[1].arrivalTime)
 	
 	# check that either: no calls have same arrival time, or dispatch delay values are all > 0
 	# This is to avoid potential bug where two calls arrive at same time with dispatch delay 0,
 	# leading to calls being responded to in order of occurence in calls file, rather than by priority.
-	assert(all(calls[i].arrivalTime < calls[i+1].arrivalTime for i = 1:n-1)
+	@assert(all(calls[i].arrivalTime < calls[i+1].arrivalTime for i = 1:n-1)
 		|| all(calls[i].dispatchDelay > 0 for i = 1:n))
 	
 	return calls, startTime
@@ -158,11 +158,11 @@ function readCompTableFile(filename::String)
 	columns = table.columns # shorthand
 	
 	# check that numAmbs column in table contains all ambulance counts
-	assert(all(sort(columns["numAmbs"]) .== [1:numAmbs;]))
+	@assert(all(sort(columns["numAmbs"]) .== [1:numAmbs;]))
 	
 	# check that table header contains all stations
 	for j = 1:numStations
-		assert(in(string("station_", j), table.header))
+		@assert(in(string("station_", j), table.header))
 	end
 	
 	# create compliance table
@@ -173,10 +173,10 @@ function readCompTableFile(filename::String)
 		end
 	end
 	
-	assert(all(compTable .>= 0))
+	@assert(all(compTable .>= 0))
 	
 	# check that compliance table rows add up to row indices
-	assert(vec(sum(compTable, 2)) == [1:numAmbs;])
+	@assert(vec(sum(compTable, 2)) == [1:numAmbs;])
 	
 	return compTable
 end
@@ -194,9 +194,9 @@ function readEventsFile(filename::String)
 	eventNames = table.columns["name"]
 	eventKeys = table.columns["key"]
 	n = length(eventKeys) # number of event types
-	assert(length(eventNames) == n)
-	assert(allunique(eventNames))
-	assert(allunique(eventKeys))
+	@assert(length(eventNames) == n)
+	@assert(allunique(eventNames))
+	@assert(allunique(eventKeys))
 	eventDict = Dict{Int,EventForm}()
 	for i = 1:n
 		eventDict[eventKeys[i]] = eval(parse(eventNames[i]))
@@ -220,9 +220,9 @@ function readEventsFile(filename::String)
 		events[i].callIndex = callIndexCol[i]
 		events[i].stationIndex = stationIndexCol[i]
 		
-		assert(events[i].form != nullEvent)
-		assert(events[i].time > nullTime)
-		assert(events[i].ambIndex != nullIndex || events[i].callIndex != nullIndex)
+		@assert(events[i].form != nullEvent)
+		@assert(events[i].time > nullTime)
+		@assert(events[i].ambIndex != nullIndex || events[i].callIndex != nullIndex)
 	end
 	
 	# set eventsChildren; eventsChildren[i] gives events that are children of the ith event that occurred
@@ -242,7 +242,7 @@ function readHospitalsFile(filename::String)
 	
 	table = tables["hospitals"]
 	n = size(table.data,1) # number of hospitals
-	assert(n >= 1)
+	@assert(n >= 1)
 	
 	# create hospitals from table data
 	columns = table.columns # shorthand
@@ -252,7 +252,7 @@ function readHospitalsFile(filename::String)
 		hospitals[i].index = columns["index"][i]
 		hospitals[i].location.x = columns["x"][i]
 		hospitals[i].location.y = columns["y"][i]
-		assert(hospitals[i].index == i)
+		@assert(hospitals[i].index == i)
 	end
 	
 	return hospitals
@@ -273,10 +273,10 @@ function readMapFile(filename::String)
 	map.xScale = columns["xScale"][1]
 	map.yScale = columns["yScale"][1]
 	
-	assert(map.xMin < map.xMax)
-	assert(map.yMin < map.yMax)
-	assert(0 < map.xScale)
-	assert(0 < map.yScale)
+	@assert(map.xMin < map.xMax)
+	@assert(map.yMin < map.yMax)
+	@assert(0 < map.xScale)
+	@assert(0 < map.yScale)
 	
 	map.xRange = map.xMax - map.xMin
 	map.yRange = map.yMax - map.yMin
@@ -289,7 +289,7 @@ function readNodesFile(filename::String)
 	
 	table = tables["nodes"]
 	n = size(table.data,1) # number of nodes
-	assert(n >= 2)
+	@assert(n >= 2)
 	c = table.columns # shorthand
 	(indexCol = c["index"]); (xCol = c["x"]); (yCol = c["y"]) # shorthand, to avoid repeated dict lookups
 	accessCol = (haskey(c, "offRoadAccess") ? convert(Vector{Bool}, c["offRoadAccess"]) : fill(true, n))
@@ -306,7 +306,7 @@ function readNodesFile(filename::String)
 		nodes[i].offRoadAccess = accessCol[i]
 		nodes[i].fields = rowsFields[i]
 		
-		assert(nodes[i].index == i)
+		@assert(nodes[i].index == i)
 	end
 	
 	return nodes
@@ -317,20 +317,20 @@ function readPrioritiesFile(filename::String)
 	
 	table = tables["priorities"]
 	n = size(table.data,1) # number of priorities
-	assert(n >= 1)
-	assert(n <= 3) # have already hard-coded priorities: high, med, low; see defs.jl
+	@assert(n >= 1)
+	@assert(n <= 3) # have already hard-coded priorities: high, med, low; see defs.jl
 	
 	# read data from table
 	columns = table.columns # shorthand
 	targetResponseTimes = Vector{Float}(n)
 	for i = 1:n
-		assert(columns["priority"][i] == i)
-		assert(eval(parse(columns["name"][i])) == Priority(i))
+		@assert(columns["priority"][i] == i)
+		@assert(eval(parse(columns["name"][i])) == Priority(i))
 		targetResponseTimes[i] = columns["targetResponseTime"][i]
 	end
 	
 	# target response times should be positive
-	assert(all(targetResponseTimes .> 0))
+	@assert(all(targetResponseTimes .> 0))
 	
 	return targetResponseTimes
 end
@@ -340,18 +340,18 @@ function readPriorityListFile(filename::String)
 	
 	table = tables["priorityList"]
 	n = size(table.data,1) # number of ambulances
-	assert(n >= 1)
+	@assert(n >= 1)
 	
 	# create priority list from data in table
 	columns = table.columns # shorthand
 	priorityList = Vector{Int}(n)
 	for i = 1:n
-		assert(columns["numAmbs"][i] == i)
+		@assert(columns["numAmbs"][i] == i)
 		priorityList[i] = columns["stationIndex"][i]
 	end
 	
 	# station indices should be positive
-	assert(all(priorityList .>= 1))
+	@assert(all(priorityList .>= 1))
 	
 	return priorityList
 end
@@ -359,10 +359,10 @@ end
 function readRNetTravelsFile(filename::String)
 	rNetTravels = deserializeFile(filename)
 	for rNetTravel in rNetTravels
-		assert(isa(rNetTravel, NetTravel))
-		assert(rNetTravel.isReduced)
-		assert(isa(rNetTravel.spTimes, Array{FloatSpTime,2}))
-		assert(isa(rNetTravel.spFadjIndex, Array{IntFadj,2}))
+		@assert(isa(rNetTravel, NetTravel))
+		@assert(rNetTravel.isReduced)
+		@assert(isa(rNetTravel.spTimes, Array{FloatSpTime,2}))
+		@assert(isa(rNetTravel.spFadjIndex, Array{IntFadj,2}))
 	end
 	return rNetTravels
 end
@@ -372,7 +372,7 @@ function readStationsFile(filename::String)
 	
 	table = tables["stations"]
 	n = size(table.data,1) # number of stations
-	assert(n >= 1)
+	@assert(n >= 1)
 	
 	# create stations from data in table
 	columns = table.columns # shorthand
@@ -384,8 +384,8 @@ function readStationsFile(filename::String)
 		stations[i].location.y = columns["y"][i]
 		stations[i].capacity = columns["capacity"][i]
 		
-		assert(stations[i].index == i)
-		assert(stations[i].capacity >= 0)
+		@assert(stations[i].index == i)
+		@assert(stations[i].capacity >= 0)
 	end
 	
 	return stations
@@ -400,7 +400,7 @@ function readTravelFile(filename::String)
 	# travel modes
 	table = tables["travelModes"]
 	n = numModes = travel.numModes = size(table.data,1)
-	assert(n >= 1)
+	@assert(n >= 1)
 	# create travel modes from data in table (network based data will need to be filled later)
 	columns = table.columns # shorthand
 	travel.modes = Vector{TravelMode}(n)
@@ -409,40 +409,40 @@ function readTravelFile(filename::String)
 		travel.modes[i].index = columns["travelModeIndex"][i]
 		travel.modes[i].offRoadSpeed = columns["offRoadSpeed"][i]
 		
-		assert(travel.modes[i].index == i)
-		assert(travel.modes[i].offRoadSpeed > 0)
+		@assert(travel.modes[i].index == i)
+		@assert(travel.modes[i].offRoadSpeed > 0)
 	end
 	
 	# travel sets
 	table = tables["travelSets"]
 	n = size(table.data,1)
-	assert(n >= 1)
+	@assert(n >= 1)
 	# populate travel object from data in table
 	columns = table.columns # shorthand
 	numSets = travel.numSets = maximum(columns["travelSetIndex"])
-	assert(sort(unique(columns["travelSetIndex"])) == [1:numSets;]) # all sets from 1:numSets should be used
-	assert(sort(unique(columns["travelModeIndex"])) == [1:numModes;]) # all travel modes should be used
+	@assert(sort(unique(columns["travelSetIndex"])) == [1:numSets;]) # all sets from 1:numSets should be used
+	@assert(sort(unique(columns["travelModeIndex"])) == [1:numModes;]) # all travel modes should be used
 	travel.modeLookup = fill(nullIndex, numSets, 3) # number of priorities is fixed at 3, set defs.jl
 	for i = 1:n
 		setIndex = columns["travelSetIndex"][i]
 		priority = eval(parse(columns["priority"][i]))
 		modeIndex = columns["travelModeIndex"][i]
 		
-		assert(travel.modeLookup[setIndex, Int(priority)] == nullIndex) # value should not yet be filled
-		assert(1 <= modeIndex <= numModes)
+		@assert(travel.modeLookup[setIndex, Int(priority)] == nullIndex) # value should not yet be filled
+		@assert(1 <= modeIndex <= numModes)
 		travel.modeLookup[setIndex, Int(priority)] = modeIndex
 	end
-	assert(all(travel.modeLookup .!= nullIndex)) # check that travel.modeLookup is filled correctly
+	@assert(all(travel.modeLookup .!= nullIndex)) # check that travel.modeLookup is filled correctly
 	
 	# travel sets timing
 	table = tables["travelSetsTiming"]
 	# populate travel object from data in table
 	columns = table.columns # shorthand
 	travel.setsStartTimes = columns["startTime"]
-	assert(travel.setsStartTimes[1] > nullTime)
-	assert(issorted(travel.setsStartTimes, lt=<=)) # times should be strictly increasing
+	@assert(travel.setsStartTimes[1] > nullTime)
+	@assert(issorted(travel.setsStartTimes, lt=<=)) # times should be strictly increasing
 	travel.setsTimeOrder = columns["travelSetIndex"]
-	assert(sort(unique(travel.setsTimeOrder)) == [1:numSets;]) # each travel set should be used at least once
+	@assert(sort(unique(travel.setsTimeOrder)) == [1:numSets;]) # each travel set should be used at least once
 	
 	# misc
 	travel.recentSetsStartTimesIndex = 1
@@ -464,7 +464,7 @@ function readDeploymentPoliciesFile(filename::String)
 	columns = table.columns # shorthand
 	# check number of ambulances
 	ambIndexCol = columns["ambIndex"]
-	assert(ambIndexCol == collect(1:length(ambIndexCol)))
+	@assert(ambIndexCol == collect(1:length(ambIndexCol)))
 	# check that table header has all deployment policies
 	for i = 1:numDepols
 		@assert(in("policy_$i stationIndex", table.header), "Missing deployment policy $i")
@@ -475,7 +475,7 @@ function readDeploymentPoliciesFile(filename::String)
 		depols[i] = columns["policy_$i stationIndex"]
 		
 		for value in depols[i]
-			assert(in(value, 1:numStations))
+			@assert(in(value, 1:numStations))
 		end
 	end
 	
@@ -488,7 +488,7 @@ function readZhangIpParamsFile(filename::String)
 	zid = ZhangIpData()
 	
 	table = tables["miscParams"]
-	assert(size(table.data,1) == 1) # table should have one data row
+	@assert(size(table.data,1) == 1) # table should have one data row
 	for fname in [:travelTimeCost, :onRoadMoveUpDiscountFactor, :regretTravelTimeThreshold, :expectedHospitalTransferDuration]
 		# setfield!(zid, fname, table.columns[string(fname)][1])
 		setfield!(zid, fname, convert(fieldtype(typeof(zid), fname), table.columns[string(fname)][1]))
@@ -497,15 +497,15 @@ function readZhangIpParamsFile(filename::String)
 	table = tables["stationCapacities"]
 	n = numStations = size(table.data, 1) # number of stations
 	for i = 1:n
-		assert(table.columns["stationIndex"][i] == i)
+		@assert(table.columns["stationIndex"][i] == i)
 		push!(zid.stationCapacities, table.columns["capacity"][i])
 	end
 	
 	table = tables["stationMarginalBenefits"]
 	n = size(table.data, 1) # number of stations
-	assert(n == numStations)
+	@assert(n == numStations)
 	for i = 1:n
-		assert(table.columns["stationIndex"][i] == i)
+		@assert(table.columns["stationIndex"][i] == i)
 		push!(zid.marginalBenefits, [])
 		for j = 1:zid.stationCapacities[i]
 			push!(zid.marginalBenefits[i], table.columns["slot_$j"][i])

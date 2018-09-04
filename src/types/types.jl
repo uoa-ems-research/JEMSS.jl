@@ -394,13 +394,13 @@ type Raster
 	function Raster(x, y, z)
 		nx = length(x)
 		ny = length(y)
-		assert(nx > 1)
-		assert(ny > 1)
-		assert((nx, ny) == size(z))
+		@assert(nx > 1)
+		@assert(ny > 1)
+		@assert((nx, ny) == size(z))
 		dx = (maximum(x) - minimum(x))/(nx-1)
 		dy = (maximum(y) - minimum(y))/(ny-1)
-		assert(dx > 0)
-		assert(dy > 0)
+		@assert(dx > 0)
+		@assert(dy > 0)
 		return new(x, y, z, nx, ny, dx, dy)
 	end
 end
@@ -415,7 +415,7 @@ type RasterSampler
 	cellLocRng::AbstractRNG # rng used when generating location within raster cell
 	
 	function RasterSampler(raster::Raster, cellRng::AbstractRNG, cellLocRng::AbstractRNG)
-		assert(all(raster.z .>= 0)) # otherwise probability values will be negative
+		@assert(all(raster.z .>= 0)) # otherwise probability values will be negative
 		p = raster.z[:] / sum(raster.z) # pdf for z
 		cellSampler = sampler(Categorical(p))
 		cellDistrRng = DistrRng(cellSampler, cellRng)

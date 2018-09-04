@@ -54,11 +54,11 @@ end
 function calcBatchMeans(; values::Vector{Float} = [], times::Vector{Float} = [],
 	batchTime::Float = nullTime, startTime::Float = nullTime, endTime::Float = nullTime)
 	
-	assert(length(times) == length(values))
-	assert(length(times) >= 1)
-	assert(batchTime != nullTime && batchTime > 0)
-	assert(startTime != nullTime && startTime >= 0)
-	assert(endTime != nullTime && endTime >= startTime)
+	@assert(length(times) == length(values))
+	@assert(length(times) >= 1)
+	@assert(batchTime != nullTime && batchTime > 0)
+	@assert(startTime != nullTime && startTime >= 0)
+	@assert(endTime != nullTime && endTime >= startTime)
 	
 	# calculate number of batches
 	numBatches = max(0, Int(floor((endTime - startTime) / batchTime)))
@@ -77,7 +77,7 @@ function calcBatchMeans(; values::Vector{Float} = [], times::Vector{Float} = [],
 			batchCounts[batchIndex] += 1
 		end
 	end
-	assert(all(batchCounts .> 0))
+	@assert(all(batchCounts .> 0))
 	batchMeans = batchTotals ./ batchCounts
 	
 	return batchMeans, batchCounts
@@ -87,7 +87,7 @@ end
 function calcBatchMeanResponseTimes(sim::Simulation;
 	batchTime::Float = nullTime, warmUpTime::Float = nullTime, coolDownTime::Float = nullTime)
 	
-	assert(sim.complete == true)
+	@assert(sim.complete == true)
 	
 	# collate data for use by calcBatchMeans function
 	n = length(sim.calls)
@@ -106,8 +106,8 @@ end
 # For each x[i], plot mean of y[i,:] with two sided confidence interval.
 # Assumes that values in y[i,:] are from a normal distribution with unknown standard deviation.
 function meanErrorPlot(x::Vector{Float}, y::Array{Float,2}, conf::Float=0.95)
-	assert(length(x) == size(y,1))
-	assert(0 < conf < 1)
+	@assert(length(x) == size(y,1))
+	@assert(0 < conf < 1)
 	t = StatsFuns.tdistinvcdf(size(y,2)-1, 1-(1-conf)/2) # t-value, for two sided confidence interval
 	# StatsFuns.tdistinvcdf(dof, p) # for n samples, dof = n - 1
 	return Plots.scatter(x, mean(y,2), yerror=repmat(t*Stats.sem(y), 1, 2),

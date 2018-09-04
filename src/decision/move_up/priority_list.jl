@@ -18,13 +18,13 @@ function initPriorityList!(sim::Simulation, priorityList::Vector{Int})
 	pld = sim.moveUpData.priorityListData
 	
 	pld.priorityList = priorityList
-	assert(length(pld.priorityList) == numAmbs)
-	assert(maximum(pld.priorityList) <= numStations)
+	@assert(length(pld.priorityList) == numAmbs)
+	@assert(maximum(pld.priorityList) <= numStations)
 	
 	# check that priority list does not violate station capacity constraints
-	# assert(all( sum(pld.priorityList .== j) .<= stations[j].capacity for j = 1:numStations ))
+	# @assert(all( sum(pld.priorityList .== j) .<= stations[j].capacity for j = 1:numStations ))
 	for j = 1:numStations
-		assert(sum(pld.priorityList .== j) <= stations[j].capacity)
+		@assert(sum(pld.priorityList .== j) <= stations[j].capacity)
 	end
 	
 	pld.stationNumIdleAmbs = Vector{Int}(numStations)
@@ -40,7 +40,7 @@ function initPriorityList!(sim::Simulation, priorityList::Vector{Int})
 end
 
 function priorityListMoveUp(sim::Simulation, newlyIdleAmb::Ambulance)
-	assert(sim.moveUpData.useMoveUp)
+	@assert(sim.moveUpData.useMoveUp)
 	
 	# shorthand:
 	pld = sim.moveUpData.priorityListData
@@ -70,7 +70,7 @@ function priorityListMoveUp(sim::Simulation, newlyIdleAmb::Ambulance)
 			break
 		end
 	end
-	assert(stationIndex != nullIndex)
+	@assert(stationIndex != nullIndex)
 	
 	return [newlyIdleAmb], [stations[stationIndex]]
 end
