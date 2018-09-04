@@ -39,34 +39,6 @@ function readRasterFile(rasterFilename::String)
 	return Raster(x, y, z)
 end
 
-# For reading raster stored in jld file, with x, y, and z variables,
-# where x and y values are coordinates (each sorted by increasing value)
-# and x[i], y[j] corresponds with cell value z[i,j] ((length(x), length(y)) == size(z))
-function readJldRasterFile(rasterFilename::String)
-	# open and read file
-	assert(isfile(rasterFilename))
-	data = JLD.load(rasterFilename)
-	raster = Raster(data["x"], data["y"], data["z"])
-	
-	# check data
-	
-	# z[i,j] should correspond with x[i], y[j]
-	assert((length(raster.x), length(raster.y)) == size(raster.z))
-	
-	# x and y values should increase with index
-	assert(issorted(raster.x, lt = <))
-	assert(issorted(raster.y, lt = <))
-	
-	# check that x and y values have (roughly) constant step sizes
-	for (v, dv) in [(raster.x, raster.dx), (raster.y, raster.dy)]
-		for i = 1:length(v)-1
-			assert(isapprox(v[i] + dv, v[i+1]; rtol = eps(Float)))
-		end
-	end
-	
-	return raster
-end
-
 # crop raster borders to fit in map borders, return true if successful, false otherwise
 # mutates: raster
 function cropRaster!(raster::Raster, map::Map)

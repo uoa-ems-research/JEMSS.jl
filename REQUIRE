@@ -4,7 +4,6 @@ Distributions
 GLPKMathProgInterface
 HttpServer
 HypothesisTests
-JLD
 JSON
 JuMP
 LightGraphs

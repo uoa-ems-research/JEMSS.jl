@@ -22,7 +22,6 @@ using StatsFuns
 # misc
 using LightGraphs
 using ArchGDAL # does not use precompile
-using JLD
 import Plots
 
 # simulation functions
