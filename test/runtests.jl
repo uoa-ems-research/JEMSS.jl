@@ -1,5 +1,7 @@
 using JEMSS
 using Base.Test
 
-# todo
-warn("No tests implemented")
+cd(@__DIR__) do
+	isdir("temp") || mkpath("temp")
+	include("test_demand.jl")
+end
