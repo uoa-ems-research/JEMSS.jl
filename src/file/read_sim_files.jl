@@ -181,6 +181,85 @@ function readCompTableFile(filename::String)
 	return compTable
 end
 
+function readDemandFile(filename::String)
+	tables = readTablesFromFile(filename)
+	
+	# create demand object, will populate gradually
+	demand = Demand()
+	
+	# demand rasters
+	table = tables["demandRasters"]
+	n = numRasters = demand.numRasters = size(table.data,1)
+	@assert(n >= 1)
+	columns = table.columns # shorthand
+	demand.rasters = Vector{Raster}(n)
+	demand.rasterFilenames = Vector{String}(n)
+	@assert(allunique(columns["rasterFilename"]), "There are duplicate raster filenames in the demand file, this is unnecessary.")
+	for i = 1:n
+		@assert(columns["rasterIndex"][i] == i)
+		
+		rasterFilename = String(columns["rasterFilename"][i])
+		@assert(isfile(rasterFilename))
+		demand.rasterFilenames[i] = rasterFilename
+		demand.rasters[i] = readRasterFile(rasterFilename)
+	end
+	
+	# demand modes
+	table = tables["demandModes"]
+	n = numModes = demand.numModes = size(table.data,1)
+	@assert(n >= 1)
+	columns = table.columns # shorthand
+	demand.modes = Vector{DemandMode}(n)
+	for i = 1:n
+		@assert(columns["modeIndex"][i] == i)
+		
+		demand.modes[i] = DemandMode()
+		demand.modes[i].index = i
+		rasterIndex = demand.modes[i].rasterIndex = columns["rasterIndex"][i]
+		@assert(1 <= rasterIndex <= numRasters)
+		demand.modes[i].raster = demand.rasters[rasterIndex]
+		demand.modes[i].priority = columns["priority"][i] |> parse |> eval
+		demand.modes[i].arrivalRate = columns["arrivalRate"][i]
+		@assert(demand.modes[i].arrivalRate >= 0)
+	end
+	
+	# demand sets
+	table = tables["demandSets"]
+	n = size(table.data,1)
+	@assert(n >= 1)
+	columns = table.columns # shorthand
+	numSets = demand.numSets = maximum(columns["setIndex"])
+	@assert(sort(unique(columns["setIndex"])) == [1:numSets;]) # all sets from 1:numSets should be used
+	demand.modeLookup = fill(nullIndex, numSets, 3) # number of priorities is fixed at 3, set defs.jl
+	for i = 1:n
+		setIndex = columns["setIndex"][i]
+		@assert(setIndex == i)
+		modeIndices = columns["modeIndices"][i] |> parse |> eval
+		for modeIndex in modeIndices
+			@assert(1 <= modeIndex <= numModes)
+			priorityIndex = Int(demand.modes[modeIndex].priority)
+			@assert(demand.modeLookup[setIndex,priorityIndex] == nullIndex) # value should not yet be filled
+			demand.modeLookup[setIndex,priorityIndex] = modeIndex
+		end
+	end
+	@assert(all(demand.modeLookup .!= nullIndex)) # check that demand.modeLookup is filled correctly
+	# have not checked that all modes from 1:numModes are used
+	
+	# demand sets timing
+	table = tables["demandSetsTiming"]
+	columns = table.columns # shorthand
+	demand.setsStartTimes = columns["startTime"]
+	@assert(demand.setsStartTimes[1] > nullTime)
+	@assert(issorted(demand.setsStartTimes, lt=<=)) # times should be strictly increasing
+	demand.setsTimeOrder = columns["setIndex"]
+	@assert(sort(unique(demand.setsTimeOrder)) == [1:numSets;]) # each demand set should be used at least once
+	
+	# misc
+	demand.recentSetsStartTimesIndex = 1
+	
+	return demand
+end
+
 function readEventsFile(filename::String)
 	tables = readTablesFromFile(filename)
 	
@@ -235,6 +314,15 @@ function readEventsFile(filename::String)
 	end
 	
 	return events, eventsChildren, fileEnded, inputFiles, fileChecksums
+end
+
+# read geographic data from file and apply f to data
+function readGeoFile(f::Function, filename::String)
+	return ArchGDAL.registerdrivers() do
+		ArchGDAL.read(filename) do dataset
+			f(dataset)
+		end
+	end
 end
 
 function readHospitalsFile(filename::String)
@@ -354,6 +442,38 @@ function readPriorityListFile(filename::String)
 	@assert(all(priorityList .>= 1))
 	
 	return priorityList
+end
+
+# read raster file using ArchGDAL package, return as custom Raster type
+function readRasterFile(rasterFilename::String)
+	
+	# open raster, get data, close raster
+	# only gets first raster band, may change this later
+	(geoTransform, z) = readGeoFile(rasterFilename) do dataset
+		rasterband = ArchGDAL.getband(dataset, 1)
+		return (ArchGDAL.getgeotransform(dataset), ArchGDAL.read(rasterband))
+	end
+	
+	# shorthand:
+	(nx, ny) = size(z) # number of cells in x and y directions
+	(x1, dxdi, dxdj, y1, dydi, dydj) = geoTransform # dxdi is change in x per change in index i, for z[i,j]; likewise for dxdj, dydi, dydj
+	dx = dxdi # width of cells in x direction
+	dy = dydj # height of cells in y direction (may be negative)
+	
+	# data checks
+	@assert(dxdj == 0 && dydi == 0) # otherwise raster is sloping, so changing x index changes y value, and vice-versa
+	@assert(dx > 0)
+	@assert(dy != 0)
+	
+	# convert data for easier use
+	# find x and y vectors to represent raster cell centres, make sure values are increasing
+	xMin = x1 + 0.5*dx # we know dx > 0
+	# (xMin, dx, z) = (dx > 0) ? (x1 + 0.5*dx, dx, z) : (x1 + (nx-0.5)*dx, -dx, flipdim(z,1))
+	(yMin, dy, z) = (dy > 0) ? (y1 + 0.5*dy, dy, z) : (y1 + (ny-0.5)*dy, -dy, flipdim(z,2))
+	x = collect(range(xMin, dx, nx))
+	y = collect(range(yMin, dy, ny))
+	
+	return Raster(x, y, z)
 end
 
 function readRNetTravelsFile(filename::String)

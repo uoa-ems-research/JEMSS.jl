@@ -428,6 +428,45 @@ type RasterSampler
 	end
 end
 
+# to model call demand for a single priority
+# can use multiple demand modes to model change in demand with time, using Demand type
+type DemandMode
+	# parameters:
+	index::Int # mode index
+	rasterIndex::Int # index of demand raster in Demand.rasters
+	priority::Priority # demand priority
+	arrivalRate::Float # demand per day
+	
+	raster::Raster # reference to Demand.rasters[rasterIndex]
+	
+	DemandMode() = new(nullIndex, nullIndex, nullPriority, nullTime,
+		Raster())
+end
+
+# To model demand (calls).
+# Stores demand modes, demand sets (a set of demand modes apply to each time period),
+# and conditions for when to use each demand set/mode.
+type Demand
+	numRasters::Int # number of demand rasters
+	numModes::Int # number of demand modes
+	numSets::Int # number of sets of demand modes; each set may contain multiple demand modes e.g. for different combinations of call priorities and ambulance classes. Different sets can overlap, by containing the same demand modes.
+	
+	rasters::Vector{Raster} # demand rasters, to model spatial demand. Raster cell z values are not actual demand, but are proportional to demand
+	rasterFilenames::Vector{String} # rasterFilenames[i] gives filename of rasters[i]
+	
+	modes::Vector{DemandMode}
+	modeLookup::Array{Int,2} # modeLookup[i,j] = index of demand mode to use for demand set i, demand priority j. Change this variable according to modelling needs
+	
+	setsStartTimes::Vector{Float} # setsStartTimes[i] gives time at which demand set setsTimeOrder[i] should be started (setsStartTimes[i+1] or Inf gives end time)
+	setsTimeOrder::Vector{Int} # setsTimeOrder[i] gives demand set to start using at time setsStartTimes[i]
+	recentSetsStartTimesIndex::Int # index of most recently used value in setsStartTimes (and setsTimeOrder), should only ever increase in value
+	
+	Demand() = new(nullIndex, nullIndex, nullIndex,
+		[], [],
+		[], Array{Int,2}(0,0),
+		[], [], nullIndex)
+end
+
 # move up data types
 abstract type MoveUpDataType end
 type EmptyMoveUpData <: MoveUpDataType end
