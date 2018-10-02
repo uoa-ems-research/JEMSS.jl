@@ -60,8 +60,9 @@ function resetSim!(sim::Simulation)
 		# reset resimulation state
 		sim.resim.prevEventIndex = 0
 		
-		# reset travel state
+		# reset travel and demand state
 		sim.travel.recentSetsStartTimesIndex = 1
+		sim.demand.recentSetsStartTimesIndex = 1
 	end
 end
 
@@ -222,7 +223,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		ambulance.status = ambGoingToCall
 		# ambulance.stationIndex
 		ambulance.callIndex = call.index
-		changeRoute!(sim, ambulance.route, call.priority, sim.time, call.location, call.nearestNodeIndex)
+		changeRoute!(sim, ambulance.route, sim.responseTravelPriorities[call.priority], sim.time, call.location, call.nearestNodeIndex)
 		
 		call.status = callWaitingForAmb
 		call.ambIndex = event.ambIndex

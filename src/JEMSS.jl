@@ -54,9 +54,9 @@ export
 
 # types
 export
-	Location, Node, Arc, Graph, NetTravel, Network, TravelMode, Travel, Route,
+	Location, Point, Node, Arc, Graph, NetTravel, Network, TravelMode, Travel, Route,
 	Event, Ambulance, Call, Hospital, Station,
-	Map, GridSearchRect, GridRect, Grid, Raster, RasterSampler, DemandMode, Demand,
+	Map, GridSearchRect, GridRect, Grid, Raster, RasterSampler, DemandMode, Demand, PointsCoverageMode, DemandCoverage,
 	CompTableData, DmexclpData, PriorityListData, ZhangIpData, Temp0Data, Temp1Data, Temp2Data, MoveUpData,
 	File, Table, Resimulation, Simulation,
 	DistrRng

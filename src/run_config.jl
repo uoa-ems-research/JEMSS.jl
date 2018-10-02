@@ -108,7 +108,7 @@ function initSimulation(configFilename::String;
 	# read misc
 	sim.map = readMapFile(simFilePath("map"))
 	map = sim.map # shorthand
-	sim.targetResponseTimes = readPrioritiesFile(simFilePath("priorities"))
+	(sim.targetResponseTimes, sim.responseTravelPriorities) = readPrioritiesFile(simFilePath("priorities"))
 	sim.travel = readTravelFile(simFilePath("travel"))
 	
 	initTime(t)

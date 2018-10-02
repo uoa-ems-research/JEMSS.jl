@@ -221,6 +221,7 @@ function readDemandFile(filename::String)
 		demand.modes[i].priority = columns["priority"][i] |> parse |> eval
 		demand.modes[i].arrivalRate = columns["arrivalRate"][i]
 		@assert(demand.modes[i].arrivalRate >= 0)
+		demand.modes[i].rasterMultiplier = demand.modes[i].arrivalRate / sum(demand.modes[i].raster.z)
 	end
 	
 	# demand sets
@@ -411,16 +412,21 @@ function readPrioritiesFile(filename::String)
 	# read data from table
 	columns = table.columns # shorthand
 	targetResponseTimes = Vector{Float}(n)
+	responseTravelPriorities = Dict([p => p for p in instances(Priority)]) # default is to have response travel priority equal to call priority
 	for i = 1:n
 		@assert(columns["priority"][i] == i)
 		@assert(eval(parse(columns["name"][i])) == Priority(i))
 		targetResponseTimes[i] = columns["targetResponseTime"][i]
+		
+		if haskey(columns, "responseTravelPriority")
+			responseTravelPriorities[Priority(i)] = eval(parse(columns["responseTravelPriority"][i]))
+		end
 	end
 	
 	# target response times should be positive
 	@assert(all(targetResponseTimes .> 0))
 	
-	return targetResponseTimes
+	return targetResponseTimes, responseTravelPriorities
 end
 
 function readPriorityListFile(filename::String)

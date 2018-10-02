@@ -6,6 +6,19 @@ type Location
 	Location(x,y) = new(x,y)
 end
 
+type Point
+	index::Int
+	location::Location
+	value::Any
+	
+	# node nearest to location
+	nearestNodeIndex::Int
+	nearestNodeDist::Float
+	
+	Point() = new(nullIndex, Location(), nothing,
+		nullIndex, nullDist)
+end
+
 type Node
 	index::Int
 	location::Location
@@ -438,9 +451,10 @@ type DemandMode
 	arrivalRate::Float # demand per day
 	
 	raster::Raster # reference to Demand.rasters[rasterIndex]
+	rasterMultiplier::Float # = arrivalRate / sum(raster.z), to scale raster.z values to match arrivalRate
 	
 	DemandMode() = new(nullIndex, nullIndex, nullPriority, nullTime,
-		Raster())
+		Raster(), 0.0)
 end
 
 # To model demand (calls).
@@ -465,6 +479,38 @@ type Demand
 		[], [],
 		[], Array{Int,2}(0,0),
 		[], [], nullIndex)
+end
+
+# For a given set of points, coverage time, and travel mode,
+# for each station store the points that can be reached by
+# travelling from the station within the coverage time.
+type PointsCoverageMode
+	# parameters:
+	index::Int
+	points::Vector{Point} # reference to DemandCoverage.points
+	coverTime::Float # any demand that can be reached within this time gets additional coverage of 1, otherwise 0. Usually equal to target cover time minus dispatch delay.
+	travelMode::TravelMode # reference to a travel mode
+	
+	pointSets::Vector{Set{Int}} # pointSets[i] has set of all point indices covered by the same unique set of stations
+	stationSets::Vector{Set{Int}} # stationSets[i] = unique set of stations for pointSets[i]
+	stationsCoverPointSets::Vector{Vector{Int}} # stationsCoverPointSets[i] = indices of pointSets covered by station i
+	
+	PointsCoverageMode() = new(nullIndex, [], nullTime, TravelMode(),
+		[], [], [])
+end
+
+type DemandCoverage
+	points::Vector{Point} # demand is aggregated to points, same points are used for all demand rasters
+	nodesPoints::Vector{Vector{Int}} # nodesPoints[i] gives indices of points for which node i is the nearest node
+	rastersPointDemands::Vector{Vector{Float}} # rastersPointDemands[i][j] is demand at points[j] for Demand.rasters[i]
+	# demandCoverTimes::Dict{Priority,Float} # reference to sim.demandCoverTimes, demandCoverTimes[p] gives the target cover time for demand of priority p
+	
+	pointsCoverageModes::Vector{PointsCoverageMode}
+	pointsCoverageModeLookup::Vector{Dict{Float,Int}} # pointsCoverageModeLookup[TravelMode.index][coverTime] gives index of PointsCoverageMode
+	pointSetsDemands::Array{Vector{Float},2} # pointSetsDemands[PointsCoverageMode.index, rasterIndex] gives demand values for each point set in PointsCoverageMode.pointSets, for Demand.rasters[rasterIndex]
+	
+	DemandCoverage() = new([], [], [],
+		[], [], Array{Vector{Float},2}(0,0))
 end
 
 # move up data types
@@ -650,7 +696,12 @@ type Simulation
 	findAmbToDispatch!::Function
 	moveUpData::MoveUpData
 	
-	# for statistics:
+	# demand
+	demand::Demand
+	demandCoverage::DemandCoverage
+	demandCoverTimes::Dict{Priority,Float} # demandCoverTimes[p] gives the target cover time for demand of priority p
+	
+	responseTravelPriorities::Dict{Priority,Priority} # responseTravelPriorities[p] gives the travel priority for responding to call of priority p
 	targetResponseTimes::Vector{Float} # targetResponseTimes[Int(priority)] gives maximum desired response time for call of given priority
 	
 	# for animation:
@@ -678,7 +729,8 @@ type Simulation
 		[], 0, [],
 		Resimulation(),
 		nullFunction, nullFunction, MoveUpData(),
-		[],
+		Demand(), DemandCoverage(), Dict(),
+		Dict(), [],
 		Set(), Set(),
 		"", "", Dict(), Dict(), IOStream(""),
 		false,
