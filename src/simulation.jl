@@ -32,12 +32,12 @@ function backupSim!(sim::Simulation)
 	@assert(!sim.used)
 	
 	# remove net, travel, grid, and resim from sim before copying sim
-	(net, travel, grid, resim) = (sim.net, sim.travel, sim.grid, sim.resim)
-	(sim.net, sim.travel, sim.grid, sim.resim) = (Network(), Travel(), Grid(), Resimulation())
+	(net, travel, grid, resim, demand, demandCoverage) = (sim.net, sim.travel, sim.grid, sim.resim, sim.demand, sim.demandCoverage)
+	(sim.net, sim.travel, sim.grid, sim.resim) = (Network(), Travel(), Grid(), Resimulation(), Demand(), DemandCoverage())
 	
 	sim.backup = deepcopy(sim)
 	
-	(sim.net, sim.travel, sim.grid, sim.resim) = (net, travel, grid, resim)
+	(sim.net, sim.travel, sim.grid, sim.resim, sim.demand, sim.demandCoverage) = (net, travel, grid, resim, demand, demandCoverage)
 end
 
 # reset sim from sim.backup
@@ -48,7 +48,7 @@ function resetSim!(sim::Simulation)
 		resetCalls!(sim) # reset calls from sim.backup, need to do this before resetting sim.time
 		
 		fnames = Set(fieldnames(sim))
-		fnamesDontCopy = Set([:backup, :net, :travel, :grid, :resim, :calls]) # will not (yet) copy these fields from sim.backup to sim
+		fnamesDontCopy = Set([:backup, :net, :travel, :grid, :resim, :calls, :demand, :demandCoverage]) # will not (yet) copy these fields from sim.backup to sim
 		# note that sim.backup does not contain net, travel, grid, or resim
 		setdiff!(fnames, fnamesDontCopy) # remove fnamesDontCopy from fnames
 		for fname in fnames

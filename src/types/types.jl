@@ -532,27 +532,18 @@ end
 # dmexclp - dynamic maximum expected coverage location problem
 type DmexclpData <: MoveUpDataType
 	# parameters:
-	coverTime::Float # ambulance 'covers' a location if it can reach the location in this time
-	coverTravelPriority::Priority # priority of travel for which coverTime applies
 	busyFraction::Float # fraction for which each ambulance is busy, approximate
-	demandRaster::Raster
+	# some other relevant parameters are stored in sim: demand, demandCoverage, demandCoverTimes, responseTravelPriorities
 	
-	marginalBenefit::Vector{Float} # marginalBenefit[i] = benefit of adding an ith ambulance to cover single demand
-	
-	nodeDemand::Vector{Float} # nodeDemand[i] = demand at node i
-	stationCoverNode::Array{Bool,2} # stationCoverNode[i,j] = true if station i 'covers' node j
-	nodeSets::Vector{Set{Int}} # nodeSets[i] has set of all node indices covered by the same unique set of stations
-	stationSets::Vector{Set{Int}} # stationSets[i] = unique set of stations for nodeSets[i]
-	nodeSetDemand::Vector{Float} # nodeSetDemand[i] = demand at node set i
-	stationCoverNodeSets::Vector{Vector{Int}} # stationCoverNodeSets[i] = list of node set indices covered by station i
+	marginalBenefit::Vector{Float} # marginalBenefit[i] = benefit of adding an ith ambulance to cover single demand, calculated from busyFraction
 	
 	# arrays for recycling:
 	stationNumIdleAmbs::Vector{Int} # stationNumIdleAmbs[i] = number of idle ambulances assigned to station i
-	nodeSetCoverCount::Vector{Int} # nodeSetCoverCount[i] = number of idle ambulances covering node set i
+	stationMarginalCoverages::Vector{Float} # stationMarginalCoverages[i] gives extra coverage provided from placing newly idle ambulance at station i
+	# pointSetsCoverCounts::Vector{Vector{Int}} # pointSetsCoverCounts[i][j] = number of idle ambulances covering node set j, for demand.pointsCoverageModes i
 	
-	DmexclpData() = new(nullTime, nullPriority, 0.0, Raster(),
+	DmexclpData() = new(0.0,
 		[],
-		[], Array{Bool,2}(0,0), [], [], [], [],
 		[], [])
 end
 

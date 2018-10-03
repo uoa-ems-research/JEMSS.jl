@@ -150,7 +150,7 @@ function createPointsCoverageMode(sim::Simulation, travelMode::TravelMode, cover
 		time1 = offRoadTravelTime(travelMode, dist1) # time to reach nearest node from station
 		
 		for j = 1:numNodes
-			(pathTravelTime, rNodes) = shortestPathTravelTime(net, travelMode.index, node1, j)
+			(pathTravelTime, rNodes) = shortestPathTravelTime(sim.net, travelMode.index, node1, j)
 			if time1 + pathTravelTime <= coverTime
 				for k in nodesPoints[j] # indices of points for which node j is the nearest node
 					point = points[k] # shorthand
@@ -161,6 +161,8 @@ function createPointsCoverageMode(sim::Simulation, travelMode::TravelMode, cover
 			end
 		end
 	end
+	
+	# to do: speed up grouping of points into sets (below)
 	
 	# group points with coverage by same set of stations
 	pointSets = Vector{Set{Int}}() # pointSets[i] has set of all point indices covered by the same unique set of stations
@@ -193,7 +195,7 @@ end
 function getPointsCoverageMode(demandCoverage::DemandCoverage, travelMode::TravelMode, coverTime::Float)
 	dc = demandCoverage # shorthand
 	@assert(travelMode.index <= length(dc.pointsCoverageModeLookup))
-	@assert(haskey(dc.pointsCoverageModeLookup[travelMode], coverTime))
+	@assert(haskey(dc.pointsCoverageModeLookup[travelMode.index], coverTime))
 	pointsCoverageMode = dc.pointsCoverageModes[dc.pointsCoverageModeLookup[travelMode.index][coverTime]]
 	return pointsCoverageMode
 end
@@ -210,6 +212,17 @@ function getPointsCoverageMode!(sim::Simulation, demandPriority::Priority, curre
 	return pointsCoverageMode
 end
 
+# mutates: sim.travel and sim.demand states
+function getPointSetsDemands!(sim::Simulation, demandPriority::Priority, currentTime::Float;
+	pointsCoverageMode::Union{PointsCoverageMode,Void} = nothing)
+	if pointsCoverageMode == nothing
+		pointsCoverageMode = getPointsCoverageMode!(sim, demandPriority, currentTime)
+	end
+	demandMode = getDemandMode!(sim.demand, demandPriority, currentTime)
+	pointSetsDemands = sim.demandCoverage.pointSetsDemands[pointsCoverageMode.index, demandMode.rasterIndex]
+	return pointSetsDemands
+end
+
 # Initialises the points coverage modes data in sim.demandCoverage.
 # mutates: sim.demandCoverage (fields: pointsCoverageModes, pointsCoverageModeLookup)
 function initPointsCoverageModes!(sim::Simulation)
@@ -220,7 +233,7 @@ function initPointsCoverageModes!(sim::Simulation)
 	# go through all travel sets and demand priorities, create points coverage mode for each call response travel priority and cover time
 	# dc.pointsCoverageModes
 	dc.pointsCoverageModeLookup = [Dict{Float,Int}() for i = 1:travel.numModes]
-	priorities = setdiff([instances(JEMSS.Priority)...], [JEMSS.nullPriority])
+	priorities = setdiff([instances(Priority)...], [nullPriority])
 	for i = 1:travel.numSets, demandPriority in priorities
 		# get travel mode and cover time
 		travelPriority = sim.responseTravelPriorities[demandPriority]
@@ -239,7 +252,8 @@ end
 
 # Initialises data in sim.demandCoverage.
 # mutates: sim.demandCoverage
-function initDemandCoverage!(sim::Simulation)
+function initDemandCoverage!(sim::Simulation;
+	rasterCellNumRows::Int = 1, rasterCellNumCols::Int = 1)
 	@assert(!sim.used)
 	@assert(sim.travel.recentSetsStartTimesIndex == 1)
 	@assert(sim.demand.recentSetsStartTimesIndex == 1)
@@ -253,7 +267,7 @@ function initDemandCoverage!(sim::Simulation)
 	
 	# create demand points
 	dc = demandCoverage = sim.demandCoverage = DemandCoverage()
-	points = dc.points = createDemandPointsFromRasters(sim.demand)
+	points = dc.points = createDemandPointsFromRasters(sim.demand; numCellRows = rasterCellNumRows, numCellCols = rasterCellNumCols) # should add kwargs
 	setPointsNearestNodes!(sim, points)
 	numPoints = length(points) # shorthand
 	
@@ -277,7 +291,7 @@ function initDemandCoverage!(sim::Simulation)
 	# note that pointSetsDemands does not need to be set for all combinations of pointsCoverageMode.index and rasterIndex, as some combinations may not occur in simulation
 	dc.pointSetsDemands = [Vector{Float}() for i = 1:numPointsCoverageModes, j = 1:demand.numRasters]
 	times = vcat(travel.setsStartTimes, demand.setsStartTimes) |> unique |> sort
-	priorities = setdiff([instances(JEMSS.Priority)...], [JEMSS.nullPriority])
+	priorities = setdiff([instances(Priority)...], [nullPriority])
 	for time in times, demandPriority in priorities
 		pointsCoverageMode = getPointsCoverageMode!(sim, demandPriority, time)
 		demandMode = getDemandMode!(demand, demandPriority, time)
@@ -305,7 +319,6 @@ end
 function calcPointSetsCoverCounts(pointsCoverageMode::PointsCoverageMode, stationsNumAmbs::Vector{Int})
 	# stationsNumAmbs[i] gives the number of ambulances that can provide coverage and are assigned to station i
 	
-	@assert(length(stationsNumAmbs) == length(pointsCoverageMode.stationSets))
 	@assert(all(n -> n >= 0, stationsNumAmbs))
 	
 	# count how many times each point set is covered
@@ -333,7 +346,7 @@ end
 # pointsCoverageMode.pointSet, where pointsCoverageMode is for the demand priority and current time.
 # mutates: sim.travel state
 function calcPointSetsCoverCounts!(sim::Simulation, currentTime::Float, stationsNumAmbs::Vector{Int};
-	demandPriorities::Vector{Priority} = setdiff([instances(JEMSS.Priority)...], [JEMSS.nullPriority]))
+	demandPriorities::Vector{Priority} = setdiff([instances(Priority)...], [nullPriority]))
 	# stationsNumAmbs[i] gives the number of ambulances that can provide coverage and are assigned to station i
 	
 	@assert(length(stationsNumAmbs) == length(sim.stations))
@@ -359,7 +372,7 @@ end
 # Calculates, for each demand priority, how much of the demand is covered by 1,2,... ambulances
 # mutates: sim.travel and sim.demand states
 function calcDemandCoverCounts!(sim::Simulation, currentTime::Float, stationsNumAmbs::Vector{Int};
-	demandPriorities::Vector{Priority} = setdiff([instances(JEMSS.Priority)...], [JEMSS.nullPriority]))
+	demandPriorities::Vector{Priority} = setdiff([instances(Priority)...], [nullPriority]))
 	# stationsNumAmbs[i] gives the number of ambulances that can provide coverage and are assigned to station i
 	
 	@assert(length(stationsNumAmbs) == length(sim.stations))

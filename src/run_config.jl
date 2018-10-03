@@ -290,11 +290,18 @@ function initSimulation(configFilename::String;
 		elseif moveUpModuleName == "dmexclp"
 			mud.moveUpModule = dmexclpModule
 			dmexclpElt = findElt(moveUpElt, "dmexclp")
+			demandCoverTimesElt = findElt(dmexclpElt, "demandCoverTimes")
+			demandCoverTimes = Dict{Priority,Float}()
+			for demandPriority in setdiff([instances(Priority)...], [nullPriority])
+				demandCoverTimes[demandPriority] = eltAttrVal(demandCoverTimesElt, string(demandPriority))
+			end
+			demandPointsPerRasterCellsElt = findElt(dmexclpElt, "demandPointsPerRasterCells")
+			sim.demand = readDemandFile(eltContent(dmexclpElt, "demandFilename"))
 			initDmexclp!(sim;
-				coverTime = eltContentVal(dmexclpElt, "coverTime"),
-				coverTravelPriority = eltContentVal(dmexclpElt, "coverTravelPriority"),
+				demandCoverTimes = demandCoverTimes,
 				busyFraction = eltContentVal(dmexclpElt, "busyFraction"),
-				demandRasterFilename = eltContent(dmexclpElt, "demandRasterFilename"))
+				rasterCellNumPointRows = eltAttrVal(demandPointsPerRasterCellsElt, "rows"),
+				rasterCellNumPointCols = eltAttrVal(demandPointsPerRasterCellsElt, "cols"))
 			
 		elseif moveUpModuleName == "priority_list"
 			mud.moveUpModule = priorityListModule
