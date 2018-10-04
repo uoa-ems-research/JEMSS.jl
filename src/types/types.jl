@@ -491,8 +491,8 @@ type PointsCoverageMode
 	coverTime::Float # any demand that can be reached within this time gets additional coverage of 1, otherwise 0. Usually equal to target cover time minus dispatch delay.
 	travelMode::TravelMode # reference to a travel mode
 	
-	pointSets::Vector{Set{Int}} # pointSets[i] has set of all point indices covered by the same unique set of stations
-	stationSets::Vector{Set{Int}} # stationSets[i] = unique set of stations for pointSets[i]
+	pointSets::Vector{Vector{Int}} # pointSets[i] has set of all point indices covered by the same unique set of stations
+	stationSets::Vector{Vector{Int}} # stationSets[i] = unique set of stations for pointSets[i]
 	stationsCoverPointSets::Vector{Vector{Int}} # stationsCoverPointSets[i] = indices of pointSets covered by station i
 	
 	PointsCoverageMode() = new(nullIndex, [], nullTime, TravelMode(),

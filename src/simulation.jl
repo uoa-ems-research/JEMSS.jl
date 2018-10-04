@@ -33,7 +33,7 @@ function backupSim!(sim::Simulation)
 	
 	# remove net, travel, grid, and resim from sim before copying sim
 	(net, travel, grid, resim, demand, demandCoverage) = (sim.net, sim.travel, sim.grid, sim.resim, sim.demand, sim.demandCoverage)
-	(sim.net, sim.travel, sim.grid, sim.resim) = (Network(), Travel(), Grid(), Resimulation(), Demand(), DemandCoverage())
+	(sim.net, sim.travel, sim.grid, sim.resim, sim.demand, sim.demandCoverage) = (Network(), Travel(), Grid(), Resimulation(), Demand(), DemandCoverage())
 	
 	sim.backup = deepcopy(sim)
 	

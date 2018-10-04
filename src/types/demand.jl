@@ -162,23 +162,17 @@ function createPointsCoverageMode(sim::Simulation, travelMode::TravelMode, cover
 		end
 	end
 	
-	# to do: speed up grouping of points into sets (below)
-	
 	# group points with coverage by same set of stations
-	pointSets = Vector{Set{Int}}() # pointSets[i] has set of all point indices covered by the same unique set of stations
-	stationSets = Vector{Set{Int}}() # stationSets[i] = unique set of stations for pointSets[i]
+	stationSetsPoints = Dict{Vector{Bool},Vector{Int}}() # stationSetsPoints[stationSet] gives the points that belong to the stationSet
 	for j = 1:numPoints
-		stationsCoverPoint = Set(find(stationsCoverPoints[:,j])) # indices of stations that cover point j
-		# if !isempty(stationsCoverPoint) # point is not covered, ignore it?
-		if !in(stationsCoverPoint, stationSets)
-			push!(stationSets, stationsCoverPoint)
-			push!(pointSets, Set())
-		end
-		# add point to pointSets for corresponding stationSets
-		k = findfirst(stationSets, stationsCoverPoint)
-		push!(pointSets[k], j)
-		# end
+		stationSet = stationsCoverPoints[:,j] # stationSet[i] = if station i covers point j
+		# will put points that are not covered into a set, though alternatively they could be ignored
+		stationSets = get!(stationSetsPoints, stationSet, Int[])
+		push!(stationSets, j)
 	end
+	pointSets = collect(values(stationSetsPoints)) # pointSets[i] has set of all point indices covered by the same unique set of stations
+	stationSets = [find(stationSet) for stationSet in keys(stationSetsPoints)] # stationSets[i] = unique set of stations for pointSets[i]
+	# according to documentation, 'values' and 'keys' return elements in the same order, so pointSets[i] corresponds with stationSets[i]
 	
 	stationsCoverPointSets = Vector{Vector{Int}}(numStations) # stationsCoverPointSets[i] = list of point set indices covered by station i
 	for i = 1:numStations
