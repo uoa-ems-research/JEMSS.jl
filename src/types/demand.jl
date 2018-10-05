@@ -63,6 +63,8 @@ function createDemandPointsFromRasters(demand::Demand; numCellRows::Int = 1, num
 	# numCellRows is for y dimension, numCellCols for x
 	numCellPoints = numCellRows * numCellCols # number of points per cell
 	points = Vector{Point}()
+	maxNumPoints = (nx * numCellCols) * (ny * numCellRows)
+	rastersPointDemands = [Vector{Float}(maxNumPoints) for i = 1:numRasters] # rastersPointDemands[i][j] gives demand at point j for raster i
 	for i = 1:nx, j = 1:ny # raster cell indices
 		if all(raster -> raster.z[i,j] == 0, rasters)
 			continue
@@ -72,23 +74,26 @@ function createDemandPointsFromRasters(demand::Demand; numCellRows::Int = 1, num
 			point.index = length(points) + 1
 			
 			# set point location
-			x = rasters[1].x[i] + rasters[1].dx * ((cellCol - 0.5)/numCellCols - 0.5)
-			y = rasters[1].y[j] + rasters[1].dy * ((cellRow - 0.5)/numCellRows - 0.5)
-			point.location = Location(x,y)
+			point.location.x = rasters[1].x[i] + rasters[1].dx * ((cellCol - 0.5)/numCellCols - 0.5)
+			point.location.y = rasters[1].y[j] + rasters[1].dy * ((cellRow - 0.5)/numCellRows - 0.5)
 			
 			# set demand of point for each raster,
 			# divide raster demand by number of points per cell
-			point.value = Dict{String,Any}()
-			point.value["demands"] = Vector{Float}(numRasters)
 			for rasterIndex = 1:numRasters
-				point.value["demands"][rasterIndex] = rasters[rasterIndex].z[i,j] / numCellPoints
+				rastersPointDemands[rasterIndex][point.index] = rasters[rasterIndex].z[i,j] / numCellPoints
 			end
 			
 			push!(points, point)
 		end
 	end
 	
-	return points
+	# remove unneeded values from rastersPointDemands (rastersPointDemands[i][j] where j > length(points))
+	numPoints = length(points) # shorthand
+	for i = 1:numRasters
+		rastersPointDemands[i] = rastersPointDemands[i][1:numPoints]
+	end
+	
+	return points, rastersPointDemands
 end
 
 # Sets the nearest node data for the points.
@@ -261,7 +266,8 @@ function initDemandCoverage!(sim::Simulation;
 	
 	# create demand points
 	dc = demandCoverage = sim.demandCoverage = DemandCoverage()
-	points = dc.points = createDemandPointsFromRasters(sim.demand; numCellRows = rasterCellNumRows, numCellCols = rasterCellNumCols) # should add kwargs
+	dc.points, dc.rastersPointDemands = createDemandPointsFromRasters(sim.demand; numCellRows = rasterCellNumRows, numCellCols = rasterCellNumCols)
+	points = dc.points # shorthand
 	setPointsNearestNodes!(sim, points)
 	numPoints = length(points) # shorthand
 	
@@ -269,12 +275,6 @@ function initDemandCoverage!(sim::Simulation;
 	dc.nodesPoints = [Int[] for i = 1:numNodes]
 	for point in points
 		push!(dc.nodesPoints[point.nearestNodeIndex], point.index)
-	end
-	
-	# set rastersPointDemands
-	dc.rastersPointDemands = [Vector{Float}(numPoints) for i = 1:numRasters]
-	for i = 1:numRasters, j = 1:numPoints
-		dc.rastersPointDemands[i][j] = points[j].value["demands"][i]
 	end
 	
 	# set points coverage modes
