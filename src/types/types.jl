@@ -710,7 +710,7 @@ type Simulation
 	
 	used::Bool # true if simulation has started running (and so restarting would require copying from backup)
 	complete::Bool # true if simulation has ended (no events remaining)
-	backup::Simulation # copy of simulation, for restarts (does not include net, travel, grid, or resim, as copying these would waste memory)
+	backup::Simulation # copy of simulation, for restarts (does not include a backup of all fields in order to save on memory, see backupSim! function for missing fields)
 	
 	configRootElt::XMLElement
 	

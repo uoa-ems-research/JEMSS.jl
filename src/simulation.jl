@@ -27,11 +27,11 @@ function simulateToEnd!(sim::Simulation)
 end
 
 # set sim.backup to copy of sim (before running)
-# note that for reducing memory usage, sim.backup does not contain: net, travel, grid, resim
+# note that for reducing memory usage, sim.backup does not contain backups of all fields
 function backupSim!(sim::Simulation)
 	@assert(!sim.used)
 	
-	# remove net, travel, grid, and resim from sim before copying sim
+	# remove certain fields from sim before copying sim
 	(net, travel, grid, resim, demand, demandCoverage) = (sim.net, sim.travel, sim.grid, sim.resim, sim.demand, sim.demandCoverage)
 	(sim.net, sim.travel, sim.grid, sim.resim, sim.demand, sim.demandCoverage) = (Network(), Travel(), Grid(), Resimulation(), Demand(), DemandCoverage())
 	
@@ -49,7 +49,7 @@ function resetSim!(sim::Simulation)
 		
 		fnames = Set(fieldnames(sim))
 		fnamesDontCopy = Set([:backup, :net, :travel, :grid, :resim, :calls, :demand, :demandCoverage]) # will not (yet) copy these fields from sim.backup to sim
-		# note that sim.backup does not contain net, travel, grid, or resim
+		# note that sim.backup does not contain a backup of all fields
 		setdiff!(fnames, fnamesDontCopy) # remove fnamesDontCopy from fnames
 		for fname in fnames
 			try
