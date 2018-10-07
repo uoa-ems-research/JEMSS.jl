@@ -58,9 +58,11 @@ function dmexclpMoveUp(sim::Simulation, newlyIdleAmb::Ambulance)
 		pointSetsDemands = sim.demandCoverage.pointSetsDemands[pointsCoverageMode.index, demandMode.rasterIndex]
 		# to do: if marginal coverage has already been calculated for the combination of pointsCoverageMode and rasterIndex (but for a different demand priority), the marginal coverage value should be reused (accounting for difference in demandMode.rasterMultiplier values) to save on computation.
 		# to do: allow for each demand priority to have a different weight in the coverage calculation
-		for i = 1:numStations, j in pointsCoverageMode.stationsCoverPointSets[i]
-			# calculate additional expected coverage of current demand, if newly idle amb is placed at station i
-			dcd.stationMarginalCoverages[i] += pointSetsDemands[j] * dcd.marginalBenefit[pointSetsCoverCounts[j]+1] * demandMode.rasterMultiplier # this puts equal weight on each demand priority
+		for i = 1:length(pointsCoverageMode.pointSets)
+			pointSetMarginalCoverage = pointSetsDemands[i] * dcd.marginalBenefit[pointSetsCoverCounts[i]+1] * demandMode.rasterMultiplier # this puts equal weight on each demand priority
+			for j in pointsCoverageMode.stationSets[i]
+				dcd.stationMarginalCoverages[j] += pointSetMarginalCoverage
+			end
 		end
 	end
 	(bestMarginalCoverage, bestStationIndex) = findmax(dcd.stationMarginalCoverages)
