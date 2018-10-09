@@ -1,0 +1,27 @@
+demandRasters,,,,
+rasterIndex,rasterFilename,note,,
+1,data\regions\small\1\demand\raster_1.xyz,"rest hours, high priority demand",,
+2,data\regions\small\1\demand\raster_2.xyz,"work hours, high priority demand",,
+3,data\regions\small\1\demand\raster_3.xyz,"rest hours, medium/low priority demand",,
+4,data\regions\small\1\demand\raster_4.xyz,"work hours, medium/low priority demand",,
+,,,,
+demandModes,,,,
+modeIndex,rasterIndex,priority,arrivalRate,note
+1,1,highPriority,25,rest hours
+2,3,medPriority,15,rest hours
+3,3,lowPriority,5,rest hours
+4,2,highPriority,30,work hours
+5,4,medPriority,20,work hours
+6,4,lowPriority,10,work hours
+,,,,
+demandSets,,,,
+setIndex,modeIndices,note,,
+1,[1; 2; 3],rest hours,,
+2,[4; 5; 6],work hours,,
+,,,,
+demandSetsTiming,,,,
+startTime,setIndex,,,
+0,1,,,
+0.3,2,,,
+0.7,1,,,
+1.0,2,,,

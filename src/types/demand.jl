@@ -54,8 +54,8 @@ function createDemandPointsFromRasters(demand::Demand; numCellRows::Int = 1, num
 	for i = 2:numRasters
 		@assert(rasters[i].nx == nx)
 		@assert(rasters[i].ny == ny)
-		@assert(all(j -> isapprox(rasters[i].x[j], rasters[1].x[j]; rtol = eps()), j = 1:nx))
-		@assert(all(j -> isapprox(rasters[i].y[j], rasters[1].y[j]; rtol = eps()), j = 1:ny))
+		@assert(all(j -> isapprox(rasters[i].x[j], rasters[1].x[j]; rtol = eps()), 1:nx))
+		@assert(all(j -> isapprox(rasters[i].y[j], rasters[1].y[j]; rtol = eps()), 1:ny))
 	end
 	
 	# create point(s) for each raster cell,
