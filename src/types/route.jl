@@ -396,3 +396,79 @@ function setRouteStateAfterEndFNode!(route::Route, time::Float)
 	route.nextFNode = nullIndex
 	route.nextFNodeTime = nullTime
 end
+
+"""
+	shortestRouteTravelTime!(sim::Simulation;
+		startLoc::Location, firstNode::Int, dist1::Float, time1::Float, route::Route,
+		endLoc::Location, lastNode::Int, dist2::Float, time2::Float,
+		travelMode::TravelMode, travelPriority::Priority, startTime::Float)
+Returns the travel time of the shortest route, given information about the start and end.
+Also returns the indices of the first and last nodes (if any) in the path for the reduced graph (`sim.net.rGraph`).
+
+# Keyword arguments
+Requires one of (in order of preference):
+- `route` and `startTime` (use this if considering starting on `route`)
+- `firstNode` (index of first node in new route) and `time1` (travel time from `startLoc` to `firstNode`)
+- `firstNode` and `dist1` (distance between `startLoc` and `firstNode`)
+- `startLoc` (can additionally pass in `firstNode` or `time1`)
+Also requires one of (in order of preference):
+- `lastNode` (index of last node in new route) and `time2` (travel time from `lastNode` to `endLoc`)
+- `lastNode` and `dist2` (distance between `lastNode` and `endLoc`)
+- `endLoc` (can additionally pass in `lastNode` or `time2`)
+Also requires one of (in order of preference):
+- `travelMode`
+- `travelPriority` and `startTime`
+
+See also: [`shortestPathTravelTime`](@ref)
+"""
+# mutates: route, sim.travel
+function shortestRouteTravelTime!(sim::Simulation;
+	route::Union{Route, Void} = nothing, startLoc::Union{Location, Void} = nothing, firstNode::Int = nullIndex, dist1::Float = nullDist, time1::Float = nullTime,
+	endLoc::Union{Location, Void} = nothing, lastNode::Int = nullIndex, dist2::Float = nullDist, time2::Float = nullTime,
+	travelMode::Union{TravelMode, Void} = nothing, travelPriority::Priority = nullPriority, startTime::Float = nullTime)
+	
+	# determine travel mode
+	if travelMode == nothing
+		@assert(startTime != nullTime)
+		@assert(travelPriority != nullPriority)
+		travelMode = getTravelMode!(sim.travel, travelPriority, startTime)
+	end
+	
+	# find firstNode, and time to reach it from startLoc
+	fNodes = sim.net.fGraph.nodes # shorthand
+	if route == nothing
+		if firstNode == nullIndex
+			(firstNode, dist1) = findNearestNodeInGrid(sim.map, sim.grid, fNodes, startLoc)
+		end
+		if time1 == nullTime
+			if dist1 == nullDist
+				@assert(startLoc != nothing)
+				dist1 = normDist(sim.map, startLoc, fNodes[firstNode].location)
+			end
+			time1 = offRoadTravelTime(travelMode, dist1)
+		end
+	else
+		@assert(startTime != nullTime)
+		(firstNode, time1) = getRouteNextNode!(sim, route, travelMode.index, startTime)
+	end
+	
+	# find lastNode, and time from it to endLoc
+	if lastNode == nullIndex
+		(lastNode, dist2) = findNearestNodeInGrid(sim.map, sim.grid, fNodes, endLoc)
+	end
+	if time2 == nullTime
+		if dist2 == nullDist
+			@assert(endLoc != nothing)
+			dist2 = normDist(sim.map, endLoc, fNodes[lastNode].location)
+		end
+		time2 = offRoadTravelTime(travelMode, dist2)
+	end
+	
+	# path (on-road) travel time
+	(pathTravelTime, rNodes) = shortestPathTravelTime(sim.net, travelMode.index, firstNode, lastNode)
+	
+	# total travel time
+	travelTime = time1 + pathTravelTime + time2
+	
+	return travelTime, rNodes
+end
