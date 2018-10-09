@@ -34,8 +34,8 @@ export
 export
 	readDlmFileNextLine!, readDlmFile, openNewFile, writeDlmLine!, arrayDict, writeTablesToFile!, writeTablesToFile, readTablesFromFile, readTablesFromData, tableRowsFieldDicts, fileChecksum, serializeToFile, deserializeFile, interpolateString, xmlFileRoot, findElt, eltContent, eltContentVal, eltContentInterpVal, childrenNodeNames, selectXmlFile, # file_io
 	runGenConfig, # gen_sim_files
-	readAmbsFile, readArcsFile, readCallsFile, readCompTableFile, readEventsFile, readHospitalsFile, readMapFile, readNodesFile, readPrioritiesFile, readPriorityListFile, readRNetTravelsFile, readStationsFile, readTravelFile, readDeploymentPoliciesFile, readZhangIpParamsFile, # read_sim_files
-	writeAmbsFile, writeArcsFile, writeCallsFile, writeHospitalsFile, writeMapFile, writeNodesFile, writePrioritiesFile, writeRNetTravelsFile, writeStationsFile, writeTravelFile, openOutputFiles!, closeOutputFiles!, writeEventToFile!, writeStatsFiles!, writeDeploymentPoliciesFile, writeBatchMeanResponseTimesFile # write_sim_files
+	readAmbsFile, readArcsFile, readCallsFile, readCompTableFile, readDemandFile, readEventsFile, readGeoFile, readHospitalsFile, readMapFile, readNodesFile, readPrioritiesFile, readPriorityListFile, readRasterFile, readRNetTravelsFile, readStationsFile, readTravelFile, readDeploymentPoliciesFile, readZhangIpParamsFile, # read_sim_files
+	writeAmbsFile, writeArcsFile, writeCallsFile, writeDemandFile, writeHospitalsFile, writeMapFile, writeNodesFile, writePrioritiesFile, writeRNetTravelsFile, writeStationsFile, writeTravelFile, openOutputFiles!, closeOutputFiles!, writeEventToFile!, writeStatsFiles!, writeDeploymentPoliciesFile, writeBatchMeanResponseTimesFile # write_sim_files
 
 # move up initialisation functions
 export
@@ -48,15 +48,15 @@ export
 	findNearestNodeInGrid, # grid
 	isSameLocation, squareDist, normDist, offRoadTravelTime, linearInterpLocation, randLocation, # location
 	isFNodeInRGraph, shortestPathNextRNode, shortestPathNextRArc, shortestPathTravelTime, shortestPath, findRArcFromFNodeToFNode, # network
-	readRasterFile, rasterRandLocations, printRasterSize, # raster
+	rasterRandLocations, printRasterSize, # raster
 	printSimStats, printAmbsStats, printCallsStats, calcBatchMeans, calcBatchMeanResponseTimes, meanErrorPlot, calcAR0DurbinWatsonTestPValue, # statistics
 	makeRandDeploymentPolicy, makeRandDeploymentPolicies, setAmbStation!, applyDeploymentPolicy!, simulateDeploymentPolicy!, simulateDeploymentPolicies! # deployment
 
 # types
 export
-	Location, Node, Arc, Graph, NetTravel, Network, TravelMode, Travel, Route,
+	Location, Point, Node, Arc, Graph, NetTravel, Network, TravelMode, Travel, Route,
 	Event, Ambulance, Call, Hospital, Station,
-	Map, GridSearchRect, GridRect, Grid, Raster, RasterSampler,
+	Map, GridSearchRect, GridRect, Grid, Raster, RasterSampler, DemandMode, Demand, PointsCoverageMode, DemandCoverage,
 	CompTableData, DmexclpData, PriorityListData, ZhangIpData, Temp0Data, Temp1Data, Temp2Data, MoveUpData,
 	File, Table, Resimulation, Simulation,
 	DistrRng
@@ -82,6 +82,7 @@ include("misc/rand.jl")
 
 include("types/types.jl")
 include("types/call.jl")
+include("types/demand.jl")
 include("types/event.jl")
 include("types/graph.jl")
 include("types/grid.jl")

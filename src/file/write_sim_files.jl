@@ -24,6 +24,29 @@ function writeCallsFile(filename::String, startTime::Float, calls::Vector{Call})
 	writeTablesToFile(filename, [miscTable, callsTable])
 end
 
+function writeDemandFile(filename::String, demand::Demand)
+	demandRastersTable = Table("demandRasters", ["rasterIndex", "rasterFilename"];
+		rows = [[i, demand.rasterFilenames[i]] for i = 1:demand.numRasters])
+	
+	demandModesTable = Table("demandModes", ["modeIndex", "rasterIndex", "priority", "arrivalRate"];
+		rows = [[m.index, m.rasterIndex, string(m.priority), m.arrivalRate] for m in demand.modes])
+	@assert(all(i -> demand.modes[i].index == i, 1:demand.numModes))
+	
+	# demand sets table
+	dml = demand.modeLookup # shorthand
+	@assert(size(dml) == (demand.numSets, 3)) # should have value for each combination of demand mode and priority
+	demandSetsTable = Table("demandSets", ["setIndex", "modeIndices"];
+		rows = [[i, hcat(dml[i,:]...)] for i = 1:demand.numSets])
+	
+	# demand sets timing table
+	startTimes = demand.setsStartTimes # shorthand
+	setIndices = demand.setsTimeOrder # shorthand
+	demandSetsTimingTable = Table("demandSetsTiming", ["startTime", "setIndex"];
+		rows = [[startTimes[i], setIndices[i]] for i = 1:length(startTimes)])
+	
+	writeTablesToFile(filename, [demandRastersTable, demandModesTable, demandSetsTable, demandSetsTimingTable])
+end
+
 function writeHospitalsFile(filename::String, hospitals::Vector{Hospital})
 	table = Table("hospitals", ["index", "x", "y"];
 		rows = [[h.index, h.location.x, h.location.y] for h in hospitals])

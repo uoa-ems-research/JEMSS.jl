@@ -27,17 +27,17 @@ function simulateToEnd!(sim::Simulation)
 end
 
 # set sim.backup to copy of sim (before running)
-# note that for reducing memory usage, sim.backup does not contain: net, travel, grid, resim
+# note that for reducing memory usage, sim.backup does not contain backups of all fields
 function backupSim!(sim::Simulation)
 	@assert(!sim.used)
 	
-	# remove net, travel, grid, and resim from sim before copying sim
-	(net, travel, grid, resim) = (sim.net, sim.travel, sim.grid, sim.resim)
-	(sim.net, sim.travel, sim.grid, sim.resim) = (Network(), Travel(), Grid(), Resimulation())
+	# remove certain fields from sim before copying sim
+	(net, travel, grid, resim, demand, demandCoverage) = (sim.net, sim.travel, sim.grid, sim.resim, sim.demand, sim.demandCoverage)
+	(sim.net, sim.travel, sim.grid, sim.resim, sim.demand, sim.demandCoverage) = (Network(), Travel(), Grid(), Resimulation(), Demand(), DemandCoverage())
 	
 	sim.backup = deepcopy(sim)
 	
-	(sim.net, sim.travel, sim.grid, sim.resim) = (net, travel, grid, resim)
+	(sim.net, sim.travel, sim.grid, sim.resim, sim.demand, sim.demandCoverage) = (net, travel, grid, resim, demand, demandCoverage)
 end
 
 # reset sim from sim.backup
@@ -48,8 +48,8 @@ function resetSim!(sim::Simulation)
 		resetCalls!(sim) # reset calls from sim.backup, need to do this before resetting sim.time
 		
 		fnames = Set(fieldnames(sim))
-		fnamesDontCopy = Set([:backup, :net, :travel, :grid, :resim, :calls]) # will not (yet) copy these fields from sim.backup to sim
-		# note that sim.backup does not contain net, travel, grid, or resim
+		fnamesDontCopy = Set([:backup, :net, :travel, :grid, :resim, :calls, :demand, :demandCoverage]) # will not (yet) copy these fields from sim.backup to sim
+		# note that sim.backup does not contain a backup of all fields
 		setdiff!(fnames, fnamesDontCopy) # remove fnamesDontCopy from fnames
 		for fname in fnames
 			try
@@ -60,8 +60,9 @@ function resetSim!(sim::Simulation)
 		# reset resimulation state
 		sim.resim.prevEventIndex = 0
 		
-		# reset travel state
+		# reset travel and demand state
 		sim.travel.recentSetsStartTimesIndex = 1
+		sim.demand.recentSetsStartTimesIndex = 1
 	end
 end
 
@@ -222,7 +223,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		ambulance.status = ambGoingToCall
 		# ambulance.stationIndex
 		ambulance.callIndex = call.index
-		changeRoute!(sim, ambulance.route, call.priority, sim.time, call.location, call.nearestNodeIndex)
+		changeRoute!(sim, ambulance.route, sim.responseTravelPriorities[call.priority], sim.time, call.location, call.nearestNodeIndex)
 		
 		call.status = callWaitingForAmb
 		call.ambIndex = event.ambIndex

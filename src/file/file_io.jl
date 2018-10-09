@@ -230,6 +230,8 @@ eltContent(parentElt::XMLElement, eltString::String) = try content(findElt(paren
 	catch error("Element not found: $eltString"); end
 eltContentVal(parentElt::XMLElement, eltString::String) = eval(parse(eltContent(parentElt, eltString)))
 eltContentInterpVal(parentElt::XMLElement, eltString::String) = interpolateString(eltContent(parentElt, eltString))
+eltAttr = attribute
+eltAttrVal(elt::XMLElement, attrString::String) = eval(parse(eltAttr(elt, attrString)))
 
 function childrenNodeNames(parentElt::XMLElement)
 	childNodes = Vector{String}(0)

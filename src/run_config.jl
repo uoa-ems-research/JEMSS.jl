@@ -20,7 +20,7 @@ end
 
 # initialise simulation from input files
 function initSimulation(configFilename::String;
-	allowResim::Bool = false, createBackup::Bool = true, allowWriteOutput::Bool = false)
+	allowResim::Bool = false, createBackup::Bool = true, allowWriteOutput::Bool = false, doPrint::Bool = true)
 	
 	# read sim config xml file
 	rootElt = xmlFileRoot(configFilename)
@@ -28,8 +28,8 @@ function initSimulation(configFilename::String;
 	
 	# for progress messages:
 	t = Vector{Float}(1)
-	initMessage(t, msg) = (t[1] = time(); print(msg))
-	initTime(t) = println(": ", round(time() - t[1], 2), " seconds")
+	initMessage(t, msg) = doPrint && (t[1] = time(); print(msg))
+	initTime(t) = doPrint && println(": ", round(time() - t[1], 2), " seconds")
 	
 	##################
 	# sim config
@@ -108,7 +108,7 @@ function initSimulation(configFilename::String;
 	# read misc
 	sim.map = readMapFile(simFilePath("map"))
 	map = sim.map # shorthand
-	sim.targetResponseTimes = readPrioritiesFile(simFilePath("priorities"))
+	(sim.targetResponseTimes, sim.responseTravelPriorities) = readPrioritiesFile(simFilePath("priorities"))
 	sim.travel = readTravelFile(simFilePath("travel"))
 	
 	initTime(t)
@@ -131,20 +131,20 @@ function initSimulation(configFilename::String;
 	initMessage(t, "creating rGraph from fGraph")
 	createRGraphFromFGraph!(net)
 	initTime(t)
-	println("fNodes: ", length(net.fGraph.nodes), ", rNodes: ", length(net.rGraph.nodes))
+	doPrint && println("fNodes: ", length(net.fGraph.nodes), ", rNodes: ", length(net.rGraph.nodes))
 	
 	initMessage(t, "checking rGraph")
 	checkGraph(net.rGraph, map)
 	initTime(t)
 	
 	if rNetTravelsLoaded != []
-		println("using data from rNetTravels file")
+		doPrint && println("using data from rNetTravels file")
 		try
 			initMessage(t, "creating rNetTravels from fNetTravels")
 			createRNetTravelsFromFNetTravels!(net; rNetTravelsLoaded = rNetTravelsLoaded)
 			initTime(t)
 		catch
-			println()
+			doPrint && println()
 			warn("failed to use data from rNetTravels file")
 			rNetTravelsLoaded = []
 			rNetTravelsFilename = ""
@@ -194,7 +194,7 @@ function initSimulation(configFilename::String;
 	gridPlaceNodes!(map, grid, fGraph.nodes)
 	initTime(t)
 	
-	println("nodes: ", length(fGraph.nodes), ", grid size: ", nx, " x ", ny)
+	doPrint && println("nodes: ", length(fGraph.nodes), ", grid size: ", nx, " x ", ny)
 	
 	##################
 	# sim - ambulances, calls, hospitals, stations...
@@ -275,7 +275,7 @@ function initSimulation(configFilename::String;
 	if moveUpModuleName == "none"
 		mud.useMoveUp = false
 		mud.moveUpModule = nullMoveUpModule
-		println("not using move up")
+		doPrint && println("not using move up")
 	else
 		initMessage(t, "initialising move up")
 		
@@ -290,11 +290,18 @@ function initSimulation(configFilename::String;
 		elseif moveUpModuleName == "dmexclp"
 			mud.moveUpModule = dmexclpModule
 			dmexclpElt = findElt(moveUpElt, "dmexclp")
+			demandCoverTimesElt = findElt(dmexclpElt, "demandCoverTimes")
+			demandCoverTimes = Dict{Priority,Float}()
+			for demandPriority in setdiff([instances(Priority)...], [nullPriority])
+				demandCoverTimes[demandPriority] = eltAttrVal(demandCoverTimesElt, string(demandPriority))
+			end
+			demandPointsPerRasterCellsElt = findElt(dmexclpElt, "demandPointsPerRasterCells")
+			sim.demand = readDemandFile(eltContent(dmexclpElt, "demandFilename"))
 			initDmexclp!(sim;
-				coverTime = eltContentVal(dmexclpElt, "coverTime"),
-				coverTravelPriority = eltContentVal(dmexclpElt, "coverTravelPriority"),
+				demandCoverTimes = demandCoverTimes,
 				busyFraction = eltContentVal(dmexclpElt, "busyFraction"),
-				demandRasterFilename = eltContent(dmexclpElt, "demandRasterFilename"))
+				rasterCellNumPointRows = eltAttrVal(demandPointsPerRasterCellsElt, "rows"),
+				rasterCellNumPointCols = eltAttrVal(demandPointsPerRasterCellsElt, "cols"))
 			
 		elseif moveUpModuleName == "priority_list"
 			mud.moveUpModule = priorityListModule
@@ -340,7 +347,7 @@ function initSimulation(configFilename::String;
 		
 		initTime(t)
 		
-		println("using move up module: ", moveUpModuleName)
+		doPrint && println("using move up module: ", moveUpModuleName)
 	end
 	
 	##################
@@ -351,7 +358,7 @@ function initSimulation(configFilename::String;
 		if sim.resim.use
 			initMessage(t, "")
 			initResimulation!(sim)
-			print("initialised resimulation")
+			doPrint && print("initialised resimulation")
 			initTime(t)
 		end
 	end

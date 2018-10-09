@@ -6,6 +6,19 @@ type Location
 	Location(x,y) = new(x,y)
 end
 
+type Point
+	index::Int
+	location::Location
+	value::Any
+	
+	# node nearest to location
+	nearestNodeIndex::Int
+	nearestNodeDist::Float
+	
+	Point() = new(nullIndex, Location(), nothing,
+		nullIndex, nullDist)
+end
+
 type Node
 	index::Int
 	location::Location
@@ -428,6 +441,78 @@ type RasterSampler
 	end
 end
 
+# to model call demand for a single priority
+# can use multiple demand modes to model change in demand with time, using Demand type
+type DemandMode
+	# parameters:
+	index::Int # mode index
+	rasterIndex::Int # index of demand raster in Demand.rasters
+	priority::Priority # demand priority
+	arrivalRate::Float # demand per day
+	
+	raster::Raster # reference to Demand.rasters[rasterIndex]
+	rasterMultiplier::Float # = arrivalRate / sum(raster.z), to scale raster.z values to match arrivalRate
+	
+	DemandMode() = new(nullIndex, nullIndex, nullPriority, nullTime,
+		Raster(), 0.0)
+end
+
+# To model demand (calls).
+# Stores demand modes, demand sets (a set of demand modes apply to each time period),
+# and conditions for when to use each demand set/mode.
+type Demand
+	numRasters::Int # number of demand rasters
+	numModes::Int # number of demand modes
+	numSets::Int # number of sets of demand modes; each set may contain multiple demand modes e.g. for different combinations of call priorities and ambulance classes. Different sets can overlap, by containing the same demand modes.
+	
+	rasters::Vector{Raster} # demand rasters, to model spatial demand. Raster cell z values are not actual demand, but are proportional to demand
+	rasterFilenames::Vector{String} # rasterFilenames[i] gives filename of rasters[i]
+	
+	modes::Vector{DemandMode}
+	modeLookup::Array{Int,2} # modeLookup[i,j] = index of demand mode to use for demand set i, demand priority j. Change this variable according to modelling needs
+	
+	setsStartTimes::Vector{Float} # setsStartTimes[i] gives time at which demand set setsTimeOrder[i] should be started (setsStartTimes[i+1] or Inf gives end time)
+	setsTimeOrder::Vector{Int} # setsTimeOrder[i] gives demand set to start using at time setsStartTimes[i]
+	recentSetsStartTimesIndex::Int # index of most recently used value in setsStartTimes (and setsTimeOrder), should only ever increase in value
+	
+	Demand() = new(nullIndex, nullIndex, nullIndex,
+		[], [],
+		[], Array{Int,2}(0,0),
+		[], [], nullIndex)
+end
+
+# For a given set of points, coverage time, and travel mode,
+# for each station store the points that can be reached by
+# travelling from the station within the coverage time.
+type PointsCoverageMode
+	# parameters:
+	index::Int
+	points::Vector{Point} # reference to DemandCoverage.points
+	coverTime::Float # any demand that can be reached within this time gets additional coverage of 1, otherwise 0. Usually equal to target cover time minus dispatch delay.
+	travelMode::TravelMode # reference to a travel mode
+	
+	pointSets::Vector{Vector{Int}} # pointSets[i] has set of all point indices covered by the same unique set of stations
+	stationSets::Vector{Vector{Int}} # stationSets[i] = unique set of stations for pointSets[i]
+	stationsCoverPointSets::Vector{Vector{Int}} # stationsCoverPointSets[i] = indices of pointSets covered by station i
+	
+	PointsCoverageMode() = new(nullIndex, [], nullTime, TravelMode(),
+		[], [], [])
+end
+
+type DemandCoverage
+	points::Vector{Point} # demand is aggregated to points, same points are used for all demand rasters
+	nodesPoints::Vector{Vector{Int}} # nodesPoints[i] gives indices of points for which node i is the nearest node
+	rastersPointDemands::Vector{Vector{Float}} # rastersPointDemands[i][j] is demand at points[j] for Demand.rasters[i]
+	# demandCoverTimes::Dict{Priority,Float} # reference to sim.demandCoverTimes, demandCoverTimes[p] gives the target cover time for demand of priority p
+	
+	pointsCoverageModes::Vector{PointsCoverageMode}
+	pointsCoverageModeLookup::Vector{Dict{Float,Int}} # pointsCoverageModeLookup[TravelMode.index][coverTime] gives index of PointsCoverageMode
+	pointSetsDemands::Array{Vector{Float},2} # pointSetsDemands[PointsCoverageMode.index, rasterIndex] gives demand values for each point set in PointsCoverageMode.pointSets, for Demand.rasters[rasterIndex]
+	
+	DemandCoverage() = new([], [], [],
+		[], [], Array{Vector{Float},2}(0,0))
+end
+
 # move up data types
 abstract type MoveUpDataType end
 type EmptyMoveUpData <: MoveUpDataType end
@@ -447,27 +532,18 @@ end
 # dmexclp - dynamic maximum expected coverage location problem
 type DmexclpData <: MoveUpDataType
 	# parameters:
-	coverTime::Float # ambulance 'covers' a location if it can reach the location in this time
-	coverTravelPriority::Priority # priority of travel for which coverTime applies
 	busyFraction::Float # fraction for which each ambulance is busy, approximate
-	demandRaster::Raster
+	# some other relevant parameters are stored in sim: demand, demandCoverage, demandCoverTimes, responseTravelPriorities
 	
-	marginalBenefit::Vector{Float} # marginalBenefit[i] = benefit of adding an ith ambulance to cover single demand
-	
-	nodeDemand::Vector{Float} # nodeDemand[i] = demand at node i
-	stationCoverNode::Array{Bool,2} # stationCoverNode[i,j] = true if station i 'covers' node j
-	nodeSets::Vector{Set{Int}} # nodeSets[i] has set of all node indices covered by the same unique set of stations
-	stationSets::Vector{Set{Int}} # stationSets[i] = unique set of stations for nodeSets[i]
-	nodeSetDemand::Vector{Float} # nodeSetDemand[i] = demand at node set i
-	stationCoverNodeSets::Vector{Vector{Int}} # stationCoverNodeSets[i] = list of node set indices covered by station i
+	marginalBenefit::Vector{Float} # marginalBenefit[i] = benefit of adding an ith ambulance to cover single demand, calculated from busyFraction
 	
 	# arrays for recycling:
 	stationNumIdleAmbs::Vector{Int} # stationNumIdleAmbs[i] = number of idle ambulances assigned to station i
-	nodeSetCoverCount::Vector{Int} # nodeSetCoverCount[i] = number of idle ambulances covering node set i
+	stationMarginalCoverages::Vector{Float} # stationMarginalCoverages[i] gives extra coverage provided from placing newly idle ambulance at station i
+	# pointSetsCoverCounts::Vector{Vector{Int}} # pointSetsCoverCounts[i][j] = number of idle ambulances covering node set j, for demand.pointsCoverageModes i
 	
-	DmexclpData() = new(nullTime, nullPriority, 0.0, Raster(),
+	DmexclpData() = new(0.0,
 		[],
-		[], Array{Bool,2}(0,0), [], [], [], [],
 		[], [])
 end
 
@@ -611,7 +687,12 @@ type Simulation
 	findAmbToDispatch!::Function
 	moveUpData::MoveUpData
 	
-	# for statistics:
+	# demand
+	demand::Demand
+	demandCoverage::DemandCoverage
+	demandCoverTimes::Dict{Priority,Float} # demandCoverTimes[p] gives the target cover time for demand of priority p
+	
+	responseTravelPriorities::Dict{Priority,Priority} # responseTravelPriorities[p] gives the travel priority for responding to call of priority p
 	targetResponseTimes::Vector{Float} # targetResponseTimes[Int(priority)] gives maximum desired response time for call of given priority
 	
 	# for animation:
@@ -629,7 +710,7 @@ type Simulation
 	
 	used::Bool # true if simulation has started running (and so restarting would require copying from backup)
 	complete::Bool # true if simulation has ended (no events remaining)
-	backup::Simulation # copy of simulation, for restarts (does not include net, travel, grid, or resim, as copying these would waste memory)
+	backup::Simulation # copy of simulation, for restarts (does not include a backup of all fields in order to save on memory, see backupSim! function for missing fields)
 	
 	configRootElt::XMLElement
 	
@@ -639,7 +720,8 @@ type Simulation
 		[], 0, [],
 		Resimulation(),
 		nullFunction, nullFunction, MoveUpData(),
-		[],
+		Demand(), DemandCoverage(), Dict(),
+		Dict(), [],
 		Set(), Set(),
 		"", "", Dict(), Dict(), IOStream(""),
 		false,

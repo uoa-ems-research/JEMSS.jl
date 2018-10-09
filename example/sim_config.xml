@@ -41,10 +41,13 @@
 				<filename>comp_table.csv</filename>
 			</compTable>
 			<dmexclp>
-				<coverTime>7/(24*60)</coverTime>
-				<coverTravelPriority>lowPriority</coverTravelPriority>
+				<demandCoverTimes
+					highPriority="8/60/24"
+					medPriority="15/60/24"
+					lowPriority="15/60/24"/>
 				<busyFraction>0.25</busyFraction>
-				<demandRasterFilename>demand.tif</demandRasterFilename>
+				<demandFilename>demand.csv</demandFilename>
+				<demandPointsPerRasterCells rows="1" cols="1"/>
 			</dmexclp>
 			<priorityList>
 				<!-- <path>inputPath</path> -->
