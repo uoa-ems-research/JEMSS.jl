@@ -17,7 +17,7 @@ function ambMoveUpTravelTimes!(sim::Simulation, ambulance::Ambulance)
 	stations = sim.stations
 	priority = lowPriority # default travel priority for this function
 	
-	travelMode = getTravelMode!(travel, priority, sim.time)
+	travelMode = getTravelMode!(travel, sim.responseTravelPriorities[priority], sim.time)
 	(node1, time1) = getRouteNextNode!(sim, ambulance.route, travelMode.index, sim.time) # next/nearest node in ambulance route
 	
 	# get travel times to each station
