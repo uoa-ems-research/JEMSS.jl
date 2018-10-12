@@ -485,7 +485,7 @@ end
 
 # Given the travel mode, and indices of start and end node (in full graph),
 # returns travel time for shortest path, and the first and last rNodes in the path (if any)
-function shortestPathTravelTime(net::Network, travelModeIndex::Int, startFNode::Int, endFNode::Int)
+function shortestPathData(net::Network, travelModeIndex::Int, startFNode::Int, endFNode::Int)
 	
 	# shorthand:
 	fNetTravel = net.fNetTravels[travelModeIndex]
@@ -552,6 +552,11 @@ function shortestPathTravelTime(net::Network, travelModeIndex::Int, startFNode::
 	return shortestTravelTime, rNodes
 end
 
+# Returns the travel time of the shortest path between two nodes; see shortestPathData function.
+function shortestPathTravelTime(net::Network, travelModeIndex::Int, startFNode::Int, endFNode::Int)
+	return shortestPathData(net, travelModeIndex, startFNode, endFNode)[1]
+end
+
 # Find and return shortest path (as represented by list of nodes) from startFNode to endFNode,
 # starting at startFNode at startTime, with a given travel mode
 # Also return time at which each node in path will be reached
@@ -582,8 +587,8 @@ function shortestPath(net::Network, travelModeIndex::Int, startFNode::Int, endFN
 		return fNodeList, fNodeTimeList
 	end
 	
-	# find which rNodes are used in the shortest path 
-	(travelTime, rNodes) = shortestPathTravelTime(net, travelModeIndex, startFNode, endFNode)
+	# find which rNodes are used in the shortest path
+	(travelTime, rNodes) = shortestPathData(net, travelModeIndex, startFNode, endFNode)
 	startRNode = rNodes[1]
 	endRNode = rNodes[2]
 	
@@ -710,11 +715,11 @@ function setCommonFNodes!(net::Network, commonFNodes::Vector{Int})
 		for commonFNode in commonFNodes, fNode = 1:numFNodes
 			i = fNodeCommonFNodeIndex[commonFNode]
 			
-			(travelTime, rNodes) = shortestPathTravelTime(net, fNetTravel.modeIndex, commonFNode, fNode)
+			(travelTime, rNodes) = shortestPathData(net, fNetTravel.modeIndex, commonFNode, fNode)
 			fNetTravel.commonFNodeToFNodeTime[i,fNode] = travelTime
 			fNetTravel.commonFNodeToFNodeRNodes[i,fNode] = rNodes
 			
-			(travelTime, rNodes) = shortestPathTravelTime(net, fNetTravel.modeIndex, fNode, commonFNode)
+			(travelTime, rNodes) = shortestPathData(net, fNetTravel.modeIndex, fNode, commonFNode)
 			fNetTravel.fNodeToCommonFNodeTime[fNode,i] = travelTime
 			fNetTravel.fNodeToCommonFNodeRNodes[fNode,i] = rNodes
 		end

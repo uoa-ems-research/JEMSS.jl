@@ -137,7 +137,7 @@ function createPointsCoverageMode(sim::Simulation, travelMode::TravelMode, cover
 			# # get shortest path travel time
 			# point = points[j] # shorthand
 			# (node2, dist2) = (point.nearestNodeIndex, point.nearestNodeDist)
-			# (pathTravelTime, rNodes) = shortestPathTravelTime(net, travelMode.index, node1, node2)
+			# pathTravelTime = shortestPathTravelTime(net, travelMode.index, node1, node2)
 			# time2 = offRoadTravelTime(travelMode, dist2) # time to reach nearest node
 			# if time1 + pathTravelTime + time2 <= coverTime
 				# stationsCoverPoints[i,j] = true
@@ -155,7 +155,7 @@ function createPointsCoverageMode(sim::Simulation, travelMode::TravelMode, cover
 		time1 = offRoadTravelTime(travelMode, dist1) # time to reach nearest node from station
 		
 		for j = 1:numNodes
-			(pathTravelTime, rNodes) = shortestPathTravelTime(sim.net, travelMode.index, node1, j)
+			pathTravelTime = shortestPathTravelTime(sim.net, travelMode.index, node1, j)
 			if time1 + pathTravelTime <= coverTime
 				for k in nodesPoints[j] # indices of points for which node j is the nearest node
 					point = points[k] # shorthand

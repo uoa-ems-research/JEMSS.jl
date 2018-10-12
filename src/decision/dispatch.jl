@@ -23,7 +23,7 @@ function findNearestFreeAmbToCall!(sim::Simulation, call::Call)
 	for amb in sim.ambulances
 		if isAmbAvailableForDispatch(amb, sim.calls, call)
 			(node1, time1) = getRouteNextNode!(sim, amb.route, travelMode.index, sim.time) # next/nearest node in ambulance route
-			(travelTime, rNodes) = shortestPathTravelTime(sim.net, travelMode.index, node1, node2) # time spent on network
+			travelTime = shortestPathTravelTime(sim.net, travelMode.index, node1, node2) # time spent on network
 			travelTime += time1 + time2 # add time to get on and off network
 			if minTime > travelTime
 				ambIndex = amb.index

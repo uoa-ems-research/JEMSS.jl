@@ -247,7 +247,7 @@ function initSimulation(configFilename::String;
 			minTime = Inf
 			nearestHospitalIndex = nullIndex
 			for hospital in sim.hospitals
-				(travelTime, rNodes) = shortestPathTravelTime(net, travelModeIndex, node.index, hospital.nearestNodeIndex)
+				travelTime = shortestPathTravelTime(net, travelModeIndex, node.index, hospital.nearestNodeIndex)
 				travelTime += offRoadTravelTime(travelMode, hospital.nearestNodeDist)
 				if travelTime < minTime
 					minTime = travelTime

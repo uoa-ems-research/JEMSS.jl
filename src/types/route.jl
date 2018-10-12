@@ -16,7 +16,7 @@ function changeRoute!(sim::Simulation, route::Route, priority::Priority, startTi
 	(startFNode, startFNodeTravelTime) = getRouteNextNode!(sim, route, travelMode.index, startTime)
 	startFNodeTime = startTime + startFNodeTravelTime
 	
-	(travelTime, rNodes) = shortestPathTravelTime(net, travelMode.index, startFNode, endFNode)
+	(pathTravelTime, rNodes) = shortestPathData(net, travelMode.index, startFNode, endFNode)
 	
 	# shorthand:
 	fNetTravel = travelMode.fNetTravel
@@ -32,7 +32,7 @@ function changeRoute!(sim::Simulation, route::Route, priority::Priority, startTi
 	route.startFNode = startFNode
 	route.startFNodeTime = startFNodeTime
 	route.endFNode = endFNode
-	route.endFNodeTime = startFNodeTime + travelTime
+	route.endFNodeTime = startFNodeTime + pathTravelTime
 	
 	# start and end rNodes and times
 	route.startRNode = rNodes[1]
@@ -403,7 +403,6 @@ end
 		endLoc::Location, lastNode::Int, dist2::Float, time2::Float,
 		travelMode::TravelMode, travelPriority::Priority, startTime::Float)
 Returns the travel time of the shortest route, given information about the start and end.
-Also returns the indices of the first and last nodes (if any) in the path for the reduced graph (`sim.net.rGraph`).
 
 # Keyword arguments
 Requires one of (in order of preference):
@@ -465,10 +464,10 @@ function shortestRouteTravelTime!(sim::Simulation;
 	end
 	
 	# path (on-road) travel time
-	(pathTravelTime, rNodes) = shortestPathTravelTime(sim.net, travelMode.index, firstNode, lastNode)
+	pathTravelTime = shortestPathTravelTime(sim.net, travelMode.index, firstNode, lastNode)
 	
 	# total travel time
 	travelTime = time1 + pathTravelTime + time2
 	
-	return travelTime, rNodes
+	return travelTime
 end
