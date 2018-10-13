@@ -80,9 +80,9 @@ function zhangIpMoveUp(sim::Simulation)
 				else
 					# get travel time from ambulance.route.startLoc to station j
 					time1 = ambulance.route.startFNodeTime - ambulance.route.startTime
-					(travelTime, rNodes) = shortestPathTravelTime(sim.net, travelMode.index, ambulance.route.startFNode, stations[j].nearestNodeIndex)
+					pathTravelTime = shortestPathTravelTime(sim.net, travelMode.index, ambulance.route.startFNode, stations[j].nearestNodeIndex)
 					time2 = offRoadTravelTime(travelMode, stations[j].nearestNodeDist)
-					tob = time1 + travelTime + time2 # on and off road travel times
+					tob = time1 + pathTravelTime + time2 # on and off road travel times
 					
 					tox = sim.time - ambulance.route.startTime # time spent on current route
 					txb = ambToStationTimes[i,j]

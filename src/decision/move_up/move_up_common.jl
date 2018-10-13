@@ -17,7 +17,7 @@ function ambMoveUpTravelTimes!(sim::Simulation, ambulance::Ambulance)
 	stations = sim.stations
 	priority = lowPriority # default travel priority for this function
 	
-	travelMode = getTravelMode!(travel, priority, sim.time)
+	travelMode = getTravelMode!(travel, sim.responseTravelPriorities[priority], sim.time)
 	(node1, time1) = getRouteNextNode!(sim, ambulance.route, travelMode.index, sim.time) # next/nearest node in ambulance route
 	
 	# get travel times to each station
@@ -30,9 +30,9 @@ function ambMoveUpTravelTimes!(sim::Simulation, ambulance::Ambulance)
 			ambToStationTimes[i] = 0.0
 		else
 			# lookup travel time from node1 to station
-			(travelTime, rNodes) = shortestPathTravelTime(net, travelMode.index, node1, station.nearestNodeIndex)
+			pathTravelTime = shortestPathTravelTime(net, travelMode.index, node1, station.nearestNodeIndex)
 			time2 = offRoadTravelTime(travelMode, station.nearestNodeDist)
-			ambToStationTimes[i] = time1 + travelTime + time2 # on and off road travel times
+			ambToStationTimes[i] = time1 + pathTravelTime + time2 # on and off road travel times
 		end
 	end
 	
@@ -57,7 +57,7 @@ function createStationPairs(sim::Simulation, travelMode::TravelMode;
 	for i = 1:numStations, j = 1:numStations
 		if i != j
 			# check travel time from station i to j
-			(travelTime, rNodes) = shortestPathTravelTime(net, travelMode.index, stations[i].nearestNodeIndex, stations[j].nearestNodeIndex)
+			travelTime = shortestPathTravelTime(net, travelMode.index, stations[i].nearestNodeIndex, stations[j].nearestNodeIndex)
 			travelTime += offRoadTravelTime(travelMode, stations[i].nearestNodeDist)
 			travelTime += offRoadTravelTime(travelMode, stations[j].nearestNodeDist)
 			stationToStationTimes[i,j] = travelTime
