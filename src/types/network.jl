@@ -64,6 +64,7 @@ function createRGraphFromFGraph!(net::Network)
 			keepNode[i] = true
 		end
 	end
+	if !any(keepNode) keepNode[1] = true end # if there are still no rNodes, make one (can happen if network is just a loop)
 	rGraph.nodes = deepcopy(fNodes[keepNode]) # need to renumber rNode indices later
 	net.rNodeFNode = find(keepNode)
 	net.fNodeRNode = [nullIndex for i = 1:numFNodes]
@@ -87,6 +88,8 @@ function createRGraphFromFGraph!(net::Network)
 			# if we have looped back to same rNode, add firstFNode as decision nodes
 			if ri == net.fNodeRNode[fNode]
 				keepNode[firstFNode] = true
+				net.fNodeRNode[firstFNode] = numFNodes + 1 # a temporary value that will make isFNodeInRGraph(net, firstFNode) return true
+				@assert(isFNodeInRGraph(net, firstFNode))
 			end
 		end
 	end
@@ -106,7 +109,7 @@ function createRGraphFromFGraph!(net::Network)
 	rNodeFNode = net.rNodeFNode
 	numRNodes = length(rNodes)
 	
-	@assert(numRNodes > 0) # may need a different createRGraphFromFGraph!() function if numRNodes == 0
+	@assert(numRNodes > 0) # should not be possible at this point, and would cause problems below if false
 	
 	# check index conversion between fNodes and rNodes
 	@assert(all([i == fNodeRNode[rNodeFNode[rNodes[i].index]] for i = 1:numRNodes]))
@@ -692,14 +695,15 @@ end
 function setCommonFNodes!(net::Network, commonFNodes::Vector{Int})
 	numFNodes = length(net.fGraph.nodes) # shorthand
 	
-	commonFNodes = sort(unique(commonFNodes))
-	@assert(length(commonFNodes) >= 1)
-	@assert(1 <= commonFNodes[1] && commonFNodes[end] <= numFNodes)
-	numCommonFNodes = length(commonFNodes)
-	
-	# add common fNodes to net after calculating shortest path data
+	# add common fNodes to net
+	commonFNodes = net.commonFNodes = sort(unique(commonFNodes))
+	@assert(all(commonFNode -> 1 <= commonFNode <= numFNodes, commonFNodes))
+	numCommonFNodes = length(commonFNodes) # shorthand
 	net.isFNodeCommon = [false for i = 1:numFNodes]
-	fNodeCommonFNodeIndex = [nullIndex for i = 1:numFNodes]
+	for commonFNode in commonFNodes
+		net.isFNodeCommon[commonFNode] = true
+	end
+	fNodeCommonFNodeIndex = net.fNodeCommonFNodeIndex = [nullIndex for i = 1:numFNodes]
 	for (i, commonFNode) in enumerate(commonFNodes)
 		fNodeCommonFNodeIndex[commonFNode] = i
 	end
@@ -723,13 +727,6 @@ function setCommonFNodes!(net::Network, commonFNodes::Vector{Int})
 			fNetTravel.fNodeToCommonFNodeTime[fNode,i] = travelTime
 			fNetTravel.fNodeToCommonFNodeRNodes[fNode,i] = rNodes
 		end
-	end
-	
-	# add common fNodes to net
-	net.commonFNodes = commonFNodes
-	net.fNodeCommonFNodeIndex = fNodeCommonFNodeIndex
-	for commonFNode in commonFNodes
-		net.isFNodeCommon[commonFNode] = true
 	end
 end
 

@@ -1,0 +1,18 @@
+miscData,,,
+arcForm,numModes,note,
+directed,1,"Nodes 1 to 4 are the roundabout, node 5 acts as an entrance or exit.",
+,,,
+arcs,,,
+index,fromNode,toNode,mode_1
+1,1,2,1
+2,2,3,1
+3,3,4,1
+4,4,1,1
+5,1,5,1
+6,2,5,1
+7,3,5,1
+8,4,5,1
+9,5,1,1
+10,5,2,1
+11,5,3,1
+12,5,4,1

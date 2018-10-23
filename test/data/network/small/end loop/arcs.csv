@@ -1,0 +1,11 @@
+miscData,,,,
+arcForm,numModes,note,,
+undirected,2,To mimic a road connected to a loop.,,
+,,,,
+arcs,,,,
+index,fromNode,toNode,mode_1,mode_2
+1,1,2,1,0.891104862
+2,2,3,1,0.854776295
+3,3,4,1,0.975230855
+4,4,1,1,0.915430279
+5,3,5,1,0.690939457
