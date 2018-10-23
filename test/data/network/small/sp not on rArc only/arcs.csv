@@ -1,0 +1,12 @@
+miscData,,,
+arcForm,numModes,note,
+undirected,1,"There is a path from node 5 to 6 only on an rArc, but the shortest path goes 5-2-3-6.",
+,,,
+arcs,,,
+index,fromNode,toNode,mode_1
+1,1,2,1
+2,2,3,4
+3,3,4,1
+4,2,5,1
+5,3,6,1
+6,5,6,7

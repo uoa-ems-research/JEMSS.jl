@@ -1,0 +1,12 @@
+miscData,,,
+arcForm,numModes,note,
+undirected,1,"Each of the four nodes is connected to the other 3, so all will be rNodes.",
+,,,
+arcs,,,
+index,fromNode,toNode,mode_1
+1,1,2,1
+2,1,3,1
+3,1,4,1
+4,2,3,1
+5,2,4,1
+6,3,4,1

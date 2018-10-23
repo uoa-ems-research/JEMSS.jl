@@ -1,0 +1,7 @@
+miscData,,,
+arcForm,numModes,note,
+undirected,1,Mimicking straight road with two nodes and one arc.,
+,,,
+arcs,,,
+index,fromNode,toNode,mode_1
+1,1,2,1
