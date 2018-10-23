@@ -696,14 +696,11 @@ function setCommonFNodes!(net::Network, commonFNodes::Vector{Int})
 	numFNodes = length(net.fGraph.nodes) # shorthand
 	
 	# add common fNodes to net
-	commonFNodes = net.commonFNodes = sort(unique(commonFNodes))
+	commonFNodes = sort(unique(commonFNodes))
 	@assert(all(commonFNode -> 1 <= commonFNode <= numFNodes, commonFNodes))
 	numCommonFNodes = length(commonFNodes) # shorthand
 	net.isFNodeCommon = [false for i = 1:numFNodes]
-	for commonFNode in commonFNodes
-		net.isFNodeCommon[commonFNode] = true
-	end
-	fNodeCommonFNodeIndex = net.fNodeCommonFNodeIndex = [nullIndex for i = 1:numFNodes]
+	fNodeCommonFNodeIndex = [nullIndex for i = 1:numFNodes]
 	for (i, commonFNode) in enumerate(commonFNodes)
 		fNodeCommonFNodeIndex[commonFNode] = i
 	end
@@ -727,6 +724,15 @@ function setCommonFNodes!(net::Network, commonFNodes::Vector{Int})
 			fNetTravel.fNodeToCommonFNodeTime[fNode,i] = travelTime
 			fNetTravel.fNodeToCommonFNodeRNodes[fNode,i] = rNodes
 		end
+	end
+	
+	# add common fNodes to net
+	# need to do this after storing results from shortest path calculations above,
+	# otherwise the shortestPathData function may try to use values before they are initialised.
+	net.commonFNodes = commonFNodes
+	net.fNodeCommonFNodeIndex = fNodeCommonFNodeIndex
+	for commonFNode in commonFNodes
+		net.isFNodeCommon[commonFNode] = true
 	end
 end
 

@@ -66,7 +66,7 @@ priorities = setdiff([instances(Priority)...], [nullPriority])
 			for (j,point) in enumerate(points)
 				# calculate travel time from station to point
 				time1 = offRoadTravelTime(travelMode, station.nearestNodeDist)
-				(pathTravelTime, rNodes) = shortestPathTravelTime(sim.net, travelMode.index, station.nearestNodeIndex, point.nearestNodeIndex)
+				pathTravelTime = shortestPathTravelTime(sim.net, travelMode.index, station.nearestNodeIndex, point.nearestNodeIndex)
 				time2 = offRoadTravelTime(travelMode, point.nearestNodeDist)
 				travelTime = time1 + pathTravelTime + time2
 				
@@ -104,7 +104,7 @@ end
 				for (j,point) in enumerate(points)
 					# calculate travel time from station to point
 					time1 = offRoadTravelTime(travelMode, station.nearestNodeDist)
-					(pathTravelTime, rNodes) = shortestPathTravelTime(sim.net, travelMode.index, station.nearestNodeIndex, point.nearestNodeIndex)
+					pathTravelTime = shortestPathTravelTime(sim.net, travelMode.index, station.nearestNodeIndex, point.nearestNodeIndex)
 					time2 = offRoadTravelTime(travelMode, point.nearestNodeDist)
 					travelTime = time1 + pathTravelTime + time2
 					
