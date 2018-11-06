@@ -522,10 +522,13 @@ type CompTableData <: MoveUpDataType
 	# parameters:
 	compTable::Array{Int,2} # compTable[i,j] = number of ambulances to place at station j, with i total idle ambs
 	
+	compTableStationSlots::Vector{Vector{Int}} # sum(compTableStationSlots[i] .== j) == compTable[i,j]
+	
 	# arrays for recycling:
 	ambMovable::Vector{Bool} # ambMovable[i] = true if ambulance i is available for move up, false otherwise
 	
 	CompTableData() = new(Array{Int,2}(0,0),
+		[],
 		[])
 end
 
