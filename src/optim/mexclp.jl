@@ -6,11 +6,9 @@
 # If sim.demand is not already set, will set from kwarg 'demand', otherwise from reading file 'demandFilename'
 function solveMexclp!(sim::Simulation;
 	demandCoverTimes = Dict([p => 8/24/60 for p in instances(Priority)]), busyFraction::Float = 0.5,
+	demandWeights = Dict([p => 1.0 for p in instances(Priority)]),
 	demand::Union{Demand,Void} = nothing, demandFilename::String = "",
 	rasterCellNumPointRows::Int = 1, rasterCellNumPointCols::Int = 1)
-	
-	warn("will just consider high priority demand, for now.")
-	demandPriority = highPriority
 	
 	@assert(sim.travel.numSets == 1) # otherwise need to solve mexclp for each travel set?
 	
@@ -37,17 +35,23 @@ function solveMexclp!(sim::Simulation;
 	initDemandCoverage!(sim; rasterCellNumRows = rasterCellNumPointRows, rasterCellNumCols = rasterCellNumPointCols)
 	
 	# get demand point coverage data
-	pointsCoverageMode = getPointsCoverageMode!(sim, demandPriority, currentTime)
-	demandMode = getDemandMode!(sim.demand, demandPriority, currentTime)
-	pointSetsDemands = getPointSetsDemands!(sim, demandPriority, currentTime; pointsCoverageMode = pointsCoverageMode) * demandMode.rasterMultiplier
-	
-	# shorthand:
-	points = pointsCoverageMode.pointSets # will refer to 'point sets' as just 'points' from now on
-	numPoints = length(points)
-	pointDemands = pointSetsDemands
-	pointStations = pointsCoverageMode.stationSets
-	
-	# points[j] has demand pointDemands[j] and is covered by stations pointStations[j]
+	pointDemands = []
+	pointStations = []
+	# point j will have demand pointDemands[j] and will be covered by stations pointStations[j]
+	demandPriorities = setdiff([instances(Priority)...], [nullPriority])
+	for demandPriority in demandPriorities
+		if !haskey(demandWeights, demandPriority) || demandWeights[demandPriority] == 0
+			continue
+		end
+		
+		pointsCoverageMode = getPointsCoverageMode!(sim, demandPriority, currentTime)
+		demandMode = getDemandMode!(sim.demand, demandPriority, currentTime)
+		pointSetsDemands = getPointSetsDemands!(sim, demandPriority, currentTime; pointsCoverageMode = pointsCoverageMode) * demandMode.rasterMultiplier * demandWeights[demandPriority]
+		
+		push!(pointDemands, pointSetsDemands...)
+		push!(pointStations, pointsCoverageMode.stationSets...)
+	end
+	numPoints = length(pointDemands) # shorthand
 	
 	# calculate benefit of covering each point with a kth ambulance
 	marginalBenefit = (busyFraction.^[0:numAmbs-1;])*(1-busyFraction) # point cover benefit values, for single demand
