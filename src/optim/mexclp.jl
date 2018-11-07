@@ -35,9 +35,7 @@ function solveMexclp!(sim::Simulation;
 	initDemandCoverage!(sim; rasterCellNumRows = rasterCellNumPointRows, rasterCellNumCols = rasterCellNumPointCols)
 	
 	# get demand point coverage data
-	pointDemands = []
-	pointStations = []
-	# point j will have demand pointDemands[j] and will be covered by stations pointStations[j]
+	pointData = Dict{Vector{Int},Float}() # pointData[pointStations] = pointDemand
 	demandPriorities = setdiff([instances(Priority)...], [nullPriority])
 	for demandPriority in demandPriorities
 		if !haskey(demandWeights, demandPriority) || demandWeights[demandPriority] == 0
@@ -48,9 +46,14 @@ function solveMexclp!(sim::Simulation;
 		demandMode = getDemandMode!(sim.demand, demandPriority, currentTime)
 		pointSetsDemands = getPointSetsDemands!(sim, demandPriority, currentTime; pointsCoverageMode = pointsCoverageMode) * demandMode.rasterMultiplier * demandWeights[demandPriority]
 		
-		push!(pointDemands, pointSetsDemands...)
-		push!(pointStations, pointsCoverageMode.stationSets...)
+		for (i,stationSet) in enumerate(pointsCoverageMode.stationSets)
+			get!(pointData, stationSet, 0.0)
+			pointData[stationSet] += pointSetsDemands[i]
+		end
 	end
+	pointStations = collect(keys(pointData))
+	pointDemands = collect(values(pointData))
+	# point j has demand pointDemands[j] and is covered by stations pointStations[j]
 	numPoints = length(pointDemands) # shorthand
 	
 	# calculate benefit of covering each point with a kth ambulance
