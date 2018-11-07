@@ -51,7 +51,8 @@ export
 	rasterRandLocations, printRasterSize, # raster
 	shortestRouteTravelTime!, # route
 	printSimStats, printAmbsStats, printCallsStats, calcBatchMeans, calcBatchMeanResponseTimes, meanErrorPlot, calcAR0DurbinWatsonTestPValue, # statistics
-	makeRandDeploymentPolicy, makeRandDeploymentPolicies, setAmbStation!, applyDeploymentPolicy!, simulateDeploymentPolicy!, simulateDeploymentPolicies! # deployment
+	makeRandDeploymentPolicy, makeRandDeploymentPolicies, setAmbStation!, applyDeploymentPolicy!, simulateDeploymentPolicy!, simulateDeploymentPolicies!, # deployment
+	solveMexclp! # mexclp
 
 # types
 export
@@ -118,5 +119,7 @@ include("statistics.jl")
 include("animation/animation.jl")
 
 include("misc/deployment.jl")
+
+include("optim/mexclp.jl")
 
 end
