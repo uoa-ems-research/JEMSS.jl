@@ -8,10 +8,10 @@ info("Initialising sim")
 sim = initSimulation(joinpath(testRegionDataFolder, "sim_config.xml"), doPrint = false);
 
 # initialise demand and demand coverage
-sim.demand = readDemandFile(joinpath(testRegionDataFolder, "demand", "demand.csv"))
-sim.demandCoverTimes = Dict([p => 20/60/24 for p in instances(Priority)])
-sim.demandCoverTimes[highPriority] = 12/60/24
-JEMSS.initDemandCoverage!(sim, rasterCellNumRows = 2, rasterCellNumCols = 2)
+initDemand!(sim, demandFilename = joinpath(testRegionDataFolder, "demand", "demand.csv"))
+demandCoverTimes = Dict([p => 20/60/24 for p in instances(Priority)])
+demandCoverTimes[highPriority] = 12/60/24
+initDemandCoverage!(sim, demandCoverTimes = demandCoverTimes, rasterCellNumRows = 2, rasterCellNumCols = 2)
 
 # shorthand
 demand = sim.demand

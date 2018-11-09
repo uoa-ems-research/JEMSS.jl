@@ -111,7 +111,7 @@ function initSimulation(configFilename::String;
 	(sim.targetResponseTimes, sim.responseTravelPriorities) = readPrioritiesFile(simFilePath("priorities"))
 	sim.travel = readTravelFile(simFilePath("travel"))
 	if haskey(sim.inputFiles, "demand")
-		sim.demand = readDemandFile(simFilePath("demand"))
+		initDemand!(sim, demandFilename = simFilePath("demand"))
 	end
 	
 	initTime(t)
@@ -302,12 +302,12 @@ function initSimulation(configFilename::String;
 			if sim.demand.numSets != nullIndex
 				warn("overwriting sim.demand with dmexclp demand data")
 			end
-			sim.demand = readDemandFile(eltContent(dmexclpElt, "demandFilename"))
-			initDmexclp!(sim;
+			initDemand!(sim, demandFilename = eltContent(dmexclpElt, "demandFilename"))
+			initDemandCoverage!(sim,
 				demandCoverTimes = demandCoverTimes,
-				busyFraction = eltContentVal(dmexclpElt, "busyFraction"),
-				rasterCellNumPointRows = eltAttrVal(demandPointsPerRasterCellsElt, "rows"),
-				rasterCellNumPointCols = eltAttrVal(demandPointsPerRasterCellsElt, "cols"))
+				rasterCellNumRows = eltAttrVal(demandPointsPerRasterCellsElt, "rows"),
+				rasterCellNumCols = eltAttrVal(demandPointsPerRasterCellsElt, "cols"))
+			initDmexclp!(sim; busyFraction = eltContentVal(dmexclpElt, "busyFraction"))
 			
 		elseif moveUpModuleName == "priority_list"
 			mud.moveUpModule = priorityListModule

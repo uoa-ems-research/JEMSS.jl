@@ -4,38 +4,33 @@
 	solveMexclp!(sim::Simulation;
 		numAmbs::Int = length(sim.ambulances),
 		busyFraction::Float = 0.5,
-		demandCoverTimes::Dict{Priority,Float} = Dict([p => 8/60/24 for p in instances(Priority)]),
-		demandWeights::Dict{Priority,Float} = Dict([p => 1.0 for p in instances(Priority)]),
-		rasterCellNumPointRows::Int = 1, rasterCellNumPointCols::Int = 1)
+		demandWeights::Dict{Priority,Float} = Dict([p => 1.0 for p in instances(Priority)]))
 Solves the Maximum Expected Coverage Location Problem (MEXCLP) for `sim` and returns the number of ambulances to assign to each station, also the converse is returned - a station index for each ambulance.
-Note that the problem assumes that ambulances are homogeneous.
+The problem assumes that all ambulances are equivalent.
+Requires data for demand and demand coverage to already be set in `sim`; see functions [`initDemand!`](@ref), [`initDemandCoverage!`](@ref).
 
 # Keyword arguments
 - `numAmbs` is the number of ambulances to solve for, must be >= 1
 - `busyFraction` is the fraction of time that ambulances are busy; should be within [0,1] though this is not enforced
-- `demandCoverTimes` is the target coverage time for each demand priority
 - `demandWeights` is the weight to apply to each demand priority for the objective function
-- `rasterCellNumPointRows` and `rasterCellNumPointCols` are used to set the number of demand points to represent demand per raster cell in `sim.demand.rasters`
 """
 function solveMexclp!(sim::Simulation;
 	numAmbs::Int = length(sim.ambulances),
 	busyFraction::Float = 0.5,
-	demandCoverTimes::Dict{Priority,Float} = Dict([p => 8/60/24 for p in instances(Priority)]),
-	demandWeights::Dict{Priority,Float} = Dict([p => 1.0 for p in instances(Priority)]),
-	rasterCellNumPointRows::Int = 1, rasterCellNumPointCols::Int = 1)
+	demandWeights::Dict{Priority,Float} = Dict([p => 1.0 for p in instances(Priority)]))
 	
 	@assert(numAmbs >= 1, "need at least 1 ambulance for mexclp")
 	@assert(sim.travel.numSets == 1) # otherwise need to solve mexclp for each travel set?
 	@assert(sim.demand.numSets != nullIndex, "no demand data, cannot solve mexclp")
 	@assert(sim.demand.numSets == 1) # otherwise need to solve mexclp for each demand set?
 	
+	# check that demand coverage data is set
+	@assert(!isempty(sim.demandCoverTimes))
+	@assert(!isempty(sim.demandCoverage.points))
+	
 	# shorthand
 	numStations = length(sim.stations)
 	currentTime = sim.startTime
-	
-	# initialise demand coverage data
-	sim.demandCoverTimes = demandCoverTimes
-	initDemandCoverage!(sim; rasterCellNumRows = rasterCellNumPointRows, rasterCellNumCols = rasterCellNumPointCols)
 	
 	# get demand point coverage data
 	pointData = Dict{Vector{Int},Float}() # pointData[pointStations] = pointDemand

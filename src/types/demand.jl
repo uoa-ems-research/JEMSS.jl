@@ -222,6 +222,25 @@ function getPointSetsDemands!(sim::Simulation, demandPriority::Priority, current
 	return pointSetsDemands
 end
 
+"""
+	function initDemand!(sim::Simulation, demand::Union{Demand,Void} = nothing;
+		demandFilename::String = "")
+Initialise demand data for `sim`.
+Uses `demand` if given, otherwise reads demand from file `demandFilename`.
+Deletes old demand coverage data in `sim.demandCoverage`.
+
+Mutates: `sim.demand`, `sim.demandCoverage`
+"""
+function initDemand!(sim::Simulation, demand::Union{Demand,Void} = nothing;
+	demandFilename::String = "")
+	if demand == nothing
+		@assert(demandFilename != "", "no demand data given")
+		demand = readDemandFile(demandFilename)
+	end
+	sim.demand = demand
+	sim.demandCoverage = DemandCoverage() # old demand coverage data may no longer be valid
+end
+
 # Initialises the points coverage modes data in sim.demandCoverage.
 # mutates: sim.demandCoverage (fields: pointsCoverageModes, pointsCoverageModeLookup)
 function initPointsCoverageModes!(sim::Simulation)
@@ -249,10 +268,22 @@ function initPointsCoverageModes!(sim::Simulation)
 	end
 end
 
-# Initialises data in sim.demandCoverage.
-# mutates: sim.demandCoverage
+"""
+	function initDemandCoverage!(sim::Simulation;
+		demandCoverTimes::Union{Dict{Priority,Float},Void} = nothing,
+		rasterCellNumRows::Int = 1, rasterCellNumCols::Int = 1)
+Initialises demand coverage data for `sim`.
+
+# Keyword arguments
+- `demandCoverTimes` is the target coverage time for each demand priority, e.g. `demandCoverTimes = Dict([p => 8/60/24 for p in instances(Priority)])` sets a target time of 8 minutes (converted to days) for each priority. Can omit this if `sim.demandCoverTimes` is already set.
+- `rasterCellNumRows` and `rasterCellNumCols` are used to set the number of demand points to represent demand per raster cell for `sim.demand.rasters`
+
+Mutates: `sim.demandCoverage`, `sim.demandCoverTimes` (optional)
+"""
 function initDemandCoverage!(sim::Simulation;
+	demandCoverTimes::Union{Dict{Priority,Float},Void} = nothing,
 	rasterCellNumRows::Int = 1, rasterCellNumCols::Int = 1)
+	
 	@assert(!sim.used)
 	@assert(sim.travel.recentSetsStartTimesIndex == 1)
 	@assert(sim.demand.recentSetsStartTimesIndex == 1)
@@ -278,6 +309,11 @@ function initDemandCoverage!(sim::Simulation;
 	end
 	
 	# set points coverage modes
+	if demandCoverTimes != nothing
+		sim.demandCoverTimes = demandCoverTimes
+	end
+	demandPriorities = setdiff([instances(Priority)...], [nullPriority])
+	@assert(all(p -> haskey(sim.demandCoverTimes, p), demandPriorities), "demandCoverTimes not set")
 	initPointsCoverageModes!(sim)
 	numPointsCoverageModes = length(dc.pointsCoverageModes)
 	
@@ -285,8 +321,7 @@ function initDemandCoverage!(sim::Simulation;
 	# note that pointSetsDemands does not need to be set for all combinations of pointsCoverageMode.index and rasterIndex, as some combinations may not occur in simulation
 	dc.pointSetsDemands = [Vector{Float}() for i = 1:numPointsCoverageModes, j = 1:demand.numRasters]
 	times = vcat(travel.setsStartTimes, demand.setsStartTimes) |> unique |> sort
-	priorities = setdiff([instances(Priority)...], [nullPriority])
-	for time in times, demandPriority in priorities
+	for time in times, demandPriority in demandPriorities
 		pointsCoverageMode = getPointsCoverageMode!(sim, demandPriority, time)
 		demandMode = getDemandMode!(demand, demandPriority, time)
 		rasterIndex = demandMode.rasterIndex # shorthand

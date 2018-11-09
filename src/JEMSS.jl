@@ -43,6 +43,7 @@ export
 
 # misc functions
 export
+	initDemand!, initDemandCoverage!, # demand
 	printEvent, # event
 	findNearestNode, # graph
 	findNearestNodeInGrid, # grid
