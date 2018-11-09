@@ -110,6 +110,9 @@ function initSimulation(configFilename::String;
 	map = sim.map # shorthand
 	(sim.targetResponseTimes, sim.responseTravelPriorities) = readPrioritiesFile(simFilePath("priorities"))
 	sim.travel = readTravelFile(simFilePath("travel"))
+	if haskey(sim.inputFiles, "demand")
+		sim.demand = readDemandFile(simFilePath("demand"))
+	end
 	
 	initTime(t)
 	
@@ -296,6 +299,9 @@ function initSimulation(configFilename::String;
 				demandCoverTimes[demandPriority] = eltAttrVal(demandCoverTimesElt, string(demandPriority))
 			end
 			demandPointsPerRasterCellsElt = findElt(dmexclpElt, "demandPointsPerRasterCells")
+			if sim.demand.numSets != nullIndex
+				warn("overwriting sim.demand with dmexclp demand data")
+			end
 			sim.demand = readDemandFile(eltContent(dmexclpElt, "demandFilename"))
 			initDmexclp!(sim;
 				demandCoverTimes = demandCoverTimes,

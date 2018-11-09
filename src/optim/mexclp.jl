@@ -1,34 +1,37 @@
 # Maximum Expected Coverage Location Problem (MEXCLP)
-# This problem assumes that ambulances are homogeneous.
 
-# Solve the MEXCLP problem for the simulation, return solution as a deployment policy
-# Requires travel and demand to be temporally static.
-# If sim.demand is not already set, will set from kwarg 'demand', otherwise from reading file 'demandFilename'
+"""
+	solveMexclp!(sim::Simulation;
+		numAmbs::Int = length(sim.ambulances),
+		busyFraction::Float = 0.5,
+		demandCoverTimes::Dict{Priority,Float} = Dict([p => 8/60/24 for p in instances(Priority)]),
+		demandWeights::Dict{Priority,Float} = Dict([p => 1.0 for p in instances(Priority)]),
+		rasterCellNumPointRows::Int = 1, rasterCellNumPointCols::Int = 1)
+Solves the Maximum Expected Coverage Location Problem (MEXCLP) for `sim` and returns the number of ambulances to assign to each station, also the converse is returned - a station index for each ambulance.
+Note that the problem assumes that ambulances are homogeneous.
+
+# Keyword arguments
+- `numAmbs` is the number of ambulances to solve for, must be >= 1
+- `busyFraction` is the fraction of time that ambulances are busy; should be within [0,1] though this is not enforced
+- `demandCoverTimes` is the target coverage time for each demand priority
+- `demandWeights` is the weight to apply to each demand priority for the objective function
+- `rasterCellNumPointRows` and `rasterCellNumPointCols` are used to set the number of demand points to represent demand per raster cell in `sim.demand.rasters`
+"""
 function solveMexclp!(sim::Simulation;
-	demandCoverTimes = Dict([p => 8/24/60 for p in instances(Priority)]), busyFraction::Float = 0.5,
-	demandWeights = Dict([p => 1.0 for p in instances(Priority)]),
-	demand::Union{Demand,Void} = nothing, demandFilename::String = "",
+	numAmbs::Int = length(sim.ambulances),
+	busyFraction::Float = 0.5,
+	demandCoverTimes::Dict{Priority,Float} = Dict([p => 8/60/24 for p in instances(Priority)]),
+	demandWeights::Dict{Priority,Float} = Dict([p => 1.0 for p in instances(Priority)]),
 	rasterCellNumPointRows::Int = 1, rasterCellNumPointCols::Int = 1)
 	
+	@assert(numAmbs >= 1, "need at least 1 ambulance for mexclp")
 	@assert(sim.travel.numSets == 1) # otherwise need to solve mexclp for each travel set?
+	@assert(sim.demand.numSets != nullIndex, "no demand data, cannot solve mexclp")
+	@assert(sim.demand.numSets == 1) # otherwise need to solve mexclp for each demand set?
 	
 	# shorthand
-	numAmbs = length(sim.ambulances)
 	numStations = length(sim.stations)
 	currentTime = sim.startTime
-	
-	# set demand
-	if sim.demand.numSets == nullIndex
-		if demand != nothing
-			sim.demand = demand
-		elseif demandFilename != ""
-			sim.demand = readDemandFile(demandFilename)
-		else
-			warn("No demand data, cannot solve mexclp.")
-			return
-		end
-	end
-	@assert(sim.demand.numSets == 1) # otherwise need to solve mexclp for each demand set?
 	
 	# initialise demand coverage data
 	sim.demandCoverTimes = demandCoverTimes
@@ -107,10 +110,10 @@ function solveMexclp!(sim::Simulation;
 	end
 	
 	# convert to a deployment policy
-	depol = Depol()
+	depol = Depol() # depol[i] gives the station index for ambulance i
 	for (stationIndex, numAmbs) in enumerate(stationsNumAmbs), i = 1:numAmbs
 		push!(depol, stationIndex)
 	end
 	
-	return depol # depol[i] gives the station index for ambulance i
+	return stationsNumAmbs, depol
 end
