@@ -4,7 +4,8 @@
 	solveMexclp!(sim::Simulation;
 		numAmbs::Int = length(sim.ambulances),
 		busyFraction::Float = 0.5,
-		demandWeights::Dict{Priority,Float} = Dict([p => 1.0 for p in instances(Priority)]))
+		demandWeights::Dict{Priority,Float} = Dict([p => 1.0 for p in instances(Priority)]),
+		stationCapacities::Vector{Int} = [station.capacity for station in sim.stations])
 Solves the Maximum Expected Coverage Location Problem (MEXCLP) for `sim` and returns the number of ambulances to assign to each station, also the converse is returned - a station index for each ambulance.
 The problem assumes that all ambulances are equivalent.
 Requires data for demand and demand coverage to already be set in `sim`; see functions [`initDemand!`](@ref), [`initDemandCoverage!`](@ref).
@@ -13,11 +14,13 @@ Requires data for demand and demand coverage to already be set in `sim`; see fun
 - `numAmbs` is the number of ambulances to solve for, must be >= 1
 - `busyFraction` is the fraction of time that ambulances are busy; should be within [0,1] though this is not enforced
 - `demandWeights` is the weight to apply to each demand priority for the objective function
+- `stationCapacities` is the maximum number of ambulances that each station can hold
 """
 function solveMexclp!(sim::Simulation;
 	numAmbs::Int = length(sim.ambulances),
 	busyFraction::Float = 0.5,
-	demandWeights::Dict{Priority,Float} = Dict([p => 1.0 for p in instances(Priority)]))
+	demandWeights::Dict{Priority,Float} = Dict([p => 1.0 for p in instances(Priority)]),
+	stationCapacities::Vector{Int} = [station.capacity for station in sim.stations])
 	
 	@assert(numAmbs >= 1, "need at least 1 ambulance for mexclp")
 	@assert(sim.travel.numSets == 1) # otherwise need to solve mexclp for each travel set?
@@ -27,6 +30,9 @@ function solveMexclp!(sim::Simulation;
 	# check that demand coverage data is set
 	@assert(!isempty(sim.demandCoverTimes))
 	@assert(!isempty(sim.demandCoverage.points))
+	
+	stationCapacities = min.(stationCapacities, numAmbs) # reduce values where capacity > numAmbs
+	@assert(sum(stationCapacities) >= numAmbs, "the total capacity for ambulances at stations is less than the number of ambulances")
 	
 	# shorthand
 	numStations = length(sim.stations)
@@ -80,6 +86,7 @@ function solveMexclp!(sim::Simulation;
 			(useAllAmbs, sum(x) == a)
 			(pointCoverCount[j=1:p], sum(y[j,:]) == sum(x[pointStations[j]]))
 			(pointCoverOrder[j=1:p, k=1:(a-1)], y[j,k] >= y[j,k+1])
+			(stationMaxNumAmbs[i=1:s], x[i] <= stationCapacities[i])
 		end)
 	else
 		# pointCoverCountBenefit[j] is non-increasing (because busyFraction >= 0), so:
@@ -98,6 +105,7 @@ function solveMexclp!(sim::Simulation;
 		@constraints(model, begin
 			(useAllAmbs, sum(x) == a)
 			(pointCoverCount[j=1:p], sum(y[j,:]) == sum(x[pointStations[j]]))
+			(stationMaxNumAmbs[i=1:s], x[i] <= stationCapacities[i])
 		end)
 	end
 	
@@ -109,9 +117,6 @@ function solveMexclp!(sim::Simulation;
 	@objective(model, :Max, expectedCoverage)
 	
 	solve(model)
-	
-	# if IP is slow, try:
-	# - if pointCoverCountBenefit[j] is decreasing, then can change y variables to be non-binary (but still constrained to be between 0 and 1), and remove the constraint 'pointCoverOrder'; can also remove constraint that x is integer (assuming that there is one unique solution...)
 	
 	# extract solution
 	stationsNumAmbs = convert(Vector{Int}, round.(getvalue(x))) # solution; stationsNumAmbs[i] gives number of ambulances to allocate to station i
