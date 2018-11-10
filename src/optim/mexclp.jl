@@ -68,18 +68,38 @@ function solveMexclp!(sim::Simulation;
 	
 	model = Model()
 	
-	setsolver(model, GLPKSolverMIP(presolve=true))
-	
-	@variables(model, begin
-		(x[i=1:s] >= 0, Int) # x[i] = number of ambulances assigned to station i
-		(y[j=1:p,k=1:a], Bin) # y[j,k] = true if point j is covered by at least k ambulances
-	end)
-	
-	@constraints(model, begin
-		(useAllAmbs, sum(x) == a)
-		(pointCoverCount[j=1:p], sum(y[j,:]) == sum(x[pointStations[j]]))
-		(pointCoverOrder[j=1:p, k=1:(a-1)], y[j,k] >= y[j,k+1])
-	end)
+	if !all(v -> issorted(v, rev=true), pointCoverCountBenefit)
+		setsolver(model, GLPKSolverMIP(presolve=true)) # GLPKSolverMIP solves faster than CbcSolver for this formulation
+		
+		@variables(model, begin
+			(x[i=1:s] >= 0, Int) # x[i] = number of ambulances assigned to station i
+			(y[j=1:p,k=1:a], Bin) # y[j,k] = true if point j is covered by at least k ambulances
+		end)
+		
+		@constraints(model, begin
+			(useAllAmbs, sum(x) == a)
+			(pointCoverCount[j=1:p], sum(y[j,:]) == sum(x[pointStations[j]]))
+			(pointCoverOrder[j=1:p, k=1:(a-1)], y[j,k] >= y[j,k+1])
+		end)
+	else
+		# pointCoverCountBenefit[j] is non-increasing (because busyFraction >= 0), so:
+		# - can have y variables as non-binary (but still constrained to be between 0 and 1)
+		# - can leave out the constraint 'pointCoverOrder'
+		# - could have x variables as non-integer, though if there are multiple solutions then x values might not be naturally integer, so will leave the integer constraint
+		
+		setsolver(model, CbcSolver()) # CbcSolver solves faster than GLPKSolverMIP for this formulation
+		# using CbcSolver here would be faster with presolve, but using this causes a line print when solving
+		
+		@variables(model, begin
+			(x[i=1:s] >= 0, Int) # x[i] = number of ambulances assigned to station i
+			(0 <= y[j=1:p,k=1:a] <= 1) # y[j,k] = true if point j is covered by at least k ambulances
+		end)
+		
+		@constraints(model, begin
+			(useAllAmbs, sum(x) == a)
+			(pointCoverCount[j=1:p], sum(y[j,:]) == sum(x[pointStations[j]]))
+		end)
+	end
 	
 	@expressions(model, begin
 		# (expectedPointCoverage[j=1:p], sum(y[j,k] * pointCoverCountBenefit[j][k] for k=1:a))

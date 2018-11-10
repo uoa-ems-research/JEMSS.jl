@@ -11,6 +11,7 @@ using LightXML
 
 # optimisation (move-up)
 using JuMP
+using Cbc
 using GLPKMathProgInterface # does not use precompile
 
 # statistics
