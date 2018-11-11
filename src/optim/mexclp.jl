@@ -28,9 +28,9 @@ function solveMexclp!(sim::Simulation;
 	@assert(sim.demand.numSets == 1) # otherwise need to solve mexclp for each demand set?
 	
 	# check that demand coverage data is set
-	@assert(!isempty(sim.demandCoverTimes))
 	@assert(!isempty(sim.demandCoverage.points))
 	
+	@assert(length(stationCapacities) == length(sim.stations))
 	@assert(all(stationCapacities .>= 0), "station capacities must be non-negative")
 	stationCapacities = min.(stationCapacities, numAmbs) # reduce values where capacity > numAmbs
 	@assert(sum(stationCapacities) >= numAmbs, "the total capacity for ambulances at stations is less than the number of ambulances")

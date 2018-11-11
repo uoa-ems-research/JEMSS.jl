@@ -294,9 +294,9 @@ function initSimulation(configFilename::String;
 			mud.moveUpModule = dmexclpModule
 			dmexclpElt = findElt(moveUpElt, "dmexclp")
 			demandCoverTimesElt = findElt(dmexclpElt, "demandCoverTimes")
-			demandCoverTimes = Dict{Priority,Float}()
+			coverTimes = Dict{Priority,Float}()
 			for demandPriority in setdiff([instances(Priority)...], [nullPriority])
-				demandCoverTimes[demandPriority] = eltAttrVal(demandCoverTimesElt, string(demandPriority))
+				coverTimes[demandPriority] = eltAttrVal(demandCoverTimesElt, string(demandPriority))
 			end
 			demandPointsPerRasterCellsElt = findElt(dmexclpElt, "demandPointsPerRasterCells")
 			if sim.demand.numSets != nullIndex
@@ -304,7 +304,7 @@ function initSimulation(configFilename::String;
 			end
 			initDemand!(sim, demandFilename = eltContent(dmexclpElt, "demandFilename"))
 			initDemandCoverage!(sim,
-				demandCoverTimes = demandCoverTimes,
+				coverTimes = coverTimes,
 				rasterCellNumRows = eltAttrVal(demandPointsPerRasterCellsElt, "rows"),
 				rasterCellNumCols = eltAttrVal(demandPointsPerRasterCellsElt, "cols"))
 			initDmexclp!(sim; busyFraction = eltContentVal(dmexclpElt, "busyFraction"))

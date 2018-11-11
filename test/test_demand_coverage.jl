@@ -9,9 +9,9 @@ sim = initSimulation(joinpath(testRegionDataFolder, "sim_config.xml"), doPrint =
 
 # initialise demand and demand coverage
 initDemand!(sim, demandFilename = joinpath(testRegionDataFolder, "demand", "demand.csv"))
-demandCoverTimes = Dict([p => 20/60/24 for p in instances(Priority)])
-demandCoverTimes[highPriority] = 12/60/24
-initDemandCoverage!(sim, demandCoverTimes = demandCoverTimes, rasterCellNumRows = 2, rasterCellNumCols = 2)
+coverTimes = Dict([p => 20/60/24 for p in instances(Priority)])
+coverTimes[highPriority] = 12/60/24
+initDemandCoverage!(sim, coverTimes = coverTimes, rasterCellNumRows = 2, rasterCellNumCols = 2)
 
 # shorthand
 demand = sim.demand
@@ -98,7 +98,7 @@ end
 		demandsPointSetsCoverCounts = JEMSS.calcPointSetsCoverCounts!(sim, sim.time, stationsNumAmbs)
 		for demandPriority in priorities
 			travelMode = JEMSS.getTravelMode!(travel, sim.responseTravelPriorities[demandPriority], sim.time)
-			coverTime = sim.demandCoverTimes[demandPriority]
+			coverTime = sim.demandCoverage.coverTimes[demandPriority]
 			pointCoverCounts[:] = 0
 			for (i,station) in enumerate(stations)
 				for (j,point) in enumerate(points)

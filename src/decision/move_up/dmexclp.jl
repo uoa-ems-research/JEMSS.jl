@@ -9,7 +9,6 @@ Mutates: `sim.moveUpData.dmexclpData`
 """
 function initDmexclp!(sim::Simulation; busyFraction::Float = 0.5)
 	# check that demand coverage data is set
-	@assert(!isempty(sim.demandCoverTimes))
 	@assert(!isempty(sim.demandCoverage.points))
 	
 	# shorthand

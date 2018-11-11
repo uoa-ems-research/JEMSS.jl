@@ -500,16 +500,16 @@ type PointsCoverageMode
 end
 
 type DemandCoverage
+	coverTimes::Dict{Priority,Float} # coverTimes[p] gives the target cover time for demand of priority p
 	points::Vector{Point} # demand is aggregated to points, same points are used for all demand rasters
 	nodesPoints::Vector{Vector{Int}} # nodesPoints[i] gives indices of points for which node i is the nearest node
 	rastersPointDemands::Vector{Vector{Float}} # rastersPointDemands[i][j] is demand at points[j] for Demand.rasters[i]
-	# demandCoverTimes::Dict{Priority,Float} # reference to sim.demandCoverTimes, demandCoverTimes[p] gives the target cover time for demand of priority p
 	
 	pointsCoverageModes::Vector{PointsCoverageMode}
 	pointsCoverageModeLookup::Vector{Dict{Float,Int}} # pointsCoverageModeLookup[TravelMode.index][coverTime] gives index of PointsCoverageMode
 	pointSetsDemands::Array{Vector{Float},2} # pointSetsDemands[PointsCoverageMode.index, rasterIndex] gives demand values for each point set in PointsCoverageMode.pointSets, for Demand.rasters[rasterIndex]
 	
-	DemandCoverage() = new([], [], [],
+	DemandCoverage() = new(Dict(), [], [], [],
 		[], [], Array{Vector{Float},2}(0,0))
 end
 
@@ -533,7 +533,7 @@ end
 type DmexclpData <: MoveUpDataType
 	# parameters:
 	busyFraction::Float # fraction for which each ambulance is busy, approximate
-	# some other relevant parameters are stored in sim: demand, demandCoverage, demandCoverTimes, responseTravelPriorities
+	# some other relevant parameters are stored in sim: demand, demandCoverage, responseTravelPriorities
 	
 	marginalBenefit::Vector{Float} # marginalBenefit[i] = benefit of adding an ith ambulance to cover single demand, calculated from busyFraction
 	
@@ -690,7 +690,6 @@ type Simulation
 	# demand
 	demand::Demand
 	demandCoverage::DemandCoverage
-	demandCoverTimes::Dict{Priority,Float} # demandCoverTimes[p] gives the target cover time for demand of priority p
 	
 	responseTravelPriorities::Dict{Priority,Priority} # responseTravelPriorities[p] gives the travel priority for responding to call of priority p
 	targetResponseTimes::Vector{Float} # targetResponseTimes[Int(priority)] gives maximum desired response time for call of given priority
@@ -720,7 +719,7 @@ type Simulation
 		[], 0, [],
 		Resimulation(),
 		nullFunction, nullFunction, MoveUpData(),
-		Demand(), DemandCoverage(), Dict(),
+		Demand(), DemandCoverage(),
 		Dict(), [],
 		Set(), Set(),
 		"", "", Dict(), Dict(), IOStream(""),
