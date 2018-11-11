@@ -31,6 +31,7 @@ function solveMexclp!(sim::Simulation;
 	@assert(!isempty(sim.demandCoverTimes))
 	@assert(!isempty(sim.demandCoverage.points))
 	
+	@assert(all(stationCapacities .>= 0), "station capacities must be non-negative")
 	stationCapacities = min.(stationCapacities, numAmbs) # reduce values where capacity > numAmbs
 	@assert(sum(stationCapacities) >= numAmbs, "the total capacity for ambulances at stations is less than the number of ambulances")
 	
