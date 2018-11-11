@@ -234,9 +234,13 @@ Mutates: `sim.demand`, `sim.demandCoverage`
 function initDemand!(sim::Simulation, demand::Union{Demand,Void} = nothing;
 	demandFilename::String = "")
 	if demand == nothing
+		if demandFilename == "" && haskey(sim.inputFiles, "demand")
+			demandFilename = sim.inputFiles["demand"]
+		end
 		@assert(demandFilename != "", "no demand data given")
 		demand = readDemandFile(demandFilename)
 	end
+	demand.initialised = true
 	sim.demand = demand
 	
 	# old demand coverage data may no longer be valid
@@ -277,6 +281,7 @@ end
 		coverTimes::Union{Dict{Priority,Float},Void} = nothing,
 		rasterCellNumRows::Int = 1, rasterCellNumCols::Int = 1)
 Initialises demand coverage data for `sim`.
+Requires data for demand to already be set in `sim`; see function [`initDemand!`](@ref).
 
 # Keyword arguments
 - `coverTimes` is the target coverage time for each demand priority, e.g. `coverTimes = Dict([p => 8/60/24 for p in instances(Priority)])` sets a target time of 8 minutes (converted to days) for each priority. Can omit this if `sim.demandCoverage.coverTimes` is already set.
@@ -289,6 +294,7 @@ function initDemandCoverage!(sim::Simulation;
 	rasterCellNumRows::Int = 1, rasterCellNumCols::Int = 1)
 	
 	@assert(!sim.used)
+	@assert(sim.demand.initialised)
 	@assert(sim.travel.recentSetsStartTimesIndex == 1)
 	@assert(sim.demand.recentSetsStartTimesIndex == 1)
 	
@@ -348,6 +354,8 @@ function initDemandCoverage!(sim::Simulation;
 	# reset travel and demand state (previously changed by getTravelMode! and getDemandMode!)
 	travel.recentSetsStartTimesIndex = 1
 	demand.recentSetsStartTimesIndex = 1
+	
+	dc.initialised = true
 end
 
 # Calculate, for a given points coverage mode, and number of available ambulances assigned to each

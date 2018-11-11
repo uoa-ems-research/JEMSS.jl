@@ -269,7 +269,7 @@ function initSimulation(configFilename::String;
 	demandCoverageElt = findElt(rootElt, "demandCoverage")
 	doInit = demandCoverageElt == nothing ? false : eltContentVal(demandCoverageElt, "init")
 	if doInit
-		if sim.demand.numSets != nullIndex
+		if sim.demand.initialised
 			initMessage(t, "initialising demand coverage")
 			
 			coverTimesElt = findElt(demandCoverageElt, "coverTimes")

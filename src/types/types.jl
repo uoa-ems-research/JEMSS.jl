@@ -461,6 +461,7 @@ end
 # Stores demand modes, demand sets (a set of demand modes apply to each time period),
 # and conditions for when to use each demand set/mode.
 type Demand
+	initialised::Bool
 	numRasters::Int # number of demand rasters
 	numModes::Int # number of demand modes
 	numSets::Int # number of sets of demand modes; each set may contain multiple demand modes e.g. for different combinations of call priorities and ambulance classes. Different sets can overlap, by containing the same demand modes.
@@ -475,7 +476,7 @@ type Demand
 	setsTimeOrder::Vector{Int} # setsTimeOrder[i] gives demand set to start using at time setsStartTimes[i]
 	recentSetsStartTimesIndex::Int # index of most recently used value in setsStartTimes (and setsTimeOrder), should only ever increase in value
 	
-	Demand() = new(nullIndex, nullIndex, nullIndex,
+	Demand() = new(false, nullIndex, nullIndex, nullIndex,
 		[], [],
 		[], Array{Int,2}(0,0),
 		[], [], nullIndex)
@@ -500,6 +501,7 @@ type PointsCoverageMode
 end
 
 type DemandCoverage
+	initialised::Bool
 	coverTimes::Dict{Priority,Float} # coverTimes[p] gives the target cover time for demand of priority p
 	points::Vector{Point} # demand is aggregated to points, same points are used for all demand rasters
 	nodesPoints::Vector{Vector{Int}} # nodesPoints[i] gives indices of points for which node i is the nearest node
@@ -509,7 +511,7 @@ type DemandCoverage
 	pointsCoverageModeLookup::Vector{Dict{Float,Int}} # pointsCoverageModeLookup[TravelMode.index][coverTime] gives index of PointsCoverageMode
 	pointSetsDemands::Array{Vector{Float},2} # pointSetsDemands[PointsCoverageMode.index, rasterIndex] gives demand values for each point set in PointsCoverageMode.pointSets, for Demand.rasters[rasterIndex]
 	
-	DemandCoverage() = new(Dict(), [], [], [],
+	DemandCoverage() = new(false, Dict(), [], [], [],
 		[], [], Array{Vector{Float},2}(0,0))
 end
 

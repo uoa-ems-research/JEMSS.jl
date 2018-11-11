@@ -24,11 +24,9 @@ function solveMexclp!(sim::Simulation;
 	
 	@assert(numAmbs >= 1, "need at least 1 ambulance for mexclp")
 	@assert(sim.travel.numSets == 1) # otherwise need to solve mexclp for each travel set?
-	@assert(sim.demand.numSets != nullIndex, "no demand data, cannot solve mexclp")
+	@assert(sim.demand.initialised, "no demand data, cannot solve mexclp")
 	@assert(sim.demand.numSets == 1) # otherwise need to solve mexclp for each demand set?
-	
-	# check that demand coverage data is set
-	@assert(!isempty(sim.demandCoverage.points))
+	@assert(sim.demandCoverage.initialised, "demand coverage data not initialised")
 	
 	@assert(length(stationCapacities) == length(sim.stations))
 	@assert(all(stationCapacities .>= 0), "station capacities must be non-negative")

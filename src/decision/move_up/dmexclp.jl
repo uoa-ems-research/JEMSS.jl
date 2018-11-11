@@ -8,8 +8,7 @@ Requires data for demand and demand coverage to already be set in `sim`; see fun
 Mutates: `sim.moveUpData.dmexclpData`
 """
 function initDmexclp!(sim::Simulation; busyFraction::Float = 0.5)
-	# check that demand coverage data is set
-	@assert(!isempty(sim.demandCoverage.points))
+	@assert(sim.demandCoverage.initialised)
 	
 	# shorthand
 	numAmbs = length(sim.ambulances)
