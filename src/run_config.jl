@@ -264,6 +264,32 @@ function initSimulation(configFilename::String;
 	initTime(t)
 	
 	##################
+	# demand coverage
+	
+	demandCoverageElt = findElt(rootElt, "demandCoverage")
+	doInit = demandCoverageElt == nothing ? false : eltContentVal(demandCoverageElt, "init")
+	if doInit
+		if sim.demand.numSets != nullIndex
+			initMessage(t, "initialising demand coverage")
+			
+			coverTimesElt = findElt(demandCoverageElt, "coverTimes")
+			coverTimes = Dict{Priority,Float}()
+			for demandPriority in setdiff([instances(Priority)...], [nullPriority])
+				coverTimes[demandPriority] = eltAttrVal(coverTimesElt, string(demandPriority))
+			end
+			demandPointsPerRasterCellsElt = findElt(demandCoverageElt, "demandPointsPerRasterCells")
+			initDemandCoverage!(sim;
+				coverTimes = coverTimes,
+				rasterCellNumRows = eltAttrVal(demandPointsPerRasterCellsElt, "rows"),
+				rasterCellNumCols = eltAttrVal(demandPointsPerRasterCellsElt, "cols"))
+			
+			initTime(t)
+		else
+			warn("no demand data, cannot initialise demand coverage")
+		end
+	end
+	
+	##################
 	# decision logic
 	
 	decisionElt = findElt(rootElt, "decision")
@@ -293,20 +319,6 @@ function initSimulation(configFilename::String;
 		elseif moveUpModuleName == "dmexclp"
 			mud.moveUpModule = dmexclpModule
 			dmexclpElt = findElt(moveUpElt, "dmexclp")
-			demandCoverTimesElt = findElt(dmexclpElt, "demandCoverTimes")
-			coverTimes = Dict{Priority,Float}()
-			for demandPriority in setdiff([instances(Priority)...], [nullPriority])
-				coverTimes[demandPriority] = eltAttrVal(demandCoverTimesElt, string(demandPriority))
-			end
-			demandPointsPerRasterCellsElt = findElt(dmexclpElt, "demandPointsPerRasterCells")
-			if sim.demand.numSets != nullIndex
-				warn("overwriting sim.demand with dmexclp demand data")
-			end
-			initDemand!(sim, demandFilename = eltContent(dmexclpElt, "demandFilename"))
-			initDemandCoverage!(sim,
-				coverTimes = coverTimes,
-				rasterCellNumRows = eltAttrVal(demandPointsPerRasterCellsElt, "rows"),
-				rasterCellNumCols = eltAttrVal(demandPointsPerRasterCellsElt, "cols"))
 			initDmexclp!(sim; busyFraction = eltContentVal(dmexclpElt, "busyFraction"))
 			
 		elseif moveUpModuleName == "priority_list"

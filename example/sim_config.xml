@@ -41,13 +41,7 @@
 				<filename>comp_table.csv</filename>
 			</compTable>
 			<dmexclp>
-				<demandCoverTimes
-					highPriority="8/60/24"
-					medPriority="15/60/24"
-					lowPriority="15/60/24"/>
 				<busyFraction>0.25</busyFraction>
-				<demandFilename>demand.csv</demandFilename>
-				<demandPointsPerRasterCells rows="1" cols="1"/>
 			</dmexclp>
 			<priorityList>
 				<!-- <path>inputPath</path> -->
@@ -76,5 +70,14 @@
 			</temp2>
 		</moveUp>
 	</decision>
+	
+	<demandCoverage>
+		<init>false</init>
+		<coverTimes
+			highPriority="8/60/24"
+			medPriority="15/60/24"
+			lowPriority="15/60/24"/>
+		<demandPointsPerRasterCells rows="1" cols="1"/>
+	</demandCoverage>
 	
 </simConfig>
