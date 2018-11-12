@@ -31,6 +31,7 @@ end
 function dmexclpMoveUp(sim::Simulation, newlyIdleAmb::Ambulance)
 	@assert(sim.moveUpData.useMoveUp)
 	@assert(newlyIdleAmb.status != ambGoingToCall)
+	@assert(sim.demand.initialised && sim.demandCoverage.initialised)
 	
 	# shorthand names:
 	dcd = sim.moveUpData.dmexclpData
