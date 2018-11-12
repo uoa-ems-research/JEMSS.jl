@@ -47,6 +47,17 @@ function writeDemandFile(filename::String, demand::Demand)
 	writeTablesToFile(filename, [demandRastersTable, demandModesTable, demandSetsTable, demandSetsTimingTable])
 end
 
+function writeDemandCoverageFile(filename::String, demandCoverage::DemandCoverage)
+	dc = demandCoverage # shorthand
+	coverTimesTable = Table("coverTimes", ["demandPriority", "coverTime"];
+		rows = [[string(priority), coverTime] for (priority, coverTime) in dc.coverTimes])
+	
+	demandRasterCellNumPointsTable = Table("demandRasterCellNumPoints", ["rows", "cols"];
+		rows = [[dc.rasterCellNumRows, dc.rasterCellNumCols]])
+	
+	writeTablesToFile(filename, [coverTimesTable, demandRasterCellNumPointsTable])
+end
+
 function writeHospitalsFile(filename::String, hospitals::Vector{Hospital})
 	table = Table("hospitals", ["index", "x", "y"];
 		rows = [[h.index, h.location.x, h.location.y] for h in hospitals])

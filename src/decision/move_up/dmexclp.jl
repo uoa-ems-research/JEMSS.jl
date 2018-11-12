@@ -1,21 +1,23 @@
-# dmexclp - dynamic maximum expected coverage location problem
+# Dynamic Maximum Expected Coverage Location Problem (DMEXCLP)
 
-# initialise data relevant to move up
-# mutates: sim.moveUpData.dmexclpData, sim.demandCoverage, sim.demandCoverTimes
-function initDmexclp!(sim::Simulation;
-	demandCoverTimes = Dict([p => 8/24/60 for p in instances(Priority)]), busyFraction::Float = 0.5,
-	rasterCellNumPointRows::Int = 1, rasterCellNumPointCols::Int = 1)
-	@assert(!sim.used)
+"""
+	function initDmexclp!(sim::Simulation; busyFraction::Float = 0.5)
+Initialise data for the Dynamic Maximum Expected Coverage Location Problem (DMEXCLP).
+
+Mutates: `sim.moveUpData.dmexclpData`
+"""
+function initDmexclp!(sim::Simulation; busyFraction::Float = 0.5)
+	
+	# initialise demand and demand coverage data if not already initialised
+	sim.demand.initialised || initDemand!(sim)
+	sim.demandCoverage.initialised || initDemandCoverage!(sim)
 	
 	# shorthand
 	numAmbs = length(sim.ambulances)
 	numStations = length(sim.stations)
 	
-	sim.demandCoverTimes = demandCoverTimes
 	dcd = sim.moveUpData.dmexclpData # shorthand
 	dcd.busyFraction = busyFraction
-	
-	initDemandCoverage!(sim; rasterCellNumRows = rasterCellNumPointRows, rasterCellNumCols = rasterCellNumPointCols);
 	
 	# calculate cover benefit values, for single demand
 	dcd.marginalBenefit = (busyFraction.^[0:numAmbs-1;])*(1-busyFraction)
@@ -29,6 +31,7 @@ end
 function dmexclpMoveUp(sim::Simulation, newlyIdleAmb::Ambulance)
 	@assert(sim.moveUpData.useMoveUp)
 	@assert(newlyIdleAmb.status != ambGoingToCall)
+	@assert(sim.demand.initialised && sim.demandCoverage.initialised)
 	
 	# shorthand names:
 	dcd = sim.moveUpData.dmexclpData

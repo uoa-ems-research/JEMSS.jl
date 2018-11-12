@@ -110,6 +110,10 @@ function initSimulation(configFilename::String;
 	map = sim.map # shorthand
 	(sim.targetResponseTimes, sim.responseTravelPriorities) = readPrioritiesFile(simFilePath("priorities"))
 	sim.travel = readTravelFile(simFilePath("travel"))
+	# "demand" file can be slow to read, will not read here but read elsewhere when needed
+	if haskey(sim.inputFiles, "demandCoverage")
+		sim.demandCoverage = readDemandCoverageFile(simFilePath("demandCoverage"))
+	end
 	
 	initTime(t)
 	
@@ -290,18 +294,7 @@ function initSimulation(configFilename::String;
 		elseif moveUpModuleName == "dmexclp"
 			mud.moveUpModule = dmexclpModule
 			dmexclpElt = findElt(moveUpElt, "dmexclp")
-			demandCoverTimesElt = findElt(dmexclpElt, "demandCoverTimes")
-			demandCoverTimes = Dict{Priority,Float}()
-			for demandPriority in setdiff([instances(Priority)...], [nullPriority])
-				demandCoverTimes[demandPriority] = eltAttrVal(demandCoverTimesElt, string(demandPriority))
-			end
-			demandPointsPerRasterCellsElt = findElt(dmexclpElt, "demandPointsPerRasterCells")
-			sim.demand = readDemandFile(eltContent(dmexclpElt, "demandFilename"))
-			initDmexclp!(sim;
-				demandCoverTimes = demandCoverTimes,
-				busyFraction = eltContentVal(dmexclpElt, "busyFraction"),
-				rasterCellNumPointRows = eltAttrVal(demandPointsPerRasterCellsElt, "rows"),
-				rasterCellNumPointCols = eltAttrVal(demandPointsPerRasterCellsElt, "cols"))
+			initDmexclp!(sim; busyFraction = eltContentVal(dmexclpElt, "busyFraction"))
 			
 		elseif moveUpModuleName == "priority_list"
 			mud.moveUpModule = priorityListModule

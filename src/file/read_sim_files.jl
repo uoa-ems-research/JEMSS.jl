@@ -261,6 +261,36 @@ function readDemandFile(filename::String)
 	return demand
 end
 
+function readDemandCoverageFile(filename::String)
+	tables = readTablesFromFile(filename)
+	
+	dc = demandCoverage = DemandCoverage()
+	
+	# demand cover times
+	table = tables["coverTimes"]
+	n = size(table.data,1) # number of priorities
+	@assert(n == 3) # have already hard-coded priorities: high, med, low; see defs.jl
+	columns = table.columns # shorthand
+	for i = 1:n
+		priority = eval(parse(columns["demandPriority"][i]))
+		coverTime = dc.coverTimes[priority] = columns["coverTime"][i]
+		@assert(coverTime >= 0)
+	end
+	demandPriorities = setdiff([instances(Priority)...], [nullPriority])
+	@assert(all(p -> haskey(dc.coverTimes, p), demandPriorities), "coverTimes not set for all priorities")
+	
+	# number of points to represent demand per raster cell
+	table = tables["demandRasterCellNumPoints"]
+	@assert(size(table.data,1) == 1) # should be single row
+	columns = table.columns # shorthand
+	rows = dc.rasterCellNumRows = columns["rows"][1]
+	cols = dc.rasterCellNumCols = columns["cols"][1]
+	@assert(rows >= 1)
+	@assert(cols >= 1)
+	
+	return dc
+end
+
 function readEventsFile(filename::String)
 	tables = readTablesFromFile(filename)
 	
