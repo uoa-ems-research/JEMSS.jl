@@ -226,7 +226,7 @@ end
 	function initDemand!(sim::Simulation, demand::Union{Demand,Void} = nothing;
 		demandFilename::String = "")
 Initialise demand data for `sim`.
-Uses `demand` if given, otherwise reads demand from file `demandFilename` if given, otherwise reads demand from file `sim.inputFiles[\"demand\"].path`.
+Will initialise from the first item in this list: `demand`, `demandFilename` file, `sim.demand` (if set), `sim.inputFiles[\"demand\"].path` file.
 Deletes old demand coverage data in `sim.demandCoverage`.
 
 Mutates: `sim.demand`, `sim.demandCoverage`
@@ -234,11 +234,17 @@ Mutates: `sim.demand`, `sim.demandCoverage`
 function initDemand!(sim::Simulation, demand::Union{Demand,Void} = nothing;
 	demandFilename::String = "")
 	if demand == nothing
-		if demandFilename == "" && haskey(sim.inputFiles, "demand")
-			demandFilename = sim.inputFiles["demand"].path
+		if demandFilename != ""
+			demand = readDemandFile(demandFilename)
+		elseif sim.demand.numSets == nullIndex
+			if haskey(sim.inputFiles, "demand")
+				demand = readDemandFile(sim.inputFiles["demand"].path)
+			else
+				error("no demand data given")
+			end
+		else
+			demand = sim.demand
 		end
-		@assert(demandFilename != "", "no demand data given")
-		demand = readDemandFile(demandFilename)
 	end
 	demand.initialised = true
 	sim.demand = demand
