@@ -8,7 +8,6 @@
 		stationCapacities::Vector{Int} = [station.capacity for station in sim.stations])
 Solves the Maximum Expected Coverage Location Problem (MEXCLP) for `sim` and returns the number of ambulances to assign to each station, also the converse is returned - a station index for each ambulance.
 The problem assumes that all ambulances are equivalent.
-Requires data for demand and demand coverage to already be set in `sim`; see functions [`initDemand!`](@ref), [`initDemandCoverage!`](@ref).
 
 # Keyword arguments
 - `numAmbs` is the number of ambulances to solve for, must be >= 1
@@ -24,14 +23,16 @@ function solveMexclp!(sim::Simulation;
 	
 	@assert(numAmbs >= 1, "need at least 1 ambulance for mexclp")
 	@assert(sim.travel.numSets == 1) # otherwise need to solve mexclp for each travel set?
-	@assert(sim.demand.initialised, "no demand data, cannot solve mexclp")
-	@assert(sim.demand.numSets == 1) # otherwise need to solve mexclp for each demand set?
-	@assert(sim.demandCoverage.initialised, "demand coverage data not initialised")
 	
 	@assert(length(stationCapacities) == length(sim.stations))
 	@assert(all(stationCapacities .>= 0), "station capacities must be non-negative")
 	stationCapacities = min.(stationCapacities, numAmbs) # reduce values where capacity > numAmbs
 	@assert(sum(stationCapacities) >= numAmbs, "the total capacity for ambulances at stations is less than the number of ambulances")
+	
+	# initialise demand and demand coverage data if not already initialised
+	sim.demand.initialised || initDemand!(sim)
+	@assert(sim.demand.numSets == 1) # otherwise need to solve mexclp for each demand set?
+	sim.demandCoverage.initialised || initDemandCoverage!(sim)
 	
 	# shorthand
 	numStations = length(sim.stations)

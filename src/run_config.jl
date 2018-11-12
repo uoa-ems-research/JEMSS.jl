@@ -110,8 +110,9 @@ function initSimulation(configFilename::String;
 	map = sim.map # shorthand
 	(sim.targetResponseTimes, sim.responseTravelPriorities) = readPrioritiesFile(simFilePath("priorities"))
 	sim.travel = readTravelFile(simFilePath("travel"))
-	if haskey(sim.inputFiles, "demand")
-		initDemand!(sim, demandFilename = simFilePath("demand"))
+	# "demand" file can be slow to read, will not read here but read elsewhere when needed
+	if haskey(sim.inputFiles, "demandCoverage")
+		sim.demandCoverage = readDemandCoverageFile(simFilePath("demandCoverage"))
 	end
 	
 	initTime(t)
@@ -262,32 +263,6 @@ function initSimulation(configFilename::String;
 	end
 	
 	initTime(t)
-	
-	##################
-	# demand coverage
-	
-	demandCoverageElt = findElt(rootElt, "demandCoverage")
-	doInit = demandCoverageElt == nothing ? false : eltContentVal(demandCoverageElt, "init")
-	if doInit
-		if sim.demand.initialised
-			initMessage(t, "initialising demand coverage")
-			
-			coverTimesElt = findElt(demandCoverageElt, "coverTimes")
-			coverTimes = Dict{Priority,Float}()
-			for demandPriority in setdiff([instances(Priority)...], [nullPriority])
-				coverTimes[demandPriority] = eltAttrVal(coverTimesElt, string(demandPriority))
-			end
-			demandPointsPerRasterCellsElt = findElt(demandCoverageElt, "demandPointsPerRasterCells")
-			initDemandCoverage!(sim;
-				coverTimes = coverTimes,
-				rasterCellNumRows = eltAttrVal(demandPointsPerRasterCellsElt, "rows"),
-				rasterCellNumCols = eltAttrVal(demandPointsPerRasterCellsElt, "cols"))
-			
-			initTime(t)
-		else
-			warn("no demand data, cannot initialise demand coverage")
-		end
-	end
 	
 	##################
 	# decision logic

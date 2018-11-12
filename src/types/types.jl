@@ -501,8 +501,12 @@ type PointsCoverageMode
 end
 
 type DemandCoverage
-	initialised::Bool
+	# params
 	coverTimes::Dict{Priority,Float} # coverTimes[p] gives the target cover time for demand of priority p
+	rasterCellNumRows::Int # number of rows of points to create per demand raster cell
+	rasterCellNumCols::Int # number of columns of points to create per demand raster cell
+	
+	initialised::Bool
 	points::Vector{Point} # demand is aggregated to points, same points are used for all demand rasters
 	nodesPoints::Vector{Vector{Int}} # nodesPoints[i] gives indices of points for which node i is the nearest node
 	rastersPointDemands::Vector{Vector{Float}} # rastersPointDemands[i][j] is demand at points[j] for Demand.rasters[i]
@@ -511,8 +515,22 @@ type DemandCoverage
 	pointsCoverageModeLookup::Vector{Dict{Float,Int}} # pointsCoverageModeLookup[TravelMode.index][coverTime] gives index of PointsCoverageMode
 	pointSetsDemands::Array{Vector{Float},2} # pointSetsDemands[PointsCoverageMode.index, rasterIndex] gives demand values for each point set in PointsCoverageMode.pointSets, for Demand.rasters[rasterIndex]
 	
-	DemandCoverage() = new(false, Dict(), [], [], [],
+	DemandCoverage() = new(Dict(), 0, 0,
+		false, [], [], [],
 		[], [], Array{Vector{Float},2}(0,0))
+	
+	function DemandCoverage(coverTimes::Dict{Priority,Float}, rasterCellNumRows::Int, rasterCellNumCols::Int)
+		dc = demandCoverage = DemandCoverage()
+		dc.coverTimes = coverTimes
+		dc.rasterCellNumRows = rasterCellNumRows
+		dc.rasterCellNumCols = rasterCellNumCols
+		return demandCoverage
+	end
+	
+	function DemandCoverage(demandCoverage::DemandCoverage)
+		dc = demandCoverage # shorthand
+		return DemandCoverage(dc.coverTimes, dc.rasterCellNumRows, dc.rasterCellNumCols)
+	end
 end
 
 # move up data types

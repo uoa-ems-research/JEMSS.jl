@@ -71,13 +71,4 @@
 		</moveUp>
 	</decision>
 	
-	<demandCoverage>
-		<init>false</init>
-		<coverTimes
-			highPriority="8/60/24"
-			medPriority="15/60/24"
-			lowPriority="15/60/24"/>
-		<demandPointsPerRasterCells rows="1" cols="1"/>
-	</demandCoverage>
-	
 </simConfig>

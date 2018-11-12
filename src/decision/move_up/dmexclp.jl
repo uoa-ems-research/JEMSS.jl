@@ -3,12 +3,14 @@
 """
 	function initDmexclp!(sim::Simulation; busyFraction::Float = 0.5)
 Initialise data for the Dynamic Maximum Expected Coverage Location Problem (DMEXCLP).
-Requires data for demand and demand coverage to already be set in `sim`; see functions [`initDemand!`](@ref), [`initDemandCoverage!`](@ref).
 
 Mutates: `sim.moveUpData.dmexclpData`
 """
 function initDmexclp!(sim::Simulation; busyFraction::Float = 0.5)
-	@assert(sim.demandCoverage.initialised)
+	
+	# initialise demand and demand coverage data if not already initialised
+	sim.demand.initialised || initDemand!(sim)
+	sim.demandCoverage.initialised || initDemandCoverage!(sim)
 	
 	# shorthand
 	numAmbs = length(sim.ambulances)
