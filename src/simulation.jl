@@ -1,29 +1,66 @@
-# run simulation, show progress whenever system time increases by timeStep (seconds)
-function simulate!(sim::Simulation; timeStep::Float = 1.0)
-	println("running simulation...")
-	startTime = time()
-	nextTime = startTime + timeStep
-	printProgress() = print(@sprintf("\rsim duration: %-9.2f real duration: %.2f seconds", sim.time - sim.startTime, time()-startTime))
-	while !sim.complete
+# run simulation
+
+"""
+	function simulate!(sim::Simulation;
+		time::Float = Inf, duration::Float = Inf, numEvents::Int = -1,
+		doPrint::Bool = false, printingInterval::Float = 1.0)
+Run the simulation to completion, or to any specified stopping point (according to `time`, `duration`, or `numEvents`), whichever comes first. Returns `true` if simulation is complete; `false` otherwise.
+
+# Keyword arguments
+- `time` is the maximum time to simulate to; will stop if time of next event is greater
+- `duration` is the maximum duration to simulate for; equivalent to setting `time = sim.time + duration`
+- `numEvents` is the maximum number of events to simulate
+- `doPrint` controls whether any lines are printed while simulating
+- `printingInterval` is the time interval (seconds) between printing while simulating, if `doPrint = true`
+"""
+function simulate!(sim::Simulation;
+	time::Real = Inf, duration::Real = Inf, numEvents::Real = Inf,
+	doPrint::Bool = false, printingInterval::Real = 1.0)
+	
+	@assert(time == Inf || duration == Inf, "can only set one of: time, duration")
+	@assert(time >= sim.time)
+	@assert(duration >= 0)
+	@assert(numEvents >= 0)
+	@assert(printingInterval >= 1e-2, "printing too often can slow the simulation")
+	
+	duration != Inf && (time = sim.time + duration) # set end time based on duration
+	
+	# for printing progress
+	startTime = Base.time()
+	doPrint || (printingInterval = Inf)
+	nextPrintTime = startTime + printingInterval
+	eventCount = 0
+	printProgress() = doPrint && print(@sprintf("\rsim time: %-9.2f sim duration: %-9.2f events simulated: %-9d real duration: %.2f seconds", sim.time, sim.time - sim.startTime, eventCount, Base.time() - startTime))
+	
+	# simulate
+	while !sim.complete && sim.eventList[end].time <= time && eventCount < numEvents
 		simulateNextEvent!(sim)
-		if time() > nextTime
+		eventCount += 1
+		if Base.time() >= nextPrintTime
 			printProgress()
-			nextTime += timeStep
+			nextPrintTime += printingInterval
 		end
 	end
+	
 	printProgress()
-	println("\n...simulation complete")
+	doPrint && println()
+	
+	return sim.complete
 end
 
-# simulate up until given time
+# simulate up to last event with time <= given time
+# equivalent to calling simulate!(sim, time = time), but may be faster so have kept for animation
 function simulateToTime!(sim::Simulation, time::Float)
 	while !sim.complete && sim.eventList[end].time <= time # eventList must remain sorted by non-increasing time
 		simulateNextEvent!(sim)
 	end
 end
 
+# run simulation to end; equivalent to simulate!(sim)
 function simulateToEnd!(sim::Simulation)
-	simulateToTime!(sim, Inf)
+	while !sim.complete
+		simulateNextEvent!(sim)
+	end
 end
 
 # set sim.backup to copy of sim (before running)
