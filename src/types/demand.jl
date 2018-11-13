@@ -120,7 +120,7 @@ function createPointsCoverageMode(sim::Simulation, travelMode::TravelMode, cover
 	points = pointsCoverageMode.points
 	numPoints = length(points)
 	stations = sim.stations
-	numStations = length(stations)
+	numStations = sim.numStations
 	numNodes = length(sim.net.fGraph.nodes)
 	nodesPoints = sim.demandCoverage.nodesPoints
 	
@@ -402,7 +402,7 @@ function calcPointSetsCoverCounts!(sim::Simulation, currentTime::Float, stations
 	demandPriorities::Vector{Priority} = setdiff([instances(Priority)...], [nullPriority]))
 	# stationsNumAmbs[i] gives the number of ambulances that can provide coverage and are assigned to station i
 	
-	@assert(length(stationsNumAmbs) == length(sim.stations))
+	@assert(length(stationsNumAmbs) == sim.numStations)
 	@assert(all(n -> n >= 0, stationsNumAmbs))
 	
 	demandsPointSetsCoverCounts = Dict{Priority,Vector{Int}}() # demandsPointSetsCoverCounts[p][i] gives the number of ambulances assigned to stations that cover point set i for demand priority p
@@ -428,7 +428,7 @@ function calcDemandCoverCounts!(sim::Simulation, currentTime::Float, stationsNum
 	demandPriorities::Vector{Priority} = setdiff([instances(Priority)...], [nullPriority]))
 	# stationsNumAmbs[i] gives the number of ambulances that can provide coverage and are assigned to station i
 	
-	@assert(length(stationsNumAmbs) == length(sim.stations))
+	@assert(length(stationsNumAmbs) == sim.numStations)
 	@assert(all(n -> n >= 0, stationsNumAmbs))
 	
 	# shorthand

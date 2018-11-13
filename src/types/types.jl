@@ -696,6 +696,12 @@ type Simulation
 	hospitals::Vector{Hospital}
 	stations::Vector{Station}
 	
+	# shorthand:
+	numAmbs::Int # length(ambulances)
+	numCalls::Int # length(calls)
+	numHospitals::Int # length(hospitals)
+	numStations::Int # length(stations)
+	
 	eventList::Vector{Event} # events to occur now or in future
 	eventIndex::Int # index of event in events that have occurred
 	queuedCallList::Vector{Call} # keep track of queued calls. Calls can be queued after call arrivalTime + dispatchDelay
@@ -736,6 +742,7 @@ type Simulation
 	Simulation() = new(nullTime, nullTime, nullTime,
 		Network(), Travel(), Map(), Grid(),
 		[], [], [], [],
+		0, 0, 0, 0,
 		[], 0, [],
 		Resimulation(),
 		nullFunction, nullFunction, MoveUpData(),

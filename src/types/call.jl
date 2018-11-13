@@ -12,11 +12,12 @@ function resetCalls!(sim::Simulation)
 	# shorthand:
 	calls = sim.calls
 	backupCalls = sim.backup.calls
-	numCalls = length(calls)
+	numCalls = sim.numCalls
 	nullCall = Call()
 	fnames = Set(fieldnames(nullCall))
 	
-	@assert(length(calls) == length(backupCalls))
+	@assert(length(calls) == numCalls)
+	@assert(length(backupCalls) == numCalls)
 	
 	# from fnames, remove fixed parameters
 	fnamesFixed = Set([:index, :priority, :transfer, :location,

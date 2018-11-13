@@ -13,8 +13,8 @@ function initPriorityList!(sim::Simulation, priorityList::Vector{Int})
 	# shorthand names:
 	ambulances = sim.ambulances
 	stations = sim.stations
-	numAmbs = length(ambulances)
-	numStations = length(stations)
+	numAmbs = sim.numAmbs
+	numStations = sim.numStations
 	pld = sim.moveUpData.priorityListData
 	
 	pld.priorityList = priorityList
@@ -48,7 +48,7 @@ function priorityListMoveUp(sim::Simulation, newlyIdleAmb::Ambulance)
 	stationNumIdleAmbs = pld.stationNumIdleAmbs
 	ambulances = sim.ambulances
 	stations = sim.stations
-	numAmbs = length(ambulances)
+	numAmbs = sim.numAmbs
 	
 	# calculate the number of idle ambulances at (or travelling to) each station
 	stationNumIdleAmbs[:] = 0

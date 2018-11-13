@@ -83,6 +83,11 @@ function initSimulation(configFilename::String;
 	sim.hospitals = readHospitalsFile(simFilePath("hospitals"))
 	sim.stations = readStationsFile(simFilePath("stations"))
 	
+	sim.numAmbs = length(sim.ambulances)
+	sim.numCalls = length(sim.calls)
+	sim.numHospitals = length(sim.hospitals)
+	sim.numStations = length(sim.stations)
+	
 	# read network data
 	sim.net = Network()
 	net = sim.net # shorthand

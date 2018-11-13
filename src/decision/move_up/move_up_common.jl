@@ -21,7 +21,7 @@ function ambMoveUpTravelTimes!(sim::Simulation, ambulance::Ambulance)
 	(node1, time1) = getRouteNextNode!(sim, ambulance.route, travelMode.index, sim.time) # next/nearest node in ambulance route
 	
 	# get travel times to each station
-	numStations = length(stations)
+	numStations = sim.numStations
 	ambToStationTimes = Vector{Float}(numStations)
 	for i = 1:numStations
 		station = stations[i]
@@ -47,7 +47,7 @@ function createStationPairs(sim::Simulation, travelMode::TravelMode;
 	travel = sim.travel
 	map = sim.map
 	stations = sim.stations
-	numStations = length(stations)
+	numStations = sim.numStations
 	priority = lowPriority # default travel priority for this function
 	
 	maxPairsPerStation = min(maxPairsPerStation, numStations)

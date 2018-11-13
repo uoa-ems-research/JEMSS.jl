@@ -90,7 +90,7 @@ function calcBatchMeanResponseTimes(sim::Simulation;
 	@assert(sim.complete == true)
 	
 	# collate data for use by calcBatchMeans function
-	n = length(sim.calls)
+	n = sim.numCalls
 	times = [sim.calls[i].arrivalTime for i = 1:n]
 	values = [sim.calls[i].responseTime for i = 1:n]
 	

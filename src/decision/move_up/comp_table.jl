@@ -3,8 +3,8 @@
 # initialise data relevant to move up
 function initCompTable!(sim::Simulation, compTableFilename::String)
 	# shorthand names:
-	numAmbs = length(sim.ambulances)
-	numStations = length(sim.stations)
+	numAmbs = sim.numAmbs
+	numStations = sim.numStations
 	ctd = sim.moveUpData.compTableData
 	
 	# read compliance table
@@ -26,8 +26,8 @@ function compTableMoveUp(sim::Simulation)
 	# shorthand:
 	ambulances = sim.ambulances
 	stations = sim.stations
-	numAmbs = length(ambulances)
-	numStations = length(stations)
+	numAmbs = sim.numAmbs
+	numStations = sim.numStations
 	ctd = sim.moveUpData.compTableData
 	compTable = ctd.compTable
 	ambMovable = ctd.ambMovable

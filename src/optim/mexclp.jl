@@ -2,7 +2,7 @@
 
 """
 	solveMexclp!(sim::Simulation;
-		numAmbs::Int = length(sim.ambulances),
+		numAmbs::Int = sim.numAmbs,
 		busyFraction::Float = 0.5,
 		demandWeights::Dict{Priority,Float} = Dict([p => 1.0 for p in instances(Priority)]),
 		stationCapacities::Vector{Int} = [station.capacity for station in sim.stations])
@@ -16,7 +16,7 @@ The problem assumes that all ambulances are equivalent.
 - `stationCapacities` is the maximum number of ambulances that each station can hold
 """
 function solveMexclp!(sim::Simulation;
-	numAmbs::Int = length(sim.ambulances),
+	numAmbs::Int = sim.numAmbs,
 	busyFraction::Float = 0.5,
 	demandWeights::Dict{Priority,Float} = Dict([p => 1.0 for p in instances(Priority)]),
 	stationCapacities::Vector{Int} = [station.capacity for station in sim.stations])
@@ -24,7 +24,7 @@ function solveMexclp!(sim::Simulation;
 	@assert(numAmbs >= 1, "need at least 1 ambulance for mexclp")
 	@assert(sim.travel.numSets == 1) # otherwise need to solve mexclp for each travel set?
 	
-	@assert(length(stationCapacities) == length(sim.stations))
+	@assert(length(stationCapacities) == sim.numStations)
 	@assert(all(stationCapacities .>= 0), "station capacities must be non-negative")
 	stationCapacities = min.(stationCapacities, numAmbs) # reduce values where capacity > numAmbs
 	@assert(sum(stationCapacities) >= numAmbs, "the total capacity for ambulances at stations is less than the number of ambulances")
@@ -35,7 +35,7 @@ function solveMexclp!(sim::Simulation;
 	sim.demandCoverage.initialised || initDemandCoverage!(sim)
 	
 	# shorthand
-	numStations = length(sim.stations)
+	numStations = sim.numStations
 	currentTime = sim.startTime
 	
 	# get demand point coverage data

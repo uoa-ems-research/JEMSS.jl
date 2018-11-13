@@ -8,7 +8,7 @@ function initZhangIp!(sim::Simulation;
 	zid = sim.moveUpData.zhangIpData = readZhangIpParamsFile(paramsFilename)
 	
 	# check number of stations
-	numStations = length(sim.stations)
+	numStations = sim.numStations
 	@assert(length(zid.marginalBenefits) == numStations)
 	@assert(length(zid.stationCapacities) == numStations)
 	
@@ -44,7 +44,7 @@ function zhangIpMoveUp(sim::Simulation)
 	benefitSlots = zid.benefitSlots
 	ambulances = sim.ambulances
 	stations = sim.stations
-	numStations = length(stations)
+	numStations = sim.numStations
 	
 	# get currently movable ambulances, and at-hospital ambulances
 	movableAmbs = filter(a -> isAmbAvailableForMoveUp(a), ambulances)

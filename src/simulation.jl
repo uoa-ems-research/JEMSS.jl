@@ -181,7 +181,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		addEvent!(sim.eventList; parentEvent = event, form = considerDispatch, time = sim.time + call.dispatchDelay, call = call)
 		
 		# add next call arrival to event queue
-		if call.index < length(sim.calls)
+		if call.index < sim.numCalls
 			addEvent!(sim.eventList, sim.calls[call.index + 1])
 		end
 		

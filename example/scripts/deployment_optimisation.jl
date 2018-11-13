@@ -8,7 +8,7 @@ using JEMSS
 # load sim
 configFilename = (length(ARGS) >= 1 ? ARGS[1] : selectXmlFile())
 sim = initSimulation(configFilename)
-(numAmbs, numStations) = (length(sim.ambulances), length(sim.stations))
+(numAmbs, numStations) = (sim.numAmbs, sim.numStations)
 @assert(numAmbs > 0 && numStations > 1) # otherwise only one deployment policy is possible
 
 # read deployment policies file

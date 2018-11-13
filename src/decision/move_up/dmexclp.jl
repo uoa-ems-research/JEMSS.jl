@@ -13,8 +13,8 @@ function initDmexclp!(sim::Simulation; busyFraction::Float = 0.5)
 	sim.demandCoverage.initialised || initDemandCoverage!(sim)
 	
 	# shorthand
-	numAmbs = length(sim.ambulances)
-	numStations = length(sim.stations)
+	numAmbs = sim.numAmbs
+	numStations = sim.numStations
 	
 	dcd = sim.moveUpData.dmexclpData # shorthand
 	dcd.busyFraction = busyFraction
@@ -37,7 +37,7 @@ function dmexclpMoveUp(sim::Simulation, newlyIdleAmb::Ambulance)
 	dcd = sim.moveUpData.dmexclpData
 	ambulances = sim.ambulances
 	stations = sim.stations
-	numStations = length(stations)
+	numStations = sim.numStations
 	
 	# calculate the number of idle ambulances at (or travelling to) each station
 	dcd.stationNumIdleAmbs[:] = 0
