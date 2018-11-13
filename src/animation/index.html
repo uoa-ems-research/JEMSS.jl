@@ -180,6 +180,9 @@
 					console.log("finished sim")
 					stopAnimation()
 					break;
+				case "jump_to_time":
+					jumpToSimTime(msgObj.time)
+					break;
 				default:
 					throw new Error("Undefined message type")
 			}
@@ -335,6 +338,11 @@
 			} else {
 				jumpAnimation()
 			}
+		}
+		
+		function jumpToSimTime(time) {
+			newSimTime = time
+			jumpToNewSimTime()
 		}
 		
 		////////////////////////////////////////////////////////////////

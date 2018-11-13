@@ -85,7 +85,7 @@ function resetSim!(sim::Simulation)
 		resetCalls!(sim) # reset calls from sim.backup, need to do this before resetting sim.time
 		
 		fnames = Set(fieldnames(sim))
-		fnamesDontCopy = Set([:backup, :net, :travel, :grid, :resim, :calls, :demand, :demandCoverage]) # will not (yet) copy these fields from sim.backup to sim
+		fnamesDontCopy = Set([:backup, :net, :travel, :grid, :resim, :calls, :demand, :demandCoverage, :animating]) # will not (yet) copy these fields from sim.backup to sim
 		# note that sim.backup does not contain a backup of all fields
 		setdiff!(fnames, fnamesDontCopy) # remove fnamesDontCopy from fnames
 		for fname in fnames

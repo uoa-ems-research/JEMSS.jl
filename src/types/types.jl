@@ -682,7 +682,7 @@ end
 
 type Simulation
 	startTime::Float
-	time::Float
+	time::Float # time of most recent event, or time of recent animation frame if animating
 	endTime::Float # calculated after simulating
 	
 	# world:
@@ -732,9 +732,11 @@ type Simulation
 	eventsFileIO::IOStream # write simulation trace of events to this file
 	
 	writeOutput::Bool # true if outputFiles should be used to write output (false if animating)
-	
+	initialised::Bool # true if simulation has been initialised and so can be run, false otherwise
 	used::Bool # true if simulation has started running (and so restarting would require copying from backup)
 	complete::Bool # true if simulation has ended (no events remaining)
+	animating::Bool # true if being used for animation, false otherwise
+	
 	backup::Simulation # copy of simulation, for restarts (does not include a backup of all fields in order to save on memory, see backupSim! function for missing fields)
 	
 	configRootElt::XMLElement
@@ -750,6 +752,5 @@ type Simulation
 		Dict(), [],
 		Set(), Set(),
 		"", "", Dict(), Dict(), IOStream(""),
-		false,
-		false, false)
+		false, false, false, false, false)
 end

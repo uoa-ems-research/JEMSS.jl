@@ -362,6 +362,11 @@ function initSimulation(configFilename::String;
 	end
 	
 	##################
+	# misc
+	
+	sim.initialised = true # at this point, the simulation could be run
+	
+	##################
 	# sim backup
 	
 	if createBackup

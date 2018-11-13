@@ -2,7 +2,7 @@
 
 # global variables; hacky...
 global animConnections = Dict{Int,WebSocket}() # store open connections
-global animConfigFilenames = Vector{String}() # store filenames between animation request and start
+global animSimQueue = Vector{Union{Simulation,String}}() # to store sims and sim filenames between animation request and start
 global animPort = nullIndex # localhost port for animation, to be set
 
 function decodeMessage(msg)
@@ -117,7 +117,7 @@ end
 function animAddAmbs!(client::WebSocket, sim::Simulation)
 	messageDict = createMessageDict("add_ambulance")
 	for amb in sim.ambulances
-		ambLocation = getRouteCurrentLocation!(sim.net, amb.route, sim.startTime)
+		ambLocation = getRouteCurrentLocation!(sim.net, amb.route, sim.time)
 		amb.currentLoc = ambLocation
 		messageDict["ambulance"] = amb
 		write(client, json(messageDict))
@@ -188,18 +188,38 @@ function updateCallLocation!(sim::Simulation, call::Call)
 end
 
 wsh = WebSocketHandler() do req::Request, client::WebSocket
-	global animConnections, animConfigFilenames
+	global animConnections, animSimQueue
 	
 	animConnections[client.id] = client
 	println("Client ", client.id, " connected")
 	
-	# get oldest filename from animConfigFilenames, or select file now
-	configFilename = (length(animConfigFilenames) > 0 ? shift!(animConfigFilenames) : selectXmlFile())
-	println("Running from config: ", configFilename)
+	# get first item in animSimQueue, or get filename now
+	nextAnimItem = (length(animSimQueue) > 0 ? shift!(animSimQueue) : selectXmlFile())
+	sim = nothing # init
+	if typeof(nextAnimItem) == Simulation
+		sim = nextAnimItem
+	else
+		@assert(typeof(nextAnimItem) == String)
+		configFilename = nextAnimItem
+		println("Initialising simulation from config:", configFilename)
+		sim = initSimulation(configFilename; allowResim = true)
+		println("...initialised")
+	end
 	
-	println("Initialising simulation...")
-	sim = initSimulation(configFilename; allowResim = true)
-	println("...initialised")
+	# check if sim can be animated
+	@assert(sim.initialised, "simulation has not been initialised; see initSimulation function")
+	@assert(!sim.animating, "simulation is already being animated")
+	@assert(!sim.writeOutput, "cannot animate simulation which is writing to output files")
+	if !isdefined(sim, :backup)
+		if !sim.used
+			backupSim!(sim)
+		else
+			warn("will not be able to restart animation because the simulation has been partially run and has no backup")
+		end
+	end
+	if sim.complete
+		resetSim!(sim)
+	end
 	
 	# set map
 	messageDict = createMessageDict("set_map_view")
@@ -218,6 +238,17 @@ wsh = WebSocketHandler() do req::Request, client::WebSocket
 	animAddBuildings(client, sim)
 	animAddAmbs!(client, sim)
 	
+	if sim.time > sim.startTime
+		# set animation to current sim state
+		@assert(!sim.complete) # not sure what would happen otherwise
+		sim.previousCalls = Set{Call}() # in case animation has been re-opened from same sim state
+		messageDict = createMessageDict("jump_to_time")
+		messageDict["time"] = sim.time
+		write(client, json(messageDict))
+	end
+	
+	sim.animating = true
+	
 	messageDict = createMessageDict("")
 	while true
 		msg = read(client) # waits for message from client
@@ -227,6 +258,7 @@ wsh = WebSocketHandler() do req::Request, client::WebSocket
 		if msgType == "prepare_next_frame"
 			simTime = Float(msgData[1])
 			simulateToTime!(sim, simTime)
+			sim.time = simTime # otherwise sim.time only stores time of last event
 			messageDict["time"] = simTime
 			writeClient!(client, messageDict, "prepared_next_frame")
 			
@@ -257,26 +289,44 @@ wsh = WebSocketHandler() do req::Request, client::WebSocket
 			end
 			
 		elseif msgType == "disconnect"
+			sim.animating = false
 			close(client)
 			println("Client ", client.id, " disconnected")
 			break
 		else
+			sim.animating = false
 			error("Unrecognised message: ", msgString)
 		end
 	end
 end
 
-# start the animation, open a browser window for it
-# can set the port for the connection, and the simulation config filename
-# openWindow = false prevents a browser window from opening automatically, will need to open manually
-function animate(; port::Int = 8001, configFilename::String = "", openWindow::Bool = true)
-	global animConfigFilenames
+"""
+	function animate!(sim::Union{Simulation,Void} = nothing;
+		configFilename::String = "", port::Int = 8001, openWindow::Bool = true)
+Open a web browser window to animate the simulation.
+Will animate for either `sim` or `configFilename`. If neither of these are given then there will be a prompt for the simulation configuration filename once the browser window has opened.
+
+# Keyword arguments
+- `configFilename` is the name of the configuration file to load the simulation from; can be used instead of `sim`
+- `port` is the port number for the local host url, e.g. `port = 8001` will use localhost:8001; this can only be set once for all animation windows
+- `openWindow` can be set to `false` to prevent the window from being opened automatically, which is useful if you wish to use a non-default browser
+"""
+function animate!(sim::Union{Simulation,Void} = nothing;
+	configFilename::String = "", port::Int = 8001, openWindow::Bool = true)
+	@assert(sim == nothing || configFilename == "", "can only set one of: sim, configFilename")
+	global animSimQueue
 	if runAnimServer(port)
-		if configFilename != ""
-			push!(animConfigFilenames, configFilename)
+		if sim != nothing
+			push!(animSimQueue, sim)
+		elseif configFilename != ""
+			push!(animSimQueue, configFilename)
 		end
 		openWindow ? openLocalhost(port) : println("waiting for window with port $port to be opened")
 	end
+end
+
+function animate(; configFilename::String = "", port::Int = 8001, openWindow::Bool = true)
+	animate!(configFilename = configFilename, port = port, openWindow = openWindow)
 end
 
 # creates and runs server for given port
