@@ -27,7 +27,7 @@ function makeRandDeploymentPolicies(numAmbs::Int, numStations::Int, numDepols::I
 	return depols
 end
 # function makeRandDeploymentPolicies(sim::Simulation, numDepols::Int)
-	# return makeRandDeploymentPolicies(length(sim.ambulances), length(sim.stations), numDepols)
+	# return makeRandDeploymentPolicies(sim.numAmbs, sim.numStations, numDepols)
 # end
 
 # set ambulance to be located at given station
@@ -43,9 +43,9 @@ end
 # mutates: sim.ambulances
 function applyDeploymentPolicy!(sim::Simulation, depol::Depol)
 	n = length(depol)
-	@assert(n == length(sim.ambulances))
-	@assert(all(d -> in(d, 1:length(sim.stations)), depol))
-	# @assert(all(1 .<= depol .<= length(sim.stations)))
+	@assert(n == sim.numAmbs)
+	@assert(all(d -> in(d, 1:sim.numStations), depol))
+	# @assert(all(1 .<= depol .<= sim.numStations))
 	for i = 1:n
 		setAmbStation!(sim.ambulances[i], sim.stations[depol[i]])
 	end
