@@ -231,7 +231,7 @@ function readDemandFile(filename::String)
 	columns = table.columns # shorthand
 	numSets = demand.numSets = maximum(columns["setIndex"])
 	@assert(sort(unique(columns["setIndex"])) == [1:numSets;]) # all sets from 1:numSets should be used
-	demand.modeLookup = fill(nullIndex, numSets, 3) # number of priorities is fixed at 3, set defs.jl
+	demand.modeLookup = fill(nullIndex, numSets, numPriorities)
 	for i = 1:n
 		setIndex = columns["setIndex"][i]
 		@assert(setIndex == i)
@@ -269,15 +269,14 @@ function readDemandCoverageFile(filename::String)
 	# demand cover times
 	table = tables["coverTimes"]
 	n = size(table.data,1) # number of priorities
-	@assert(n == 3) # have already hard-coded priorities: high, med, low; see defs.jl
+	@assert(n == numPriorities)
 	columns = table.columns # shorthand
 	for i = 1:n
 		priority = eval(parse(columns["demandPriority"][i]))
 		coverTime = dc.coverTimes[priority] = columns["coverTime"][i]
 		@assert(coverTime >= 0)
 	end
-	demandPriorities = setdiff([instances(Priority)...], [nullPriority])
-	@assert(all(p -> haskey(dc.coverTimes, p), demandPriorities), "coverTimes not set for all priorities")
+	@assert(all(p -> haskey(dc.coverTimes, p), priorities), "coverTimes not set for all priorities")
 	
 	# number of points to represent demand per raster cell
 	table = tables["demandRasterCellNumPoints"]
@@ -437,12 +436,12 @@ function readPrioritiesFile(filename::String)
 	table = tables["priorities"]
 	n = size(table.data,1) # number of priorities
 	@assert(n >= 1)
-	@assert(n <= 3) # have already hard-coded priorities: high, med, low; see defs.jl
+	@assert(n <= numPriorities)
 	
 	# read data from table
 	columns = table.columns # shorthand
 	targetResponseTimes = Vector{Float}(n)
-	responseTravelPriorities = Dict([p => p for p in instances(Priority)]) # default is to have response travel priority equal to call priority
+	responseTravelPriorities = Dict([p => p for p in priorities]) # default is to have response travel priority equal to call priority
 	for i = 1:n
 		@assert(columns["priority"][i] == i)
 		@assert(eval(parse(columns["name"][i])) == Priority(i))
@@ -578,7 +577,7 @@ function readTravelFile(filename::String)
 	numSets = travel.numSets = maximum(columns["travelSetIndex"])
 	@assert(sort(unique(columns["travelSetIndex"])) == [1:numSets;]) # all sets from 1:numSets should be used
 	@assert(sort(unique(columns["travelModeIndex"])) == [1:numModes;]) # all travel modes should be used
-	travel.modeLookup = fill(nullIndex, numSets, 3) # number of priorities is fixed at 3, set defs.jl
+	travel.modeLookup = fill(nullIndex, numSets, numPriorities)
 	for i = 1:n
 		setIndex = columns["travelSetIndex"][i]
 		priority = eval(parse(columns["priority"][i]))

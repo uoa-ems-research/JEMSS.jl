@@ -34,7 +34,7 @@ function writeDemandFile(filename::String, demand::Demand)
 	
 	# demand sets table
 	dml = demand.modeLookup # shorthand
-	@assert(size(dml) == (demand.numSets, 3)) # should have value for each combination of demand mode and priority
+	@assert(size(dml) == (demand.numSets, numPriorities)) # should have value for each combination of demand mode and priority
 	demandSetsTable = Table("demandSets", ["setIndex", "modeIndices"];
 		rows = [[i, hcat(dml[i,:]...)] for i = 1:demand.numSets])
 	
@@ -102,7 +102,7 @@ function writeTravelFile(filename::String, travel::Travel)
 	
 	# travel sets table
 	tml = travel.modeLookup # shorthand
-	@assert(size(tml) == (length(travel.modes), 3)) # should have value for each combination of travel mode and priority
+	@assert(size(tml) == (length(travel.modes), numPriorities)) # should have value for each combination of travel mode and priority
 	travelSetsTable = Table("travelSets", ["travelSetIndex", "priority", "travelModeIndex"];
 		rows = [[ind2sub(tml,i)[1], string(Priority(ind2sub(tml,i)[2])), tml[i]] for i = 1:length(tml)])
 	

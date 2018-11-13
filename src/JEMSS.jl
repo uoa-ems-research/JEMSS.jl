@@ -69,6 +69,7 @@ export
 export
 	Float, FloatSpTime, IntRNode, IntFadj, # type alias
 	nullIndex, nullX, nullY, nullTime, nullDist, # nulls
+	priorities, numPriorities, # priorities
 	Depol
 
 # defs - enums

@@ -33,8 +33,7 @@ end
 @testset "demand mode lookup" begin
 	demand = readDemandFile("data/demand/demand_1.csv")
 	
-	priorities = setdiff([instances(JEMSS.Priority)...], [JEMSS.nullPriority])
-	for t = 0:0.1:1, priority in priorities
+	for t = 0:0.1:1, priority in JEMSS.priorities
 		i = JEMSS.getDemandMode!(demand, priority, t).index
 		if 0.3 <= mod(t,1) < 0.7
 			@test (priority == highPriority && i == 4) ||

@@ -4,7 +4,7 @@
 	solveMexclp!(sim::Simulation;
 		numAmbs::Int = sim.numAmbs,
 		busyFraction::Float = 0.5,
-		demandWeights::Dict{Priority,Float} = Dict([p => 1.0 for p in instances(Priority)]),
+		demandWeights::Dict{Priority,Float} = Dict([p => 1.0 for p in priorities]),
 		stationCapacities::Vector{Int} = [station.capacity for station in sim.stations])
 Solves the Maximum Expected Coverage Location Problem (MEXCLP) for `sim` and returns the number of ambulances to assign to each station, also the converse is returned - a station index for each ambulance.
 The problem assumes that all ambulances are equivalent.
@@ -18,7 +18,7 @@ The problem assumes that all ambulances are equivalent.
 function solveMexclp!(sim::Simulation;
 	numAmbs::Int = sim.numAmbs,
 	busyFraction::Float = 0.5,
-	demandWeights::Dict{Priority,Float} = Dict([p => 1.0 for p in instances(Priority)]),
+	demandWeights::Dict{Priority,Float} = Dict([p => 1.0 for p in priorities]),
 	stationCapacities::Vector{Int} = [station.capacity for station in sim.stations])
 	
 	@assert(numAmbs >= 1, "need at least 1 ambulance for mexclp")
@@ -40,8 +40,7 @@ function solveMexclp!(sim::Simulation;
 	
 	# get demand point coverage data
 	pointData = Dict{Vector{Int},Float}() # pointData[pointStations] = pointDemand
-	demandPriorities = setdiff([instances(Priority)...], [nullPriority])
-	for demandPriority in demandPriorities
+	for demandPriority in priorities
 		if !haskey(demandWeights, demandPriority) || demandWeights[demandPriority] == 0
 			continue
 		end

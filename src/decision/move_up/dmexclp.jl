@@ -54,7 +54,7 @@ function dmexclpMoveUp(sim::Simulation, newlyIdleAmb::Ambulance)
 	# find station allocation for newly idle ambulance that gives greatest
 	# increase in expected demand coverage
 	dcd.stationMarginalCoverages[:] = 0.0
-	for demandPriority in setdiff([instances(Priority)...], [nullPriority])
+	for demandPriority in priorities
 		pointSetsCoverCounts = demandsPointSetsCoverCounts[demandPriority]
 		pointsCoverageMode = getPointsCoverageMode!(sim, demandPriority, sim.time)
 		demandMode = getDemandMode!(sim.demand, demandPriority, sim.time)

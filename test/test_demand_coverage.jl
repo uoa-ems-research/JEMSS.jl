@@ -9,7 +9,7 @@ sim = initSimulation(joinpath(testRegionDataFolder, "sim_config.xml"), doPrint =
 
 # initialise demand and demand coverage
 initDemand!(sim, demandFilename = joinpath(testRegionDataFolder, "demand", "demand.csv"))
-coverTimes = Dict([p => 20/60/24 for p in instances(Priority)])
+coverTimes = Dict([p => 20/60/24 for p in priorities])
 coverTimes[highPriority] = 12/60/24
 initDemandCoverage!(sim, coverTimes = coverTimes, rasterCellNumRows = 2, rasterCellNumCols = 2)
 
@@ -26,7 +26,6 @@ stations = sim.stations
 numStations = sim.numStations
 pointsCoverageModeLookup = demandCoverage.pointsCoverageModeLookup
 travel = sim.travel;
-priorities = setdiff([instances(Priority)...], [nullPriority])
 
 @testset "demand coverage init" begin
 	# check sim.demandCoverage after being initialised with function initDemandCoverage!
