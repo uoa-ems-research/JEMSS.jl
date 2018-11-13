@@ -1,12 +1,20 @@
 # Dynamic Maximum Expected Coverage Location Problem (DMEXCLP)
 
 """
-	function initDmexclp!(sim::Simulation; busyFraction::Float = 0.5)
+	function initDmexclp!(sim::Simulation;
+		busyFraction::Float = 0.5,
+		demandWeights::Dict{Priority,Float} = Dict([p => 1.0 for p in priorities]))
 Initialise data for the Dynamic Maximum Expected Coverage Location Problem (DMEXCLP).
+
+# Keyword arguments
+- `busyFraction` is the fraction of time that ambulances are busy; should be within [0,1] though this is not enforced
+- `demandWeights` is the weight of each demand priority on the objective function
 
 Mutates: `sim.moveUpData.dmexclpData`
 """
-function initDmexclp!(sim::Simulation; busyFraction::Float = 0.5)
+function initDmexclp!(sim::Simulation;
+	busyFraction::Float = 0.5,
+	demandWeights::Dict{Priority,Float} = Dict([p => 1.0 for p in priorities]))
 	
 	# initialise demand and demand coverage data if not already initialised
 	sim.demand.initialised || initDemand!(sim)
@@ -18,6 +26,7 @@ function initDmexclp!(sim::Simulation; busyFraction::Float = 0.5)
 	
 	dcd = sim.moveUpData.dmexclpData # shorthand
 	dcd.busyFraction = busyFraction
+	dcd.demandWeights = demandWeights
 	
 	# calculate cover benefit values, for single demand
 	dcd.marginalBenefit = (busyFraction.^[0:numAmbs-1;])*(1-busyFraction)
@@ -55,14 +64,17 @@ function dmexclpMoveUp(sim::Simulation, newlyIdleAmb::Ambulance)
 	# increase in expected demand coverage
 	dcd.stationMarginalCoverages[:] = 0.0
 	for demandPriority in priorities
+		if !haskey(dcd.demandWeights, demandPriority) || dcd.demandWeights[demandPriority] == 0
+			continue
+		end
 		pointSetsCoverCounts = demandsPointSetsCoverCounts[demandPriority]
 		pointsCoverageMode = getPointsCoverageMode!(sim, demandPriority, sim.time)
 		demandMode = getDemandMode!(sim.demand, demandPriority, sim.time)
 		pointSetsDemands = sim.demandCoverage.pointSetsDemands[pointsCoverageMode.index, demandMode.rasterIndex]
-		# to do: if marginal coverage has already been calculated for the combination of pointsCoverageMode and rasterIndex (but for a different demand priority), the marginal coverage value should be reused (accounting for difference in demandMode.rasterMultiplier values) to save on computation.
-		# to do: allow for each demand priority to have a different weight in the coverage calculation
+		# to do: if marginal coverage has already been calculated for the combination of pointsCoverageMode and rasterIndex (but for a different demand priority), the marginal coverage value should be reused (accounting for differences in old and new values of demandMode.rasterMultiplier and dcd.demandWeights[demandPriority]) to save on computation.
 		for i = 1:length(pointsCoverageMode.pointSets)
-			pointSetMarginalCoverage = pointSetsDemands[i] * dcd.marginalBenefit[pointSetsCoverCounts[i]+1] * demandMode.rasterMultiplier # this puts equal weight on each demand priority
+			pointSetDemand = pointSetsDemands[i] * demandMode.rasterMultiplier
+			pointSetMarginalCoverage = pointSetDemand * dcd.marginalBenefit[pointSetsCoverCounts[i]+1] * dcd.demandWeights[demandPriority]
 			for j in pointsCoverageMode.stationSets[i]
 				dcd.stationMarginalCoverages[j] += pointSetMarginalCoverage
 			end
