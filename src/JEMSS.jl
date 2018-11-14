@@ -53,7 +53,7 @@ export
 	rasterRandLocations, printRasterSize, # raster
 	shortestRouteTravelTime!, # route
 	printSimStats, printAmbsStats, printCallsStats, calcBatchMeans, calcBatchMeanResponseTimes, meanErrorPlot, calcAR0DurbinWatsonTestPValue, # statistics
-	makeRandDeployment, makeRandDeployments, setAmbStation!, applyDeployment!, simulateDeployment!, simulateDeployments!, # deployment
+	makeRandDeployment, makeRandDeployments, deploymentToStationsNumAmbs, stationsNumAmbsToDeployment, setAmbStation!, applyDeployment!, applyStationsNumAmbs!, simulateDeployment!, simulateDeployments!, # deployment
 	solveMexclp! # mexclp
 
 # types

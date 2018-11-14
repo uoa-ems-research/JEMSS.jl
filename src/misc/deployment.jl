@@ -16,19 +16,37 @@ function makeRandDeployments(numAmbs::Int, numStations::Int, numDeployments::Int
 	@assert(numDeployments >= 1)
 	@assert(numDeployments <= binomial(numAmbs + numStations - 1, numStations - 1))
 	
-	deployments = Vector{Deployment}() # deployments, deployments[i][j] gives station index that ambulance j should be deployed to, for ith deployment
+	deployments = Set{Deployment}()
 	while length(deployments) < numDeployments
-		newDeployment = makeRandDeployment(numAmbs, numStations; rng = rng)
-		if !in(newDeployment, deployments)
-			push!(deployments, newDeployment)
-		end
+		push!(deployments, makeRandDeployment(numAmbs, numStations; rng = rng))
 	end
+	deployments = collect(deployments)
 	
 	return deployments
 end
-# function makeRandDeployments(sim::Simulation, numDeployments::Int)
-	# return makeRandDeployments(sim.numAmbs, sim.numStations, numDeployments)
-# end
+function makeRandDeployments(sim::Simulation, numDeployments::Int;
+	rng::AbstractRNG = Base.GLOBAL_RNG)
+	return makeRandDeployments(sim.numAmbs, sim.numStations, numDeployments; rng = rng)
+end
+
+function deploymentToStationsNumAmbs(deployment::Deployment, numStations::Int)
+	# deployment[i] gives the station index for ambulance i
+	stationsNumAmbs = zeros(Int, numStations)
+	for stationIndex in deployment
+		stationsNumAmbs[stationIndex] += 1
+	end
+	return stationsNumAmbs
+end
+
+function stationsNumAmbsToDeployment(stationsNumAmbs::Vector{Int})
+	# stationsNumAmbs[i] gives the number of ambulances for station i
+	# will assume that all ambulances are equivalent
+	deployment = Deployment() # deployment[i] gives the station index for ambulance i
+	for (stationIndex, numAmbs) in enumerate(stationsNumAmbs), i = 1:numAmbs
+		push!(deployment, stationIndex)
+	end
+	return deployment
+end
 
 # set ambulance to be located at given station
 # this is hacky, expects ambulance will only need changing, this may not always be true
@@ -49,6 +67,10 @@ function applyDeployment!(sim::Simulation, deployment::Deployment)
 	for i = 1:n
 		setAmbStation!(sim.ambulances[i], sim.stations[deployment[i]])
 	end
+end
+
+function applyStationsNumAmbs!(sim::Simulation, stationsNumAmbs::Vector{Int})
+	applyDeployment!(sim, stationsNumAmbsToDeployment(stationsNumAmbs))
 end
 
 # runs simulation for the deployment

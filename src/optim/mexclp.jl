@@ -129,10 +129,7 @@ function solveMexclp!(sim::Simulation;
 	end
 	
 	# convert to a deployment
-	deployment = Deployment() # deployment[i] gives the station index for ambulance i
-	for (stationIndex, numAmbs) in enumerate(stationsNumAmbs), i = 1:numAmbs
-		push!(deployment, stationIndex)
-	end
+	deployment = stationsNumAmbsToDeployment(stationsNumAmbs)
 	
 	return stationsNumAmbs, deployment
 end
