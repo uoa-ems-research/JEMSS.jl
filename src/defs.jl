@@ -12,7 +12,7 @@ const IntFadj = Int8 # precision for storing maximum number of nodes adjacent to
 
 const sourcePath = @__DIR__
 
-const Depol = Vector{Int} # short for "deployment policy"; depol[i] gives index of station to deploy ambulance i to
+const Deployment = Vector{Int} # deployment[i] gives index of station to deploy ambulance i to
 
 # run modes
 const debugMode = false

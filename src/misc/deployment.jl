@@ -1,33 +1,33 @@
 # deployment (allocation) of ambulances to stations
 
-# make a single random deployment policy
+# make a single random deployment
 # ignores station capacities, assumes ambulances are homogeneous
-function makeRandDeploymentPolicy(numAmbs::Int, numStations::Int;
-	rng::AbstractRNG = Base.GLOBAL_RNG)::Depol
+function makeRandDeployment(numAmbs::Int, numStations::Int;
+	rng::AbstractRNG = Base.GLOBAL_RNG)::Deployment
 	return sort(rand(rng, 1:numStations, numAmbs))
 end
 
-# generate a number of unique random deployment policies
+# generate a number of unique random deployments
 # ignores station capacities, assumes ambulances are homogeneous
-function makeRandDeploymentPolicies(numAmbs::Int, numStations::Int, numDepols::Int;
+function makeRandDeployments(numAmbs::Int, numStations::Int, numDeployments::Int;
 	rng::AbstractRNG = Base.GLOBAL_RNG)
 	@assert(numAmbs >= 1)
 	@assert(numStations >= 1)
-	@assert(numDepols >= 1)
-	@assert(numDepols <= binomial(numAmbs + numStations - 1, numStations - 1))
+	@assert(numDeployments >= 1)
+	@assert(numDeployments <= binomial(numAmbs + numStations - 1, numStations - 1))
 	
-	depols = Vector{Depol}() # deployment policies, depols[i][j] gives station index that ambulance j should be deployed to, for ith deployment policy
-	while length(depols) < numDepols
-		newDepol = makeRandDeploymentPolicy(numAmbs, numStations; rng = rng)
-		if !in(newDepol, depols)
-			push!(depols, newDepol)
+	deployments = Vector{Deployment}() # deployments, deployments[i][j] gives station index that ambulance j should be deployed to, for ith deployment
+	while length(deployments) < numDeployments
+		newDeployment = makeRandDeployment(numAmbs, numStations; rng = rng)
+		if !in(newDeployment, deployments)
+			push!(deployments, newDeployment)
 		end
 	end
 	
-	return depols
+	return deployments
 end
-# function makeRandDeploymentPolicies(sim::Simulation, numDepols::Int)
-	# return makeRandDeploymentPolicies(sim.numAmbs, sim.numStations, numDepols)
+# function makeRandDeployments(sim::Simulation, numDeployments::Int)
+	# return makeRandDeployments(sim.numAmbs, sim.numStations, numDeployments)
 # end
 
 # set ambulance to be located at given station
@@ -39,39 +39,39 @@ function setAmbStation!(ambulance::Ambulance, station::Station)
 	ambulance.route.endFNode = station.nearestNodeIndex
 end
 
-# apply deployment policy 'depol' for sim.ambulances and sim.stations
+# apply deployment 'deployment' for sim.ambulances and sim.stations
 # mutates: sim.ambulances
-function applyDeploymentPolicy!(sim::Simulation, depol::Depol)
-	n = length(depol)
+function applyDeployment!(sim::Simulation, deployment::Deployment)
+	n = length(deployment)
 	@assert(n == sim.numAmbs)
-	@assert(all(d -> in(d, 1:sim.numStations), depol))
-	# @assert(all(1 .<= depol .<= sim.numStations))
+	@assert(all(d -> in(d, 1:sim.numStations), deployment))
+	# @assert(all(1 .<= deployment .<= sim.numStations))
 	for i = 1:n
-		setAmbStation!(sim.ambulances[i], sim.stations[depol[i]])
+		setAmbStation!(sim.ambulances[i], sim.stations[deployment[i]])
 	end
 end
 
-# runs simulation for the deployment policy
+# runs simulation for the deployment
 # mutates: sim
-function simulateDeploymentPolicy!(sim::Simulation, depol::Depol)
+function simulateDeployment!(sim::Simulation, deployment::Deployment)
 	resetSim!(sim)
-	applyDeploymentPolicy!(sim, depol)
+	applyDeployment!(sim, deployment)
 	simulateToEnd!(sim)
 end
 
-# runs simulation for each deployment policy
+# runs simulation for each deployment
 # returns vector of function applied to end of each simulation run
 # mutates: sim
-function simulateDeploymentPolicies!(sim::Simulation, depols::Vector{Depol}, f::Function;
+function simulateDeployments!(sim::Simulation, deployments::Vector{Deployment}, f::Function;
 	showEta::Bool = false)
-	numDepols = length(depols)
-	results = Vector{Any}(numDepols)
+	numDeployments = length(deployments)
+	results = Vector{Any}(numDeployments)
 	t = time() # for estimating expected time remaining
-	for i = 1:numDepols
-		simulateDeploymentPolicy!(sim, depols[i])
+	for i = 1:numDeployments
+		simulateDeployment!(sim, deployments[i])
 		results[i] = f(sim)
 		if showEta
-			remTime = (time() - t) / i * (numDepols - i) / 60 # minutes
+			remTime = (time() - t) / i * (numDeployments - i) / 60 # minutes
 			print(rpad(string(" remaining run time (minutes): ", ceil(remTime,1)), 100, " "), "\r")
 		end
 	end

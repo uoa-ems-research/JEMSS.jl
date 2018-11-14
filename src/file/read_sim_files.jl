@@ -605,36 +605,36 @@ function readTravelFile(filename::String)
 	return travel
 end
 
-# read deployment policies from file
-function readDeploymentPoliciesFile(filename::String)
+# read deployments from file
+function readDeploymentsFile(filename::String)
 	tables = readTablesFromFile(filename)
 	
 	# get counts
 	table = tables["miscData"]
 	numStations = table.columns["numStations"][1]
-	numDepols = table.columns["numDepols"][1]
+	numDeployments = table.columns["numDeployments"][1]
 	
-	# deployment policies
-	table = tables["deploymentPolicies"]
+	# deployments
+	table = tables["deployments"]
 	columns = table.columns # shorthand
 	# check number of ambulances
 	ambIndexCol = columns["ambIndex"]
 	@assert(ambIndexCol == collect(1:length(ambIndexCol)))
-	# check that table header has all deployment policies
-	for i = 1:numDepols
-		@assert(in("policy_$i stationIndex", table.header), "Missing deployment policy $i")
+	# check that table header has all deployments
+	for i = 1:numDeployments
+		@assert(in("deployment_$i stationIndex", table.header), "Missing deployment $i")
 	end
-	# create deployment policies from table
-	depols = Vector{Depol}(numDepols)
-	for i = 1:numDepols
-		depols[i] = columns["policy_$i stationIndex"]
+	# create deployments from table
+	deployments = Vector{Deployment}(numDeployments)
+	for i = 1:numDeployments
+		deployments[i] = columns["deployment_$i stationIndex"]
 		
-		for value in depols[i]
+		for value in deployments[i]
 			@assert(in(value, 1:numStations))
 		end
 	end
 	
-	return depols, numStations
+	return deployments, numStations
 end
 
 function readZhangIpParamsFile(filename::String)

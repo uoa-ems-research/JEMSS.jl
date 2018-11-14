@@ -198,17 +198,17 @@ function writeStatsFiles!(sim::Simulation)
 		rows = [[h.index, h.numTransfers] for h in sim.hospitals]))
 end
 
-# write deployment policies to file
-function writeDeploymentPoliciesFile(filename::String, depols::Vector{Depol}, numStations::Int)
-	numAmbs = length(depols[1])
-	@assert(numStations >= maximum([maximum(d) for d in depols]))
-	numDepols = length(depols)
+# write deployments to file
+function writeDeploymentsFile(filename::String, deployments::Vector{Deployment}, numStations::Int)
+	numAmbs = length(deployments[1])
+	@assert(numStations >= maximum([maximum(d) for d in deployments]))
+	numDeployments = length(deployments)
 	
-	miscTable = Table("miscData", ["numStations", "numDepols"]; rows = [[numStations, numDepols]])
-	deploymentPoliciesTable = Table("deploymentPolicies",
-		["ambIndex", ["policy_$i stationIndex" for i = 1:numDepols]...];
-		cols = [collect(1:numAmbs), depols...])
-	writeTablesToFile(filename, [miscTable, deploymentPoliciesTable])
+	miscTable = Table("miscData", ["numStations", "numDeployments"]; rows = [[numStations, numDeployments]])
+	deploymentsTable = Table("deployments",
+		["ambIndex", ["deployment_$i stationIndex" for i = 1:numDeployments]...];
+		cols = [collect(1:numAmbs), deployments...])
+	writeTablesToFile(filename, [miscTable, deploymentsTable])
 end
 
 # save batch mean response times to file

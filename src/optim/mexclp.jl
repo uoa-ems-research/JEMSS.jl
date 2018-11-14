@@ -128,11 +128,11 @@ function solveMexclp!(sim::Simulation;
 		@assert(all(j -> issorted(pointSlotCover[j], rev=true), 1:p)) # pointCoverOrder constraint
 	end
 	
-	# convert to a deployment policy
-	depol = Depol() # depol[i] gives the station index for ambulance i
+	# convert to a deployment
+	deployment = Deployment() # deployment[i] gives the station index for ambulance i
 	for (stationIndex, numAmbs) in enumerate(stationsNumAmbs), i = 1:numAmbs
-		push!(depol, stationIndex)
+		push!(deployment, stationIndex)
 	end
 	
-	return stationsNumAmbs, depol
+	return stationsNumAmbs, deployment
 end
