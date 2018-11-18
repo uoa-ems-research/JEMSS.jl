@@ -1,3 +1,17 @@
+
+function getCallResponseTimes(sim::Simulation)
+	@assert(sim.complete)
+	@assert(all(call -> call.responseTime >= 0, sim.calls))
+	return map(call -> call.responseTime, sim.calls)
+end
+
+function getCallsReachedInTime(sim::Simulation;
+	targetResponseTimes::Vector{Float} = sim.targetResponseTimes)
+	@assert(sim.complete)
+	@assert(all(call -> call.responseTime >= 0, sim.calls))
+	return map(call -> call.responseTime <= targetResponseTimes[Int(call.priority)], sim.calls)
+end
+
 function printSimStats(sim::Simulation)
 	printAmbsStats(sim.ambulances)
 	println()
