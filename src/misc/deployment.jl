@@ -1,10 +1,30 @@
 # deployment (allocation) of ambulances to stations
 
 # make a single random deployment
-# ignores station capacities, assumes ambulances are homogeneous
+# assumes ambulances are homogeneous
 function makeRandDeployment(numAmbs::Int, numStations::Int;
+	stationCapacities::Union{Vector{Int},Void} = nothing,
 	rng::AbstractRNG = Base.GLOBAL_RNG)::Deployment
-	return sort(rand(rng, 1:numStations, numAmbs))
+	
+	@assert(numStations > 0)
+	if stationCapacities == nothing
+		return sort(rand(rng, 1:numStations, numAmbs))
+	else
+		@assert(numStations == length(stationCapacities))
+		@assert(numAmbs <= sum(stationCapacities))
+		remainingCapacity = copy(stationCapacities)
+		unfilledStations = Set(find(remainingCapacity))
+		deployment = zeros(Int, numAmbs)
+		for i = 1:numAmbs
+			j = rand(rng, unfilledStations) # station index
+			deployment[i] = j
+			remainingCapacity[j] -= 1
+			if remainingCapacity[j] == 0
+				delete!(unfilledStations, j)
+			end
+		end
+		return sort(deployment)
+	end
 end
 
 # generate a number of unique random deployments
