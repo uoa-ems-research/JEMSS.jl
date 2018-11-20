@@ -12,6 +12,13 @@ function getCallsReachedInTime(sim::Simulation;
 	return map(call -> call.responseTime <= targetResponseTimes[Int(call.priority)], sim.calls)
 end
 
+function countCallsReachedInTime(sim::Simulation;
+	targetResponseTimes::Vector{Float} = sim.targetResponseTimes)
+	@assert(sim.complete)
+	@assert(all(call -> call.responseTime >= 0, sim.calls))
+	return count(call -> call.responseTime <= targetResponseTimes[Int(call.priority)], sim.calls)
+end
+
 function printSimStats(sim::Simulation)
 	printAmbsStats(sim.ambulances)
 	println()
