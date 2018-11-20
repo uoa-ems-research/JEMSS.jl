@@ -39,6 +39,8 @@ function initSimulation(configFilename::String;
 	sim = Simulation()
 	sim.configRootElt = rootElt
 	
+	joinPathIfNotAbs(absPath::String, path::String) = isabspath(path) ? path : joinpath(absPath, path)
+	
 	# input
 	sim.inputPath = abspath(eltContentInterpVal(rootElt, "inputPath"))
 	simFilesElt = findElt(rootElt, "simFiles")
@@ -46,8 +48,8 @@ function initSimulation(configFilename::String;
 	sim.inputFiles = Dict{String,File}()
 	for inputFile in inputFiles
 		file = File()
-		file.name = eltContent(simFilesElt, inputFile)
-		file.path = joinpath(sim.inputPath, file.name)
+		file.path = joinPathIfNotAbs(sim.inputPath, eltContent(simFilesElt, inputFile))
+		file.name = splitdir(file.path)[2]
 		if inputFile != "rNetTravels" # do not need checksum of rNetTravels file
 			file.checksum = fileChecksum(file.path)
 		end
@@ -62,8 +64,8 @@ function initSimulation(configFilename::String;
 	sim.outputFiles = Dict{String,File}()
 	for outputFile in outputFiles
 		file = File()
-		file.name = eltContent(outputFilesElt, outputFile)
-		file.path = joinpath(sim.outputPath, file.name)
+		file.path = joinPathIfNotAbs(sim.outputPath, eltContent(outputFilesElt, outputFile))
+		file.name = splitdir(file.path)[2]
 		sim.outputFiles[outputFile] = file
 	end
 	
@@ -293,8 +295,8 @@ function initSimulation(configFilename::String;
 		if moveUpModuleName == "comp_table"
 			mud.moveUpModule = compTableModule
 			compTableElt = findElt(moveUpElt, "compTable")
-			compTableFilename = eltContent(compTableElt, "filename")
-			initCompTable!(sim, joinpath(sim.inputPath, compTableFilename))
+			compTableFilename = joinPathIfNotAbs(sim.inputPath, eltContent(compTableElt, "filename"))
+			initCompTable!(sim, compTableFilename)
 			
 		elseif moveUpModuleName == "dmexclp"
 			mud.moveUpModule = dmexclpModule
@@ -304,14 +306,15 @@ function initSimulation(configFilename::String;
 		elseif moveUpModuleName == "priority_list"
 			mud.moveUpModule = priorityListModule
 			priorityListElt = findElt(moveUpElt, "priorityList")
-			priorityListFilename = eltContent(priorityListElt, "filename")
-			initPriorityList!(sim, joinpath(sim.inputPath, priorityListFilename))
+			priorityListFilename = joinPathIfNotAbs(sim.inputPath, eltContent(priorityListElt, "filename"))
+			initPriorityList!(sim, priorityListFilename)
 			
 		elseif moveUpModuleName == "zhang_ip"
 			mud.moveUpModule = zhangIpModule
 			zhangIpElt = findElt(moveUpElt, "zhangIp")
+			zhangIpParamsFilename = joinPathIfNotAbs(sim.inputPath, eltContent(zhangIpElt, "paramsFilename"))
 			initZhangIp!(sim;
-				paramsFilename = eltContent(zhangIpElt, "paramsFilename"))
+				paramsFilename = zhangIpParamsFilename)
 			
 		elseif moveUpModuleName == "temp0"
 			mud.moveUpModule = temp0Module
