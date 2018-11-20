@@ -68,6 +68,19 @@ function stationsNumAmbsToDeployment(stationsNumAmbs::Vector{Int})
 	return deployment
 end
 
+function getDeployment(sim::Simulation)::Deployment
+	return map(a -> a.stationIndex, sim.ambulances)
+end
+
+function getStationsNumAmbs(sim::Simulation)
+	stationsNumAmbs = zeros(Int, sim.numStations)
+	for ambulance in sim.ambulances
+		stationsNumAmbs[ambulance.stationIndex] += 1
+	end
+	return stationsNumAmbs
+	# return deploymentToStationsNumAmbs(getDeployment(sim), sim.numStations)
+end
+
 # set ambulance to be located at given station
 # this is hacky, expects ambulance will only need changing, this may not always be true
 # mutates: ambulance
