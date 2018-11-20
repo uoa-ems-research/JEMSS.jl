@@ -72,7 +72,7 @@ end
 # calculate and set speeds for arcs in rGraph, should only be called after animAddArcs()
 function animSetArcSpeeds(client::WebSocket, map::Map, net::Network)
 	# shorthand:
-	fNodes = net.fGraph.nodes 
+	fNodes = net.fGraph.nodes
 	rNetTravels = net.rNetTravels
 	
 	messageDict = createMessageDict("set_arc_speed")

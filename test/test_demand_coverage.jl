@@ -90,7 +90,7 @@ end
 	
 	stationsNumAmbs = ones(Int, numStations)
 	pointCoverCounts = Vector{Int}(numPoints)
-	times = vcat(travel.setsStartTimes, demand.setsStartTimes) |> unique |> sort # simulating to these points in time will 
+	times = vcat(travel.setsStartTimes, demand.setsStartTimes) |> unique |> sort # simulating to these points in time will cause each combination of travel and demand states to be checked
 	for t in times
 		# simulateToTime!(sim, t) # probably unnecessary, and sim.time may stop before t
 		sim.time = t # is this safe?

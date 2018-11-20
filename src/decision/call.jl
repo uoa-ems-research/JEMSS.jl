@@ -14,7 +14,7 @@ function addCallToQueueSortPriorityThenTime!(queuedCallList::Vector{Call}, call:
 	if checkMode
 		# check that calls are ordered first by priority, then by time
 		for i = length(queuedCallList): -1 : 2
-			@assert(queuedCallList[i].priority < queuedCallList[i-1].priority || 
+			@assert(queuedCallList[i].priority < queuedCallList[i-1].priority ||
 				(queuedCallList[i].priority == queuedCallList[i-1].priority &&
 				queuedCallList[i].arrivalTime <= queuedCallList[i-1].arrivalTime))
 		end

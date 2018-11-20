@@ -229,7 +229,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 			if ambWasOnRoute
 				ambulance.totalTravelTime += sim.time - ambulance.route.startTime
 				if ambulance.status == ambGoingToCall
-					ambulance.totalBusyTime += sim.time - ambulance.route.startTime 
+					ambulance.totalBusyTime += sim.time - ambulance.route.startTime
 					ambulance.numDiversions += 1
 				end
 			end
