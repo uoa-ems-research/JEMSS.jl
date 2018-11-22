@@ -73,6 +73,6 @@ end
 
 @deprecate(
 calcBatchMeans(; values::Vector{Float} = [], times::Vector{Float} = [], batchTime::Float = nullTime, startTime::Float = nullTime, endTime::Float = nullTime),
-calcBatchMeans(values, times, batchTime; startTime = startTime, endTime = endTime, returnBatchSizes = true))
+calcBatchMeans(values, times, batchTime; startTime = startTime, endTime = endTime, rmPartialBatch = true, returnBatchSizes = true))
 
 ##

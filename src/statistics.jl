@@ -77,32 +77,33 @@ end
 """
 	function calcBatchMeans(values::Vector{Float}, times::Vector{Float}, batchTime::Float;
 		startTime::Float = minimum(times), endTime::Float = maximum(times)*(1+eps(Float)),
-		batchGapTime::Float = 0.0, returnBatchSizes::Bool = false)
+		batchGapTime::Float = 0.0, rmPartialBatch::Bool = false, returnBatchSizes::Bool = false)
 Returns the batch means of `values` batched by time, where `values[i]` corresponds with `times[i]`.
-Each batch will have a duration of `batchTime`.
+Each batch will batch values in a time interval `[t, t + batchTime)` for some `t`.
 Empty batches have mean `NaN`.
 
 # Keyword arguments
 - `startTime` is the time at which batching starts; values with times before this are omitted
 - `endTime` is the time at which batching ends; values with times at or after this are omitted
-- `returnBatchSizes` should be set to `true` to also return the number of values in each batch
 - `batchGapTime` is the time (duration) gap between batches
+- `rmPartialBatch` can be set to `true` to remove the last batch it if does not end before `endTime - batchGapTime`.
+- `returnBatchSizes` can be set to `true` to also return the number of values in each batch
 """
 function calcBatchMeans(values::Vector{Float}, times::Vector{Float}, batchTime::Float;
 	startTime::Float = minimum(times), endTime::Float = maximum(times)*(1+eps(Float)),
-	batchGapTime::Float = 0.0, returnBatchSizes::Bool = false)
+	batchGapTime::Float = 0.0, rmPartialBatch::Bool = false, returnBatchSizes::Bool = false)
 	
-	@assert(length(values) >= 1)
 	@assert(length(values) == length(times))
 	@assert(batchTime > 0)
-	# @assert(startTime >= minimum(times))
-	# @assert(endTime <= maximum(times)*(1+eps(Float)))
-	@assert(startTime < endTime)
+	@assert(startTime <= endTime)
 	@assert(batchGapTime >= 0)
 	
 	# calculate number of batches
 	interBatchTime = batchTime + batchGapTime # time difference between start of subsequent batches
-	numBatches = max(0, floor(Int, (endTime - startTime + batchGapTime) / interBatchTime))
+	numBatches = max(0, ceil(Int, (endTime - startTime) / interBatchTime))
+	if rmPartialBatch
+		numBatches = max(0, floor(Int, (endTime - startTime + batchGapTime) / interBatchTime))
+	end
 	
 	# calculate batch means by time
 	batchTotals = zeros(Float,numBatches) # total of values in each batch
