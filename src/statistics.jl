@@ -123,7 +123,8 @@ end
 
 # calculate statistics on average response time based on batch means
 function calcBatchMeanResponseTimes(sim::Simulation;
-	batchTime::Float = nullTime, warmUpTime::Float = nullTime, coolDownTime::Float = nullTime, returnBatchSizes::Bool = true)
+	batchTime::Float = nullTime, warmUpTime::Float = nullTime, coolDownTime::Float = nullTime,
+	rmPartialBatch::Bool = true, returnBatchSizes::Bool = true)
 	
 	@assert(sim.complete == true)
 	
@@ -133,7 +134,8 @@ function calcBatchMeanResponseTimes(sim::Simulation;
 	values = [sim.calls[i].responseTime for i = 1:n]
 	
 	return calcBatchMeans(values, times, batchTime;
-		startTime = sim.startTime + warmUpTime, endTime = sim.endTime - coolDownTime, returnBatchSizes = returnBatchSizes)
+		startTime = sim.startTime + warmUpTime, endTime = sim.endTime - coolDownTime,
+		rmPartialBatch = rmPartialBatch, returnBatchSizes = returnBatchSizes)
 end
 
 # calculate Stats.sem for each row of x
