@@ -5,6 +5,11 @@ function getCallResponseTimes(sim::Simulation)
 	return map(call -> call.responseTime, sim.calls)
 end
 
+function getAvgCallResponseTime(sim::Simulation; useMinutes::Bool = false)
+	@assert(sim.complete)
+	return mean(call -> call.responseTime, sim.calls) * (useMinutes ? 60*24 : 1) # if useMinutes, convert days to minutes
+end
+
 function getCallsReachedInTime(sim::Simulation;
 	targetResponseTimes::Vector{Float} = sim.targetResponseTimes)
 	@assert(sim.complete)
