@@ -7,6 +7,7 @@ end
 
 function getAvgCallResponseTime(sim::Simulation; useMinutes::Bool = false)
 	@assert(sim.complete)
+	@assert(all(call -> call.responseTime >= 0, sim.calls))
 	return mean(call -> call.responseTime, sim.calls) * (useMinutes ? 60*24 : 1) # if useMinutes, convert days to minutes
 end
 
