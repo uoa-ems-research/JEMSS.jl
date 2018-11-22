@@ -74,45 +74,55 @@ function printCallsStats(calls::Vector{Call})
 
 end
 
-# calculate batch means of values, with values[i] corresponding with times[i]
-# each batch will have duration of batchTime, number of values in each batch is also returned
-# batches will be made starting at (and including) startTime, up to (but not including) endTime
-# warm-up and cool-down periods should be included by varying the start and end time values
-function calcBatchMeans(; values::Vector{Float} = [], times::Vector{Float} = [],
-	batchTime::Float = nullTime, startTime::Float = nullTime, endTime::Float = nullTime)
+"""
+	function calcBatchMeans(values::Vector{Float}, times::Vector{Float}, batchTime::Float;
+		startTime::Float = minimum(times), endTime::Float = maximum(times)*(1+eps(Float)),
+		batchGapTime::Float = 0.0, returnBatchSizes::Bool = false)
+Returns the batch means of `values` batched by time, where `values[i]` corresponds with `times[i]`.
+Each batch will have a duration of `batchTime`.
+Empty batches have mean `NaN`.
+
+# Keyword arguments
+- `startTime` is the time at which batching starts; values with times before this are omitted
+- `endTime` is the time at which batching ends; values with times at or after this are omitted
+- `returnBatchSizes` should be set to `true` to also return the number of values in each batch
+- `batchGapTime` is the time (duration) gap between batches
+"""
+function calcBatchMeans(values::Vector{Float}, times::Vector{Float}, batchTime::Float;
+	startTime::Float = minimum(times), endTime::Float = maximum(times)*(1+eps(Float)),
+	batchGapTime::Float = 0.0, returnBatchSizes::Bool = false)
 	
-	@assert(length(times) == length(values))
-	@assert(length(times) >= 1)
-	@assert(batchTime != nullTime && batchTime > 0)
-	@assert(startTime != nullTime && startTime >= 0)
-	@assert(endTime != nullTime && endTime >= startTime)
+	@assert(length(values) >= 1)
+	@assert(length(values) == length(times))
+	@assert(batchTime > 0)
+	# @assert(startTime >= minimum(times))
+	# @assert(endTime <= maximum(times)*(1+eps(Float)))
+	@assert(startTime < endTime)
+	@assert(batchGapTime >= 0)
 	
 	# calculate number of batches
-	numBatches = max(0, Int(floor((endTime - startTime) / batchTime)))
+	interBatchTime = batchTime + batchGapTime # time difference between start of subsequent batches
+	numBatches = max(0, floor(Int, (endTime - startTime + batchGapTime) / interBatchTime))
 	
-	if numBatches == 0
-		return [], []
-	end
-	
-	# calculate batch means
+	# calculate batch means by time
 	batchTotals = zeros(Float,numBatches) # total of values in each batch
-	batchCounts = zeros(Int,numBatches) # total number of values in each batch
-	for (i, time) in enumerate(times)
-		batchIndex = Int(floor((time - startTime) / batchTime)) + 1
-		if batchIndex >= 1 && batchIndex <= numBatches
+	batchSizes = zeros(Int,numBatches) # total number of values in each batch
+	for (i,t) in enumerate(times)
+		batchIndex = floor(Int, (t - startTime) / interBatchTime) + 1
+		isInGap = (t - startTime >= batchIndex * interBatchTime - batchGapTime)
+		if batchIndex >= 1 && batchIndex <= numBatches && !isInGap
 			batchTotals[batchIndex] += values[i]
-			batchCounts[batchIndex] += 1
+			batchSizes[batchIndex] += 1
 		end
 	end
-	@assert(all(batchCounts .> 0))
-	batchMeans = batchTotals ./ batchCounts
+	batchMeans = batchTotals ./ batchSizes
 	
-	return batchMeans, batchCounts
+	return returnBatchSizes ? (batchMeans, batchSizes) : batchMeans
 end
 
 # calculate statistics on average response time based on batch means
 function calcBatchMeanResponseTimes(sim::Simulation;
-	batchTime::Float = nullTime, warmUpTime::Float = nullTime, coolDownTime::Float = nullTime)
+	batchTime::Float = nullTime, warmUpTime::Float = nullTime, coolDownTime::Float = nullTime, returnBatchSizes::Bool = true)
 	
 	@assert(sim.complete == true)
 	
@@ -121,8 +131,8 @@ function calcBatchMeanResponseTimes(sim::Simulation;
 	times = [sim.calls[i].arrivalTime for i = 1:n]
 	values = [sim.calls[i].responseTime for i = 1:n]
 	
-	return calcBatchMeans(; values = values, times = times, batchTime = batchTime,
-		startTime = sim.startTime + warmUpTime, endTime = sim.endTime - coolDownTime)
+	return calcBatchMeans(values, times, batchTime;
+		startTime = sim.startTime + warmUpTime, endTime = sim.endTime - coolDownTime, returnBatchSizes = returnBatchSizes)
 end
 
 # calculate Stats.sem for each row of x

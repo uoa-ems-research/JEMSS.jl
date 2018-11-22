@@ -46,8 +46,8 @@ x = [] # will populate with batch mean response times
 callArrivalTimes = [call.arrivalTime for call in sim.calls] # same for each simulation
 batchTime = 7.0; startTime = sim.startTime + 1.0; endTime = callArrivalTimes[end] # batch response times by week, with one day warm-up; ignore last call (cool-down period)
 for i = 1:numDeployments
-	push!(x, calcBatchMeans(values = callResponseTimes[i], times = callArrivalTimes,
-		batchTime = batchTime, startTime = startTime, endTime = endTime)[1])
+	push!(x, calcBatchMeans(callResponseTimes[i], callArrivalTimes, batchTime;
+		startTime = startTime, endTime = endTime))
 end
 batchMeanResponseTimes = hcat(x...)' # batchMeanResponseTimes[i,j] is for calls in simulation i, batch j
 
