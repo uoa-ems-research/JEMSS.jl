@@ -74,7 +74,7 @@ function simStats(sim::Simulation)
 	if sim.complete
 		stats["totalAmbTravelTime"] = sum(amb -> amb.totalTravelTime, sim.ambulances)
 		stats["totalAmbBusyTime"] = sum(amb -> amb.totalBusyTime, sim.ambulances)
-		assert(all(call -> call.responseTime != nullTime, sim.calls))
+		@assert(all(call -> call.responseTime != nullTime, sim.calls))
 		stats["avgResponseTimeMinutes"] = mean(call -> call.responseTime, sim.calls) * 24 * 60
 		stats["callsReachedInTime"] = sum(call -> call.responseTime <= sim.targetResponseTimes[Int(call.priority)], sim.calls)
 	end
