@@ -212,7 +212,7 @@ function initSimulation(configFilename::String;
 	
 	initMessage(t, "adding ambulances, calls, etc")
 	
-	# for each call, hospital, and station, find neareset node
+	# for each call, hospital, and station, find nearest node
 	for c in sim.calls
 		(c.nearestNodeIndex, c.nearestNodeDist) = findNearestNodeInGrid(map, grid, fGraph.nodes, c.location)
 	end
