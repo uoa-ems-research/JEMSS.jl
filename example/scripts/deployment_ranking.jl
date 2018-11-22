@@ -1,7 +1,7 @@
 # Script to generate many different deployments, and rank them by batch mean response times.
 # Run from julia:
 # ARGS = [simConfigFilename, numDeployments] # these are optional
-# include("deployment_optimisation.jl")
+# include("deployment_ranking.jl")
 
 using JEMSS
 
