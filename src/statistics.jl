@@ -75,6 +75,54 @@ function printCallsStats(calls::Vector{Call})
 end
 
 """
+	function calcBatchMeans(values::Vector{Float}, batchSize::Int;
+		batchGapSize::Int = 0, rmPartialBatch::Bool = false, returnBatchSizes::Bool = false)
+Returns the batch means of `values` batched by size `batchSize`.
+
+# Keyword arguments
+- `batchGapSize` is the gap (number of values to ignore) between batches
+- `rmPartialBatch` can be set to `true` to remove the last batch if it has size < `batchSize`
+- `returnBatchSizes` can be set to `true` to also return the number of values in each batch
+"""
+function calcBatchMeans(values::Vector{Float}, batchSize::Int;
+	batchGapSize::Int = 0, rmPartialBatch::Bool = false, returnBatchSizes::Bool = false)
+	
+	@assert(batchSize >= 1)
+	@assert(batchGapSize >= 0)
+	
+	# calculate number of batches
+	numValues = length(values)
+	interBatchSize = batchSize + batchGapSize # number of values between start of subsequent batches
+	numBatches = max(0, ceil(Int, numValues / interBatchSize))
+	if rmPartialBatch
+		numBatches = max(0, div(numValues + batchGapSize, interBatchSize))
+	end
+	
+	# calculate batch means by time
+	batchTotals = zeros(Float,numBatches) # total of values in each batch
+	batchSizes = zeros(Int,numBatches) # total number of values in each batch
+	for i = 1:numValues
+		batchIndex = div(i-1, interBatchSize) + 1 # = ceil(Int, i / interBatchSize)
+		isInGap = (i > batchIndex * interBatchSize - batchGapSize)
+		if batchIndex >= 1 && batchIndex <= numBatches && !isInGap
+			batchTotals[batchIndex] += values[i]
+			batchSizes[batchIndex] += 1
+		end
+	end
+	batchMeans = batchTotals ./ batchSizes
+	
+	# check batch sizes
+	if rmPartialBatch
+		@assert(all(n -> n == batchSize, batchSizes))
+	else
+		@assert(all(n -> n == batchSize, batchSizes[1:end-1]))
+		@assert(numBatches == 0 || batchSizes[end] == rem(numValues, interBatchSize))
+	end
+	
+	return returnBatchSizes ? (batchMeans, batchSizes) : batchMeans
+end
+
+"""
 	function calcBatchMeans(values::Vector{Float}, times::Vector{Float}, batchTime::Float;
 		startTime::Float = minimum(times), endTime::Float = maximum(times)*(1+eps(Float)),
 		batchGapTime::Float = 0.0, rmPartialBatch::Bool = false, returnBatchSizes::Bool = false)
@@ -86,7 +134,7 @@ Empty batches have mean `NaN`.
 - `startTime` is the time at which batching starts; values with times before this are omitted
 - `endTime` is the time at which batching ends; values with times at or after this are omitted
 - `batchGapTime` is the time (duration) gap between batches
-- `rmPartialBatch` can be set to `true` to remove the last batch it if does not end before `endTime - batchGapTime`.
+- `rmPartialBatch` can be set to `true` to remove the last batch if it does not end before `endTime - batchGapTime`.
 - `returnBatchSizes` can be set to `true` to also return the number of values in each batch
 """
 function calcBatchMeans(values::Vector{Float}, times::Vector{Float}, batchTime::Float;
