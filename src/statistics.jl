@@ -25,53 +25,81 @@ function countCallsReachedInTime(sim::Simulation;
 	return count(call -> call.responseTime <= targetResponseTimes[Int(call.priority)], sim.calls)
 end
 
+printDays(t::Float) = string(round(t, 2), " days")
+printHours(t::Float) = string(round(t*24, 2), " hours") # convert days to hours, round
+printMinutes(t::Float) = string(round(t*24*60, 2), " minutes") # convert days to minutes, round
+printSeconds(t::Float) = string(round(t*24*60*60, 2), " seconds") # convert days to seconds, round
+printPercent(p::Float) = string(round(p*100, 2), "%")
+
 function printSimStats(sim::Simulation)
-	printAmbsStats(sim.ambulances)
+	println("=== Simulation statistics ===")
 	println()
-	printCallsStats(sim.calls)
+	println("Simulation duration = ", printDays(sim.endTime - sim.startTime))
+	println()
+	printAmbsStats(sim)
+	println()
+	printCallsStats(sim)
+	println()
+	printHospitalsStats(sim)
 end
 
-function printTime(t::Float)
-	return string(round(t*24*60, 2), " minutes") # convert days to minutes, round
-end
-
-function printAmbsStats(ambulances::Vector{Ambulance})
-	numAmbs = length(ambulances)
-	travelTimes = [amb.totalTravelTime for amb in ambulances]
-
-	# Gadfly.plot(ecdf(travelTimes*24*60),
-		# x="Total travel time (minutes)",
+function printAmbsStats(sim::Simulation)
+	@assert(sim.complete)
+	
+	ambsAvgDailyTravelTimes = [amb.totalTravelTime for amb in sim.ambulances] ./ (sim.time - sim.startTime)
+	
+	# Gadfly.plot(ecdf(ambsAvgDailyTravelTimes*24*60),
+		# x="Average daily travel time (minutes)",
 		# y="Cdf")
-
+	
 	println("Ambulance statistics:")
-
-	println("Travel time: ")
-	println(" mean = ", printTime(mean(travelTimes)))
-	println(" std = ", printTime(std(travelTimes)))
-	println(" min = ", printTime(minimum(travelTimes)))
-	println(" max = ", printTime(maximum(travelTimes)))
+	
+	println("Number of ambulances = ", sim.numAmbs)
+	
+	println("Average daily travel time: ")
+	println(" mean = ", printHours(mean(ambsAvgDailyTravelTimes)))
+	println(" std = ", printHours(std(ambsAvgDailyTravelTimes)))
+	println(" min = ", printHours(minimum(ambsAvgDailyTravelTimes)))
+	println(" max = ", printHours(maximum(ambsAvgDailyTravelTimes)))
 end
 
-function printCallsStats(calls::Vector{Call})
-	numCalls = length(calls)
-	responseTimes = [call.responseTime == nullTime ? Inf : call.responseTime for call in calls]
-	callAnswered = [call.responseTime != nullTime for call in calls] # may be false if sim not finished, or call cancelled
-
+function printCallsStats(sim::Simulation)
+	@assert(sim.complete)
+	
+	responseTimes = getCallResponseTimes(sim)
+	callsReachedInTime = getCallsReachedInTime(sim)
+	
 	println("Call statistics:")
-
-	# print, then remove, unanswered calls
-	println("Unanswered calls: ", numCalls - sum(callAnswered))
-
-	responseTimes = responseTimes[callAnswered] # no longer consider unanswered calls
-
+	
+	# # print, then remove, unanswered calls
+	# callAnswered = [call.responseTime != nullTime for call in sim.calls] # may be false if sim not finished, or call cancelled
+	# println("Unanswered calls: ", sim.numCalls - sum(callAnswered))
+	# responseTimes = responseTimes[callAnswered] # no longer consider unanswered calls
+	
 	# Gadfly.plot(ecdf(responseTimes*24*60), x="Call response time (minutes)", y="Cdf")
-
+	
+	println("Number of calls = ", sim.numCalls)
+	
 	println("Response time: ")
-	println(" mean = ", printTime(mean(responseTimes)))
-	println(" std = ", printTime(std(responseTimes)))
-	println(" min = ", printTime(minimum(responseTimes)))
-	println(" max = ", printTime(maximum(responseTimes)))
+	println(" mean = ", printMinutes(mean(responseTimes)))
+	println(" std = ", printMinutes(std(responseTimes)))
+	println(" min = ", printMinutes(minimum(responseTimes)))
+	println(" max = ", printMinutes(maximum(responseTimes)))
+	
+	println("Reached in target response time: ")
+	println(" mean = ", printPercent(mean(callsReachedInTime)))
+	println(" sem = ", printPercent(sem(callsReachedInTime)))
+end
 
+function printHospitalsStats(sim::Simulation)
+	@assert(sim.complete)
+	
+	println("Hospital statistics:")
+	println("Number of hospitals = ", sim.numHospitals)
+	println("Transfers:")
+	hospitalsNumTransfers = map(h -> h.numTransfers, sim.hospitals)
+	println(" mean = ", round(mean(hospitalsNumTransfers), 2))
+	println(" std = ", round(std(hospitalsNumTransfers), 2))
 end
 
 """

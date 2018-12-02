@@ -52,7 +52,7 @@ export
 	isFNodeInRGraph, shortestPathNextRNode, shortestPathNextRArc, shortestPathData, shortestPathTravelTime, shortestPath, findRArcFromFNodeToFNode, # network
 	rasterRandLocations, printRasterSize, # raster
 	shortestRouteTravelTime!, # route
-	getCallResponseTimes, getAvgCallResponseTime, getCallsReachedInTime, countCallsReachedInTime, printSimStats, printAmbsStats, printCallsStats, calcBatchMeans, calcBatchMeanResponseTimes, meanErrorPlot, calcAR0DurbinWatsonTestPValue, # statistics
+	getCallResponseTimes, getAvgCallResponseTime, getCallsReachedInTime, countCallsReachedInTime, printSimStats, printAmbsStats, printCallsStats, printHospitalsStats, calcBatchMeans, calcBatchMeanResponseTimes, meanErrorPlot, calcAR0DurbinWatsonTestPValue, # statistics
 	makeRandDeployment, makeRandDeployments, deploymentToStationsNumAmbs, stationsNumAmbsToDeployment, getDeployment, getStationsNumAmbs, setAmbStation!, applyDeployment!, applyStationsNumAmbs!, simulateDeployment!, simulateDeployments!, # deployment
 	solveMexclp! # mexclp
 
