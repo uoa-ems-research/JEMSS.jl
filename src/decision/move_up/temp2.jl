@@ -61,7 +61,7 @@ end
 # determine move ups to make at current time
 # returns list of ambulances to be moved, and list of their destinations (stations)
 function temp2MoveUp(sim::Simulation)
-
+	
 	# shorthand names:
 	tmp = sim.moveUpData.temp2Data
 	stationPairs = tmp.stationPairs
@@ -74,7 +74,7 @@ function temp2MoveUp(sim::Simulation)
 	
 	numAmbs = sim.numAmbs
 	numStations = sim.numStations
-
+	
 	# get movable ambulances (movableAmbs)
 	ambMovable = Vector{Bool}(numAmbs) # ambMovable[i] = true if ambulances[i] can move-up
 	for i = 1:numAmbs
@@ -82,7 +82,7 @@ function temp2MoveUp(sim::Simulation)
 	end
 	movableAmbs = ambulances[ambMovable]
 	numMovableAmbs = length(movableAmbs)
-
+	
 	# calculate travel time for each available ambulance to reach every station
 	ambToStationTimes = Array{Float,2}(numMovableAmbs, numStations)
 	for i = 1:numMovableAmbs
@@ -93,17 +93,17 @@ function temp2MoveUp(sim::Simulation)
 		j = movableAmbs[i].stationIndex
 		ambToStationTimes[i,j] = 0.0
 	end
-
+	
 	# restrict which stations each ambulance can be moved to
 	# ambMovableToStation[i,j] = true if movableAmbs[i] can be moved to stations[j]; false otherwise
 	ambMovableToStation = Array{Bool,2}(numMovableAmbs, numStations)
 	ambMovableToStation[:,:] = true
-
+	
 	# limit ambulance move-up to nearest stations
 	numNearestStations = min(maxNumNearestStations, numStations)
 	sortedTimes = sort(ambToStationTimes, 2) # sortedTimes[i,:] gives travel times for ith movable ambulance to all other stations, sorted
 	ambMovableToStation = (ambMovableToStation .* (ambToStationTimes .<= sortedTimes[:, numNearestStations]))
-
+	
 	# for ambulances idle at station, limit travel time
 	for i = 1:numMovableAmbs
 		ambulance = movableAmbs[i]
@@ -111,7 +111,7 @@ function temp2MoveUp(sim::Simulation)
 			ambMovableToStation[i,:] = (ambMovableToStation[i,:] .* (ambToStationTimes[i,:] .<= maxIdleAmbTravelTime))
 		end
 	end
-
+	
 	# useful lists for IP
 	(ambList, stationList) = findn(ambMovableToStation)
 	# ambList and stationList together have all the information of ambMovableToStation:
@@ -122,7 +122,7 @@ function temp2MoveUp(sim::Simulation)
 	for k = 1:m
 		travelCostList[k] = ambToStationTimes[ambList[k], stationList[k]] * travelTimeCost
 	end
-
+	
 	# counting number of ambulances at each station
 	stationSlots = Vector{Int}(0)
 	benefitSlots = Vector{Float}(0)
@@ -163,51 +163,51 @@ function temp2MoveUp(sim::Simulation)
 	for (i,j) in stationPairs
 		totalBenefitLowerBound += sum(sum(marginalBenefit[i,j][1:numAmbsAtStation[i],1:numAmbsAtStation[j]]))
 	end
-
+	
 	######################
 	# IP
-
+	
 	# shorthand variable names:
 	a = numMovableAmbs
 	s = numStations
 	m = length(stationList)
 	n = length(stationSlots) # <= m
 	q = length(stationPairSlots) # = length(benefitPairSlots)
-
+	
 	# using JuMP
 	model = Model()
 	
 	setsolver(model, GLPKSolverMIP(presolve=true))
-
+	
 	@variables(model, begin
 		(x[k=1:m], Bin) # x[k] = 1 if ambulance: ambList[k] should be moved to station: stationList[k]
 		(0 <= y[k=1:n] <= 1) # y should be naturally binary; sum(y[stationSlots .== k]) = number of ambulances assigned to stations[k]
 		(0 <= z[k=1:q] <= 1) # z should be naturally binary
 	end)
-
+	
 	@expressions(model, begin
 		totalAmbTravelCosts, sum(x[k] * travelCostList[k] for k=1:m)
 		totalBenefitAtStations, sum(y[k] * benefitSlots[k] for k=1:n)
 		totalBenefitAtStationPairs, sum(z[k] * benefitPairSlots[k] for k=1:q)
 		# totalBenefit, totalBenefitAtStations + totalBenefitAtStationPairs
 	end)
-
+	
 	@constraints(model, begin
 		(ambAtOneLocation[i=1:a], sum(x[k] for k=find(ambList .== i)) == 1) # each ambulance must be assigned to one station
 		(stationAmbCounts[j=1:s], sum(x[k] for k=find(stationList .== j)) == sum(y[k] for k=find(stationSlots .== j)))
 		(stationPairAmbCounts[k=1:q, l=1:2], z[k] <= y[mapzy[k][l]])
 		# (totalBenefit >= totalBenefitLowerBound)
 	end)
-
+	
 	@objective(model, :Max, totalBenefitAtStations + totalBenefitAtStationPairs - totalAmbTravelCosts)
-
+	
 	# # testing: giving back fake results, for testing runtime without solving IP model
 	# if true
 		# return moveUpNull()
 	# end
-
+	
 	solve(model)
-
+	
 	# extract solution
 	sol = convert(Vector{Bool}, round.(getvalue(x)))
 	ambStations = Vector{Station}(numMovableAmbs)
@@ -239,6 +239,6 @@ function temp2MoveUp(sim::Simulation)
 			end
 		end
 	end
-
+	
 	return movableAmbs, ambStations
 end

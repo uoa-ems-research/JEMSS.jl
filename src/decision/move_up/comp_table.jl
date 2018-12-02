@@ -31,7 +31,7 @@ function compTableMoveUp(sim::Simulation)
 	ctd = sim.moveUpData.compTableData
 	compTable = ctd.compTable
 	ambMovable = ctd.ambMovable
-
+	
 	# get movable ambulances (movableAmbs)
 	for i = 1:numAmbs
 		ambMovable[i] = isAmbAvailableForMoveUp(ambulances[i])
@@ -53,10 +53,10 @@ function compTableMoveUp(sim::Simulation)
 		j = movableAmbs[i].stationIndex
 		ambToStationTimes[i,j] = 0.0
 	end
-
+	
 	######################
 	# IP
-
+	
 	# shorthand variable names:
 	a = numMovableAmbs
 	s = numStations

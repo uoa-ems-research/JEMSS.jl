@@ -145,7 +145,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		error("null event")
 		
 ################
-
+	
 	elseif eventForm == ambGoesToSleep
 		ambulance = sim.ambulances[event.ambIndex]
 		@assert(ambulance.status == ambIdleAtStation) # ambulance should be at station before sleeping
@@ -158,7 +158,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		addEvent!(sim.eventList; parentEvent = event, form = ambWakesUp, time = sim.time + sleepDuration, ambulance = ambulance)
 		
 ################
-
+	
 	elseif eventForm == ambWakesUp
 		ambulance = sim.ambulances[event.ambIndex]
 		@assert(ambulance.status == ambSleeping) # ambulance should have been sleeping
@@ -169,7 +169,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		# ambulance.callIndex
 		
 ################
-
+	
 	elseif eventForm == callArrives
 		@assert(event.ambIndex == nullIndex) # no ambulance should be assigned yet
 		call = sim.calls[event.callIndex]
@@ -186,7 +186,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		end
 		
 ################
-
+	
 	elseif eventForm == considerDispatch
 		@assert(event.ambIndex == nullIndex) # no ambulance should be assigned yet
 		call = sim.calls[event.callIndex]
@@ -239,7 +239,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		end
 		
 ################
-
+	
 	elseif eventForm == ambDispatched
 		ambulance = sim.ambulances[event.ambIndex]
 		status = ambulance.status # shorthand
@@ -276,7 +276,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		end
 		
 ################
-
+	
 	elseif eventForm == ambReachesCall
 		ambulance = sim.ambulances[event.ambIndex]
 		@assert(ambulance.status == ambGoingToCall)
@@ -304,7 +304,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		end
 		
 ################
-
+	
 	elseif eventForm == ambGoesToHospital
 		ambulance = sim.ambulances[event.ambIndex]
 		@assert(ambulance.status == ambAtCall)
@@ -330,13 +330,13 @@ function simulateEvent!(sim::Simulation, event::Event)
 		addEvent!(sim.eventList; parentEvent = event, form = ambReachesHospital, time = ambulance.route.endTime, ambulance = ambulance, call = call)
 		
 ################
-
+	
 	elseif eventForm == ambReachesHospital
 		ambulance = sim.ambulances[event.ambIndex]
 		@assert(ambulance.status == ambGoingToHospital)
 		call = sim.calls[event.callIndex]
 		@assert(call.status == callGoingToHospital)
-
+		
 		ambulance.status = ambAtHospital
 		# ambulance.stationIndex
 		# ambulance.callIndex
@@ -351,7 +351,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		addEvent!(sim.eventList; parentEvent = event, form = ambBecomesIdle, time = sim.time + call.transferDuration, ambulance = ambulance, call = call)
 		
 ################
-
+	
 	elseif eventForm == ambBecomesIdle
 		ambulance = sim.ambulances[event.ambIndex]
 		@assert(ambulance.status == ambAtCall || ambulance.status == ambAtHospital)
@@ -369,7 +369,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		if length(sim.queuedCallList) > 0
 			call = getNextCall!(sim.queuedCallList)
 			@assert(call != nothing)
-
+			
 			# dispatch ambulance
 			addEvent!(sim.eventList; parentEvent = event, form = ambDispatched, time = sim.time, ambulance = ambulance, call = call)
 		else
@@ -391,7 +391,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		end
 		
 ################
-
+	
 	elseif eventForm == ambReachesStation
 		ambulance = sim.ambulances[event.ambIndex]
 		@assert(ambulance.status == ambGoingToStation)
@@ -405,7 +405,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		ambulance.event = Event() # no event currently
 		
 ################
-
+	
 	elseif eventForm == considerMoveUp
 		ambulance = sim.ambulances[event.ambIndex] # ambulance that triggered consideration of move up
 		@assert(event.callIndex == nullIndex)
@@ -461,7 +461,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		end
 		
 ################
-
+	
 	elseif eventForm == ambMoveUp
 		ambulance = sim.ambulances[event.ambIndex]
 		@assert(event.callIndex == nullIndex)
@@ -476,7 +476,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		addEvent!(sim.eventList; parentEvent = event, form = ambReachesStation, time = ambulance.route.endTime, ambulance = ambulance)
 		
 ################
-
+	
 	# elseif eventForm == ambRedirected
 		# ambulance = sim.ambulances[event.ambIndex]
 		# call = sim.calls[event.callIndex]
@@ -488,7 +488,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		# error()
 		
 ################
-
+	
 	else
 		# unspecified event
 		error()
