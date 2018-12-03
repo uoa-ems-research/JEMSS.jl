@@ -25,7 +25,7 @@ runGenConfig(genConfigFilename; overwriteOutputPath = true)
 # create and run simulation using generated files
 println("\n=== Simulating with generated files ===")
 simConfigFilename = joinpath(path, "sim_config.xml")
-sim = initSimulation(simConfigFilename, doPrint = false)
+sim = initSim(simConfigFilename, doPrint = false)
 simulate!(sim)
 
 # print some basic statistics
@@ -41,7 +41,7 @@ simulate!(sim)
 # create and run simulation again, this time writing output files
 println("\n=== Simulating with generated files, writing output ===")
 simConfigFilename = joinpath(path, "sim_config.xml")
-sim = initSimulation(simConfigFilename; allowWriteOutput = true, doPrint = false)
+sim = initSim(simConfigFilename; allowWriteOutput = true, doPrint = false)
 openOutputFiles!(sim)
 simulate!(sim)
 writeStatsFiles!(sim)
@@ -49,7 +49,7 @@ closeOutputFiles!(sim)
 
 # create and run simulation again, resimulating based on previously created events output file
 println("\n=== Resimulating based on output/events file ===")
-sim = initSimulation(simConfigFilename; allowResim = true, doPrint = false)
+sim = initSim(simConfigFilename; allowResim = true, doPrint = false)
 simulate!(sim)
 
 nothing # return value

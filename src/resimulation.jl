@@ -15,7 +15,7 @@
 
 # load the resimulation data from the events file
 # changes sim.resim.use to be false unless all checks are passed
-function initResimulation!(sim::Simulation)
+function initResim!(sim::Simulation)
 	resim = sim.resim # shorthand
 	@assert(resim.use)
 	resim.use = false # until checks have passed

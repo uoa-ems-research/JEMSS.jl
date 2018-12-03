@@ -20,7 +20,7 @@ runGenConfig(joinpath(testRegionDataFolder, "gen_config.xml"), overwriteOutputPa
 
 # initialise sim
 info("Initialising sim")
-sim = initSimulation(joinpath(testRegionDataFolder, "sim_config.xml"), doPrint = false);
+sim = initSim(joinpath(testRegionDataFolder, "sim_config.xml"), doPrint = false);
 
 # initialise demand and demand coverage
 initDemand!(sim, demandFilename = joinpath(testRegionDataFolder, "demand", "demand.csv"))

@@ -42,7 +42,7 @@ import Plots
 
 # simulation functions
 export
-	initSimulation, runConfig, # run_config
+	initSim, runConfig, # run_config
 	simulate!, simulateToTime!, simulateToEnd!, backupSim!, resetSim!, simulateNextEvent!, # simulation
 	animate!, animate # animation
 

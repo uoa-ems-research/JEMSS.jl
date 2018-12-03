@@ -16,7 +16,7 @@
 # run configuration xml file
 function runConfig(configFilename::String)
 	# read input files, initialise simulation
-	sim = initSimulation(configFilename; allowResim = true, createBackup = false, allowWriteOutput = true)
+	sim = initSim(configFilename; allowResim = true, createBackup = false, allowWriteOutput = true)
 	
 	# open output files
 	openOutputFiles!(sim)
@@ -34,7 +34,7 @@ function runConfig(configFilename::String)
 end
 
 # initialise simulation from input files
-function initSimulation(configFilename::String;
+function initSim(configFilename::String;
 	allowResim::Bool = false, createBackup::Bool = true, allowWriteOutput::Bool = false, doPrint::Bool = true)
 	
 	# read sim config xml file
@@ -373,7 +373,7 @@ function initSimulation(configFilename::String;
 		sim.resim.use = eltContentVal(rootElt, "resim")
 		if sim.resim.use
 			initMessage(t, "")
-			initResimulation!(sim)
+			initResim!(sim)
 			doPrint && print("initialised resimulation")
 			initTime(t)
 		end

@@ -25,7 +25,7 @@ Pkg.clone("https://github.com/samridler/JEMSS.jl.git")
 using JEMSS
 
 filename = selectXmlFile()
-sim = initSimulation(filename);
+sim = initSim(filename);
 
 simulate!(sim) # run the simulation
 printSimStats(sim) # some basic statistics
@@ -38,7 +38,7 @@ The simulation is initialised from an xml configuration file which contains a li
 using JEMSS
 animate(configFilename = filename, port = 8001)
 # alternative:
-sim = initSimulation(filename);
+sim = initSim(filename);
 animate!(sim) # will use same port as before (8001)
 ```
 The call to `animate` will open a web browser window to `localhost:8001` (other port numbers may be used) and load the simulation for the given configuration file.

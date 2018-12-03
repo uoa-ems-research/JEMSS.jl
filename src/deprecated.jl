@@ -86,6 +86,14 @@ end
 ##
 
 @deprecate(
+initSimulation(configFilename::String; allowResim::Bool = false, createBackup::Bool = true, allowWriteOutput::Bool = false, doPrint::Bool = true),
+initSim(configFilename; allowResim = allowResim, createBackup = createBackup, allowWriteOutput = allowWriteOutput, doPrint = doPrint))
+
+@deprecate(
+initResimulation!(sim::Simulation),
+initResim!(sim))
+
+@deprecate(
 calcBatchMeans(; values::Vector{Float} = [], times::Vector{Float} = [], batchTime::Float = nullTime, startTime::Float = nullTime, endTime::Float = nullTime),
 calcBatchMeans(values, times, batchTime; startTime = startTime, endTime = endTime, rmPartialBatch = true, returnBatchSizes = true))
 

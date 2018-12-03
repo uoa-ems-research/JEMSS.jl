@@ -217,12 +217,12 @@ wsh = WebSocketHandler() do req::Request, client::WebSocket
 		@assert(typeof(nextAnimItem) == String)
 		configFilename = nextAnimItem
 		println("Initialising simulation from config:", configFilename)
-		sim = initSimulation(configFilename; allowResim = true)
+		sim = initSim(configFilename; allowResim = true)
 		println("...initialised")
 	end
 	
 	# check if sim can be animated
-	@assert(sim.initialised, "simulation has not been initialised; see initSimulation function")
+	@assert(sim.initialised, "simulation has not been initialised; see initSim function")
 	@assert(!sim.animating, "simulation is already being animated")
 	@assert(!sim.writeOutput, "cannot animate simulation which is writing to output files")
 	if !isdefined(sim, :backup)

@@ -22,7 +22,7 @@ using JEMSS
 
 # load sim
 configFilename = (length(ARGS) >= 1 ? ARGS[1] : selectXmlFile())
-sim = initSimulation(configFilename)
+sim = initSim(configFilename)
 (numAmbs, numStations) = (sim.numAmbs, sim.numStations)
 @assert(numAmbs > 0 && numStations > 1) # otherwise only one deployment is possible
 
