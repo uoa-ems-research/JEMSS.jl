@@ -1,3 +1,18 @@
+##########################################################################
+# Copyright 2017 Samuel Ridler.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+##########################################################################
+
 # for generating simulation objects based on a config file
 
 type GenConfig
@@ -210,7 +225,7 @@ function runGenConfig(genConfigFilename::String; overwriteOutputPath::Bool = fal
 		writeHospitalsFile(genConfig.hospitalsFilename, hospitals)
 		writeMapFile(genConfig.mapFilename, genConfig.map)
 		writeNodesFile(genConfig.nodesFilename, nodes)
-		writePrioritiesFile(genConfig.prioritiesFilename, repmat([genConfig.targetResponseTime],3))
+		writePrioritiesFile(genConfig.prioritiesFilename, repmat([genConfig.targetResponseTime],numPriorities))
 		writeStationsFile(genConfig.stationsFilename, stations)
 		writeTravelFile(genConfig.travelFilename, travel)
 	elseif genConfig.mode == "calls"
@@ -358,9 +373,8 @@ function makeTravel(genConfig::GenConfig)
 	travel.numModes = length(travel.modes)
 	
 	# use single travel mode in single travel mode set
-	# all three travel priorities should be used
 	travel.numSets = 1
-	travel.modeLookup = repmat([1],1,3) # modeLookup[setIndex, priority] gives travelModeIndex
+	travel.modeLookup = repmat([1],1,numPriorities) # modeLookup[setIndex, priority] gives travelModeIndex
 	
 	travel.setsStartTimes = [genConfig.startTime]
 	travel.setsTimeOrder = [1]

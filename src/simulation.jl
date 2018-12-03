@@ -1,29 +1,81 @@
-# run simulation, show progress whenever system time increases by timeStep (seconds)
-function simulate!(sim::Simulation; timeStep::Float = 1.0)
-	println("running simulation...")
-	startTime = time()
-	nextTime = startTime + timeStep
-	printProgress() = print(@sprintf("\rsim duration: %-9.2f real duration: %.2f seconds", sim.time - sim.startTime, time()-startTime))
-	while !sim.complete
+##########################################################################
+# Copyright 2017 Samuel Ridler.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+##########################################################################
+
+# run simulation
+
+"""
+	function simulate!(sim::Simulation;
+		time::Float = Inf, duration::Float = Inf, numEvents::Int = -1,
+		doPrint::Bool = false, printingInterval::Float = 1.0)
+Run the simulation to completion, or to any specified stopping point (according to `time`, `duration`, or `numEvents`), whichever comes first. Returns `true` if simulation is complete; `false` otherwise.
+
+# Keyword arguments
+- `time` is the maximum time to simulate to; will stop if time of next event is greater
+- `duration` is the maximum duration to simulate for; equivalent to setting `time = sim.time + duration`
+- `numEvents` is the maximum number of events to simulate
+- `doPrint` controls whether any lines are printed while simulating
+- `printingInterval` is the time interval (seconds) between printing while simulating, if `doPrint = true`
+"""
+function simulate!(sim::Simulation;
+	time::Real = Inf, duration::Real = Inf, numEvents::Real = Inf,
+	doPrint::Bool = false, printingInterval::Real = 1.0)
+	
+	@assert(time == Inf || duration == Inf, "can only set one of: time, duration")
+	@assert(time >= sim.time)
+	@assert(duration >= 0)
+	@assert(numEvents >= 0)
+	@assert(printingInterval >= 1e-2, "printing too often can slow the simulation")
+	
+	duration != Inf && (time = sim.time + duration) # set end time based on duration
+	
+	# for printing progress
+	startTime = Base.time()
+	doPrint || (printingInterval = Inf)
+	nextPrintTime = startTime + printingInterval
+	eventCount = 0
+	printProgress() = doPrint && print(@sprintf("\rsim time: %-9.2f sim duration: %-9.2f events simulated: %-9d real duration: %.2f seconds", sim.time, sim.time - sim.startTime, eventCount, Base.time() - startTime))
+	
+	# simulate
+	while !sim.complete && sim.eventList[end].time <= time && eventCount < numEvents
 		simulateNextEvent!(sim)
-		if time() > nextTime
+		eventCount += 1
+		if Base.time() >= nextPrintTime
 			printProgress()
-			nextTime += timeStep
+			nextPrintTime += printingInterval
 		end
 	end
+	
 	printProgress()
-	println("\n...simulation complete")
+	doPrint && println()
+	
+	return sim.complete
 end
 
-# simulate up until given time
+# simulate up to last event with time <= given time
+# equivalent to calling simulate!(sim, time = time), but may be faster so have kept for animation
 function simulateToTime!(sim::Simulation, time::Float)
 	while !sim.complete && sim.eventList[end].time <= time # eventList must remain sorted by non-increasing time
 		simulateNextEvent!(sim)
 	end
 end
 
+# run simulation to end; equivalent to simulate!(sim)
 function simulateToEnd!(sim::Simulation)
-	simulateToTime!(sim, Inf)
+	while !sim.complete
+		simulateNextEvent!(sim)
+	end
 end
 
 # set sim.backup to copy of sim (before running)
@@ -48,7 +100,7 @@ function resetSim!(sim::Simulation)
 		resetCalls!(sim) # reset calls from sim.backup, need to do this before resetting sim.time
 		
 		fnames = Set(fieldnames(sim))
-		fnamesDontCopy = Set([:backup, :net, :travel, :grid, :resim, :calls, :demand, :demandCoverage]) # will not (yet) copy these fields from sim.backup to sim
+		fnamesDontCopy = Set([:backup, :net, :travel, :grid, :resim, :calls, :demand, :demandCoverage, :animating]) # will not (yet) copy these fields from sim.backup to sim
 		# note that sim.backup does not contain a backup of all fields
 		setdiff!(fnames, fnamesDontCopy) # remove fnamesDontCopy from fnames
 		for fname in fnames
@@ -108,7 +160,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		error("null event")
 		
 ################
-
+	
 	elseif eventForm == ambGoesToSleep
 		ambulance = sim.ambulances[event.ambIndex]
 		@assert(ambulance.status == ambIdleAtStation) # ambulance should be at station before sleeping
@@ -121,7 +173,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		addEvent!(sim.eventList; parentEvent = event, form = ambWakesUp, time = sim.time + sleepDuration, ambulance = ambulance)
 		
 ################
-
+	
 	elseif eventForm == ambWakesUp
 		ambulance = sim.ambulances[event.ambIndex]
 		@assert(ambulance.status == ambSleeping) # ambulance should have been sleeping
@@ -132,7 +184,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		# ambulance.callIndex
 		
 ################
-
+	
 	elseif eventForm == callArrives
 		@assert(event.ambIndex == nullIndex) # no ambulance should be assigned yet
 		call = sim.calls[event.callIndex]
@@ -144,12 +196,12 @@ function simulateEvent!(sim::Simulation, event::Event)
 		addEvent!(sim.eventList; parentEvent = event, form = considerDispatch, time = sim.time + call.dispatchDelay, call = call)
 		
 		# add next call arrival to event queue
-		if call.index < length(sim.calls)
+		if call.index < sim.numCalls
 			addEvent!(sim.eventList, sim.calls[call.index + 1])
 		end
 		
 ################
-
+	
 	elseif eventForm == considerDispatch
 		@assert(event.ambIndex == nullIndex) # no ambulance should be assigned yet
 		call = sim.calls[event.callIndex]
@@ -192,7 +244,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 			if ambWasOnRoute
 				ambulance.totalTravelTime += sim.time - ambulance.route.startTime
 				if ambulance.status == ambGoingToCall
-					ambulance.totalBusyTime += sim.time - ambulance.route.startTime 
+					ambulance.totalBusyTime += sim.time - ambulance.route.startTime
 					ambulance.numDiversions += 1
 				end
 			end
@@ -202,7 +254,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		end
 		
 ################
-
+	
 	elseif eventForm == ambDispatched
 		ambulance = sim.ambulances[event.ambIndex]
 		status = ambulance.status # shorthand
@@ -239,7 +291,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		end
 		
 ################
-
+	
 	elseif eventForm == ambReachesCall
 		ambulance = sim.ambulances[event.ambIndex]
 		@assert(ambulance.status == ambGoingToCall)
@@ -267,7 +319,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		end
 		
 ################
-
+	
 	elseif eventForm == ambGoesToHospital
 		ambulance = sim.ambulances[event.ambIndex]
 		@assert(ambulance.status == ambAtCall)
@@ -293,13 +345,13 @@ function simulateEvent!(sim::Simulation, event::Event)
 		addEvent!(sim.eventList; parentEvent = event, form = ambReachesHospital, time = ambulance.route.endTime, ambulance = ambulance, call = call)
 		
 ################
-
+	
 	elseif eventForm == ambReachesHospital
 		ambulance = sim.ambulances[event.ambIndex]
 		@assert(ambulance.status == ambGoingToHospital)
 		call = sim.calls[event.callIndex]
 		@assert(call.status == callGoingToHospital)
-
+		
 		ambulance.status = ambAtHospital
 		# ambulance.stationIndex
 		# ambulance.callIndex
@@ -314,7 +366,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		addEvent!(sim.eventList; parentEvent = event, form = ambBecomesIdle, time = sim.time + call.transferDuration, ambulance = ambulance, call = call)
 		
 ################
-
+	
 	elseif eventForm == ambBecomesIdle
 		ambulance = sim.ambulances[event.ambIndex]
 		@assert(ambulance.status == ambAtCall || ambulance.status == ambAtHospital)
@@ -332,7 +384,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		if length(sim.queuedCallList) > 0
 			call = getNextCall!(sim.queuedCallList)
 			@assert(call != nothing)
-
+			
 			# dispatch ambulance
 			addEvent!(sim.eventList; parentEvent = event, form = ambDispatched, time = sim.time, ambulance = ambulance, call = call)
 		else
@@ -354,7 +406,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		end
 		
 ################
-
+	
 	elseif eventForm == ambReachesStation
 		ambulance = sim.ambulances[event.ambIndex]
 		@assert(ambulance.status == ambGoingToStation)
@@ -368,7 +420,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		ambulance.event = Event() # no event currently
 		
 ################
-
+	
 	elseif eventForm == considerMoveUp
 		ambulance = sim.ambulances[event.ambIndex] # ambulance that triggered consideration of move up
 		@assert(event.callIndex == nullIndex)
@@ -424,7 +476,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		end
 		
 ################
-
+	
 	elseif eventForm == ambMoveUp
 		ambulance = sim.ambulances[event.ambIndex]
 		@assert(event.callIndex == nullIndex)
@@ -439,7 +491,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		addEvent!(sim.eventList; parentEvent = event, form = ambReachesStation, time = ambulance.route.endTime, ambulance = ambulance)
 		
 ################
-
+	
 	# elseif eventForm == ambRedirected
 		# ambulance = sim.ambulances[event.ambIndex]
 		# call = sim.calls[event.callIndex]
@@ -451,7 +503,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		# error()
 		
 ################
-
+	
 	else
 		# unspecified event
 		error()

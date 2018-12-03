@@ -1,10 +1,25 @@
+##########################################################################
+# Copyright 2017 Samuel Ridler.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+##########################################################################
+
 # Maximum Expected Coverage Location Problem (MEXCLP)
 
 """
 	solveMexclp!(sim::Simulation;
-		numAmbs::Int = length(sim.ambulances),
+		numAmbs::Int = sim.numAmbs,
 		busyFraction::Float = 0.5,
-		demandWeights::Dict{Priority,Float} = Dict([p => 1.0 for p in instances(Priority)]),
+		demandWeights::Dict{Priority,Float} = Dict([p => 1.0 for p in priorities]),
 		stationCapacities::Vector{Int} = [station.capacity for station in sim.stations])
 Solves the Maximum Expected Coverage Location Problem (MEXCLP) for `sim` and returns the number of ambulances to assign to each station, also the converse is returned - a station index for each ambulance.
 The problem assumes that all ambulances are equivalent.
@@ -16,15 +31,15 @@ The problem assumes that all ambulances are equivalent.
 - `stationCapacities` is the maximum number of ambulances that each station can hold
 """
 function solveMexclp!(sim::Simulation;
-	numAmbs::Int = length(sim.ambulances),
+	numAmbs::Int = sim.numAmbs,
 	busyFraction::Float = 0.5,
-	demandWeights::Dict{Priority,Float} = Dict([p => 1.0 for p in instances(Priority)]),
+	demandWeights::Dict{Priority,Float} = Dict([p => 1.0 for p in priorities]),
 	stationCapacities::Vector{Int} = [station.capacity for station in sim.stations])
 	
 	@assert(numAmbs >= 1, "need at least 1 ambulance for mexclp")
 	@assert(sim.travel.numSets == 1) # otherwise need to solve mexclp for each travel set?
 	
-	@assert(length(stationCapacities) == length(sim.stations))
+	@assert(length(stationCapacities) == sim.numStations)
 	@assert(all(stationCapacities .>= 0), "station capacities must be non-negative")
 	stationCapacities = min.(stationCapacities, numAmbs) # reduce values where capacity > numAmbs
 	@assert(sum(stationCapacities) >= numAmbs, "the total capacity for ambulances at stations is less than the number of ambulances")
@@ -35,13 +50,12 @@ function solveMexclp!(sim::Simulation;
 	sim.demandCoverage.initialised || initDemandCoverage!(sim)
 	
 	# shorthand
-	numStations = length(sim.stations)
+	numStations = sim.numStations
 	currentTime = sim.startTime
 	
 	# get demand point coverage data
 	pointData = Dict{Vector{Int},Float}() # pointData[pointStations] = pointDemand
-	demandPriorities = setdiff([instances(Priority)...], [nullPriority])
-	for demandPriority in demandPriorities
+	for demandPriority in priorities
 		if !haskey(demandWeights, demandPriority) || demandWeights[demandPriority] == 0
 			continue
 		end
@@ -129,11 +143,8 @@ function solveMexclp!(sim::Simulation;
 		@assert(all(j -> issorted(pointSlotCover[j], rev=true), 1:p)) # pointCoverOrder constraint
 	end
 	
-	# convert to a deployment policy
-	depol = Depol() # depol[i] gives the station index for ambulance i
-	for (stationIndex, numAmbs) in enumerate(stationsNumAmbs), i = 1:numAmbs
-		push!(depol, stationIndex)
-	end
+	# convert to a deployment
+	deployment = stationsNumAmbsToDeployment(stationsNumAmbs)
 	
-	return stationsNumAmbs, depol
+	return stationsNumAmbs, deployment
 end

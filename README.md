@@ -25,7 +25,7 @@ Pkg.clone("https://github.com/samridler/JEMSS.jl.git")
 using JEMSS
 
 filename = selectXmlFile()
-sim = initSimulation(filename);
+sim = initSim(filename);
 
 simulate!(sim) # run the simulation
 printSimStats(sim) # some basic statistics
@@ -36,9 +36,13 @@ The simulation is initialised from an xml configuration file which contains a li
 ### Animation
 ```julia
 using JEMSS
-animate(port = 8001, configFilename = filename)
+animate(configFilename = filename, port = 8001)
+# alternative:
+sim = initSim(filename);
+animate!(sim) # will use same port as before (8001)
 ```
-This will open a web browser window to `localhost:8001` (other port numbers may be used) and load the simulation for the given configuration file.
+The call to `animate` will open a web browser window to `localhost:8001` (other port numbers may be used) and load the simulation for the given configuration file.
+If a simulation is already loaded beforehand then `animate!(sim)` can be used instead.
 The connection may take a few seconds to be established.
 Once the simulation has been initialised, the browser window, using [Mapbox](https://www.mapbox.com/), will show a map of the region of interest, the ambulances, hospitals, stations, and road arcs.
 Controlling the animation is done with buttons and text input in a box at the bottom right of the window.
@@ -50,7 +54,7 @@ Notes on animation:
 
 - Firefox and Chrome work, Edge does not work well, other browsers have not been tested.
 - Multiple browser windows may use the same port.
-- If you do not specify a simulation configuration filename, then you will be prompted for this from Julia (not the browser window).
+- If you do not specify a simulation or configuration filename, then you will be prompted for a configuration filename from Julia (not the browser window).
 - For the timing control, 'speed' is the ratio of animation time to real time; speed of 1 gives real-time (real slow) animation. Calculating the ratio correctly currently requires the input files to have time units in days.
 - Input files should have (latitude, longitude) coordinates, these correspond with the y and x fields in the input files.
 

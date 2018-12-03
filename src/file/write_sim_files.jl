@@ -1,3 +1,18 @@
+##########################################################################
+# Copyright 2017 Samuel Ridler.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+##########################################################################
+
 # write sim object and output files
 
 function writeAmbsFile(filename::String, ambulances::Vector{Ambulance})
@@ -34,7 +49,7 @@ function writeDemandFile(filename::String, demand::Demand)
 	
 	# demand sets table
 	dml = demand.modeLookup # shorthand
-	@assert(size(dml) == (demand.numSets, 3)) # should have value for each combination of demand mode and priority
+	@assert(size(dml) == (demand.numSets, numPriorities)) # should have value for each combination of demand mode and priority
 	demandSetsTable = Table("demandSets", ["setIndex", "modeIndices"];
 		rows = [[i, hcat(dml[i,:]...)] for i = 1:demand.numSets])
 	
@@ -102,7 +117,7 @@ function writeTravelFile(filename::String, travel::Travel)
 	
 	# travel sets table
 	tml = travel.modeLookup # shorthand
-	@assert(size(tml) == (length(travel.modes), 3)) # should have value for each combination of travel mode and priority
+	@assert(size(tml) == (length(travel.modes), numPriorities)) # should have value for each combination of travel mode and priority
 	travelSetsTable = Table("travelSets", ["travelSetIndex", "priority", "travelModeIndex"];
 		rows = [[ind2sub(tml,i)[1], string(Priority(ind2sub(tml,i)[2])), tml[i]] for i = 1:length(tml)])
 	
@@ -198,17 +213,17 @@ function writeStatsFiles!(sim::Simulation)
 		rows = [[h.index, h.numTransfers] for h in sim.hospitals]))
 end
 
-# write deployment policies to file
-function writeDeploymentPoliciesFile(filename::String, depols::Vector{Depol}, numStations::Int)
-	numAmbs = length(depols[1])
-	@assert(numStations >= maximum([maximum(d) for d in depols]))
-	numDepols = length(depols)
+# write deployments to file
+function writeDeploymentsFile(filename::String, deployments::Vector{Deployment}, numStations::Int)
+	numAmbs = length(deployments[1])
+	@assert(numStations >= maximum([maximum(d) for d in deployments]))
+	numDeployments = length(deployments)
 	
-	miscTable = Table("miscData", ["numStations", "numDepols"]; rows = [[numStations, numDepols]])
-	deploymentPoliciesTable = Table("deploymentPolicies",
-		["ambIndex", ["policy_$i stationIndex" for i = 1:numDepols]...];
-		cols = [collect(1:numAmbs), depols...])
-	writeTablesToFile(filename, [miscTable, deploymentPoliciesTable])
+	miscTable = Table("miscData", ["numStations", "numDeployments"]; rows = [[numStations, numDeployments]])
+	deploymentsTable = Table("deployments",
+		["ambIndex", ["deployment_$i stationIndex" for i = 1:numDeployments]...];
+		cols = [collect(1:numAmbs), deployments...])
+	writeTablesToFile(filename, [miscTable, deploymentsTable])
 end
 
 # save batch mean response times to file
