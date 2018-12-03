@@ -13,7 +13,6 @@
 # limitations under the License.
 ##########################################################################
 
-
 function getCallResponseTimes(sim::Simulation)
 	@assert(sim.complete)
 	@assert(all(call -> call.responseTime >= 0, sim.calls))

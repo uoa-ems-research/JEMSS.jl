@@ -13,7 +13,6 @@
 # limitations under the License.
 ##########################################################################
 
-
 ## renamed "deployment policy" to "deployment"
 
 const Depol = Deployment # not sure how to deprecate a const
