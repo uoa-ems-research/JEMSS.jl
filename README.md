@@ -1,10 +1,8 @@
 # JEMSS.jl
 
-[![Build Status](https://travis-ci.org/samridler/JEMSS.jl.svg?branch=master)](https://travis-ci.org/samridler/JEMSS.jl)
-
-[![Coverage Status](https://coveralls.io/repos/samridler/JEMSS.jl/badge.svg?branch=master&service=github)](https://coveralls.io/github/samridler/JEMSS.jl?branch=master)
-
-[![codecov.io](http://codecov.io/github/samridler/JEMSS.jl/coverage.svg?branch=master)](http://codecov.io/github/samridler/JEMSS.jl?branch=master)
+[![Build Status](https://travis-ci.com/uoa-ems-research/JEMSS.jl.svg?branch=master)](https://travis-ci.com/uoa-ems-research/JEMSS.jl)
+[![Coverage Status](https://coveralls.io/repos/github/uoa-ems-research/JEMSS.jl/badge.svg?branch=master)](https://coveralls.io/github/uoa-ems-research/JEMSS.jl?branch=master)
+[![codecov.io](http://codecov.io/github/uoa-ems-research/JEMSS.jl/coverage.svg?branch=master)](http://codecov.io/github/uoa-ems-research/JEMSS.jl?branch=master)
 
 ## Warning
 This package is currently being developed.
@@ -13,9 +11,8 @@ Expect bugs, and backward compatibility issues between commits.
 ## Installation
 This package (and others that it requires) is unregistered so you will need to `Pkg.clone` it as follows:
 ```julia
-Pkg.clone("https://github.com/visr/GDAL.jl.git")
-Pkg.clone("https://github.com/yeesian/ArchGDAL.jl.git")
-Pkg.clone("https://github.com/samridler/JEMSS.jl.git")
+Pkg.clone("https://github.com/samridler/ArchGDAL.jl.git") # ArchGDAL fork, required for julia v0.6
+Pkg.clone("https://github.com/uoa-ems-research/JEMSS.jl.git")
 ```
 
 ## Usage
@@ -63,4 +60,4 @@ Notes on animation:
 The example folder contains example.jl, run this using `include("example.jl")` (run from the containing directory). This will generate some artificial data and save it to files, which can then be used as input to simulate with (example.jl script shows some cases of this) or animate with.
 
 ## License
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
+This project is licensed under the Apache License 2.0 - see the [LICENSE.md](LICENSE.md) file for details.
