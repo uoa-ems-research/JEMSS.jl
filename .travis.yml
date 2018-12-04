@@ -15,9 +15,7 @@ notifications:
   email: false
 script:
   - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
-  # note that ArchGDAL uses GDAL
-  - julia --color=yes -e 'Pkg.add("GDAL")'
-  - julia --color=yes -e 'Pkg.add("ArchGDAL")'
+  - julia --color=yes -e 'Pkg.clone("https://github.com/samridler/ArchGDAL.jl.git"); Pkg.build("ArchGDAL")'
   - julia --color=yes -e 'Pkg.clone(pwd()); Pkg.build("JEMSS"); Pkg.test("JEMSS"; coverage=true)'
 after_success:
   # push coverage results to Coveralls

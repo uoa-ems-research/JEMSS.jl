@@ -1,6 +1,6 @@
 # JEMSS.jl
 
-[![Build Status](https://travis-ci.org/uoa-ems-research/JEMSS.jl.svg?branch=master)](https://travis-ci.org/uoa-ems-research/JEMSS.jl)
+[![Build Status](https://travis-ci.com/uoa-ems-research/JEMSS.jl.svg?branch=master)](https://travis-ci.com/uoa-ems-research/JEMSS.jl)
 
 [![Coverage Status](https://coveralls.io/repos/uoa-ems-research/JEMSS.jl/badge.svg?branch=master&service=github)](https://coveralls.io/github/uoa-ems-research/JEMSS.jl?branch=master)
 
@@ -13,9 +13,7 @@ Expect bugs, and backward compatibility issues between commits.
 ## Installation
 This package (and others that it requires) is unregistered so you will need to `Pkg.clone` it as follows:
 ```julia
-Pkg.clone("https://github.com/visr/GDAL.jl.git")
-Pkg.pin("GDAL", v"0.1.0") # allows julia v0.6.3
-Pkg.clone("https://github.com/yeesian/ArchGDAL.jl.git")
+Pkg.clone("https://github.com/samridler/ArchGDAL.jl.git") # required for julia v0.6
 Pkg.clone("https://github.com/uoa-ems-research/JEMSS.jl.git")
 ```
 
