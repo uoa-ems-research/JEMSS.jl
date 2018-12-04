@@ -214,7 +214,7 @@ function readDemandFile(filename::String)
 		@assert(columns["rasterIndex"][i] == i)
 		
 		rasterFilename = String(columns["rasterFilename"][i])
-		@assert(isfile(rasterFilename))
+		@assert(isfile(rasterFilename), "File does not exist with name: ", rasterFilename)
 		demand.rasterFilenames[i] = rasterFilename
 		demand.rasters[i] = readRasterFile(rasterFilename)
 	end

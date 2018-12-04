@@ -14,6 +14,10 @@
 ##########################################################################
 
 @testset "demand file i/o" begin
+	
+	# debugging, delete:
+	@show pwd()
+	
 	demand = readDemandFile("data/demand/demand_1.csv")
 	
 	# check that demand can be written to file and read again
