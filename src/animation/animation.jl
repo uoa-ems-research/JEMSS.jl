@@ -377,11 +377,11 @@ end
 
 # opens browser window for url
 function openUrl(url::String)
-	if is_windows()
+	if Compat.Sys.iswindows()
 		run(`$(ENV["COMSPEC"]) /c start $url`)
-	elseif is_apple()
+	elseif Compat.Sys.isapple()
 		run(`open $url`)
-	elseif is_linux() || is_bsd()
+	elseif Compat.Sys.islinux() || Compat.Sys.isbsd()
 		run(`xdg-open $url`)
 	end
 end
