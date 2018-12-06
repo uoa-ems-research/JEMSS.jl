@@ -316,7 +316,7 @@ wsh = WebSocketHandler() do req::Request, client::WebSocket
 end
 
 """
-	function animate!(sim::Union{Simulation,Nothing} = nothing;
+	function animate!(sim::Union{Simulation,Compat.Nothing} = nothing;
 		configFilename::String = "", port::Int = 8001, openWindow::Bool = true)
 Open a web browser window to animate the simulation.
 Will animate for either `sim` or `configFilename`. If neither of these are given then there will be a prompt for the simulation configuration filename once the browser window has opened.
@@ -326,7 +326,7 @@ Will animate for either `sim` or `configFilename`. If neither of these are given
 - `port` is the port number for the local host url, e.g. `port = 8001` will use localhost:8001; this can only be set once for all animation windows
 - `openWindow` can be set to `false` to prevent the window from being opened automatically, which is useful if you wish to use a non-default browser
 """
-function animate!(sim::Union{Simulation,Nothing} = nothing;
+function animate!(sim::Union{Simulation,Compat.Nothing} = nothing;
 	configFilename::String = "", port::Int = 8001, openWindow::Bool = true)
 	@assert(sim == nothing || configFilename == "", "can only set one of: sim, configFilename")
 	global animSimQueue
@@ -356,7 +356,7 @@ function runAnimServer(port::Int)
 		return false
 	end
 	try
-		socket = connect(port)
+		socket = Compat.Sockets.connect(port)
 		if socket.status == 3 # = open
 			println("port $port is already in use, try another")
 			return false

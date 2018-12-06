@@ -455,9 +455,9 @@ Mutates: `sim.travel`, `route`
 See also: [`shortestPathTravelTime`](@ref)
 """
 function shortestRouteTravelTime!(sim::Simulation;
-	route::Union{Route, Nothing} = nothing, startLoc::Union{Location, Nothing} = nothing, firstNode::Int = nullIndex, dist1::Float = nullDist, time1::Float = nullTime,
-	endLoc::Union{Location, Nothing} = nothing, lastNode::Int = nullIndex, dist2::Float = nullDist, time2::Float = nullTime,
-	travelMode::Union{TravelMode, Nothing} = nothing, travelPriority::Priority = nullPriority, startTime::Float = nullTime)
+	route::Union{Route, Compat.Nothing} = nothing, startLoc::Union{Location, Compat.Nothing} = nothing, firstNode::Int = nullIndex, dist1::Float = nullDist, time1::Float = nullTime,
+	endLoc::Union{Location, Compat.Nothing} = nothing, lastNode::Int = nullIndex, dist2::Float = nullDist, time2::Float = nullTime,
+	travelMode::Union{TravelMode, Compat.Nothing} = nothing, travelPriority::Priority = nullPriority, startTime::Float = nullTime)
 	
 	# determine travel mode
 	if travelMode == nothing
