@@ -36,6 +36,7 @@ using Stats
 using StatsFuns
 
 # misc
+using Compat
 using LightGraphs
 using ArchGDAL # does not use precompile
 import Plots
