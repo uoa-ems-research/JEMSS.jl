@@ -59,7 +59,7 @@ function arrayDict(array::Vector{Any})
 	return dict
 end
 
-immutable Table
+struct Table
 	name::String
 	header::Vector{Any} # header names for columns in data, header[i] is for data[:,i]
 	headerDict::Dict{Any,Int} # headerDict[h] gives index of h in header

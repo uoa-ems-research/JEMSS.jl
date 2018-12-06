@@ -14,7 +14,7 @@
 ##########################################################################
 
 # type to contain a probability distribution sampler and corresponding random number generator
-type DistrRng{T<:Sampleable}
+mutable struct DistrRng{T<:Sampleable}
 	d::T
 	rng::MersenneTwister
 	

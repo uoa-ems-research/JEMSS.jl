@@ -15,7 +15,7 @@
 
 # for generating simulation objects based on a config file
 
-type GenConfig
+mutable struct GenConfig
 	outputPath::String
 	mode::String # "all" or "calls"
 	
