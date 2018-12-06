@@ -29,7 +29,7 @@ include("graph_tools.jl")
 # Output may need further processing, such as only keeping the largest strongly connected component, and removing duplicate arcs.
 # Note that distance calculations done here are different (more accurate) than those in JEMSS.
 function readOsmNetworkFile(osmFilename::String;
-	levels::Union{Set{Int},Void} = nothing, boundsLLA::Union{Geodesy.Bounds{LLA},Void} = nothing)
+	levels::Union{Set{Int},Nothing} = nothing, boundsLLA::Union{Geodesy.Bounds{LLA},Nothing} = nothing)
 	
 	# read osm file
 	@assert(isfile(osmFilename))
@@ -118,7 +118,7 @@ mergeDuplicateOsmArcs!(arcs::Vector{Arc}, i::Int, j::Int) = mergeDuplicateOsmArc
 # - classOffRoadAccess: dict indicating which nodes of different arc classes can be used to get on and off road; node will not have off-road access if all connecting arcs have class returning false in dict
 # - mergeArcsFunction: function to merge any duplicate arcs found, given the arcs and two arc indices
 function convertOsmNetwork!(nodes::Vector{Node}, arcs::Vector{Arc};
-	levels::Union{Set{Int},Void} = nothing, classSpeeds::Vector{Dict{Int,Float}} = [], classOffRoadAccess::Dict{Int,Bool} = Dict{Int,Bool}(), mergeArcsFunction::Function = mergeDuplicateOsmArcs!)
+	levels::Union{Set{Int},Nothing} = nothing, classSpeeds::Vector{Dict{Int,Float}} = [], classOffRoadAccess::Dict{Int,Bool} = Dict{Int,Bool}(), mergeArcsFunction::Function = mergeDuplicateOsmArcs!)
 	
 	numTravelModes = length(classSpeeds)
 	
@@ -199,7 +199,7 @@ function convertOsmNetworkExample!(nodes::Vector{Node}, arcs::Vector{Arc})
 end
 
 function convertOsmNetworkFile(osmFilename::String;
-	levels::Union{Set{Int},Void} = nothing, boundsLLA::Union{Geodesy.Bounds{LLA},Void} = nothing, classSpeeds::Vector{Dict{Int,Float}} = [], classOffRoadAccess::Dict{Int,Bool} = Dict{Int,Bool}(), mergeArcsFunction::Function = mergeDuplicateOsmArcs!)
+	levels::Union{Set{Int},Nothing} = nothing, boundsLLA::Union{Geodesy.Bounds{LLA},Nothing} = nothing, classSpeeds::Vector{Dict{Int,Float}} = [], classOffRoadAccess::Dict{Int,Bool} = Dict{Int,Bool}(), mergeArcsFunction::Function = mergeDuplicateOsmArcs!)
 	
 	(nodes, arcs) = readOsmNetworkFile(osmFilename; levels = levels, boundsLLA = boundsLLA)
 	convertOsmNetwork!(nodes, arcs; levels = levels, classSpeeds = classSpeeds, classOffRoadAccess = classOffRoadAccess, mergeArcsFunction = mergeArcsFunction)

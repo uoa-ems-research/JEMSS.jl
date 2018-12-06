@@ -450,13 +450,14 @@ Also requires one of (in order of preference):
 - `travelMode`
 - `travelPriority` and `startTime`
 
+Mutates: `sim.travel`, `route`
+
 See also: [`shortestPathTravelTime`](@ref)
 """
-# mutates: route, sim.travel
 function shortestRouteTravelTime!(sim::Simulation;
-	route::Union{Route, Void} = nothing, startLoc::Union{Location, Void} = nothing, firstNode::Int = nullIndex, dist1::Float = nullDist, time1::Float = nullTime,
-	endLoc::Union{Location, Void} = nothing, lastNode::Int = nullIndex, dist2::Float = nullDist, time2::Float = nullTime,
-	travelMode::Union{TravelMode, Void} = nothing, travelPriority::Priority = nullPriority, startTime::Float = nullTime)
+	route::Union{Route, Nothing} = nothing, startLoc::Union{Location, Nothing} = nothing, firstNode::Int = nullIndex, dist1::Float = nullDist, time1::Float = nullTime,
+	endLoc::Union{Location, Nothing} = nothing, lastNode::Int = nullIndex, dist2::Float = nullDist, time2::Float = nullTime,
+	travelMode::Union{TravelMode, Nothing} = nothing, travelPriority::Priority = nullPriority, startTime::Float = nullTime)
 	
 	# determine travel mode
 	if travelMode == nothing

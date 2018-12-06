@@ -106,6 +106,8 @@ function resetSim!(sim::Simulation)
 		for fname in fnames
 			try
 				setfield!(sim, fname, deepcopy(getfield(sim.backup, fname)))
+			catch e
+				error(e)
 			end
 		end
 		

@@ -229,7 +229,7 @@ function calcBatchMeanResponseTimes(sim::Simulation;
 end
 
 # calculate Stats.sem for each row of x
-function Stats.sem{T<:Real}(x::Array{T,2})
+function Stats.sem(x::Array{T,2}) where T <: Real
 	return [Stats.sem(x[i,:]) for i = 1:size(x,1)]
 end
 
@@ -254,7 +254,7 @@ end
 # For a vector of values, fit an AR(0) model, and return a p-value for the Durbin-Watson test.
 # From wikipedia: "the Durbin–Watson statistic is a test statistic used to detect the presence
 # of autocorrelation at lag 1 in the residuals (prediction errors) from a regression analysis".
-function calcAR0DurbinWatsonTestPValue{T<:Real}(x::Vector{T})
+function calcAR0DurbinWatsonTestPValue(x::Vector{T}) where T <: Real
 	xFit = repmat([mean(x)], length(x), 1)
 	residuals = x - xFit
 	dwTest = HypothesisTests.DurbinWatsonTest(xFit, residuals)
