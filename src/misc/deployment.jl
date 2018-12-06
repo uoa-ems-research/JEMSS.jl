@@ -18,7 +18,7 @@
 # make a single random deployment
 # assumes ambulances are homogeneous
 function makeRandDeployment(numAmbs::Int, numStations::Int;
-	stationCapacities::Union{Vector{Int},Compat.Nothing} = nothing,
+	stationCapacities::Union{Vector{Int},Nothing} = nothing,
 	rng::AbstractRNG = Base.GLOBAL_RNG)::Deployment
 	
 	@assert(numStations > 0)

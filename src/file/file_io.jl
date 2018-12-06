@@ -260,7 +260,7 @@ function childrenNodeNames(parentElt::XMLElement)
 end
 
 function selectXmlFile(; message::String = "Enter xml filename: ")
-	if Compat.Sys.iswindows()
+	if Sys.iswindows()
 		ps1Filename = "$sourcePath/file/select_xml.ps1"
 		str = readstring(`Powershell.exe -executionpolicy remotesigned -File $ps1Filename`)
 	else

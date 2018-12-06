@@ -228,7 +228,7 @@ end
 
 # mutates: sim.travel and sim.demand states
 function getPointSetsDemands!(sim::Simulation, demandPriority::Priority, currentTime::Float;
-	pointsCoverageMode::Union{PointsCoverageMode,Compat.Nothing} = nothing)
+	pointsCoverageMode::Union{PointsCoverageMode,Nothing} = nothing)
 	if pointsCoverageMode == nothing
 		pointsCoverageMode = getPointsCoverageMode!(sim, demandPriority, currentTime)
 	end
@@ -238,7 +238,7 @@ function getPointSetsDemands!(sim::Simulation, demandPriority::Priority, current
 end
 
 """
-	function initDemand!(sim::Simulation, demand::Union{Demand,Compat.Nothing} = nothing;
+	function initDemand!(sim::Simulation, demand::Union{Demand,Nothing} = nothing;
 		demandFilename::String = "")
 Initialise demand data for `sim`.
 Will initialise from the first item in this list: `demand`, `demandFilename` file, `sim.demand` (if set), `sim.inputFiles[\"demand\"].path` file.
@@ -246,7 +246,7 @@ Deletes old demand coverage data in `sim.demandCoverage`.
 
 Mutates: `sim.demand`, `sim.demandCoverage`
 """
-function initDemand!(sim::Simulation, demand::Union{Demand,Compat.Nothing} = nothing;
+function initDemand!(sim::Simulation, demand::Union{Demand,Nothing} = nothing;
 	demandFilename::String = "")
 	if demand == nothing
 		if demandFilename != ""
@@ -296,7 +296,7 @@ end
 
 """
 	function initDemandCoverage!(sim::Simulation;
-		coverTimes::Union{Dict{Priority,Float},Compat.Nothing} = nothing,
+		coverTimes::Union{Dict{Priority,Float},Nothing} = nothing,
 		rasterCellNumRows::Int = 1, rasterCellNumCols::Int = 1)
 Initialises demand coverage data for `sim`.
 If `coverTimes` is given, will use this (along with `rasterCellNumRows` and `rasterCellNumCols`), otherwise will use the previous parameter values set in `sim.demandCoverage`.
@@ -308,7 +308,7 @@ If `coverTimes` is given, will use this (along with `rasterCellNumRows` and `ras
 Mutates: `sim.demandCoverage`
 """
 function initDemandCoverage!(sim::Simulation;
-	coverTimes::Union{Dict{Priority,Float},Compat.Nothing} = nothing,
+	coverTimes::Union{Dict{Priority,Float},Nothing} = nothing,
 	rasterCellNumRows::Int = 1, rasterCellNumCols::Int = 1)
 	
 	@assert(!sim.used)
