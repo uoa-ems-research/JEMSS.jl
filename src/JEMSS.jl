@@ -17,7 +17,7 @@ __precompile__()
 module JEMSS
 
 # animation
-using HTTP
+using HttpServer
 using WebSockets
 using JSON
 
@@ -36,13 +36,18 @@ using Stats
 using StatsFuns
 
 # misc
-using Compat
 using Printf
 using Random
 using SparseArrays
 using LightGraphs
 using ArchGDAL # does not use precompile
 import Plots
+
+# compat
+using Compat
+import Compat.Nothing
+import Compat.Sockets
+import Compat.Sys
 
 # simulation functions
 export
