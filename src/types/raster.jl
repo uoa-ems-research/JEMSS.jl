@@ -71,7 +71,7 @@ end
 
 # generate n random locations for a given raster sampler
 function rasterRandLocations(rasterSampler::RasterSampler, n::Int)
-	randLocations = Vector{Location}(n)
+	randLocations = Vector{Location}(undef, n)
 	zis = rand(rasterSampler.cellDistrRng, n) # z indices of random locations
 	for i = 1:n
 		zi = zis[i]

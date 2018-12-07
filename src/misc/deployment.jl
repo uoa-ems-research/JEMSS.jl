@@ -135,7 +135,7 @@ end
 function simulateDeployments!(sim::Simulation, deployments::Vector{Deployment}, f::Function;
 	showEta::Bool = false)
 	numDeployments = length(deployments)
-	results = Vector{Any}(numDeployments)
+	results = Vector{Any}(undef, numDeployments)
 	t = time() # for estimating expected time remaining
 	for i = 1:numDeployments
 		simulateDeployment!(sim, deployments[i])

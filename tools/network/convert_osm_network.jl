@@ -69,7 +69,7 @@ function readOsmNetworkFile(osmFilename::String;
 	
 	# create nodes from graph.vertices
 	numNodes = length(graph.vertices)
-	nodes = Vector{Node}(numNodes)
+	nodes = Vector{Node}(undef, numNodes)
 	for i = 1:numNodes
 		vertex = graph.vertices[i]
 		nodes[i] = Node()
@@ -81,7 +81,7 @@ function readOsmNetworkFile(osmFilename::String;
 	
 	# create arcs from edges
 	numArcs = graph.nedges
-	arcs = Vector{Arc}(numArcs)
+	arcs = Vector{Arc}(undef, numArcs)
 	for i = 1:numArcs
 		edge = edges[i]
 		arcs[i] = Arc()

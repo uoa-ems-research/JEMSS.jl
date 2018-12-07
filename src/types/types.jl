@@ -101,9 +101,9 @@ mutable struct NetTravel
 	fNodeNearestHospitalIndex::Vector{Int} # fNodeNearestHospitalIndex[i] gives index of nearest hospital from fNode[i]
 	
 	NetTravel(isReduced::Bool) = new(isReduced, nullIndex, [],
-		Array{FloatSpTime,2}(0,0), Array{IntFadj,2}(0,0), spzeros(Int, 0, 0), [],
+		Array{FloatSpTime,2}(undef,0,0), Array{IntFadj,2}(undef,0,0), spzeros(Int, 0, 0), [],
 		[], [], [],
-		Array{Float,2}(0,0), Array{Float,2}(0,0), Array{Vector{Int},2}(0,0), Array{Vector{Int},2}(0,0), [])
+		Array{Float,2}(undef,0,0), Array{Float,2}(undef,0,0), Array{Vector{Int},2}(undef,0,0), Array{Vector{Int},2}(undef,0,0), [])
 end
 
 mutable struct Network
@@ -163,7 +163,7 @@ mutable struct Travel
 	recentSetsStartTimesIndex::Int # index of most recently used value in setsStartTimes (and setsTimeOrder), should only ever increase in value
 	
 	Travel() = new(nullIndex, nullIndex,
-		[], Array{Int,2}(0,0),
+		[], Array{Int,2}(undef,0,0),
 		[], [], nullIndex)
 end
 
@@ -385,9 +385,9 @@ mutable struct Grid
 	rects::Array{GridRect,2} # rectangles
 	searchRect::GridSearchRect
 	
-	Grid() = new(nullIndex, nullIndex, nullDist, nullDist, nullDist, nullDist, Array{GridRect,2}(0, 0), GridSearchRect())
+	Grid() = new(nullIndex, nullIndex, nullDist, nullDist, nullDist, nullDist, Array{GridRect,2}(undef, 0, 0), GridSearchRect())
 	function Grid(map::Map, nx, ny)
-		grid = new(nx, ny, nullDist, nullDist, nullDist, nullDist, Array{GridRect,2}(nx, ny))
+		grid = new(nx, ny, nullDist, nullDist, nullDist, nullDist, Array{GridRect,2}(undef, nx, ny))
 		for i = 1:nx
 			for j = 1:ny
 				grid.rects[i,j] = GridRect()
@@ -417,7 +417,7 @@ mutable struct Raster
 	dx::Float # x step size
 	dy::Float # y step size
 	
-	Raster() = new([], [], Array{Float,2}(0,0),
+	Raster() = new([], [], Array{Float,2}(undef,0,0),
 		0, 0, 0.0, 0.0)
 	function Raster(x, y, z)
 		nx = length(x)
@@ -493,7 +493,7 @@ mutable struct Demand
 	
 	Demand() = new(false, nullIndex, nullIndex, nullIndex,
 		[], [],
-		[], Array{Int,2}(0,0),
+		[], Array{Int,2}(undef,0,0),
 		[], [], nullIndex)
 end
 
@@ -532,7 +532,7 @@ mutable struct DemandCoverage
 	
 	DemandCoverage() = new(Dict(), 0, 0,
 		false, [], [], [],
-		[], [], Array{Vector{Float},2}(0,0))
+		[], [], Array{Vector{Float},2}(undef,0,0))
 	
 	function DemandCoverage(coverTimes::Dict{Priority,Float}, rasterCellNumRows::Int, rasterCellNumCols::Int)
 		dc = demandCoverage = DemandCoverage()
@@ -560,7 +560,7 @@ mutable struct CompTableData <: MoveUpDataType
 	# arrays for recycling:
 	ambMovable::Vector{Bool} # ambMovable[i] = true if ambulance i is available for move up, false otherwise
 	
-	CompTableData() = new(Array{Int,2}(0,0),
+	CompTableData() = new(Array{Int,2}(undef,0,0),
 		[])
 end
 
@@ -609,7 +609,7 @@ mutable struct ZhangIpData <: MoveUpDataType
 	stationSlotsOrderPairs::Array{Int,2} # stationSlotsOrderConstraintPairs[i,1:2] gives two stationSlots indices, first should be filled (with ambulance) before second
 	
 	ZhangIpData() = new([], [], 1.0, 1.0, nullTime, nullTime,
-		[], [], false, Array{Int,2}(0,0))
+		[], [], false, Array{Int,2}(undef,0,0))
 end
 
 mutable struct Temp0Data <: MoveUpDataType
@@ -636,8 +636,8 @@ mutable struct Temp1Data <: MoveUpDataType
 	
 	marginalBenefit::Array{Vector{Float},2} # marginal benefit values from ambulance to station allocations, calculated from 'benefit'
 	
-	Temp1Data() = new(Array{Vector{Float},2}(0,0), 0.0, Vector{Vector{Int}}(0), 0.0, Inf, 0,
-		Array{Vector{Float},2}(0,0))
+	Temp1Data() = new(Array{Vector{Float},2}(undef,0,0), 0.0, Vector{Vector{Int}}(), 0.0, Inf, 0,
+		Array{Vector{Float},2}(undef,0,0))
 end
 
 mutable struct Temp2Data <: MoveUpDataType
@@ -651,8 +651,8 @@ mutable struct Temp2Data <: MoveUpDataType
 	
 	marginalBenefit::Array{Array{Float,2},2} # marginal benefit values from ambulance to station allocations, calculated from 'benefit'
 	
-	Temp2Data() = new(Array{Array{Float,2},2}(0,0), 0.0, Vector{Vector{Int}}(0), 0.0, Inf, 0,
-		Array{Array{Float,2},2}(0,0))
+	Temp2Data() = new(Array{Array{Float,2},2}(undef,0,0), 0.0, Vector{Vector{Int}}(), 0.0, Inf, 0,
+		Array{Array{Float,2},2}(undef,0,0))
 end
 
 mutable struct MoveUpData

@@ -250,7 +250,7 @@ eltAttr = attribute
 eltAttrVal(elt::XMLElement, attrString::String) = eval(parse(eltAttr(elt, attrString)))
 
 function childrenNodeNames(parentElt::XMLElement)
-	childNodes = Vector{String}(0)
+	childNodes = Vector{String}()
 	for childNode in child_nodes(parentElt)
 		if is_elementnode(childNode)
 			push!(childNodes, name(childNode))

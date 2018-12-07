@@ -71,7 +71,7 @@ function readDeploymentPoliciesFile(filename::String)
 		@assert(in("policy_$i stationIndex", table.header), "Missing deployment $i")
 	end
 	# create deployments from table
-	deployments = Vector{Deployment}(numDeployments)
+	deployments = Vector{Deployment}(undef, numDeployments)
 	for i = 1:numDeployments
 		deployments[i] = columns["policy_$i stationIndex"]
 		

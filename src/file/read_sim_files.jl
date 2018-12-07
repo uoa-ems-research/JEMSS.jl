@@ -23,7 +23,7 @@ function readAmbsFile(filename::String)
 	@assert(n >= 1)
 	
 	# create ambulances from data in table
-	ambulances = Vector{Ambulance}(n)
+	ambulances = Vector{Ambulance}(undef, n)
 	columns = table.columns # shorthand
 	for i = 1:n
 		ambulances[i] = Ambulance()
@@ -56,11 +56,11 @@ function readArcsFile(filename::String;
 	arcs = []
 	travelTimes = []
 	if arcForm == "directed"
-		arcs = Vector{Arc}(numArcs)
-		travelTimes = Array{Float,2}(numModes, numArcs)
+		arcs = Vector{Arc}(undef, numArcs)
+		travelTimes = Array{Float,2}(undef, numModes, numArcs)
 	elseif arcForm == "undirected"
-		arcs = Vector{Arc}(numArcs * 2)
-		travelTimes = Array{Float,2}(numModes, numArcs * 2)
+		arcs = Vector{Arc}(undef, numArcs * 2)
+		travelTimes = Array{Float,2}(undef, numModes, numArcs * 2)
 	end
 	
 	# check that table header has all travel times and modes
@@ -123,7 +123,7 @@ function readCallsFile(filename::String)
 	@assert(n >= 1)
 	c = table.columns # shorthand
 	(indexCol = c["index"]); (priorityCol = c["priority"]); (xCol = c["x"]); (yCol = c["y"]); (arrivalTimeCol = c["arrivalTime"]); (dispatchDelayCol = c["dispatchDelay"]); (onSceneDurationCol = c["onSceneDuration"]); (transferDurationCol = c["transferDuration"]); (transferCol = c["transfer"]); (hospitalIndexCol = c["hospitalIndex"]) # shorthand, to avoid repeated dict lookups
-	calls = Vector{Call}(n)
+	calls = Vector{Call}(undef, n)
 	for i = 1:n
 		calls[i] = Call()
 		calls[i].index = indexCol[i]
@@ -181,7 +181,7 @@ function readCompTableFile(filename::String)
 	end
 	
 	# create compliance table
-	compTable = Array{Int,2}(numAmbs, numStations)
+	compTable = Array{Int,2}(undef, numAmbs, numStations)
 	for i in columns["numAmbs"]
 		for j = 1:numStations
 			compTable[i,j] = columns[string("station_", j)][i]
@@ -207,8 +207,8 @@ function readDemandFile(filename::String)
 	n = numRasters = demand.numRasters = size(table.data,1)
 	@assert(n >= 1)
 	columns = table.columns # shorthand
-	demand.rasters = Vector{Raster}(n)
-	demand.rasterFilenames = Vector{String}(n)
+	demand.rasters = Vector{Raster}(undef, n)
+	demand.rasterFilenames = Vector{String}(undef, n)
 	@assert(allunique(columns["rasterFilename"]), "There are duplicate raster filenames in the demand file, this is unnecessary.")
 	for i = 1:n
 		@assert(columns["rasterIndex"][i] == i)
@@ -224,7 +224,7 @@ function readDemandFile(filename::String)
 	n = numModes = demand.numModes = size(table.data,1)
 	@assert(n >= 1)
 	columns = table.columns # shorthand
-	demand.modes = Vector{DemandMode}(n)
+	demand.modes = Vector{DemandMode}(undef, n)
 	for i = 1:n
 		@assert(columns["modeIndex"][i] == i)
 		
@@ -333,7 +333,7 @@ function readEventsFile(filename::String)
 	data = table.data # shorthand
 	fileEnded = (data[end,1] == "end") # true if writing all events to file ended before file was closed
 	n = size(data,1) - fileEnded # number of events
-	events = Vector{Event}(n)
+	events = Vector{Event}(undef, n)
 	for i = 1:n
 		events[i] = Event()
 		events[i].index = eventIndexCol[i]
@@ -379,7 +379,7 @@ function readHospitalsFile(filename::String)
 	
 	# create hospitals from table data
 	columns = table.columns # shorthand
-	hospitals = Vector{Hospital}(n)
+	hospitals = Vector{Hospital}(undef, n)
 	for i = 1:n
 		hospitals[i] = Hospital()
 		hospitals[i].index = columns["index"][i]
@@ -430,7 +430,7 @@ function readNodesFile(filename::String)
 	rowsFields = tableRowsFieldDicts(table, fieldNames)
 	
 	# create nodes from data in table
-	nodes = Vector{Node}(n)
+	nodes = Vector{Node}(undef, n)
 	for i = 1:n
 		nodes[i] = Node()
 		nodes[i].index = indexCol[i]
@@ -455,7 +455,7 @@ function readPrioritiesFile(filename::String)
 	
 	# read data from table
 	columns = table.columns # shorthand
-	targetResponseTimes = Vector{Float}(n)
+	targetResponseTimes = Vector{Float}(undef, n)
 	responseTravelPriorities = Dict([p => p for p in priorities]) # default is to have response travel priority equal to call priority
 	for i = 1:n
 		@assert(columns["priority"][i] == i)
@@ -482,7 +482,7 @@ function readPriorityListFile(filename::String)
 	
 	# create priority list from data in table
 	columns = table.columns # shorthand
-	priorityList = Vector{Int}(n)
+	priorityList = Vector{Int}(undef, n)
 	for i = 1:n
 		@assert(columns["numAmbs"][i] == i)
 		priorityList[i] = columns["stationIndex"][i]
@@ -546,7 +546,7 @@ function readStationsFile(filename::String)
 	
 	# create stations from data in table
 	columns = table.columns # shorthand
-	stations = Vector{Station}(n)
+	stations = Vector{Station}(undef, n)
 	for i = 1:n
 		stations[i] = Station()
 		stations[i].index = columns["index"][i]
@@ -573,7 +573,7 @@ function readTravelFile(filename::String)
 	@assert(n >= 1)
 	# create travel modes from data in table (network based data will need to be filled later)
 	columns = table.columns # shorthand
-	travel.modes = Vector{TravelMode}(n)
+	travel.modes = Vector{TravelMode}(undef, n)
 	for i = 1:n
 		travel.modes[i] = TravelMode()
 		travel.modes[i].index = columns["travelModeIndex"][i]
@@ -640,7 +640,7 @@ function readDeploymentsFile(filename::String)
 		@assert(in("deployment_$i stationIndex", table.header), "Missing deployment $i")
 	end
 	# create deployments from table
-	deployments = Vector{Deployment}(numDeployments)
+	deployments = Vector{Deployment}(undef, numDeployments)
 	for i = 1:numDeployments
 		deployments[i] = columns["deployment_$i stationIndex"]
 		

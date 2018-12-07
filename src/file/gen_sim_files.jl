@@ -268,7 +268,7 @@ function runGenConfigCalls(genConfig::GenConfig; doPrint::Bool = true)
 end
 
 function makeAmbs(genConfig::GenConfig)
-	ambulances = Vector{Ambulance}(genConfig.numAmbs)
+	ambulances = Vector{Ambulance}(undef, genConfig.numAmbs)
 	for i = 1:genConfig.numAmbs
 		ambulances[i] = Ambulance()
 		ambulances[i].index = i
@@ -282,8 +282,8 @@ function makeArcs(genConfig::GenConfig, graph::LightGraphs.Graph, nodes::Vector{
 	numTravelModes = length(genConfig.travelModeSpeeds)
 	@assert(numTravelModes >= 1)
 	
-	arcs = Vector{Arc}(graph.ne)
-	travelTimes = Array{Float,2}(numTravelModes,length(arcs))
+	arcs = Vector{Arc}(undef, graph.ne)
+	travelTimes = Array{Float,2}(undef,numTravelModes,length(arcs))
 	
 	i = 1
 	for edge in LightGraphs.edges(graph)
@@ -304,7 +304,7 @@ end
 
 # make calls that are spatially randomly uniform in map
 function makeCalls(genConfig::GenConfig)
-	calls = Vector{Call}(genConfig.numCalls)
+	calls = Vector{Call}(undef, genConfig.numCalls)
 	
 	currentTime = genConfig.startTime
 	# first call will arrive at genConfig.startTime + rand(genConfig.interarrivalTimeDistrRng)
@@ -327,7 +327,7 @@ function makeCalls(genConfig::GenConfig)
 end
 
 function makeHospitals(genConfig::GenConfig)
-	hospitals = Vector{Hospital}(genConfig.numHospitals)
+	hospitals = Vector{Hospital}(undef, genConfig.numHospitals)
 	for i = 1:genConfig.numHospitals
 		hospitals[i] = Hospital()
 		hospitals[i].index = i
@@ -337,7 +337,7 @@ function makeHospitals(genConfig::GenConfig)
 end
 
 function makeNodes(genConfig::GenConfig, graph::LightGraphs.Graph)
-	nodes = Vector{Node}(LightGraphs.nv(graph)) # should have length xNodes*yNodes
+	nodes = Vector{Node}(undef, LightGraphs.nv(graph)) # should have length xNodes*yNodes
 	map = genConfig.map # shorthand
 	k = 1
 	for j = 1:genConfig.yNodes, i = 1:genConfig.xNodes
@@ -352,7 +352,7 @@ function makeNodes(genConfig::GenConfig, graph::LightGraphs.Graph)
 end
 
 function makeStations(genConfig::GenConfig)
-	stations = Vector{Station}(genConfig.numStations)
+	stations = Vector{Station}(undef, genConfig.numStations)
 	for i = 1:genConfig.numStations
 		stations[i] = Station()
 		stations[i].index = i

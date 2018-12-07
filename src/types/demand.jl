@@ -79,7 +79,7 @@ function createDemandPointsFromRasters(demand::Demand; numCellRows::Int = 1, num
 	numCellPoints = numCellRows * numCellCols # number of points per cell
 	points = Vector{Point}()
 	maxNumPoints = (nx * numCellCols) * (ny * numCellRows)
-	rastersPointDemands = [Vector{Float}(maxNumPoints) for i = 1:numRasters] # rastersPointDemands[i][j] gives demand at point j for raster i
+	rastersPointDemands = [Vector{Float}(undef, maxNumPoints) for i = 1:numRasters] # rastersPointDemands[i][j] gives demand at point j for raster i
 	for i = 1:nx, j = 1:ny # raster cell indices
 		if all(raster -> raster.z[i,j] == 0, rasters)
 			continue
@@ -194,7 +194,7 @@ function createPointsCoverageMode(sim::Simulation, travelMode::TravelMode, cover
 	stationSets = [find(stationSet) for stationSet in keys(stationSetsPoints)] # stationSets[i] = unique set of stations for pointSets[i]
 	# according to documentation, 'values' and 'keys' return elements in the same order, so pointSets[i] corresponds with stationSets[i]
 	
-	stationsCoverPointSets = Vector{Vector{Int}}(numStations) # stationsCoverPointSets[i] = list of point set indices covered by station i
+	stationsCoverPointSets = Vector{Vector{Int}}(undef, numStations) # stationsCoverPointSets[i] = list of point set indices covered by station i
 	for i = 1:numStations
 		stationsCoverPointSets[i] = find(stationSet -> in(i,stationSet), stationSets)
 	end

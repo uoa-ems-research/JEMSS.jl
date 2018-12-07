@@ -56,7 +56,7 @@ end
 			for arc in fGraph.arcs
 				arcTimes[arc.fromNodeIndex, arc.toNodeIndex] = fNetTravels[travelModeIndex].arcTimes[arc.index]
 			end
-			spTimes = Array{FloatSpTime,2}(numNodes, numNodes) # spTimes[i,j] is the shortest-path travel time from node i to node j, to be calculated
+			spTimes = Array{FloatSpTime,2}(undef, numNodes, numNodes) # spTimes[i,j] is the shortest-path travel time from node i to node j, to be calculated
 			for i = 1:numNodes
 				# calculate shortest paths for origin node i
 				spData = LightGraphs.dijkstra_shortest_paths(fGraph.light, i, arcTimes) # type: LightGraphs.DijkstraState{Float}

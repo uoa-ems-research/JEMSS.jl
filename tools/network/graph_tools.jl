@@ -49,7 +49,7 @@ getNumTravelModes(arcs::Vector{Arc}) = getNumTravelModes(arcs[1]) # assume all a
 # get travel times for each travel mode of an arc
 function getArcTravelTimes(arc::Arc)
 	numModes = getNumTravelModes(arcs)
-	travelTimes = Vector{Float}(numModes)
+	travelTimes = Vector{Float}(undef, numModes)
 	for i = 1:numModes
 		travelTimes[i] = arc.fields[travelModeString(i)]
 	end
@@ -61,7 +61,7 @@ end
 function getArcsTravelTimes(arcs::Vector{Arc})
 	numArcs = length(arcs)
 	numModes = getNumTravelModes(arcs)
-	travelTimes = Array{Float,2}(numModes, numArcs)
+	travelTimes = Array{Float,2}(undef, numModes, numArcs)
 	for i = 1:numModes
 		modeString = travelModeString(i)
 		for j = 1:numArcs
@@ -266,8 +266,8 @@ function graphTagSpElts!(nodes::Vector{Node}, arcs::Vector{Arc};
 	arcTagged = fill(false, numArcs)
 	
 	# to be used, and reset, for each SP tree:
-	tagNode = Vector{Bool}(numNodes)
-	tagArc = Vector{Bool}(numArcs)
+	tagNode = Vector{Bool}(undef, numNodes)
+	tagArc = Vector{Bool}(undef, numArcs)
 	
 	nodePairArcIndex = Dict{Tuple{Int,Int},Int}()
 	revNodePairArcIndex = Dict{Tuple{Int,Int},Int}()

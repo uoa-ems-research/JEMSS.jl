@@ -71,7 +71,7 @@ function zhangIpMoveUp(sim::Simulation)
 	numMoveUpAmbs = length(moveUpAmbs)
 	
 	# calculate travel time for each move-up ambulance to reach every station
-	ambToStationTimes = Array{Float,2}(numMoveUpAmbs, numStations)
+	ambToStationTimes = Array{Float,2}(undef, numMoveUpAmbs, numStations)
 	for i = 1:numMoveUpAmbs
 		ambToStationTimes[i,:] = ambMoveUpTravelTimes!(sim, moveUpAmbs[i])
 	end

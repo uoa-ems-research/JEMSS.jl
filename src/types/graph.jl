@@ -95,7 +95,7 @@ function checkGraph(graph::Graph, map::Map)
 	
 	# check that all nodes are attached to at least one arc
 	# and check that arcs are all attached to two nodes
-	nodeUsed = Vector{Bool}(numNodes)
+	nodeUsed = Vector{Bool}(undef, numNodes)
 	nodeUsed[1:end] = false
 	for i = 1:numArcs
 		@assert(1 <= arcs[i].fromNodeIndex && arcs[i].fromNodeIndex <= numNodes, "arc $i fromNodeIndex is outside range")

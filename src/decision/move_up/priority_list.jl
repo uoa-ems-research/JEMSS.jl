@@ -42,7 +42,7 @@ function initPriorityList!(sim::Simulation, priorityList::Vector{Int})
 		@assert(sum(pld.priorityList .== j) <= stations[j].capacity)
 	end
 	
-	pld.stationNumIdleAmbs = Vector{Int}(numStations)
+	pld.stationNumIdleAmbs = Vector{Int}(undef, numStations)
 	
 	# check that ambulance to station assignments follow priority list
 	pld.stationNumIdleAmbs[:] = 0

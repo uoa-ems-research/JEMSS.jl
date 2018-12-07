@@ -104,7 +104,7 @@ end
 	# compare results of fast (using sim.demandCoverage) and slow calculation of demand point coverage
 	
 	stationsNumAmbs = ones(Int, numStations)
-	pointCoverCounts = Vector{Int}(numPoints)
+	pointCoverCounts = Vector{Int}(undef, numPoints)
 	times = vcat(travel.setsStartTimes, demand.setsStartTimes) |> unique |> sort # simulating to these points in time will cause each combination of travel and demand states to be checked
 	for t in times
 		# simulateToTime!(sim, t) # probably unnecessary, and sim.time may stop before t

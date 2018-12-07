@@ -32,7 +32,7 @@ function initCompTable!(sim::Simulation, compTableFilename::String)
 	end
 	
 	# set array sizes
-	ctd.ambMovable = Vector{Bool}(numAmbs)
+	ctd.ambMovable = Vector{Bool}(undef, numAmbs)
 end
 
 function compTableMoveUp(sim::Simulation)
@@ -59,7 +59,7 @@ function compTableMoveUp(sim::Simulation)
 	end
 	
 	# calculate travel time for each available ambulance to reach every station
-	ambToStationTimes = Array{Float,2}(numMovableAmbs, numStations) # ambToStationTimes[i,j] = time for ambulance i to travel to station j
+	ambToStationTimes = Array{Float,2}(undef, numMovableAmbs, numStations) # ambToStationTimes[i,j] = time for ambulance i to travel to station j
 	for i = 1:numMovableAmbs
 		ambToStationTimes[i,:] = ambMoveUpTravelTimes!(sim, movableAmbs[i])
 	end
@@ -108,7 +108,7 @@ function compTableMoveUp(sim::Simulation)
 	
 	# extract solution
 	sol = convert(Array{Bool,2}, round.(getvalue(x)))
-	ambStations = Vector{Station}(numMovableAmbs)
+	ambStations = Vector{Station}(undef, numMovableAmbs)
 	for i = 1:a, j = 1:s
 		if sol[i,j] == 1
 			ambStations[i] = stations[j]
