@@ -424,14 +424,14 @@ function calcRNetTravelShortestPaths!(net::Network, rNetTravel::NetTravel)
 		@assert(spTimes[i,j] <= t)
 		if spSuccs[i,j] == j && spTimes[i,j] == t
 			spNodePairArcIndex[i,j] = rArc.index
-			spFadjArcList[i][findfirst(fadjList[i], j)] = rArc.index
+			spFadjArcList[i][Compat.findfirst(fadjList[i], j)] = rArc.index
 		end
 	end
 	
 	# set spFadjIndex
 	spFadjIndex = rNetTravel.spFadjIndex = Array{IntFadj,2}(numRNodes, numRNodes)
 	for i = 1:numRNodes, j = 1:numRNodes
-		spFadjIndex[i,j] = (i == j ? nullIndex : findfirst(fadjList[i], spSuccs[i,j]))
+		spFadjIndex[i,j] = (i == j ? nullIndex : Compat.findfirst(fadjList[i], spSuccs[i,j]))
 	end
 	
 	# check stored shortest path times are same as those from traversing stored shortest paths

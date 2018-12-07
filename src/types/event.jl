@@ -31,7 +31,8 @@ function addEvent!(eventList::Vector{Event};
 	
 	# find where to insert event into list
 	# maintain sorting by time, events nearer to end of list are sooner
-	i = findlast(e -> e.time >= event.time, eventList) + 1
+	i = Compat.findlast(e -> e.time >= event.time, eventList)
+	i = (i == nothing ? 0 : i) + 1
 	insert!(eventList, i, event)
 	
 	if checkMode
@@ -65,8 +66,8 @@ end
 
 # delete event in eventList
 function deleteEvent!(eventList::Vector{Event}, event::Event)
-	i = findfirst(e -> e == event, eventList)
-	@assert(i != 0)
+	i = Compat.findfirst(e -> e == event, eventList)
+	@assert(i != nothing)
 	@assert(findnext(e -> e == event, eventList, i + 1) == 0)
 	deleteat!(eventList, i)
 end

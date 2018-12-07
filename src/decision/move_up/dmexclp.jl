@@ -95,7 +95,7 @@ function dmexclpMoveUp(sim::Simulation, newlyIdleAmb::Ambulance)
 			end
 		end
 	end
-	(bestMarginalCoverage, bestStationIndex) = findmax(dcd.stationMarginalCoverages)
+	(bestMarginalCoverage, bestStationIndex) = Compat.findmax(dcd.stationMarginalCoverages)
 	
 	return [newlyIdleAmb], [stations[bestStationIndex]]
 end
