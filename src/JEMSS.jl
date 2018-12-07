@@ -43,6 +43,7 @@ using CRC32c
 using Mmap
 using Printf
 using Random
+import Random: AbstractRNG, GLOBAL_RNG, MersenneTwister
 using SparseArrays
 using LightGraphs
 using ArchGDAL # does not use precompile

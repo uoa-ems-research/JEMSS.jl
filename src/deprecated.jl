@@ -18,11 +18,11 @@
 const Depol = Deployment # not sure how to deprecate a const
 
 @deprecate(
-makeRandDeploymentPolicy(numAmbs::Int, numStations::Int; rng::AbstractRNG = Base.GLOBAL_RNG),
+makeRandDeploymentPolicy(numAmbs::Int, numStations::Int; rng::AbstractRNG = GLOBAL_RNG),
 makeRandDeployment(numAmbs, numStations; rng = rng))
 
 @deprecate(
-makeRandDeploymentPolicies(numAmbs::Int, numStations::Int, numDeployments::Int; rng::AbstractRNG = Base.GLOBAL_RNG),
+makeRandDeploymentPolicies(numAmbs::Int, numStations::Int, numDeployments::Int; rng::AbstractRNG = GLOBAL_RNG),
 makeRandDeployments(numAmbs, numStations, numDeployments; rng = rng))
 
 @deprecate(

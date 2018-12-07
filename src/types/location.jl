@@ -68,7 +68,7 @@ end
 # return random location from map
 # use uniform distribution
 # allow fractional trimming of border
-function randLocation(map::Map; trim::Float = 0.0, rng::AbstractRNG = Base.GLOBAL_RNG)
+function randLocation(map::Map; trim::Float = 0.0, rng::AbstractRNG = GLOBAL_RNG)
 	@assert(trim >= 0 && trim <= 1)
 	r = rand(rng, 2) .* (1-trim) + trim/2
 	location = Location()

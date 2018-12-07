@@ -19,7 +19,7 @@
 # assumes ambulances are homogeneous
 function makeRandDeployment(numAmbs::Int, numStations::Int;
 	stationCapacities::Union{Vector{Int},Nothing} = nothing,
-	rng::AbstractRNG = Base.GLOBAL_RNG)::Deployment
+	rng::AbstractRNG = GLOBAL_RNG)::Deployment
 	
 	@assert(numStations > 0)
 	if stationCapacities == nothing
@@ -45,7 +45,7 @@ end
 # generate a number of unique random deployments
 # ignores station capacities, assumes ambulances are homogeneous
 function makeRandDeployments(numAmbs::Int, numStations::Int, numDeployments::Int;
-	rng::AbstractRNG = Base.GLOBAL_RNG)
+	rng::AbstractRNG = GLOBAL_RNG)
 	@assert(numAmbs >= 1)
 	@assert(numStations >= 1)
 	@assert(numDeployments >= 1)
@@ -60,7 +60,7 @@ function makeRandDeployments(numAmbs::Int, numStations::Int, numDeployments::Int
 	return deployments
 end
 function makeRandDeployments(sim::Simulation, numDeployments::Int;
-	rng::AbstractRNG = Base.GLOBAL_RNG)
+	rng::AbstractRNG = GLOBAL_RNG)
 	return makeRandDeployments(sim.numAmbs, sim.numStations, numDeployments; rng = rng)
 end
 

@@ -46,7 +46,7 @@ end
 # generate a random location within the cell
 # (x[i] +/- 0.5*dx, y[j] +/- 0.5*dy)
 function rasterCellRandLocation(raster::Raster, i::Int, j::Int;
-	rng::AbstractRNG = Base.GLOBAL_RNG)
+	rng::AbstractRNG = GLOBAL_RNG)
 	randLocation = Location()
 	randLocation.x = raster.x[i] + (rand(rng) - 0.5) * raster.dx
 	randLocation.y = raster.y[j] + (rand(rng) - 0.5) * raster.dy

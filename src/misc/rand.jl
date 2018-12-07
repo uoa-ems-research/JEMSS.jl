@@ -49,12 +49,12 @@ end
 function Base.rand(distrRng::DistrRng, n::Int)
 	rng = distrRng.rng # shorthand
 	# store GLOBAL_RNG state in backup, set GLOBAL_RNG to rng
-	copyRng!(GlobalRngBackup, Base.GLOBAL_RNG)
-	copyRng!(Base.GLOBAL_RNG, rng)
+	copyRng!(GlobalRngBackup, GLOBAL_RNG)
+	copyRng!(GLOBAL_RNG, rng)
 	value = rand(distrRng.d, n)
 	# set rng to state of GLOBAL_RNG, restore GLOBAL_RNG from backup
-	copyRng!(rng, Base.GLOBAL_RNG)
-	copyRng!(Base.GLOBAL_RNG, GlobalRngBackup) # for safety, so rng is no longer tied to GLOBAL_RNG
+	copyRng!(rng, GLOBAL_RNG)
+	copyRng!(GLOBAL_RNG, GlobalRngBackup) # for safety, so rng is no longer tied to GLOBAL_RNG
 	return value
 end
 function Base.rand(distrRng::DistrRng)
