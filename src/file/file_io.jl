@@ -216,7 +216,7 @@ end
 
 # crc checksum
 function fileChecksum(filename::String)
-	return Base.crc32c(Mmap.mmap(filename))
+	return CRC32c.crc32c(Mmap.mmap(filename))
 end
 
 function serializeToFile(filename::String, data::Any)
