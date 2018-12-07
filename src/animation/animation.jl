@@ -307,7 +307,7 @@ function animateClient(client::Client)
 		elseif msgType == "disconnect"
 			sim.animating = false
 			close(client)
-			deleteat!(animClients, Compat.findfirst(animClients .=== client))
+			deleteat!(animClients, findfirst(isequal(client), animClients)
 			println("Client disconnected")
 			break
 		else

@@ -40,8 +40,7 @@ function resetCalls!(sim::Simulation)
 		:nearestNodeIndex, :nearestNodeDist])
 	setdiff!(fnames, fnamesFixed)
 	
-	i = Compat.findlast(call -> call.arrivalTime <= sim.time, calls)
-	recentCallIndex = (i == nothing ? 0 : i)
+	recentCallIndex = something(findlast(call -> call.arrivalTime <= sim.time, calls), 0)
 	@assert(all(i -> calls[i].status == callNullStatus, recentCallIndex+1:numCalls))
 	
 	# reset calls that arrived before (or at) sim.time

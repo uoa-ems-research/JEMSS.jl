@@ -173,7 +173,7 @@ function zhangIpMoveUp(sim::Simulation)
 	
 	# extract solution
 	sol = convert(Array{Bool,2}, round.(getvalue(x)))
-	ambStations = [stations[Compat.findfirst(sol[i,:])] for i = ai] # only consider movableAmbs (ignore atHospitalAmbs)
+	ambStations = [stations[findfirst(sol[i,:])] for i = ai] # only consider movableAmbs (ignore atHospitalAmbs)
 	
 	if checkMode
 		@assert(all(sum(sol,2) .<= 1)) # each ambulance can be used in move up at most once
