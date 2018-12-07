@@ -90,7 +90,7 @@ struct Table
 	function Table(name, header; rows = [], cols = [])
 		@assert(isempty(rows) + isempty(cols) == 1)
 		if !isempty(rows)
-			return Table(name, header, ctranspose(hcat(rows...)))
+			return Table(name, header, adjoint(hcat(rows...)))
 		elseif !isempty(cols)
 			return Table(name, header, hcat(cols...))
 		end
@@ -233,21 +233,21 @@ function deserializeFile(filename::String)
 end
 
 function interpolateString(s::String)
-	return eval(parse(string("\"", s, "\"")))
+	return eval(Meta.parse(string("\"", s, "\"")))
 end
 
 # some convenient functions for reading xml files
 xmlFileRoot(filename::String) = root(parse_file(filename))
 findElt = find_element # shorthand
 eltContent(elt::XMLElement) = content(elt)
-eltContentVal(elt::XMLElement) = eval(parse(eltContent(elt)))
+eltContentVal(elt::XMLElement) = eval(Meta.parse(eltContent(elt)))
 eltContentInterpVal(elt::XMLElement) = interpolateString(eltContent(elt))
 eltContent(parentElt::XMLElement, eltString::String) = try content(findElt(parentElt, eltString));
 	catch; error("Element not found: $eltString"); end
-eltContentVal(parentElt::XMLElement, eltString::String) = eval(parse(eltContent(parentElt, eltString)))
+eltContentVal(parentElt::XMLElement, eltString::String) = eval(Meta.parse(eltContent(parentElt, eltString)))
 eltContentInterpVal(parentElt::XMLElement, eltString::String) = interpolateString(eltContent(parentElt, eltString))
 eltAttr = attribute
-eltAttrVal(elt::XMLElement, attrString::String) = eval(parse(eltAttr(elt, attrString)))
+eltAttrVal(elt::XMLElement, attrString::String) = eval(Meta.parse(eltAttr(elt, attrString)))
 
 function childrenNodeNames(parentElt::XMLElement)
 	childNodes = Vector{String}()

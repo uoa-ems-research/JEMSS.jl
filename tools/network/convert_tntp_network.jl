@@ -62,7 +62,7 @@ function readTntpNetworkFile(tntpNetworkFilename::String; delim::Char = '\t')
 	data = readDlmFile(tntpNetworkFilename; delim = delim)
 	
 	# first few lines have metadata
-	f(r::Regex, s::AbstractString) = parse(match(r,s).captures[1])
+	f(r::Regex, s::AbstractString) = Meta.parse(match(r,s).captures[1])
 	numZones = f(r"<NUMBER OF ZONES> (\d+)", data[1,1])
 	numNodes = f(r"<NUMBER OF NODES> (\d+)", data[2,1])
 	firstThruNode = f(r"<FIRST THRU NODE> (\d+)", data[3,1])

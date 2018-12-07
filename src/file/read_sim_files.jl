@@ -287,7 +287,7 @@ function readDemandCoverageFile(filename::String)
 	@assert(n == numPriorities)
 	columns = table.columns # shorthand
 	for i = 1:n
-		priority = eval(parse(columns["demandPriority"][i]))
+		priority = eval(Meta.parse(columns["demandPriority"][i]))
 		coverTime = dc.coverTimes[priority] = columns["coverTime"][i]
 		@assert(coverTime >= 0)
 	end
@@ -323,7 +323,7 @@ function readEventsFile(filename::String)
 	@assert(allunique(eventKeys))
 	eventDict = Dict{Int,EventForm}()
 	for i = 1:n
-		eventDict[eventKeys[i]] = eval(parse(eventNames[i]))
+		eventDict[eventKeys[i]] = eval(Meta.parse(eventNames[i]))
 	end
 	
 	# create events from data in events table
@@ -459,11 +459,11 @@ function readPrioritiesFile(filename::String)
 	responseTravelPriorities = Dict([p => p for p in priorities]) # default is to have response travel priority equal to call priority
 	for i = 1:n
 		@assert(columns["priority"][i] == i)
-		@assert(eval(parse(columns["name"][i])) == Priority(i))
+		@assert(eval(Meta.parse(columns["name"][i])) == Priority(i))
 		targetResponseTimes[i] = columns["targetResponseTime"][i]
 		
 		if haskey(columns, "responseTravelPriority")
-			responseTravelPriorities[Priority(i)] = eval(parse(columns["responseTravelPriority"][i]))
+			responseTravelPriorities[Priority(i)] = eval(Meta.parse(columns["responseTravelPriority"][i]))
 		end
 	end
 	
@@ -595,7 +595,7 @@ function readTravelFile(filename::String)
 	travel.modeLookup = fill(nullIndex, numSets, numPriorities)
 	for i = 1:n
 		setIndex = columns["travelSetIndex"][i]
-		priority = eval(parse(columns["priority"][i]))
+		priority = eval(Meta.parse(columns["priority"][i]))
 		modeIndex = columns["travelModeIndex"][i]
 		
 		@assert(travel.modeLookup[setIndex, Int(priority)] == nullIndex) # value should not yet be filled

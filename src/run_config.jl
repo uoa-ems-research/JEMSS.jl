@@ -44,7 +44,7 @@ function initSim(configFilename::String;
 	# for progress messages:
 	t = [0.0]
 	initMessage(t, msg) = doPrint && (t[1] = time(); print(msg))
-	initTime(t) = doPrint && println(": ", round(time() - t[1], 2), " seconds")
+	initTime(t) = doPrint && println(": ", round(time() - t[1], digits = 2), " seconds")
 	
 	##################
 	# sim config

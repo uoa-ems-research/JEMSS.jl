@@ -129,7 +129,7 @@ function readGenConfig(genConfigFilename::String)
 		distrElt = findElt(callDistrsElt, distrName)
 		distr = eltContentVal(distrElt)
 		seedAttr = attribute(distrElt, "seed")
-		seed = (seedAttr == nothing ? nullIndex : eval(parse(seedAttr)))
+		seed = (seedAttr == nothing ? nullIndex : eval(Meta.parse(seedAttr)))
 		return DistrRng(distr; seed = seed)
 	end
 	genConfig.interarrivalTimeDistrRng = callDistrsEltContent("interarrivalTime")
@@ -167,7 +167,7 @@ function readGenConfig(genConfigFilename::String)
 	# seeds
 	function callRasterSeedVal(seedName::String)
 		seedAttr = attribute(callDensityRasterElt, seedName)
-		return seedAttr == nothing ? nullIndex : eval(parse(seedAttr))
+		return seedAttr == nothing ? nullIndex : eval(Meta.parse(seedAttr))
 	end
 	genConfig.callRasterCellSeed = callRasterSeedVal("cellSeed")
 	genConfig.callRasterCellLocSeed = callRasterSeedVal("cellLocSeed")
@@ -225,7 +225,7 @@ function runGenConfig(genConfigFilename::String; overwriteOutputPath::Bool = fal
 		writeHospitalsFile(genConfig.hospitalsFilename, hospitals)
 		writeMapFile(genConfig.mapFilename, genConfig.map)
 		writeNodesFile(genConfig.nodesFilename, nodes)
-		writePrioritiesFile(genConfig.prioritiesFilename, repmat([genConfig.targetResponseTime],numPriorities))
+		writePrioritiesFile(genConfig.prioritiesFilename, repeat([genConfig.targetResponseTime],numPriorities))
 		writeStationsFile(genConfig.stationsFilename, stations)
 		writeTravelFile(genConfig.travelFilename, travel)
 	elseif genConfig.mode == "calls"
@@ -374,7 +374,7 @@ function makeTravel(genConfig::GenConfig)
 	
 	# use single travel mode in single travel mode set
 	travel.numSets = 1
-	travel.modeLookup = repmat([1],1,numPriorities) # modeLookup[setIndex, priority] gives travelModeIndex
+	travel.modeLookup = repeat([1],1,numPriorities) # modeLookup[setIndex, priority] gives travelModeIndex
 	
 	travel.setsStartTimes = [genConfig.startTime]
 	travel.setsTimeOrder = [1]

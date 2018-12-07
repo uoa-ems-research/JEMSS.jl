@@ -54,7 +54,7 @@ getCallResponseTimes(sim::Simulation) = [call.responseTime * 24 * 60 for call in
 responseTimeUnits = "minutes"
 t = time()
 callResponseTimes = simulateDeployments!(sim, deployments, getCallResponseTimes; showEta = true)
-println("total time for simulating $numDeployments deployments (seconds): ", round(time() - t, 2))
+println("total time for simulating $numDeployments deployments (seconds): ", round(time() - t, digits = 2))
 
 # calculate batch mean response times
 x = [] # will populate with batch mean response times

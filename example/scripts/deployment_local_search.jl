@@ -255,7 +255,7 @@ function localSearch!(sim::Simulation, stationsNumAmbsObjVal::Dict{StationsNumAm
 				logFileDict["usedMove"] = Int(usedMove)
 				logFileDict["objVal"] = objVal
 				logFileDict["bestObjVal"] = bestObjVal
-				logFileDict["iterTimeSeconds"] = round(time() - startTime, 2)
+				logFileDict["iterTimeSeconds"] = round(time() - startTime, digits = 2)
 				logFileWriteDlmLine!(logFile, logFileDict, stationsNumAmbs)
 				
 				iter += 1
@@ -276,4 +276,4 @@ end
 t = time()
 println("starting...")
 repeatedLocalSearch()
-println("total runtime: ", round(time()-t, 2), " seconds")
+println("total runtime: ", round(time()-t, digits = 2), " seconds")
