@@ -15,7 +15,7 @@
 
 # misc file input/output functions
 
-Base.transpose(s::T) where T <: AbstractString = s # not sure where else to put this
+Base.adjoint(s::T) where T <: AbstractString = s # not sure where else to put this
 
 function readDlmFileNextLine!(file::IOStream; delim::Char = delimiter)
 	try
@@ -262,7 +262,7 @@ end
 function selectXmlFile(; message::String = "Enter xml filename: ")
 	if Sys.iswindows()
 		ps1Filename = "$sourcePath/file/select_xml.ps1"
-		str = readstring(`Powershell.exe -executionpolicy remotesigned -File $ps1Filename`)
+		str = read(`Powershell.exe -executionpolicy remotesigned -File $ps1Filename`, String)
 	else
 		print(message)
 		str = readline()

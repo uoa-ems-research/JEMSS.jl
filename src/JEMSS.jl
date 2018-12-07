@@ -22,7 +22,9 @@ using WebSockets
 using JSON
 
 # files
+using DelimitedFiles
 using LightXML
+using Serialization
 
 # optimisation (move-up)
 using JuMP
@@ -36,6 +38,9 @@ using Stats
 using StatsFuns
 
 # misc
+using Base64
+using CRC32c
+using Mmap
 using Printf
 using Random
 using SparseArrays

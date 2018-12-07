@@ -34,9 +34,11 @@ function copyRng!(dest::MersenneTwister, src::MersenneTwister)
 	dest.seed = src.seed
 	dest.state = src.state
 	dest.vals = src.vals
-	dest.idx = src.idx
+	dest.ints = src.ints
+	dest.idxF = src.idxF
+	dest.idxI = src.idxI
 	# # slower (but not by much):
-	# for fname in [:seed, :state, :vals, :idx] # = fieldnames(MersenneTwister)
+	# for fname in [:seed, :state, :vals, :ints, :idxF, :idxI] # = fieldnames(MersenneTwister)
 		# setfield!(dest, fname, getfield(src, fname))
 	# end
 end

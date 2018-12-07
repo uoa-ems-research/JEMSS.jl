@@ -127,7 +127,7 @@ function readCallsFile(filename::String)
 	for i = 1:n
 		calls[i] = Call()
 		calls[i].index = indexCol[i]
-		calls[i].priority = Priority(priorityCol[i])
+		calls[i].priority = Priority(Int(priorityCol[i]))
 		calls[i].location.x = xCol[i]
 		calls[i].location.y = yCol[i]
 		calls[i].arrivalTime = arrivalTimeCol[i]
