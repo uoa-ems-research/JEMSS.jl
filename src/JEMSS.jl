@@ -17,7 +17,7 @@ __precompile__()
 module JEMSS
 
 # animation
-using HttpServer
+using HTTP
 using WebSockets
 using JSON
 

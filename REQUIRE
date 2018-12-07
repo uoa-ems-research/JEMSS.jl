@@ -4,7 +4,7 @@ Cbc
 Compat
 Distributions
 GLPKMathProgInterface
-HttpServer
+HTTP
 HypothesisTests
 JSON
 JuMP

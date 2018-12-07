@@ -16,7 +16,8 @@
 # EMS simulation animation
 
 # global variables; hacky...
-global animConnections = Dict{Int,WebSocket}() # store open connections
+const Client = HTTP.WebSockets.WebSocket{HTTP.ConnectionPool.Transaction{Sockets.TCPSocket}}
+global animClients = [] # store open connections
 global animSimQueue = Vector{Union{Simulation,String}}() # to store sims and sim filenames between animation request and start
 global animPort = nullIndex # localhost port for animation, to be set
 
@@ -45,14 +46,14 @@ function changeMessageDict!(messageDict::Dict, message::String)
 	messageDict["message"] = message
 end
 
-function writeClient!(client::WebSocket, messageDict::Dict, message::String)
+function writeClient!(client::Client, messageDict::Dict, message::String)
 	# common enough lines to warrant the use of a function, I guess
 	changeMessageDict!(messageDict, message)
 	write(client, json(messageDict))
 end
 
 # set icons for ambulances, hospitals, etc.
-function animSetIcons(client::WebSocket)
+function animSetIcons(client::Client)
 	messageDict = createMessageDict("set_icons")
 	pngFileUrl(filename) = string("data:image/png;base64,", filename |> read |> base64encode)
 	iconPath = joinpath(@__DIR__, "..", "..", "assets", "animation", "icons")
@@ -66,7 +67,7 @@ function animSetIcons(client::WebSocket)
 end
 
 # adds nodes from fGraph
-function animAddNodes(client::WebSocket, nodes::Vector{Node})
+function animAddNodes(client::Client, nodes::Vector{Node})
 	messageDict = createMessageDict("add_node")
 	for node in nodes
 		messageDict["node"] = node
@@ -75,7 +76,7 @@ function animAddNodes(client::WebSocket, nodes::Vector{Node})
 end
 
 # adds arcs from rGraph, should only be called after animAddNodes()
-function animAddArcs(client::WebSocket, net::Network)
+function animAddArcs(client::Client, net::Network)
 	messageDict = createMessageDict("add_arc")
 	for arc in net.rGraph.arcs
 		messageDict["arc"] = arc
@@ -85,7 +86,7 @@ function animAddArcs(client::WebSocket, net::Network)
 end
 
 # calculate and set speeds for arcs in rGraph, should only be called after animAddArcs()
-function animSetArcSpeeds(client::WebSocket, map::Map, net::Network)
+function animSetArcSpeeds(client::Client, map::Map, net::Network)
 	# shorthand:
 	fNodes = net.fGraph.nodes
 	rNetTravels = net.rNetTravels
@@ -113,7 +114,7 @@ function animSetArcSpeeds(client::WebSocket, map::Map, net::Network)
 	end
 end
 
-function animAddBuildings(client::WebSocket, sim::Simulation)
+function animAddBuildings(client::Client, sim::Simulation)
 	messageDict = createMessageDict("add_hospital")
 	for h in sim.hospitals
 		messageDict["hospital"] = h
@@ -129,7 +130,7 @@ function animAddBuildings(client::WebSocket, sim::Simulation)
 	# delete!(messageDict, "station")
 end
 
-function animAddAmbs!(client::WebSocket, sim::Simulation)
+function animAddAmbs!(client::Client, sim::Simulation)
 	messageDict = createMessageDict("add_ambulance")
 	for amb in sim.ambulances
 		ambLocation = getRouteCurrentLocation!(sim.net, amb.route, sim.time)
@@ -140,7 +141,7 @@ function animAddAmbs!(client::WebSocket, sim::Simulation)
 end
 
 # write frame updates to client
-function updateFrame!(client::WebSocket, sim::Simulation, time::Float)
+function updateFrame!(client::Client, sim::Simulation, time::Float)
 	
 	# check which ambulances have moved since last frame
 	# need to do this before showing call locations
@@ -202,11 +203,11 @@ function updateCallLocation!(sim::Simulation, call::Call)
 	end
 end
 
-wsh = WebSocketHandler() do req::Request, client::WebSocket
-	global animConnections, animSimQueue
+function animateClient(client::Client)
+	global animClients, animSimQueue
 	
-	animConnections[client.id] = client
-	println("Client ", client.id, " connected")
+	push!(animClients, client)
+	println("Client connected")
 	
 	# get first item in animSimQueue, or get filename now
 	nextAnimItem = (length(animSimQueue) > 0 ? shift!(animSimQueue) : selectXmlFile())
@@ -265,8 +266,8 @@ wsh = WebSocketHandler() do req::Request, client::WebSocket
 	sim.animating = true
 	
 	messageDict = createMessageDict("")
-	while true
-		msg = read(client) # waits for message from client
+	while !eof(client)
+		msg = readavailable(client) # waits for message from client?
 		msgString = decodeMessage(msg)
 		(msgType, msgData) = parseMessage(msgString)
 		
@@ -306,7 +307,8 @@ wsh = WebSocketHandler() do req::Request, client::WebSocket
 		elseif msgType == "disconnect"
 			sim.animating = false
 			close(client)
-			println("Client ", client.id, " disconnected")
+			deleteat!(animClients, Compat.findfirst(animClients .=== client))
+			println("Client disconnected")
 			break
 		else
 			sim.animating = false
@@ -362,18 +364,24 @@ function runAnimServer(port::Int)
 			return false
 		end
 	catch
-		return false
 	end
 	
 	# create and run server
-	onepage = readstring("$sourcePath/animation/index.html")
-	httph = HttpHandler() do req::Request, res::Response
-		Response(onepage)
+	onepage = read("$sourcePath/animation/index.html", String)
+	@async HTTP.listen(Sockets.localhost, port) do http::HTTP.Stream
+		if HTTP.WebSockets.is_upgrade(http.message)
+			HTTP.WebSockets.upgrade(http) do client
+				animateClient(client)
+			end
+		else
+			HTTP.Servers.handle_request(http) do req::HTTP.Request
+				HTTP.Response(200, onepage)
+			end
+		end
 	end
-	server = Server(httph, wsh)
-	@async run(server, port)
 	animPort = port
 	println("opened port $animPort, use this for subsequent animation windows")
+	
 	return true
 end
 
