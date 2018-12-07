@@ -65,7 +65,7 @@ end
 
 # delete event in eventList
 function deleteEvent!(eventList::Vector{Event}, event::Event)
-	i = something(findfirst(isequal(e), eventList))
+	i = something(findfirst(isequal(event), eventList))
 	@assert(i != nothing)
 	@assert(findnext(e -> e == event, eventList, i + 1) == nothing)
 	deleteat!(eventList, i)
