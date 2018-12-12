@@ -28,6 +28,8 @@ const IntFadj = Int8 # precision for storing maximum number of nodes adjacent to
 const sourcePath = @__DIR__
 
 const Deployment = Vector{Int} # deployment[i] gives index of station to deploy ambulance i to
+const CompTable = Array{Int,2} # compTable[i,j] gives number of ambulances to place at station j when there are i available ambulances
+const NestedCompTable = Vector{Int} # nested compliance table can be represented as a list of station indices; nestedCompTable[1:i] gives indices of stations that i available ambulances should be placed at
 
 # run modes
 const debugMode = false

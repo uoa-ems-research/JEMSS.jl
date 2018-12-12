@@ -181,7 +181,7 @@ function readCompTableFile(filename::String)
 	end
 	
 	# create compliance table
-	compTable = Array{Int,2}(numAmbs, numStations)
+	compTable = CompTable(numAmbs, numStations)
 	for i in columns["numAmbs"]
 		for j = 1:numStations
 			compTable[i,j] = columns[string("station_", j)][i]

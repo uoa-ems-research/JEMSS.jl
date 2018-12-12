@@ -69,6 +69,7 @@ export
 	rasterRandLocations, printRasterSize, # raster
 	shortestRouteTravelTime!, # route
 	getCallResponseTimes, getAvgCallResponseTime, getCallsReachedInTime, countCallsReachedInTime, printSimStats, printAmbsStats, printCallsStats, printHospitalsStats, calcBatchMeans, calcBatchMeanResponseTimes, meanErrorPlot, calcAR0DurbinWatsonTestPValue, # statistics
+	checkCompTable, checkCompTableIsNested, nestCompTable, unnestCompTable, makeRandNestedCompTable, # compliance table
 	makeRandDeployment, makeRandDeployments, deploymentToStationsNumAmbs, stationsNumAmbsToDeployment, getDeployment, getStationsNumAmbs, setAmbStation!, applyDeployment!, applyStationsNumAmbs!, simulateDeployment!, simulateDeployments!, # deployment
 	solveMexclp! # mexclp
 
@@ -86,7 +87,7 @@ export
 	Float, FloatSpTime, IntRNode, IntFadj, # type alias
 	nullIndex, nullX, nullY, nullTime, nullDist, # nulls
 	priorities, numPriorities, # priorities
-	Deployment
+	Deployment, CompTable, NestedCompTable
 
 # defs - enums
 export

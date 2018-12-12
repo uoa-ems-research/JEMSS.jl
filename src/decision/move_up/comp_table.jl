@@ -16,25 +16,28 @@
 # compliance table for move up
 
 # initialise data relevant to move up
-function initCompTable!(sim::Simulation, compTableFilename::String)
+function initCompTable!(sim::Simulation, compTable::CompTable)
 	# shorthand names:
 	numAmbs = sim.numAmbs
 	numStations = sim.numStations
 	ctd = sim.moveUpData.compTableData
 	
-	# read compliance table
-	ctd.compTable = readCompTableFile(compTableFilename)
-	@assert(size(ctd.compTable) == (numAmbs, numStations))
-	
-	# compliance table should not violate station capacities
-	for j = 1:numStations
-		@assert(all(ctd.compTable[:,j] .<= sim.stations[j].capacity))
-	end
+	# set compliance table
+	checkCompTable(compTable, sim) # not checking station capacities
+	ctd.compTable = compTable
 	
 	ctd.compTableStationSlots = [vcat([[stationIndex for j = 1:stationSlotCount] for (stationIndex, stationSlotCount) in enumerate(ctd.compTable[i,:])]...) for i = 1:numAmbs] # compTableStationSlots[i] gives the indices of stations as many times as the number of ambulances required at the station for compTable[i,:]
 	
 	# set array sizes
 	ctd.ambMovable = Vector{Bool}(numAmbs)
+end
+function initCompTable!(sim::Simulation, nestedCompTable::NestedCompTable)
+	compTable = unnestCompTable(nestedCompTable, sim.numStations)
+	initCompTable!(sim, compTable)
+end
+function initCompTable!(sim::Simulation, compTableFilename::String)
+	compTable = readCompTableFile(compTableFilename)
+	initCompTable!(sim, compTable)
 end
 
 function compTableMoveUp(sim::Simulation)
@@ -173,4 +176,86 @@ function solveCompTableAssignmentProblem(stationSlots::Vector{Int}, ambToStation
 	# end
 	
 	return ambStationIndices
+end
+
+# check that compliance table is valid
+function checkCompTable(compTable::CompTable;
+	numAmbs::Int = nullIndex, numStations::Int = nullIndex,
+	stationCapacities::Union{Vector{Int},Void} = nothing)
+	
+	(m,n) = size(compTable)
+	@assert(all(v -> v >= 0, compTable)) # need non-negative integers
+	for i = 1:m
+		@assert(sum(compTable[i,:]) == i) # row sum should match row index (= number of available ambulances)
+	end
+	@assert(numAmbs == nullIndex || numAmbs == m)
+	@assert(numStations == nullIndex || numStations == n)
+	if stationCapacities != nothing
+		@assert(length(stationCapacities) == n)
+		for j = 1:n
+			@assert(all(v -> v <= stationCapacities[j], compTable[:,j]))
+			# @assert(all(compTable[:,j] .<= stationCapacities[j]))
+		end
+	end
+end
+function checkCompTable(compTable::CompTable, sim::Simulation)
+	checkCompTable(compTable; numAmbs = sim.numAmbs, numStations = sim.numStations, stationCapacities = [s.capacity for s in sim.stations])
+end
+
+function checkCompTableIsNested(compTable::CompTable)
+	checkCompTable(compTable)
+	for i = 2:size(compTable,1)
+		@assert(length(find(compTable[i,:] - compTable[i-1,:])) == 1) # should only have one change between rows
+	end
+end
+
+# take a compliance table and return the nested form, if possible
+function nestCompTable(compTable::CompTable)::NestedCompTable
+	checkCompTableIsNested(compTable) # check if nesting is possible
+	(m,n) = size(compTable)
+	nestedCompTable = NestedCompTable(m)
+	nestedCompTable[1] = findfirst(compTable[1,:])
+	for i = 2:m
+		nestedCompTable[i] = findfirst(compTable[i,:] - compTable[i-1,:])
+	end
+	return nestedCompTable
+end
+
+# convert nested comp table to normal compliance table (list to array)
+function unnestCompTable(nestedCompTable::NestedCompTable, numStations::Int)::CompTable
+	m = length(nestedCompTable)
+	n = numStations
+	compTable = CompTable(m,n)
+	compTable[:] = 0
+	for i = 1:m
+		compTable[i:m, nestedCompTable[i]] += 1
+	end
+	return compTable
+end
+
+# returns a randomly generated nested comp table
+function makeRandNestedCompTable(numAmbs::Int, numStations::Int;
+	stationCapacities::Union{Vector{Int},Void} = nothing,
+	rng::AbstractRNG = Base.GLOBAL_RNG)::NestedCompTable
+	
+	@assert(numStations > 0)
+	if stationCapacities == nothing
+		return rand(rng, 1:numStations, numAmbs)
+	else
+		@assert(numStations == length(stationCapacities))
+		@assert(numAmbs <= sum(stationCapacities))
+		remainingCapacity = copy(stationCapacities)
+		unfilledStations = Set(find(remainingCapacity))
+		nestedCompTable = NestedCompTable(numAmbs)
+		nestedCompTable[:] = 0
+		for i = 1:numAmbs
+			j = rand(rng, unfilledStations) # station index
+			nestedCompTable[i] = j
+			remainingCapacity[j] -= 1
+			if remainingCapacity[j] == 0
+				delete!(unfilledStations, j)
+			end
+		end
+		return nestedCompTable
+	end
 end
