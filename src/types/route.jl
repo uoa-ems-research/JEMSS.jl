@@ -1,3 +1,18 @@
+##########################################################################
+# Copyright 2017 Samuel Ridler.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+##########################################################################
+
 # given a route, a priority for travel, a start time, and an end location,
 # (and an end node which should be the node nearest to end location),
 # modify current route
@@ -193,6 +208,7 @@ function updateRouteRecentRArc!(net::Network, route::Route, time::Float)
 		route.recentRArcRecentFNode = 1 # remaining fNode data will be set in updateRouteRecentRArcFNode!()
 		route.recentRArcStartTime = route.endRNodeTime
 		route.recentRArcEndTime = route.endRNodeTime + rNetTravel.arcTimes[route.recentRArc]
+		@assert(route.endFNodeTime < route.recentRArcEndTime) # should leave network before rArc ends
 		return
 	end
 	
@@ -211,6 +227,10 @@ function updateRouteRecentRArc!(net::Network, route::Route, time::Float)
 			route.recentRArc = rArcIndex
 			route.recentRArcStartTime = route.recentRArcEndTime
 			route.recentRArcEndTime += rNetTravel.arcTimes[route.recentRArc] # do not use route.recentRArcEndTime += rNetTravel.spTimes[recentRNode, nextRNode], as this may have low precision
+		end
+		if rNodeFNode[nextRNode] == route.endFNode
+			@assert(isapprox(route.recentRArcEndTime, route.endFNodeTime))
+			route.recentRArcEndTime = route.endFNodeTime # adjust value, to compensate for problems with numerical precision
 		end
 		route.recentRArcRecentFNode = 1 # remaining fNode data will be set in updateRouteRecentRArcFNode!()
 	end
@@ -247,6 +267,10 @@ function updateRouteRecentRArcFNode!(net::Network, route::Route, time::Float)
 	route.recentRArcNextFNode = route.recentRArcRecentFNode + 1
 	route.nextFNode = rArcFNodes[route.recentRArcNextFNode]
 	route.nextFNodeTime = route.recentRArcStartTime + recentRArcFNodesTimes[route.recentRArcNextFNode]
+	if route.nextFNode == route.endFNode
+		@assert(isapprox(route.nextFNodeTime, route.endFNodeTime))
+		route.nextFNodeTime = route.endFNodeTime # adjust value, to compensate for problems with numerical precision
+	end
 end
 
 # for a vector of strictly increasing time values,
@@ -362,6 +386,10 @@ function setRouteStateAfterStartFNode!(net::Network, route::Route, time::Float)
 	route.recentRArc = route.firstRArc
 	route.recentRArcStartTime = route.startFNodeTime - fNodeFromRNodeTime[route.startFNode][rArc.fromNodeIndex]
 	route.recentRArcEndTime = route.recentRArcStartTime + rNetTravel.arcTimes[route.firstRArc]
+	if firstRArcFNodes[end] == route.endFNode
+		@assert(isapprox(route.recentRArcEndTime, route.endFNodeTime))
+		route.recentRArcEndTime = route.endFNodeTime # adjust value, to compensate for problems with numerical precision
+	end
 	
 	# recent fNode
 	route.recentRArcRecentFNode = net.rArcFNodeIndex[route.firstRArc][route.startFNode]
@@ -375,6 +403,10 @@ function setRouteStateAfterStartFNode!(net::Network, route::Route, time::Float)
 	route.recentRArcNextFNode = route.recentRArcRecentFNode + 1
 	route.nextFNode = firstRArcFNodes[route.recentRArcNextFNode]
 	route.nextFNodeTime = route.recentRArcStartTime + firstRArcFNodesTimes[route.recentRArcNextFNode]
+	if route.nextFNode == route.endFNode
+		@assert(isapprox(route.nextFNodeTime, route.endFNodeTime))
+		route.nextFNodeTime = route.endFNodeTime # adjust value, to compensate for problems with numerical precision
+	end
 end
 
 # set temporally varying fields of route to represent state after leaving endFNode

@@ -1,3 +1,18 @@
+##########################################################################
+# Copyright 2017 Samuel Ridler.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+##########################################################################
+
 # add call to list that is sorted by call priorities and then by arrival times within priorities
 function addCallToQueueSortPriorityThenTime!(queuedCallList::Vector{Call}, call::Call)
 	# find where to insert new call into list
@@ -14,7 +29,7 @@ function addCallToQueueSortPriorityThenTime!(queuedCallList::Vector{Call}, call:
 	if checkMode
 		# check that calls are ordered first by priority, then by time
 		for i = length(queuedCallList): -1 : 2
-			@assert(queuedCallList[i].priority < queuedCallList[i-1].priority || 
+			@assert(queuedCallList[i].priority < queuedCallList[i-1].priority ||
 				(queuedCallList[i].priority == queuedCallList[i-1].priority &&
 				queuedCallList[i].arrivalTime <= queuedCallList[i-1].arrivalTime))
 		end

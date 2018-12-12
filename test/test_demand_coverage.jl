@@ -1,3 +1,18 @@
+##########################################################################
+# Copyright 2017 Samuel Ridler.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+##########################################################################
+
 # create test data
 info("Creating test data")
 testRegionDataFolder = "data/regions/small/1"
@@ -5,13 +20,13 @@ runGenConfig(joinpath(testRegionDataFolder, "gen_config.xml"), overwriteOutputPa
 
 # initialise sim
 info("Initialising sim")
-sim = initSimulation(joinpath(testRegionDataFolder, "sim_config.xml"), doPrint = false);
+sim = initSim(joinpath(testRegionDataFolder, "sim_config.xml"), doPrint = false);
 
 # initialise demand and demand coverage
-sim.demand = readDemandFile(joinpath(testRegionDataFolder, "demand", "demand.csv"))
-sim.demandCoverTimes = Dict([p => 20/60/24 for p in instances(Priority)])
-sim.demandCoverTimes[highPriority] = 12/60/24
-JEMSS.initDemandCoverage!(sim, rasterCellNumRows = 2, rasterCellNumCols = 2)
+initDemand!(sim, demandFilename = joinpath(testRegionDataFolder, "demand", "demand.csv"))
+coverTimes = Dict([p => 20/60/24 for p in priorities])
+coverTimes[highPriority] = 12/60/24
+initDemandCoverage!(sim, coverTimes = coverTimes, rasterCellNumRows = 2, rasterCellNumCols = 2)
 
 # shorthand
 demand = sim.demand
@@ -23,10 +38,9 @@ nodes = sim.net.fGraph.nodes
 numNodes = length(nodes)
 pointsCoverageModes = demandCoverage.pointsCoverageModes;
 stations = sim.stations
-numStations = length(sim.stations)
+numStations = sim.numStations
 pointsCoverageModeLookup = demandCoverage.pointsCoverageModeLookup
 travel = sim.travel;
-priorities = setdiff([instances(Priority)...], [nullPriority])
 
 @testset "demand coverage init" begin
 	# check sim.demandCoverage after being initialised with function initDemandCoverage!
@@ -91,14 +105,14 @@ end
 	
 	stationsNumAmbs = ones(Int, numStations)
 	pointCoverCounts = Vector{Int}(numPoints)
-	times = vcat(travel.setsStartTimes, demand.setsStartTimes) |> unique |> sort # simulating to these points in time will 
+	times = vcat(travel.setsStartTimes, demand.setsStartTimes) |> unique |> sort # simulating to these points in time will cause each combination of travel and demand states to be checked
 	for t in times
 		# simulateToTime!(sim, t) # probably unnecessary, and sim.time may stop before t
 		sim.time = t # is this safe?
 		demandsPointSetsCoverCounts = JEMSS.calcPointSetsCoverCounts!(sim, sim.time, stationsNumAmbs)
 		for demandPriority in priorities
 			travelMode = JEMSS.getTravelMode!(travel, sim.responseTravelPriorities[demandPriority], sim.time)
-			coverTime = sim.demandCoverTimes[demandPriority]
+			coverTime = sim.demandCoverage.coverTimes[demandPriority]
 			pointCoverCounts[:] = 0
 			for (i,station) in enumerate(stations)
 				for (j,point) in enumerate(points)

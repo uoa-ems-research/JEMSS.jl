@@ -1,3 +1,18 @@
+##########################################################################
+# Copyright 2017 Samuel Ridler.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+##########################################################################
+
 type Location
 	x::Float # latitude, or other
 	y::Float # longitude, or other
@@ -461,6 +476,7 @@ end
 # Stores demand modes, demand sets (a set of demand modes apply to each time period),
 # and conditions for when to use each demand set/mode.
 type Demand
+	initialised::Bool
 	numRasters::Int # number of demand rasters
 	numModes::Int # number of demand modes
 	numSets::Int # number of sets of demand modes; each set may contain multiple demand modes e.g. for different combinations of call priorities and ambulance classes. Different sets can overlap, by containing the same demand modes.
@@ -475,7 +491,7 @@ type Demand
 	setsTimeOrder::Vector{Int} # setsTimeOrder[i] gives demand set to start using at time setsStartTimes[i]
 	recentSetsStartTimesIndex::Int # index of most recently used value in setsStartTimes (and setsTimeOrder), should only ever increase in value
 	
-	Demand() = new(nullIndex, nullIndex, nullIndex,
+	Demand() = new(false, nullIndex, nullIndex, nullIndex,
 		[], [],
 		[], Array{Int,2}(0,0),
 		[], [], nullIndex)
@@ -500,17 +516,36 @@ type PointsCoverageMode
 end
 
 type DemandCoverage
+	# params
+	coverTimes::Dict{Priority,Float} # coverTimes[p] gives the target cover time for demand of priority p
+	rasterCellNumRows::Int # number of rows of points to create per demand raster cell
+	rasterCellNumCols::Int # number of columns of points to create per demand raster cell
+	
+	initialised::Bool
 	points::Vector{Point} # demand is aggregated to points, same points are used for all demand rasters
 	nodesPoints::Vector{Vector{Int}} # nodesPoints[i] gives indices of points for which node i is the nearest node
 	rastersPointDemands::Vector{Vector{Float}} # rastersPointDemands[i][j] is demand at points[j] for Demand.rasters[i]
-	# demandCoverTimes::Dict{Priority,Float} # reference to sim.demandCoverTimes, demandCoverTimes[p] gives the target cover time for demand of priority p
 	
 	pointsCoverageModes::Vector{PointsCoverageMode}
 	pointsCoverageModeLookup::Vector{Dict{Float,Int}} # pointsCoverageModeLookup[TravelMode.index][coverTime] gives index of PointsCoverageMode
-	pointSetsDemands::Array{Vector{Float},2} # pointSetsDemands[PointsCoverageMode.index, rasterIndex] gives demand values for each point set in PointsCoverageMode.pointSets, for Demand.rasters[rasterIndex]
+	pointSetsDemands::Array{Vector{Float},2} # pointSetsDemands[PointsCoverageMode.index, DemandMode.rasterIndex] gives relative demand values for each point set in PointsCoverageMode.pointSets, for Demand.rasters[rasterIndex]. Note that this needs to be multiplied by DemandMode.rasterMultiplier to get absolute (instead of relative) demand values.
 	
-	DemandCoverage() = new([], [], [],
+	DemandCoverage() = new(Dict(), 0, 0,
+		false, [], [], [],
 		[], [], Array{Vector{Float},2}(0,0))
+	
+	function DemandCoverage(coverTimes::Dict{Priority,Float}, rasterCellNumRows::Int, rasterCellNumCols::Int)
+		dc = demandCoverage = DemandCoverage()
+		dc.coverTimes = coverTimes
+		dc.rasterCellNumRows = rasterCellNumRows
+		dc.rasterCellNumCols = rasterCellNumCols
+		return demandCoverage
+	end
+	
+	function DemandCoverage(demandCoverage::DemandCoverage)
+		dc = demandCoverage # shorthand
+		return DemandCoverage(dc.coverTimes, dc.rasterCellNumRows, dc.rasterCellNumCols)
+	end
 end
 
 # move up data types
@@ -536,7 +571,8 @@ end
 type DmexclpData <: MoveUpDataType
 	# parameters:
 	busyFraction::Float # fraction for which each ambulance is busy, approximate
-	# some other relevant parameters are stored in sim: demand, demandCoverage, demandCoverTimes, responseTravelPriorities
+	demandWeights::Dict{Priority,Float} # weight of each demand priority on the objective function
+	# some other relevant parameters are stored in sim: demand, demandCoverage, responseTravelPriorities
 	
 	marginalBenefit::Vector{Float} # marginalBenefit[i] = benefit of adding an ith ambulance to cover single demand, calculated from busyFraction
 	
@@ -545,7 +581,7 @@ type DmexclpData <: MoveUpDataType
 	stationMarginalCoverages::Vector{Float} # stationMarginalCoverages[i] gives extra coverage provided from placing newly idle ambulance at station i
 	# pointSetsCoverCounts::Vector{Vector{Int}} # pointSetsCoverCounts[i][j] = number of idle ambulances covering node set j, for demand.pointsCoverageModes i
 	
-	DmexclpData() = new(0.0,
+	DmexclpData() = new(0.0, Dict(),
 		[],
 		[], [])
 end
@@ -665,7 +701,7 @@ end
 
 type Simulation
 	startTime::Float
-	time::Float
+	time::Float # time of most recent event, or time of recent animation frame if animating
 	endTime::Float # calculated after simulating
 	
 	# world:
@@ -678,6 +714,12 @@ type Simulation
 	calls::Vector{Call}
 	hospitals::Vector{Hospital}
 	stations::Vector{Station}
+	
+	# shorthand:
+	numAmbs::Int # length(ambulances)
+	numCalls::Int # length(calls)
+	numHospitals::Int # length(hospitals)
+	numStations::Int # length(stations)
 	
 	eventList::Vector{Event} # events to occur now or in future
 	eventIndex::Int # index of event in events that have occurred
@@ -693,7 +735,6 @@ type Simulation
 	# demand
 	demand::Demand
 	demandCoverage::DemandCoverage
-	demandCoverTimes::Dict{Priority,Float} # demandCoverTimes[p] gives the target cover time for demand of priority p
 	
 	responseTravelPriorities::Dict{Priority,Priority} # responseTravelPriorities[p] gives the travel priority for responding to call of priority p
 	targetResponseTimes::Vector{Float} # targetResponseTimes[Int(priority)] gives maximum desired response time for call of given priority
@@ -710,9 +751,11 @@ type Simulation
 	eventsFileIO::IOStream # write simulation trace of events to this file
 	
 	writeOutput::Bool # true if outputFiles should be used to write output (false if animating)
-	
+	initialised::Bool # true if simulation has been initialised and so can be run, false otherwise
 	used::Bool # true if simulation has started running (and so restarting would require copying from backup)
 	complete::Bool # true if simulation has ended (no events remaining)
+	animating::Bool # true if being used for animation, false otherwise
+	
 	backup::Simulation # copy of simulation, for restarts (does not include a backup of all fields in order to save on memory, see backupSim! function for missing fields)
 	
 	configRootElt::XMLElement
@@ -720,13 +763,13 @@ type Simulation
 	Simulation() = new(nullTime, nullTime, nullTime,
 		Network(), Travel(), Map(), Grid(),
 		[], [], [], [],
+		0, 0, 0, 0,
 		[], 0, [],
 		Resimulation(),
 		nullFunction, nullFunction, MoveUpData(),
-		Demand(), DemandCoverage(), Dict(),
+		Demand(), DemandCoverage(),
 		Dict(), [],
 		Set(), Set(),
 		"", "", Dict(), Dict(), IOStream(""),
-		false,
-		false, false)
+		false, false, false, false, false)
 end

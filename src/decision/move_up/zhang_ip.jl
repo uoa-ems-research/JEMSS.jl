@@ -1,3 +1,18 @@
+##########################################################################
+# Copyright 2017 Samuel Ridler.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+##########################################################################
+
 # integer program formulation by Oddo Zhang, for move-up
 
 # initialise data relevant to move up
@@ -8,7 +23,7 @@ function initZhangIp!(sim::Simulation;
 	zid = sim.moveUpData.zhangIpData = readZhangIpParamsFile(paramsFilename)
 	
 	# check number of stations
-	numStations = length(sim.stations)
+	numStations = sim.numStations
 	@assert(length(zid.marginalBenefits) == numStations)
 	@assert(length(zid.stationCapacities) == numStations)
 	
@@ -44,7 +59,7 @@ function zhangIpMoveUp(sim::Simulation)
 	benefitSlots = zid.benefitSlots
 	ambulances = sim.ambulances
 	stations = sim.stations
-	numStations = length(stations)
+	numStations = sim.numStations
 	
 	# get currently movable ambulances, and at-hospital ambulances
 	movableAmbs = filter(a -> isAmbAvailableForMoveUp(a), ambulances)

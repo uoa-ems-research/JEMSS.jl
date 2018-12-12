@@ -1,3 +1,18 @@
+##########################################################################
+# Copyright 2017 Samuel Ridler.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+##########################################################################
+
 __precompile__()
 module JEMSS
 
@@ -11,6 +26,7 @@ using LightXML
 
 # optimisation (move-up)
 using JuMP
+using Cbc
 using GLPKMathProgInterface # does not use precompile
 
 # statistics
@@ -27,16 +43,16 @@ import Plots
 
 # simulation functions
 export
-	initSimulation, runConfig, # run_config
+	initSim, runConfig, # run_config
 	simulate!, simulateToTime!, simulateToEnd!, backupSim!, resetSim!, simulateNextEvent!, # simulation
-	animate # animation
+	animate!, animate # animation
 
 # file functions
 export
 	readDlmFileNextLine!, readDlmFile, openNewFile, writeDlmLine!, arrayDict, writeTablesToFile!, writeTablesToFile, readTablesFromFile, readTablesFromData, tableRowsFieldDicts, fileChecksum, serializeToFile, deserializeFile, interpolateString, xmlFileRoot, findElt, eltContent, eltContentVal, eltContentInterpVal, childrenNodeNames, selectXmlFile, # file_io
 	runGenConfig, # gen_sim_files
-	readAmbsFile, readArcsFile, readCallsFile, readCompTableFile, readDemandFile, readEventsFile, readGeoFile, readHospitalsFile, readMapFile, readNodesFile, readPrioritiesFile, readPriorityListFile, readRasterFile, readRNetTravelsFile, readStationsFile, readTravelFile, readDeploymentPoliciesFile, readZhangIpParamsFile, # read_sim_files
-	writeAmbsFile, writeArcsFile, writeCallsFile, writeDemandFile, writeHospitalsFile, writeMapFile, writeNodesFile, writePrioritiesFile, writeRNetTravelsFile, writeStationsFile, writeTravelFile, openOutputFiles!, closeOutputFiles!, writeEventToFile!, writeStatsFiles!, writeDeploymentPoliciesFile, writeBatchMeanResponseTimesFile # write_sim_files
+	readAmbsFile, readArcsFile, readCallsFile, readCompTableFile, readDemandFile, readDemandCoverageFile, readEventsFile, readGeoFile, readHospitalsFile, readMapFile, readNodesFile, readPrioritiesFile, readPriorityListFile, readRasterFile, readRNetTravelsFile, readStationsFile, readTravelFile, readDeploymentsFile, readZhangIpParamsFile, # read_sim_files
+	writeAmbsFile, writeArcsFile, writeCallsFile, writeDemandFile, writeDemandCoverageFile, writeHospitalsFile, writeMapFile, writeNodesFile, writePrioritiesFile, writeRNetTravelsFile, writeStationsFile, writeTravelFile, openOutputFiles!, closeOutputFiles!, writeEventToFile!, writeStatsFiles!, writeDeploymentsFile, writeBatchMeanResponseTimesFile # write_sim_files
 
 # move up initialisation functions
 export
@@ -44,6 +60,7 @@ export
 
 # misc functions
 export
+	initDemand!, initDemandCoverage!, # demand
 	printEvent, # event
 	findNearestNode, # graph
 	findNearestNodeInGrid, # grid
@@ -51,8 +68,9 @@ export
 	isFNodeInRGraph, shortestPathNextRNode, shortestPathNextRArc, shortestPathData, shortestPathTravelTime, shortestPath, findRArcFromFNodeToFNode, # network
 	rasterRandLocations, printRasterSize, # raster
 	shortestRouteTravelTime!, # route
-	printSimStats, printAmbsStats, printCallsStats, calcBatchMeans, calcBatchMeanResponseTimes, meanErrorPlot, calcAR0DurbinWatsonTestPValue, # statistics
-	makeRandDeploymentPolicy, makeRandDeploymentPolicies, setAmbStation!, applyDeploymentPolicy!, simulateDeploymentPolicy!, simulateDeploymentPolicies! # deployment
+	getCallResponseTimes, getAvgCallResponseTime, getCallsReachedInTime, countCallsReachedInTime, printSimStats, printAmbsStats, printCallsStats, printHospitalsStats, calcBatchMeans, calcBatchMeanResponseTimes, meanErrorPlot, calcAR0DurbinWatsonTestPValue, # statistics
+	makeRandDeployment, makeRandDeployments, deploymentToStationsNumAmbs, stationsNumAmbsToDeployment, getDeployment, getStationsNumAmbs, setAmbStation!, applyDeployment!, applyStationsNumAmbs!, simulateDeployment!, simulateDeployments!, # deployment
+	solveMexclp! # mexclp
 
 # types
 export
@@ -67,7 +85,8 @@ export
 export
 	Float, FloatSpTime, IntRNode, IntFadj, # type alias
 	nullIndex, nullX, nullY, nullTime, nullDist, # nulls
-	Depol
+	priorities, numPriorities, # priorities
+	Deployment
 
 # defs - enums
 export
@@ -77,6 +96,10 @@ export
 	AmbStatus, ambNullStatus, ambSleeping, ambIdleAtStation, ambGoingToCall, ambAtCall, ambGoingToHospital, ambAtHospital, ambGoingToStation,
 	CallStatus, callNullStatus, callScreening, callQueued, callWaitingForAmb, callOnSceneCare, callGoingToHospital, callAtHospital, callProcessed,
 	MoveUpModule, nullMoveUpModule, compTableModule, dmexclpModule, priorityListModule, zhangIpModule, temp0Module, temp1Module, temp2Module
+
+# deprecated
+export
+	Depol, makeRandDeploymentPolicy, makeRandDeploymentPolicies, applyDeploymentPolicy!, simulateDeploymentPolicy!, simulateDeploymentPolicies!, writeDeploymentPoliciesFile, readDeploymentPoliciesFile # renamed "deployment policy" to "deployment"
 
 include("defs.jl")
 
@@ -119,5 +142,9 @@ include("statistics.jl")
 include("animation/animation.jl")
 
 include("misc/deployment.jl")
+
+include("optim/mexclp.jl")
+
+include("deprecated.jl")
 
 end

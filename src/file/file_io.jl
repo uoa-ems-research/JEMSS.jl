@@ -1,3 +1,18 @@
+##########################################################################
+# Copyright 2017 Samuel Ridler.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+##########################################################################
+
 # misc file input/output functions
 
 Base.transpose(s::T) where T <: AbstractString = s # not sure where else to put this
@@ -141,8 +156,9 @@ function readTablesFromData(data::Array{Any,2})
 		tableName = data[i,1]
 		
 		# read row and column counts, if given
-		isempty(data[i,2]) ? numRows = nullIndex : numRows = data[i,2]
-		isempty(data[i,3]) ? numCols = nullIndex : numCols = data[i,3]
+		numRows = numCols = nullIndex
+		(size(data,2) >= 2) && !isempty(data[i,2]) && (numRows = data[i,2])
+		(size(data,2) >= 3) && !isempty(data[i,3]) && (numCols = data[i,3])
 		
 		i += 1 # move to table header
 		

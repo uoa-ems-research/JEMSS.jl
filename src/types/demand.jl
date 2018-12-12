@@ -1,3 +1,18 @@
+##########################################################################
+# Copyright 2017 Samuel Ridler.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+##########################################################################
+
 # Demand (call) model
 
 # get demand mode for given time and priority
@@ -120,7 +135,7 @@ function createPointsCoverageMode(sim::Simulation, travelMode::TravelMode, cover
 	points = pointsCoverageMode.points
 	numPoints = length(points)
 	stations = sim.stations
-	numStations = length(stations)
+	numStations = sim.numStations
 	numNodes = length(sim.net.fGraph.nodes)
 	nodesPoints = sim.demandCoverage.nodesPoints
 	
@@ -205,7 +220,7 @@ function getPointsCoverageMode!(sim::Simulation, demandPriority::Priority, curre
 	@assert(currentTime != nullTime)
 	travelPriority = sim.responseTravelPriorities[demandPriority]
 	travelMode = getTravelMode!(sim.travel, travelPriority, currentTime)
-	coverTime = sim.demandCoverTimes[demandPriority]
+	coverTime = sim.demandCoverage.coverTimes[demandPriority]
 	pointsCoverageMode = getPointsCoverageMode(sim.demandCoverage, travelMode, coverTime)
 	@assert(pointsCoverageMode != nothing)
 	return pointsCoverageMode
@@ -222,6 +237,37 @@ function getPointSetsDemands!(sim::Simulation, demandPriority::Priority, current
 	return pointSetsDemands
 end
 
+"""
+	function initDemand!(sim::Simulation, demand::Union{Demand,Void} = nothing;
+		demandFilename::String = "")
+Initialise demand data for `sim`.
+Will initialise from the first item in this list: `demand`, `demandFilename` file, `sim.demand` (if set), `sim.inputFiles[\"demand\"].path` file.
+Deletes old demand coverage data in `sim.demandCoverage`.
+
+Mutates: `sim.demand`, `sim.demandCoverage`
+"""
+function initDemand!(sim::Simulation, demand::Union{Demand,Void} = nothing;
+	demandFilename::String = "")
+	if demand == nothing
+		if demandFilename != ""
+			demand = readDemandFile(demandFilename)
+		elseif sim.demand.numSets == nullIndex
+			if haskey(sim.inputFiles, "demand")
+				demand = readDemandFile(sim.inputFiles["demand"].path)
+			else
+				error("no demand data given")
+			end
+		else
+			demand = sim.demand
+		end
+	end
+	demand.initialised = true
+	sim.demand = demand
+	
+	# old demand coverage data may no longer be valid
+	sim.demandCoverage = DemandCoverage(sim.demandCoverage) # keep some old params
+end
+
 # Initialises the points coverage modes data in sim.demandCoverage.
 # mutates: sim.demandCoverage (fields: pointsCoverageModes, pointsCoverageModeLookup)
 function initPointsCoverageModes!(sim::Simulation)
@@ -232,12 +278,11 @@ function initPointsCoverageModes!(sim::Simulation)
 	# go through all travel sets and demand priorities, create points coverage mode for each call response travel priority and cover time
 	# dc.pointsCoverageModes
 	dc.pointsCoverageModeLookup = [Dict{Float,Int}() for i = 1:travel.numModes]
-	priorities = setdiff([instances(Priority)...], [nullPriority])
 	for i = 1:travel.numSets, demandPriority in priorities
 		# get travel mode and cover time
 		travelPriority = sim.responseTravelPriorities[demandPriority]
 		travelMode = travel.modes[travel.modeLookup[i,Int(travelPriority)]]
-		coverTime = sim.demandCoverTimes[demandPriority]
+		coverTime = sim.demandCoverage.coverTimes[demandPriority]
 		
 		# if combination of travel mode and cover time is new, need to calculate points coverage
 		if !haskey(dc.pointsCoverageModeLookup[travelMode.index], coverTime)
@@ -249,12 +294,26 @@ function initPointsCoverageModes!(sim::Simulation)
 	end
 end
 
-# Initialises data in sim.demandCoverage.
-# mutates: sim.demandCoverage
+"""
+	function initDemandCoverage!(sim::Simulation;
+		coverTimes::Union{Dict{Priority,Float},Void} = nothing,
+		rasterCellNumRows::Int = 1, rasterCellNumCols::Int = 1)
+Initialises demand coverage data for `sim`.
+If `coverTimes` is given, will use this (along with `rasterCellNumRows` and `rasterCellNumCols`), otherwise will use the previous parameter values set in `sim.demandCoverage`.
+
+# Keyword arguments
+- `coverTimes` is the target coverage time for each demand priority, e.g. `coverTimes = Dict([p => 8/60/24 for p in priorities])` sets a target time of 8 minutes (converted to days) for each priority. Can omit this if `sim.demandCoverage.coverTimes` is already set.
+- `rasterCellNumRows` and `rasterCellNumCols` are used to set the number of demand points to represent demand per raster cell for `sim.demand.rasters`
+
+Mutates: `sim.demandCoverage`
+"""
 function initDemandCoverage!(sim::Simulation;
+	coverTimes::Union{Dict{Priority,Float},Void} = nothing,
 	rasterCellNumRows::Int = 1, rasterCellNumCols::Int = 1)
+	
 	@assert(!sim.used)
 	@assert(sim.travel.recentSetsStartTimesIndex == 1)
+	sim.demand.initialised || initDemand!(sim)
 	@assert(sim.demand.recentSetsStartTimesIndex == 1)
 	
 	# shorthand
@@ -264,9 +323,22 @@ function initDemandCoverage!(sim::Simulation;
 	numNodes = length(sim.net.fGraph.nodes)
 	travel = sim.travel
 	
+	# set demand coverage params
+	oldDemandCoverage = sim.demandCoverage
+	if coverTimes != nothing
+		sim.demandCoverage = DemandCoverage(coverTimes, rasterCellNumRows, rasterCellNumCols)
+	else # use old params
+		@assert(!isempty(oldDemandCoverage.coverTimes))
+		sim.demandCoverage = DemandCoverage(oldDemandCoverage)
+	end
+	dc = sim.demandCoverage # shorthand
+	demandPriorities = priorities
+	@assert(all(p -> haskey(dc.coverTimes, p), demandPriorities), "coverTimes not set")
+	@assert(dc.rasterCellNumRows >= 1)
+	@assert(dc.rasterCellNumCols >= 1)
+	
 	# create demand points
-	dc = demandCoverage = sim.demandCoverage = DemandCoverage()
-	dc.points, dc.rastersPointDemands = createDemandPointsFromRasters(sim.demand; numCellRows = rasterCellNumRows, numCellCols = rasterCellNumCols)
+	dc.points, dc.rastersPointDemands = createDemandPointsFromRasters(sim.demand; numCellRows = dc.rasterCellNumRows, numCellCols = dc.rasterCellNumCols)
 	points = dc.points # shorthand
 	setPointsNearestNodes!(sim, points)
 	numPoints = length(points) # shorthand
@@ -285,8 +357,7 @@ function initDemandCoverage!(sim::Simulation;
 	# note that pointSetsDemands does not need to be set for all combinations of pointsCoverageMode.index and rasterIndex, as some combinations may not occur in simulation
 	dc.pointSetsDemands = [Vector{Float}() for i = 1:numPointsCoverageModes, j = 1:demand.numRasters]
 	times = vcat(travel.setsStartTimes, demand.setsStartTimes) |> unique |> sort
-	priorities = setdiff([instances(Priority)...], [nullPriority])
-	for time in times, demandPriority in priorities
+	for time in times, demandPriority in demandPriorities
 		pointsCoverageMode = getPointsCoverageMode!(sim, demandPriority, time)
 		demandMode = getDemandMode!(demand, demandPriority, time)
 		rasterIndex = demandMode.rasterIndex # shorthand
@@ -306,6 +377,8 @@ function initDemandCoverage!(sim::Simulation;
 	# reset travel and demand state (previously changed by getTravelMode! and getDemandMode!)
 	travel.recentSetsStartTimesIndex = 1
 	demand.recentSetsStartTimesIndex = 1
+	
+	dc.initialised = true
 end
 
 # Calculate, for a given points coverage mode, and number of available ambulances assigned to each
@@ -340,10 +413,10 @@ end
 # pointsCoverageMode.pointSet, where pointsCoverageMode is for the demand priority and current time.
 # mutates: sim.travel state
 function calcPointSetsCoverCounts!(sim::Simulation, currentTime::Float, stationsNumAmbs::Vector{Int};
-	demandPriorities::Vector{Priority} = setdiff([instances(Priority)...], [nullPriority]))
+	demandPriorities::Vector{Priority} = priorities)
 	# stationsNumAmbs[i] gives the number of ambulances that can provide coverage and are assigned to station i
 	
-	@assert(length(stationsNumAmbs) == length(sim.stations))
+	@assert(length(stationsNumAmbs) == sim.numStations)
 	@assert(all(n -> n >= 0, stationsNumAmbs))
 	
 	demandsPointSetsCoverCounts = Dict{Priority,Vector{Int}}() # demandsPointSetsCoverCounts[p][i] gives the number of ambulances assigned to stations that cover point set i for demand priority p
@@ -366,10 +439,10 @@ end
 # Calculates, for each demand priority, how much of the demand is covered by 1,2,... ambulances
 # mutates: sim.travel and sim.demand states
 function calcDemandCoverCounts!(sim::Simulation, currentTime::Float, stationsNumAmbs::Vector{Int};
-	demandPriorities::Vector{Priority} = setdiff([instances(Priority)...], [nullPriority]))
+	demandPriorities::Vector{Priority} = priorities)
 	# stationsNumAmbs[i] gives the number of ambulances that can provide coverage and are assigned to station i
 	
-	@assert(length(stationsNumAmbs) == length(sim.stations))
+	@assert(length(stationsNumAmbs) == sim.numStations)
 	@assert(all(n -> n >= 0, stationsNumAmbs))
 	
 	# shorthand
