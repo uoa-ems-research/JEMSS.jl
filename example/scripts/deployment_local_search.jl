@@ -112,7 +112,7 @@ end
 # perform local search, starting at each of the deployments provided
 function repeatedLocalSearch()
 	println("Initialising simulation from config: ", configFilename)
-	sim = initSim(configFilename, doPrint = false)
+	sim = initSim(configFilename, createBackup = true, doPrint = false)
 	
 	# open files for writing solution
 	solFile = open(solFilename, "w")
@@ -172,8 +172,6 @@ end
 # Continue search until no improvement can be made.
 # mutates: sim, stationsNumAmbsObjVal, logFile
 function localSearch!(sim::Simulation, stationsNumAmbsObjVal::Dict{StationsNumAmbs,ObjVal}, logFile::IOStream)::StationsNumAmbs
-	
-	backupSim!(sim) # for restarting sim
 	
 	# shorthand
 	numStations = sim.numStations
