@@ -28,9 +28,9 @@ const solFilename = "$outputFolder/solutions.csv" # final solutions from each lo
 const logFilename = "$outputFolder/log.csv" # log search progress to file
 const ObjVal = Int # type alias, return type of objFn
 const nullObjVal = -1 # depends on objective function, see objFn
-const sense = :min # :min or :max; direction of optimisation for objective function
+const sense = :max # :min or :max; direction of optimisation for objective function
 deployments = [] # leave empty (and set numSearches) if generating random deployments for random restarts
-const numSearches = isempty(deployments) ? 5 : length(deployments) # number of local searches to perform
+const numSearches = isempty(deployments) ? 1 : length(deployments) # number of local searches to perform
 deploymentRng = MersenneTwister(0) # useful for reproducing results, if using random restarts
 
 # some parameter checks
@@ -126,7 +126,7 @@ function repeatedLocalSearch()
 	
 	global deployments
 	if isempty(deployments)
-		println("generating $numSearches random deployments")
+		println("generating $numSearches random deployment(s)")
 		deployments = makeRandDeployments(sim, numSearches; rng = deploymentRng)
 	end
 	
@@ -274,6 +274,5 @@ end
 
 # run
 t = time()
-println("starting...")
 repeatedLocalSearch()
-println("total runtime: ", round(time()-t, 2), " seconds")
+println("Total runtime: ", round(time()-t, 2), " seconds")
