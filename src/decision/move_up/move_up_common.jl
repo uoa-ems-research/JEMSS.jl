@@ -24,22 +24,20 @@ function isAmbAvailableForMoveUp(ambulance::Ambulance)
 end
 
 # for an ambulance, gives travel time for it to travel to each station
-function ambMoveUpTravelTimes!(sim::Simulation, ambulance::Ambulance)
+function ambMoveUpTravelTimes!(sim::Simulation, ambulance::Ambulance;
+	stations::Vector{Station} = sim.stations)
 	
 	# shorthand:
 	net = sim.net
 	travel = sim.travel
-	stations = sim.stations
 	priority = lowPriority # default travel priority for this function
 	
 	travelMode = getTravelMode!(travel, sim.responseTravelPriorities[priority], sim.time)
 	(node1, time1) = getRouteNextNode!(sim, ambulance.route, travelMode.index, sim.time) # next/nearest node in ambulance route
 	
-	# get travel times to each station
-	numStations = sim.numStations
-	ambToStationTimes = Vector{Float}(numStations)
-	for i = 1:numStations
-		station = stations[i]
+	# get travel times to each station given
+	ambToStationTimes = Vector{Float}(length(stations))
+	for (i,station) in enumerate(stations)
 		if ambulance.stationIndex == station.index && ambulance.status == ambIdleAtStation
 			# ambulance already idle at this station, travel time is 0
 			ambToStationTimes[i] = 0.0

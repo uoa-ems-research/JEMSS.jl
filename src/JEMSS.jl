@@ -38,6 +38,7 @@ using StatsFuns
 # misc
 using LightGraphs
 using ArchGDAL # does not use precompile
+using Hungarian
 import Plots
 
 # simulation functions

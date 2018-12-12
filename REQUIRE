@@ -4,6 +4,7 @@ Cbc
 Distributions
 GLPKMathProgInterface
 HttpServer
+Hungarian
 HypothesisTests
 JSON
 JuMP
