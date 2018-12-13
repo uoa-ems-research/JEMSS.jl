@@ -156,10 +156,11 @@ function repeatedLocalSearch()
 	println()
 	println("Station ambulance counts from completed local searches:")
 	for i = 1:numSearches
+		println()
 		println("Iteration: ", i)
 		stationsNumAmbs = stationsNumAmbsSols[i]
 		printStationsNumAmbs(stationsNumAmbs)
-		println("	objective value = ", objValLookup(stationsNumAmbs))
+		println("objective value = ", objValLookup(stationsNumAmbs))
 	end
 	
 	close(solFile)

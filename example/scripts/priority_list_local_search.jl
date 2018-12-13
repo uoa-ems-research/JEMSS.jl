@@ -269,6 +269,8 @@ function localSearch!(sim::Simulation, priorityList::PriorityList, logFile::IOSt
 			logFileDict["iterTimeSeconds"] = round(time() - startTime, 2)
 			logFileWriteDlmLine!(logFile, logFileDict, priorityList)
 			
+			iter += 1
+			
 			if usedMove || endPoint == nothing
 				endPoint = (i,j,move) # set end point
 			elseif endPoint == (i,j,move)
@@ -276,8 +278,6 @@ function localSearch!(sim::Simulation, priorityList::PriorityList, logFile::IOSt
 				printPriorityList(bestPriorityList)
 				return bestPriorityList
 			end
-			
-			iter += 1
 		end
 	end
 end

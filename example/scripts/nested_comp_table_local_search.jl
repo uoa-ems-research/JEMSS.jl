@@ -149,7 +149,7 @@ function repeatedLocalSearch()
 		
 		# perform local search until no improvements can be made
 		println()
-		println("Random search ", i, " (of ", numSearches, ")")
+		println("Search ", i, " (of ", numSearches, ")")
 		nestedCompTable = localSearch!(sim, nestedCompTables[i], logFile)
 		
 		# save best ambulance to station allocation found for this search iteration
@@ -158,6 +158,17 @@ function repeatedLocalSearch()
 		# write solution to file
 		writeDlmLine!(solFile, i, objValLookup(nestedCompTable), nestedCompTable...)
 		flush(solFile)
+	end
+	
+	# print out all results from each finished local search
+	println()
+	println("Nested compliance tables from completed local searches:")
+	for i = 1:numSearches
+		println()
+		println("Iteration: ", i)
+		nestedCompTable = nestedCompTableSols[i]
+		printNestedCompTable(nestedCompTable)
+		println("objective value = ", objValLookup(nestedCompTable))
 	end
 	
 	close(solFile)
