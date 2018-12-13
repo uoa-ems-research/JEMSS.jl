@@ -30,6 +30,7 @@ const sourcePath = @__DIR__
 const Deployment = Vector{Int} # deployment[i] gives index of station to deploy ambulance i to
 const CompTable = Array{Int,2} # compTable[i,j] gives number of ambulances to place at station j when there are i available ambulances
 const NestedCompTable = Vector{Int} # nested compliance table can be represented as a list of station indices; nestedCompTable[1:i] gives indices of stations that i available ambulances should be placed at
+const PriorityList = Vector{Int} # a priority list gives the order of preference for which ambulances should be redeployed (moved up) to stations; priorityList[1] has the index of the station with highest priority
 
 # run modes
 const debugMode = false
