@@ -20,8 +20,6 @@
 # Ambulances are assumed to be identical, and station capacities are ignored.
 
 using JEMSS
-todo(s) = (print_with_color(:light_magenta, string("TODO: ", s)); println())
-todo("lastly, remove 'todo' function")
 
 # parameters:
 const configFilename = "sim_config.xml"
