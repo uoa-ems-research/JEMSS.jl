@@ -482,7 +482,7 @@ function readPriorityListFile(filename::String)
 	
 	# create priority list from data in table
 	columns = table.columns # shorthand
-	priorityList = Vector{Int}(n)
+	priorityList = PriorityList(n)
 	for i = 1:n
 		@assert(columns["numAmbs"][i] == i)
 		priorityList[i] = columns["stationIndex"][i]

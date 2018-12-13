@@ -13,9 +13,9 @@
 # limitations under the License.
 ##########################################################################
 
-# Run a local search algorithm to optimise a nested compliance table given some objective function (objFn).
-# The local search is simple hill climbing, and the neighbourhood of a nested compliance table
-# involves swapping or inserting items (station indices) within/into the table.
+# Run a local search algorithm to optimise a priority list given some objective function (objFn).
+# The local search is simple hill climbing, and the neighbourhood of a priority list
+# involves swapping or inserting items (station indices) within/into the list.
 # The local search stops when a local optimum (as evaluated by simulating) is found.
 # Ambulances are assumed to be identical, and station capacities are ignored.
 
@@ -29,9 +29,9 @@ const logFilename = "$outputFolder/log.csv" # log search progress to file
 const ObjVal = Int # type alias, return type of objFn
 const nullObjVal = -1 # depends on objective function, see objFn
 const sense = :max # :min or :max; direction of optimisation for objective function
-nestedCompTables = [] # leave empty (and set numSearches) if generating random nested compliance tables for random restarts
-const numSearches = isempty(nestedCompTables) ? 1 : length(nestedCompTables) # number of local searches to perform
-const nestedCompTableRng = MersenneTwister(0) # useful for reproducing results, if using random restarts
+priorityLists = [] # leave empty (and set numSearches) if generating random priority lists for random restarts
+const numSearches = isempty(priorityLists) ? 1 : length(priorityLists) # number of local searches to perform
+const priorityListRng = MersenneTwister(0) # useful for reproducing results, if using random restarts
 
 # some parameter checks
 @assert(isfile(configFilename))
@@ -39,15 +39,16 @@ const nestedCompTableRng = MersenneTwister(0) # useful for reproducing results, 
 @assert(ObjVal <: Real)
 @assert(typeof(nullObjVal) <: ObjVal)
 @assert(sense == :min || sense == :max)
-@assert((isempty(nestedCompTables) && numSearches >= 1) || (length(nestedCompTables) == numSearches))
-@assert(all(nestedCompTable -> checkCompTableIsNested(nestedCompTable), nestedCompTables))
+@assert((isempty(priorityLists) && numSearches >= 1) || (length(priorityLists) == numSearches))
+@assert(all(priorityList -> checkPriorityList(priorityList), priorityLists))
 
 stationCapacities = [] # stationCapacities[i] gives ambulance holding capacity of station i; will populate after sim is initialised
+priorityListSols = Vector{PriorityList}() # solution of each complete local search
 
-# keep track of nested compliance tables tried, and their objective values
-nestedCompTablesObjVal = Dict{NestedCompTable, ObjVal}()
-function objValLookup(nestedCompTable::NestedCompTable)::ObjVal
-	return get(nestedCompTablesObjVal, nestedCompTable, nullObjVal) # return objective value if found, otherwise nullObjVal
+# keep track of priority lists tried, and their objective values
+priorityListsObjVal = Dict{PriorityList, ObjVal}()
+function objValLookup(priorityList::PriorityList)::ObjVal
+	return get(priorityListsObjVal, priorityList, nullObjVal) # return objective value if found, otherwise nullObjVal
 end
 
 # for a completed simulation, calculate and return the objective function value
@@ -56,26 +57,26 @@ function objFn(sim::Simulation)::ObjVal
 	return countCallsReachedInTime(sim) # countCallsReachedInTime is from JEMSS
 end
 
-# get objective value for sim, applying nestedCompTable
-# only use this if nestedCompTablesObjVal does not already contain nestedCompTable
-# mutates: sim, nestedCompTablesObjVal
-function simObjVal!(sim::Simulation, nestedCompTable::NestedCompTable)::ObjVal
-	@assert(!haskey(nestedCompTablesObjVal, nestedCompTable))
+# get objective value for sim, applying priorityList
+# only use this if priorityListsObjVal does not already contain priorityList
+# mutates: sim, priorityListsObjVal
+function simObjVal!(sim::Simulation, priorityList::PriorityList)::ObjVal
+	@assert(!haskey(priorityListsObjVal, priorityList))
 	resetSim!(sim)
 	for i = 1:sim.numAmbs
-		setAmbStation!(sim.ambulances[i], sim.stations[nestedCompTable[i]])
+		setAmbStation!(sim.ambulances[i], sim.stations[priorityList[i]])
 	end
-	initCompTable!(sim, nestedCompTable)
+	initPriorityList!(sim, priorityList)
 	simulateToEnd!(sim)
 	objVal = objFn(sim)
-	nestedCompTablesObjVal[nestedCompTable] = objVal
+	priorityListsObjVal[priorityList] = objVal
 	# do not reset sim before returning, as other stats may needed after calling this function
 	return objVal
 end
 
-function printNestedCompTable(nestedCompTable::NestedCompTable)
-	for i = 1:length(nestedCompTable)
-		println("item ", i, ": station ", nestedCompTable[i])
+function printPriorityList(priorityList::PriorityList)
+	for i = 1:length(priorityList)
+		println("item ", i, ": station ", priorityList[i])
 	end
 end
 
@@ -96,28 +97,26 @@ function simStats(sim::Simulation)
 	return stats
 end
 
-logFileHeader = ["search", "iter", "move", "i", "j", "usedLookup", "usedMove", "objVal", "bestObjVal", "totalAmbTravelTime", "totalAmbBusyTime", "avgResponseTimeMinutes", "callsReachedInTime", "iterTimeSeconds"] # ... and nested comp table
+logFileHeader = ["search", "iter", "move", "i", "j", "usedLookup", "usedMove", "objVal", "bestObjVal", "totalAmbTravelTime", "totalAmbBusyTime", "avgResponseTimeMinutes", "callsReachedInTime", "iterTimeSeconds"] # ... and priority list
 logFileDict = Dict{String,Any}([s => "" for s in logFileHeader])
 
-function logFileWriteDlmLine!(logFile::IOStream, data::Dict{String,Any}, nestedCompTable::NestedCompTable)
+function logFileWriteDlmLine!(logFile::IOStream, data::Dict{String,Any}, priorityList::PriorityList)
 	line = []
 	for header in logFileHeader
 		push!(line, data[header])
 	end
-	line = vcat(line, nestedCompTable)
+	line = vcat(line, priorityList)
 	writeDlmLine!(logFile, line...)
 	flush(logFile)
 end
 
-nestedCompTableSols = Vector{NestedCompTable}(0) # solution of each complete local search
-
-# perform local search, starting at each of the nested compliance tables provided
+# perform local search, starting at each of the priority lists provided
 function repeatedLocalSearch()
 	println("Initialising simulation from config: ", configFilename)
 	sim = initSim(configFilename; createBackup = false, doPrint = false)
 	
-	# change move up module index to comp_table
-	sim.moveUpData.moveUpModule = compTableModule
+	# change move up module index to priority_list
+	sim.moveUpData.moveUpModule = priorityListModule
 	sim.moveUpData.useMoveUp = true
 	
 	backupSim!(sim)
@@ -134,15 +133,16 @@ function repeatedLocalSearch()
 	flush(solFile)
 	flush(logFile)
 	
-	global nestedCompTables, nestedCompTableSols
-	if isempty(nestedCompTables)
-		println("generating $numSearches random nested compliance table(s)")
+	global priorityLists, priorityListSols
+	if isempty(priorityLists)
+		println("generating $numSearches random priority list(s)")
 		for i = 1:numSearches
-			nestedCompTable = makeRandNestedCompTable(sim.numAmbs, sim.numStations;
-				stationCapacities = stationCapacities, rng = nestedCompTableRng)
-			push!(nestedCompTables, nestedCompTable)
+			priorityList = makeRandPriorityList(sim.numAmbs, sim.numStations;
+				stationCapacities = stationCapacities, rng = priorityListRng)
+			push!(priorityLists, priorityList)
 		end
 	end
+	@assert(all(priorityList -> checkPriorityList(priorityList, sim), priorityLists))
 	
 	for i = 1:numSearches
 		logFileDict["search"] = i
@@ -150,54 +150,54 @@ function repeatedLocalSearch()
 		# perform local search until no improvements can be made
 		println()
 		println("Search ", i, " (of ", numSearches, ")")
-		nestedCompTable = localSearch!(sim, nestedCompTables[i], logFile)
+		priorityList = localSearch!(sim, priorityLists[i], logFile)
 		
 		# save best ambulance to station allocation found for this search iteration
-		push!(nestedCompTableSols, nestedCompTable)
+		push!(priorityListSols, priorityList)
 		
 		# write solution to file
-		writeDlmLine!(solFile, i, objValLookup(nestedCompTable), nestedCompTable...)
+		writeDlmLine!(solFile, i, objValLookup(priorityList), priorityList...)
 		flush(solFile)
 	end
 	
 	# print out all results from each finished local search
 	println()
-	println("Nested compliance tables from completed local searches:")
+	println("Priority lists from completed local searches:")
 	for i = 1:numSearches
 		println()
 		println("Iteration: ", i)
-		nestedCompTable = nestedCompTableSols[i]
-		printNestedCompTable(nestedCompTable)
-		println("objective value = ", objValLookup(nestedCompTable))
+		priorityList = priorityListSols[i]
+		printPriorityList(priorityList)
+		println("objective value = ", objValLookup(priorityList))
 	end
 	
 	close(solFile)
 	close(logFile)
 end
 
-# Local search of nested compliance table.
-# Move items in nested compliance table, making changes that optimise
+# Local search of priority list.
+# Move items in priority list, making changes that optimise
 # the objective function (objFn) for the given sense (:min or :max).
 # Continue search until no improvement can be made.
 # Mutates: sim, logFile
-function localSearch!(sim::Simulation, nestedCompTable::NestedCompTable, logFile::IOStream)
+function localSearch!(sim::Simulation, priorityList::PriorityList, logFile::IOStream)
 	
 	# shorthand
 	numAmbs = sim.numAmbs
 	numStations = sim.numStations
 	
 	# print starting point
-	println("Starting nested comp table:")
-	printNestedCompTable(nestedCompTable)
+	println("Starting priority list:")
+	printPriorityList(priorityList)
 	
 	# calculate objective value for starting point
-	objVal = objValLookup(nestedCompTable)
+	objVal = objValLookup(priorityList)
 	if objVal == nullObjVal
-		objVal = simObjVal!(sim, nestedCompTable)
+		objVal = simObjVal!(sim, priorityList)
 	end
 	println("starting objective value: ", objVal)
 	bestObjVal = objVal # current best objective value
-	bestNestedCompTable = copy(nestedCompTable)
+	bestPriorityList = copy(priorityList)
 	
 	# write starting point
 	for (key, value) in logFileDict
@@ -209,39 +209,39 @@ function localSearch!(sim::Simulation, nestedCompTable::NestedCompTable, logFile
 	logFileDict["objVal"] = objVal
 	logFileDict["bestObjVal"] = bestObjVal
 	logFileDict["iterTimeSeconds"] = 0
-	logFileWriteDlmLine!(logFile, logFileDict, nestedCompTable)
+	logFileWriteDlmLine!(logFile, logFileDict, priorityList)
 	
 	# local search - try re-inserting/swapping items in the
-	# nested comp table into different positions
+	# priority list into different positions
 	println("starting local search")
 	endPoint = nothing
 	iter = 1 # count iterations performed
 	startTime = time() # time each iteration
 	while true
 		for i = (numAmbs+numStations):-1:1, j = 1:numAmbs, move = ["insert", "swap"]
-			# starting with i > numAmbs will try insert/swap new items into nested comp table first (instead of only moving existing items within table); should help with speed
+			# starting with i > numAmbs will try insert/swap new items into priority list first (instead of only moving existing items within list); should help with speed
 			
 			i != j || continue # insert / swap will make no difference, skip
 			
-			# change nested comp table, using re-insertion / swapping
-			# if i <= numAmbs, move item in nestedCompTable[i] to nestedCompTable[j]
+			# change priority list, using re-insertion / swapping
+			# if i <= numAmbs, move item in priorityList[i] to priorityList[j]
 			# if i > numAmbs, try move slot from station i-numAmbs (if num spare slots > 0)
 			print(move, ": i = ", i, ", j = ", j)
-			nestedCompTable = copy(bestNestedCompTable)
+			priorityList = copy(bestPriorityList)
 			if move == "insert"
-				insert!(nestedCompTable, i, j) # || continue
+				insert!(priorityList, i, j) # || continue
 			elseif move == "swap"
-				swap!(nestedCompTable, i, j) # || continue
+				swap!(priorityList, i, j) # || continue
 			end
 			
-			objVal = objValLookup(nestedCompTable)
+			objVal = objValLookup(priorityList)
 			usedLookup = false
 			if objVal != nullObjVal
-				# nested comp table already tried
+				# priority list already tried
 				print("; done")
 				usedLookup = true
 			else
-				objVal = simObjVal!(sim, nestedCompTable)
+				objVal = simObjVal!(sim, priorityList)
 			end
 			merge!(logFileDict, simStats(sim)) # need to do this before resetting sim
 			
@@ -250,7 +250,7 @@ function localSearch!(sim::Simulation, nestedCompTable::NestedCompTable, logFile
 			usedMove = false
 			if (sense == :max && bestObjVal < objVal) || (sense == :min && bestObjVal > objVal)
 				bestObjVal = objVal
-				bestNestedCompTable = nestedCompTable
+				bestPriorityList = priorityList
 				usedMove = true
 				
 				println("made ", move,": i = ", i, ", j = ", j, "; new objective value: ", bestObjVal)
@@ -265,7 +265,7 @@ function localSearch!(sim::Simulation, nestedCompTable::NestedCompTable, logFile
 			logFileDict["objVal"] = objVal
 			logFileDict["bestObjVal"] = bestObjVal
 			logFileDict["iterTimeSeconds"] = round(time() - startTime, 2)
-			logFileWriteDlmLine!(logFile, logFileDict, nestedCompTable)
+			logFileWriteDlmLine!(logFile, logFileDict, priorityList)
 			
 			iter += 1
 			
@@ -273,18 +273,18 @@ function localSearch!(sim::Simulation, nestedCompTable::NestedCompTable, logFile
 				endPoint = (i,j,move) # set end point
 			elseif endPoint == (i,j,move)
 				println("Finished local search ", logFileDict["search"], " (of ", numSearches, "); solution:")
-				printNestedCompTable(bestNestedCompTable)
-				return bestNestedCompTable
+				printPriorityList(bestPriorityList)
+				return bestPriorityList
 			end
 		end
 	end
 end
 
-# for the given nested compliance table, count how many slots are still available for the station
-function countStationSpareSlots(nestedCompTable::NestedCompTable, stationIndex::Int)
+# for the given priority list, count how many slots are still available for the station
+function countStationSpareSlots(priorityList::PriorityList, stationIndex::Int)
 	global stationCapacities
 	stationSpareSlots = stationCapacities[stationIndex]
-	for i in nestedCompTable
+	for i in priorityList
 		if i == stationIndex
 			stationSpareSlots -= 1
 		end
@@ -292,58 +292,58 @@ function countStationSpareSlots(nestedCompTable::NestedCompTable, stationIndex::
 	return stationSpareSlots
 end
 
-# Insert item at index i into index j in nested comp table.
+# Insert item at index i into index j in priority list.
 # If i > numAmbs, insertion is done with station index i-numAmbs.
 # Return true if insertion completed, false otherwise.
-function insert!(nestedCompTable::NestedCompTable, i::Int, j::Int)
+function insert!(priorityList::PriorityList, i::Int, j::Int)
 	@assert(i != j)
 	
 	# shorthand
-	numAmbs = length(nestedCompTable)
+	numAmbs = length(priorityList)
 	numStations = length(stationCapacities) # global stationCapacities
 	
 	if i <= numAmbs
 		@assert(i >= 1)
-		# re-insert item in nestedCompTable[i] to nestedCompTable[j]
-		temp = nestedCompTable[i]
+		# re-insert item in priorityList[i] to priorityList[j]
+		temp = priorityList[i]
 		if i < j
 			for k = i:j-1
-				nestedCompTable[k] = nestedCompTable[k+1]
+				priorityList[k] = priorityList[k+1]
 			end
 		elseif i > j
 			for k = i:-1:j+1
-				nestedCompTable[k] = nestedCompTable[k-1]
+				priorityList[k] = priorityList[k-1]
 			end
 		else
 			error()
 		end
-		nestedCompTable[j] = temp
+		priorityList[j] = temp
 	else
 		i -= numAmbs # so now i = station index
 		@assert(1 <= i && i <= numStations)
-		stationSpareSlots = countStationSpareSlots(nestedCompTable, i)
+		stationSpareSlots = countStationSpareSlots(priorityList, i)
 		if stationSpareSlots == 0
 			return false
 		end
-		# insert slot from station i to nestedCompTable[j] (if stationSpareSlots > 0)
-		temp = nestedCompTable[numAmbs] # will be bumped from end of nestedCompTable
+		# insert slot from station i to priorityList[j] (if stationSpareSlots > 0)
+		temp = priorityList[numAmbs] # will be bumped from end of priorityList
 		for k = numAmbs:-1:j+1
-			nestedCompTable[k] = nestedCompTable[k-1]
+			priorityList[k] = priorityList[k-1]
 		end
-		nestedCompTable[j] = i
+		priorityList[j] = i
 	end
 	
 	return true
 end
 
-# Swap items at index i and index j in nested comp table.
+# Swap items at index i and index j in priority list.
 # If i > numAmbs, swap is done with station index i-numAmbs.
 # Return true if swap completed, false otherwise.
-function swap!(nestedCompTable::NestedCompTable, i::Int, j::Int)
+function swap!(priorityList::PriorityList, i::Int, j::Int)
 	@assert(i != j)
 	
 	# shorthand
-	numAmbs = length(nestedCompTable)
+	numAmbs = length(priorityList)
 	numStations = length(stationCapacities) # global stationCapacities
 	
 	@assert(1 <= i && i <= numAmbs + numStations)
@@ -351,19 +351,19 @@ function swap!(nestedCompTable::NestedCompTable, i::Int, j::Int)
 	
 	# perform swap if stations are different
 	if i <= numAmbs
-		if nestedCompTable[i] == nestedCompTable[j]
+		if priorityList[i] == priorityList[j]
 			return false
 		end
-		(nestedCompTable[i], nestedCompTable[j]) = (nestedCompTable[j], nestedCompTable[i])
+		(priorityList[i], priorityList[j]) = (priorityList[j], priorityList[i])
 	else # elseif i <= numAmbs + numStations
 		i -= numAmbs # so now i = station index
 		@assert(1 <= i && i <= numStations)
-		stationSpareSlots = countStationSpareSlots(nestedCompTable, i)
-		if i == nestedCompTable[j] || stationSpareSlots == 0
+		stationSpareSlots = countStationSpareSlots(priorityList, i)
+		if i == priorityList[j] || stationSpareSlots == 0
 			return false
 		end
-		# swap i with nestedCompTable[j]
-		nestedCompTable[j] = i
+		# swap i with priorityList[j]
+		priorityList[j] = i
 	end
 	
 	return true
