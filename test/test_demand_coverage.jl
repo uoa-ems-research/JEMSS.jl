@@ -113,7 +113,7 @@ end
 		for demandPriority in priorities
 			travelMode = JEMSS.getTravelMode!(travel, sim.responseTravelPriorities[demandPriority], sim.time)
 			coverTime = sim.demandCoverage.coverTimes[demandPriority]
-			pointCoverCounts[:] = 0
+			pointCoverCounts[:] .= 0
 			for (i,station) in enumerate(stations)
 				for (j,point) in enumerate(points)
 					# calculate travel time from station to point

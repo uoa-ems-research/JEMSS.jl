@@ -69,7 +69,7 @@ function createRGraphFromFGraph!(net::Network)
 	# only keep nodes with >= 3 adjacent nodes, or 2 adjacent nodes if the incoming and outgoing arcs cannot be replaced
 	# Also, for easier programming, put leaf nodes in fGraph into rGraph, hopefully there are not too many...
 	keepNode = Vector{Bool}(undef, numFNodes) # find which fNodes belong in rGraph
-	keepNode[:] = false
+	keepNode[:] .= false
 	for i = 1:numFNodes
 		if fNodeNumAdjacent[i] >= 3
 			keepNode[i] = true
@@ -410,7 +410,7 @@ function calcRNetTravelShortestPaths!(net::Network, rNetTravel::NetTravel)
 		end
 		if j != k
 			# for any paths from i that have successor node k, change successor to be j
-			spSuccs[i, spSuccs[i,:] .== k] = j
+			spSuccs[i, spSuccs[i,:] .== k] .= j
 		end
 	end
 	

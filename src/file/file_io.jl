@@ -182,7 +182,7 @@ function readTablesFromData(data::Array{Any,2})
 		numRows == nullIndex ? numRows = j - i : @assert(numRows == j - i)
 		
 		# create table
-		tableData = data[i-1+(1:numRows), 1:numCols]
+		tableData = data[i-1 .+ (1:numRows), 1:numCols]
 		table = Table(convert(String,tableName), tableHeader, tableData)
 		
 		# add table to tables

@@ -104,7 +104,7 @@ function temp1MoveUp(sim::Simulation)
 	# restrict which stations each ambulance can be moved to
 	# ambMovableToStation[i,j] = true if movableAmbs[i] can be moved to stations[j]; false otherwise
 	ambMovableToStation = Array{Bool,2}(undef, numMovableAmbs, numStations)
-	ambMovableToStation[:,:] = true
+	ambMovableToStation[:,:] .= true
 	
 	# limit ambulance move-up to nearest stations
 	numNearestStations = min(maxNumNearestStations, numStations)

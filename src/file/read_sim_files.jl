@@ -100,7 +100,7 @@ function readArcsFile(filename::String;
 			arcs[j].fields = deepcopy(arcs[i].fields)
 		end
 		# copy travel times
-		travelTimes[:, (1:numArcs) + numArcs] = travelTimes[:, 1:numArcs]
+		travelTimes[:, (1:numArcs) .+ numArcs] = travelTimes[:, 1:numArcs]
 	end
 	
 	# travel times should be positive

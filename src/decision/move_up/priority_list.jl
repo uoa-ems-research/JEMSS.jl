@@ -45,7 +45,7 @@ function initPriorityList!(sim::Simulation, priorityList::Vector{Int})
 	pld.stationNumIdleAmbs = Vector{Int}(undef, numStations)
 	
 	# check that ambulance to station assignments follow priority list
-	pld.stationNumIdleAmbs[:] = 0
+	pld.stationNumIdleAmbs[:] .= 0
 	for i = 1:numAmbs
 		pld.stationNumIdleAmbs[ambulances[i].stationIndex] += 1
 	end
@@ -66,7 +66,7 @@ function priorityListMoveUp(sim::Simulation, newlyIdleAmb::Ambulance)
 	numAmbs = sim.numAmbs
 	
 	# calculate the number of idle ambulances at (or travelling to) each station
-	stationNumIdleAmbs[:] = 0
+	stationNumIdleAmbs[:] .= 0
 	for i = 1:numAmbs
 		# do not count newly idle ambulance, it has not been assigned a station
 		if isAmbAvailableForMoveUp(ambulances[i]) && i != newlyIdleAmb.index

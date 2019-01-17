@@ -80,7 +80,7 @@ function createStationPairs(sim::Simulation, travelMode::TravelMode;
 	end
 	
 	areStationsPaired = Array{Bool,2}(undef,numStations,numStations) # areStationsPaired[i,j] = false if stations i, j, should not be paired
-	areStationsPaired[:] = true
+	areStationsPaired[:] .= true
 	sortedTimes = sort(stationToStationTimes, 2)
 	areStationsPaired .*= (stationToStationTimes .<= sortedTimes[:, maxPairsPerStation])
 	areStationsPaired .*= (stationToStationTimes .<= maxPairSeparation)

@@ -321,9 +321,9 @@ function graphTagSpElts!(nodes::Vector{Node}, arcs::Vector{Arc};
 		i = originNode # shorthand
 		spData = LightGraphs.dijkstra_shortest_paths(lightGraph, i, arcTimes)
 		spPreds = spData.parents # spPreds[j] gives index of node before j on shortest path from i to j
-		tagNode[:] = false
+		tagNode[:] .= false
 		tagNode[i] = true
-		tagArc[:] = false
+		tagArc[:] .= false
 		for nodeIndices in destNodeSets
 			for j in nodeIndices
 				while !tagNode[j]
