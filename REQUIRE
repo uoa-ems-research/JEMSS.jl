@@ -11,6 +11,6 @@ JuMP
 LightGraphs
 LightXML
 Plots
-Stats
+StatsBase
 StatsFuns
 WebSockets 0.4.0

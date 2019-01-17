@@ -228,9 +228,11 @@ function calcBatchMeanResponseTimes(sim::Simulation;
 		rmPartialBatch = rmPartialBatch, returnBatchSizes = returnBatchSizes)
 end
 
-# calculate Stats.sem for each row of x
-function Stats.sem(x::Array{T,2}) where T <: Real
-	return [Stats.sem(x[i,:]) for i = 1:size(x,1)]
+# calculate sem for 2d array, calculating along given dim
+function semDim(x::Array{T,2}, dim::Int = 1) where T <: Real
+	@assert(dim == 1 || dim == 2)
+	dim == 1 && return collect([sem(x[:,j]) for j = 1:size(x,2)]') # sem of each col
+	dim == 2 && return [sem(x[i,:]) for i = 1:size(x,1)] # sem of each row
 end
 
 # For each x[i], plot mean of y[i,:] with two sided confidence interval.
@@ -240,7 +242,7 @@ function meanErrorPlot(x::Vector{Float}, y::Array{Float,2}, conf::Float=0.95)
 	@assert(0 < conf < 1)
 	t = StatsFuns.tdistinvcdf(size(y,2)-1, 1-(1-conf)/2) # t-value, for two sided confidence interval
 	# StatsFuns.tdistinvcdf(dof, p) # for n samples, dof = n - 1
-	return Plots.scatter(x, mean(y,2), yerror=repeat(t*Stats.sem(y), 1, 2),
+	return Plots.scatter(x, mean(y,2), yerror=repeat(t*semDim(y,2), 1, 2),
 		xaxis=("x"), yaxis=("y"), m=(:hline), lab="")
 end
 function meanErrorPlot(x, y, conf::Float=0.95)

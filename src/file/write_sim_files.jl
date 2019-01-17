@@ -237,7 +237,7 @@ function writeBatchMeanResponseTimesFile(filename::String, batchMeanResponseTime
 		rows=[[numRows, numCols, batchTime, startTime, endTime, responseTimeUnits]])
 	avgBatchMeansTable = Table("avg_batch_mean_response_times",
 		["sim_index", "avg_batch_mean_response_time", "standard_error"];
-		rows = [[i, mean(x[i,:]), Stats.sem(x[i,:])] for i = 1:numRows])
+		rows = [[i, mean(x[i,:]), sem(x[i,:])] for i = 1:numRows])
 	batchMeansTable = Table("batch_mean_response_times",
 		["batch_index", ["sim_$i" for i = 1:numRows]...];
 		rows = [[i, x[:,i]...] for i = 1:numCols])

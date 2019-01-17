@@ -34,7 +34,7 @@ using GLPKMathProgInterface # does not use precompile
 # statistics
 using Distributions
 using HypothesisTests
-using Stats
+using StatsBase
 using StatsFuns
 
 # misc
