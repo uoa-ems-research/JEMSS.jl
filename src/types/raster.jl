@@ -35,7 +35,7 @@ function cropRaster!(raster::Raster, map::Map)
 	end
 	
 	# overwrite raster field values in raster with those in croppedRaster
-	for fname in fieldnames(raster)
+	for fname in fieldnames(Raster)
 		setfield!(raster, fname, getfield(croppedRaster, fname))
 	end
 	

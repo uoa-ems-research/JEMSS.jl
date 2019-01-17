@@ -210,7 +210,7 @@ function animateClient(client::Client)
 	println("Client connected")
 	
 	# get first item in animSimQueue, or get filename now
-	nextAnimItem = (length(animSimQueue) > 0 ? shift!(animSimQueue) : selectXmlFile())
+	nextAnimItem = (length(animSimQueue) > 0 ? popfirst!(animSimQueue) : selectXmlFile())
 	sim = nothing # init
 	if typeof(nextAnimItem) == Simulation
 		sim = nextAnimItem

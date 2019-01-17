@@ -29,7 +29,7 @@ function resetCalls!(sim::Simulation)
 	backupCalls = sim.backup.calls
 	numCalls = sim.numCalls
 	nullCall = Call()
-	fnames = Set(fieldnames(nullCall))
+	fnames = Set(fieldnames(Call))
 	
 	@assert(length(calls) == numCalls)
 	@assert(length(backupCalls) == numCalls)
