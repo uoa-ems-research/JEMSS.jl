@@ -155,8 +155,8 @@ function temp2MoveUp(sim::Simulation)
 	mapzy = Vector{Vector{Int}}() # for mapping stationPairSlots to pair of stationSlots
 	mapmbz = Array{Array{Int,2},2}(undef, size(marginalBenefit)) # for mapping marginalBenefit to stationPairSlots
 	for (p, (i,j)) in enumerate(stationPairs)
-		ssi = find(stationSlots .== i)
-		ssj = find(stationSlots .== j)
+		ssi = findall(stationSlots .== i)
+		ssj = findall(stationSlots .== j)
 		mapmbz[i,j] = nullIndex * ones(Int, size(marginalBenefit[i,j]))
 		for k1 = 1:length(ssi), k2 = 1:length(ssj)
 			push!(stationPairSlots, p)
@@ -208,8 +208,8 @@ function temp2MoveUp(sim::Simulation)
 	end)
 	
 	@constraints(model, begin
-		(ambAtOneLocation[i=1:a], sum(x[k] for k=find(ambList .== i)) == 1) # each ambulance must be assigned to one station
-		(stationAmbCounts[j=1:s], sum(x[k] for k=find(stationList .== j)) == sum(y[k] for k=find(stationSlots .== j)))
+		(ambAtOneLocation[i=1:a], sum(x[k] for k=findall(ambList .== i)) == 1) # each ambulance must be assigned to one station
+		(stationAmbCounts[j=1:s], sum(x[k] for k=findall(stationList .== j)) == sum(y[k] for k=findall(stationSlots .== j)))
 		(stationPairAmbCounts[k=1:q, l=1:2], z[k] <= y[mapzy[k][l]])
 		# (totalBenefit >= totalBenefitLowerBound)
 	end)

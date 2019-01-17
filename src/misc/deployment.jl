@@ -28,7 +28,7 @@ function makeRandDeployment(numAmbs::Int, numStations::Int;
 		@assert(numStations == length(stationCapacities))
 		@assert(numAmbs <= sum(stationCapacities))
 		remainingCapacity = copy(stationCapacities)
-		unfilledStations = Set(find(remainingCapacity))
+		unfilledStations = Set(findall(remainingCapacity))
 		deployment = zeros(Int, numAmbs)
 		for i = 1:numAmbs
 			j = rand(rng, unfilledStations) # station index

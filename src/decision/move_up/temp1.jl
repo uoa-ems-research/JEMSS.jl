@@ -178,9 +178,9 @@ function temp1MoveUp(sim::Simulation)
 	end)
 	
 	@constraints(model, begin
-		(ambAtOneLocation[i=1:a], sum(x[k] for k=find(ambList .== i)) == 1) # each ambulance must be assigned to one station
-		(stationAmbCounts[j=1:s], sum(x[k] for k=find(stationList .== j)) == sum(y[k] for k=find(stationSlots .== j)))
-		(stationPairAmbCounts[l=1:p], sum(x[k] for k=find(stationList .== stationPairs[l][1])) + sum(x[k] for k=find(stationList .== stationPairs[l][2])) == sum(z[k] for k=find(stationPairSlots .== l)))
+		(ambAtOneLocation[i=1:a], sum(x[k] for k=findall(ambList .== i)) == 1) # each ambulance must be assigned to one station
+		(stationAmbCounts[j=1:s], sum(x[k] for k=findall(stationList .== j)) == sum(y[k] for k=findall(stationSlots .== j)))
+		(stationPairAmbCounts[l=1:p], sum(x[k] for k=findall(stationList .== stationPairs[l][1])) + sum(x[k] for k=findall(stationList .== stationPairs[l][2])) == sum(z[k] for k=findall(stationPairSlots .== l)))
 	end)
 	
 	@expressions(model, begin

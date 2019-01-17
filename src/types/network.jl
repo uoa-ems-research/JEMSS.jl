@@ -81,7 +81,7 @@ function createRGraphFromFGraph!(net::Network)
 	end
 	if !any(keepNode) keepNode[1] = true end # if there are still no rNodes, make one (can happen if network is just a loop)
 	rGraph.nodes = deepcopy(fNodes[keepNode]) # need to renumber rNode indices later
-	net.rNodeFNode = find(keepNode)
+	net.rNodeFNode = findall(keepNode)
 	net.fNodeRNode = [nullIndex for i = 1:numFNodes]
 	net.fNodeRNode[keepNode] = [1:sum(keepNode);]
 	
@@ -114,7 +114,7 @@ function createRGraphFromFGraph!(net::Network)
 	for i = 1:length(rGraph.nodes)
 		rGraph.nodes[i].index = i
 	end
-	net.rNodeFNode = find(keepNode)
+	net.rNodeFNode = findall(keepNode)
 	net.fNodeRNode = [nullIndex for i = 1:numFNodes]
 	net.fNodeRNode[keepNode] = [1:sum(keepNode);]
 	

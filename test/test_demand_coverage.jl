@@ -91,7 +91,7 @@ travel = sim.travel;
 			end
 		end
 		
-		@test all(i -> all(j -> find(stationsCoverPoints[:,j]) == stationSets[i], pointSets[i]), 1:length(pointSets)) # assume that both vectors (stationsCoverPoints[:,j] and stationSets[i]) are sorted the same
+		@test all(i -> all(j -> findall(stationsCoverPoints[:,j]) == stationSets[i], pointSets[i]), 1:length(pointSets)) # assume that both vectors (stationsCoverPoints[:,j] and stationSets[i]) are sorted the same
 	end
 	
 	# check pointsCoverageModeLookup

@@ -41,8 +41,8 @@ function initZhangIp!(sim::Simulation;
 	
 	zid.marginalBenefitsDecreasing = all(i -> issorted(zid.marginalBenefits[i], lt=<=, rev=true), 1:numStations)
 	if !zid.marginalBenefitsDecreasing
-		p1 = vcat([find(zid.stationSlots .== j)[1:end-1] for j = 1:numStations]...)
-		p2 = vcat([find(zid.stationSlots .== j)[2:end] for j = 1:numStations]...)
+		p1 = vcat([findall(zid.stationSlots .== j)[1:end-1] for j = 1:numStations]...)
+		p2 = vcat([findall(zid.stationSlots .== j)[2:end] for j = 1:numStations]...)
 		zid.stationSlotsOrderPairs = hcat(p1, p2)
 	end
 	
@@ -147,8 +147,8 @@ function zhangIpMoveUp(sim::Simulation)
 	@constraints(model, begin
 		(movableAmbAtOneLocation[i=ai], sum(x[i,:]) == 1) # each movable ambulance must be assigned to one station
 		(atHospitalAmbAtMostOneLocation[i=aj], sum(x[i,:]) <= 1) # each at-hospital ambulance may be assigned to zero or one station
-		(stationAmbCounts[j=1:s], sum(x[:,j]) == sum(y[k] for k=find(stationSlots .== j)))
-		# (stationAmbCounts[j=1:s], sum(x[:,j]) >= sum(y[k] for k=find(stationSlots .== j))) # should have same effect as "==" constraint (instead of ">="), but may be faster?
+		(stationAmbCounts[j=1:s], sum(x[:,j]) == sum(y[k] for k=findall(stationSlots .== j)))
+		# (stationAmbCounts[j=1:s], sum(x[:,j]) >= sum(y[k] for k=findall(stationSlots .== j))) # should have same effect as "==" constraint (instead of ">="), but may be faster?
 	end)
 	
 	if !zid.marginalBenefitsDecreasing

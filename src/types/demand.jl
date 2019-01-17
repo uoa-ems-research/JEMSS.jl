@@ -191,12 +191,12 @@ function createPointsCoverageMode(sim::Simulation, travelMode::TravelMode, cover
 		push!(stationSets, j)
 	end
 	pointSets = collect(values(stationSetsPoints)) # pointSets[i] has set of all point indices covered by the same unique set of stations
-	stationSets = [find(stationSet) for stationSet in keys(stationSetsPoints)] # stationSets[i] = unique set of stations for pointSets[i]
+	stationSets = [findall(stationSet) for stationSet in keys(stationSetsPoints)] # stationSets[i] = unique set of stations for pointSets[i]
 	# according to documentation, 'values' and 'keys' return elements in the same order, so pointSets[i] corresponds with stationSets[i]
 	
 	stationsCoverPointSets = Vector{Vector{Int}}(undef, numStations) # stationsCoverPointSets[i] = list of point set indices covered by station i
 	for i = 1:numStations
-		stationsCoverPointSets[i] = find(stationSet -> in(i,stationSet), stationSets)
+		stationsCoverPointSets[i] = findall(stationSet -> in(i,stationSet), stationSets)
 	end
 	
 	pointsCoverageMode.pointSets = pointSets

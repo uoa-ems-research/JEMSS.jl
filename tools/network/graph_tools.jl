@@ -130,7 +130,7 @@ function graphRemoveElts!(nodes::Vector{Node}, arcs::Vector{Arc};
 	nodeFilter::Function = (x->true), arcFilter::Function = (x->true))
 	
 	# before filtering, create mapping from old indices to new
-	keepNodeIndices = find(nodeFilter, nodes)
+	keepNodeIndices = findall(nodeFilter, nodes)
 	nodeNewIndex = fill(nullIndex, length(nodes))
 	nodeNewIndex[keepNodeIndices] = 1:length(keepNodeIndices) # nodeNewIndex[i] gives new node index for old nodes[i]
 	

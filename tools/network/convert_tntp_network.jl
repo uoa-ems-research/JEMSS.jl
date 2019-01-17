@@ -70,7 +70,7 @@ function readTntpNetworkFile(tntpNetworkFilename::String; delim::Char = '\t')
 	numArcs = f(r"<NUMBER OF LINKS> (\d+)", data[4,1])
 	
 	# find and read table data
-	row = first(find(data[:,1] .== "~"))
+	row = first(findall(data[:,1] .== "~"))
 	header = data[row,:]
 	cols = find(.!isempty.(header))[2:end] # need to ignore any empty headers, and "~"
 	table = Table("tntpNetwork", data[row, cols], data[row+1:end, cols])
