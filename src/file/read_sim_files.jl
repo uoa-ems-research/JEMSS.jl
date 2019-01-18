@@ -233,7 +233,7 @@ function readDemandFile(filename::String)
 		rasterIndex = demand.modes[i].rasterIndex = columns["rasterIndex"][i]
 		@assert(1 <= rasterIndex <= numRasters)
 		demand.modes[i].raster = demand.rasters[rasterIndex]
-		demand.modes[i].priority = columns["priority"][i] |> parse |> eval
+		demand.modes[i].priority = columns["priority"][i] |> Meta.parse |> eval
 		demand.modes[i].arrivalRate = columns["arrivalRate"][i]
 		@assert(demand.modes[i].arrivalRate >= 0)
 		demand.modes[i].rasterMultiplier = demand.modes[i].arrivalRate / sum(demand.modes[i].raster.z)
@@ -250,7 +250,7 @@ function readDemandFile(filename::String)
 	for i = 1:n
 		setIndex = columns["setIndex"][i]
 		@assert(setIndex == i)
-		modeIndices = columns["modeIndices"][i] |> parse |> eval
+		modeIndices = columns["modeIndices"][i] |> Meta.parse |> eval
 		for modeIndex in modeIndices
 			@assert(1 <= modeIndex <= numModes)
 			priorityIndex = Int(demand.modes[modeIndex].priority)
@@ -520,8 +520,8 @@ function readRasterFile(rasterFilename::String)
 	xMin = x1 + 0.5*dx # we know dx > 0
 	# (xMin, dx, z) = (dx > 0) ? (x1 + 0.5*dx, dx, z) : (x1 + (nx-0.5)*dx, -dx, flipdim(z,1))
 	(yMin, dy, z) = (dy > 0) ? (y1 + 0.5*dy, dy, z) : (y1 + (ny-0.5)*dy, -dy, flipdim(z,2))
-	x = collect(range(xMin, dx, nx))
-	y = collect(range(yMin, dy, ny))
+	x = collect(Compat.range(xMin, step=dx, length=nx))
+	y = collect(Compat.range(yMin, step=dy, length=ny))
 	
 	return Raster(x, y, z)
 end

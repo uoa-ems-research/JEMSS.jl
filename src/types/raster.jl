@@ -65,8 +65,9 @@ end
 
 function rasterZIndexToXYIndices(raster::Raster, i::Int)
 	# return (x,y) indices for raster.z[i]
-	@assert(1 <= i && i <= length(raster.z)) # ind2sub does not check this
-	return ind2sub(raster.z, i)
+	@assert(1 <= i && i <= length(raster.z))
+	c = CartesianIndices(raster.z)[i]
+	return c[1], c[2]
 end
 
 # generate n random locations for a given raster sampler

@@ -119,7 +119,7 @@ function writeTravelFile(filename::String, travel::Travel)
 	tml = travel.modeLookup # shorthand
 	@assert(size(tml) == (length(travel.modes), numPriorities)) # should have value for each combination of travel mode and priority
 	travelSetsTable = Table("travelSets", ["travelSetIndex", "priority", "travelModeIndex"];
-		rows = [[ind2sub(tml,i)[1], string(Priority(ind2sub(tml,i)[2])), tml[i]] for i = 1:length(tml)])
+		rows = [[[i, string(Priority(j)), tml[i,j]] for i = 1:size(tml,1), j = 1:size(tml,2)]...])
 	
 	# travel sets timing table
 	startTimes = travel.setsStartTimes # shorthand

@@ -70,7 +70,7 @@ end
 # allow fractional trimming of border
 function randLocation(map::Map; trim::Float = 0.0, rng::AbstractRNG = GLOBAL_RNG)
 	@assert(trim >= 0 && trim <= 1)
-	r = rand(rng, 2) .* (1-trim) + trim/2
+	r = rand(rng, 2) .* (1-trim) .+ trim/2
 	location = Location()
 	location.x = map.xMin + map.xRange * r[1]
 	location.y = map.yMin + map.yRange * r[2]

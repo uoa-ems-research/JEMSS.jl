@@ -14,7 +14,7 @@
 ##########################################################################
 
 using JEMSS
-using Base.Test
+using Test
 
 cd(@__DIR__) do
 	isdir("temp") || mkpath("temp")

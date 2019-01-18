@@ -255,7 +255,7 @@ function graphTagSpElts!(nodes::Vector{Node}, arcs::Vector{Arc};
 	spHeader::String = "in_a_sp", chosenNodes::Vector{Int} = Int[], originNodes::Vector{Int} = Int[], destNodes::Vector{Int} = Int[], dijkstraSpDistmxAllowDict::Bool = false)
 	
 	@assert(!graphContainsDuplicateArcs(arcs), "Cannot handle duplicate arcs")
-	if dijkstraSpDistmxAllowDict info("Setting `dijkstraSpDistmxAllowDict` = true requires LightGraphs.dijkstra_shortest_paths function to be changed, to allow arg `distmx` to be type Dict") end
+	if dijkstraSpDistmxAllowDict @info("Setting `dijkstraSpDistmxAllowDict` = true requires LightGraphs.dijkstra_shortest_paths function to be changed, to allow arg `distmx` to be type Dict") end
 	
 	# shorthand
 	numArcs = length(arcs)
