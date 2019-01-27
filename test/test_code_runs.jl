@@ -18,9 +18,9 @@
 # check that different sim configs can be opened, and sim can run
 @testset "sim configs" begin
 	@assert(isdir("data/regions/small/1"))
+	@info("Testing sim configs")
 	simConfigFolder = "data/regions/small/1/sim_configs"
 	for configFilename in readdir(simConfigFolder)
-		@info(string("Running sim config: ", configFilename))
 		filename = joinpath(pwd(), simConfigFolder, configFilename)
 		sim = initSim(filename, doPrint = false);
 		simulate!(sim)

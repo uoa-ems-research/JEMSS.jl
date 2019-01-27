@@ -176,7 +176,7 @@ function zhangIpMoveUp(sim::Simulation)
 	ambStations = [stations[findfirst(sol[i,:])] for i = ai] # only consider movableAmbs (ignore atHospitalAmbs)
 	
 	if checkMode
-		@assert(all(sum(sol,2) .<= 1)) # each ambulance can be used in move up at most once
+		@assert(all(sum(sol, dims=2) .<= 1)) # each ambulance can be used in move up at most once
 		
 		# check that y values are ordered correctly
 		stationSlotsFilled = convert(Vector{Bool}, round.(getvalue(y)))
