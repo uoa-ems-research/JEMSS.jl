@@ -16,7 +16,6 @@ notifications:
   email: false
 script:
   - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
-  - julia --color=yes -e 'using Pkg; Pkg.clone("https://github.com/samridler/ArchGDAL.jl.git"); Pkg.build("ArchGDAL")'
   - julia --color=yes -e 'using Pkg; Pkg.clone(pwd()); Pkg.build("JEMSS"); Pkg.test("JEMSS"; coverage=true)'
 after_success:
   # push coverage results to Coveralls
