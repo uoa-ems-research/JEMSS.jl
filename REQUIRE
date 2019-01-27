@@ -1,7 +1,7 @@
 julia 0.6
 ArchGDAL
 Cbc
-Compat
+Compat 1.4.0
 Distributions
 GLPKMathProgInterface
 HTTP
