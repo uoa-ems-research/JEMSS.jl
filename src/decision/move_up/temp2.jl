@@ -128,7 +128,8 @@ function temp2MoveUp(sim::Simulation)
 	end
 	
 	# useful lists for IP
-	(ambList, stationList) = findn(ambMovableToStation)
+	I = findall(ambMovableToStation)
+	(ambList, stationList) = (getindex.(I, 1), getindex.(I, 2))
 	# ambList and stationList together have all the information of ambMovableToStation:
 	# - movableAmbs[i] can move to stations stationList[ambList .== i]
 	# - stations[j] can have any of the ambulances in ambList[stationList .== j]
