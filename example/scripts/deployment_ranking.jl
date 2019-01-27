@@ -66,7 +66,7 @@ for i = 1:numDeployments
 end
 batchMeanResponseTimes = hcat(x...)' # batchMeanResponseTimes[i,j] is for calls in simulation i, batch j
 
-warn("Have assumed that batch time of $batchTime is sufficient for values in batchMeanResponseTimes[i,:] to be from a normal distribution (for each i).")
+@warn("Have assumed that batch time of $batchTime is sufficient for values in batchMeanResponseTimes[i,:] to be from a normal distribution (for each i).")
 
 # Check for serial autocorrelation of batchMeanResponseTimes for each deployment,
 # if autocorrelation is detected, then the batch sizes / durations need to be increased.

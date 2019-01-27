@@ -110,7 +110,7 @@ function zhangIpMoveUp(sim::Simulation)
 				end
 			end
 		elseif ambulance.status == ambAtHospital
-			adjustedAmbToStationTimes[i,:] += zid.expectedHospitalTransferDuration
+			adjustedAmbToStationTimes[i,:] .+= zid.expectedHospitalTransferDuration
 		else
 			error()
 		end
@@ -123,8 +123,8 @@ function zhangIpMoveUp(sim::Simulation)
 	
 	# shorthand variable names:
 	a = numMoveUpAmbs
-	ai = findin(moveUpAmbs, movableAmbs) # indices of movableAmbs in moveUpAmbs
-	aj = findin(moveUpAmbs, atHospitalAmbs) # indices of atHospitalAmbs in moveUpAmbs
+	ai = findall(in(movableAmbs), moveUpAmbs) # indices of movableAmbs in moveUpAmbs
+	aj = findall(in(atHospitalAmbs), moveUpAmbs) # indices of atHospitalAmbs in moveUpAmbs
 	s = numStations
 	n = length(stationSlots) # = length(benefitSlots)
 	

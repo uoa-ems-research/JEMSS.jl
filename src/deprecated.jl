@@ -39,7 +39,7 @@ simulateDeployments!(sim, deployments, f; showEta = showEta))
 
 # write deployments to file
 function writeDeploymentPoliciesFile(filename::String, deployments::Vector{Deployment}, numStations::Int)
-	warn("'writeDeploymentPoliciesFile' is deprecated, should use 'writeDeploymentsFile' instead")
+	@warn("'writeDeploymentPoliciesFile' is deprecated, should use 'writeDeploymentsFile' instead")
 	numAmbs = length(deployments[1])
 	@assert(numStations >= maximum([maximum(d) for d in deployments]))
 	numDeployments = length(deployments)
@@ -52,7 +52,7 @@ function writeDeploymentPoliciesFile(filename::String, deployments::Vector{Deplo
 end
 
 function readDeploymentPoliciesFile(filename::String)
-	warn("'readDeploymentPoliciesFile' is deprecated, should save deployment with 'writeDeploymentsFile' and load again with 'readDeploymentsFile'")
+	@warn("'readDeploymentPoliciesFile' is deprecated, should save deployment with 'writeDeploymentsFile' and load again with 'readDeploymentsFile'")
 	tables = readTablesFromFile(filename)
 	
 	# get counts

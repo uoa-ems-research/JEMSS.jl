@@ -50,7 +50,7 @@ function initPriorityList!(sim::Simulation, priorityList::Vector{Int})
 		pld.stationNumIdleAmbs[ambulances[i].stationIndex] += 1
 	end
 	if !all(pld.stationNumIdleAmbs[i] == sum(pld.priorityList .== i) for i = 1:numStations)
-		warn("Number of ambulances at each station does not match priority list")
+		@warn("Number of ambulances at each station does not match priority list")
 	end
 end
 

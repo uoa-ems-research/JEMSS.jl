@@ -21,16 +21,16 @@ using JEMSS
 travelModeString(i::Int) = "mode_$i"
 
 function checkNodeIndices(nodes::Vector{Node})
-	all(i -> i == nodes[i].index, 1:length(nodes)) || warn("Node indices are not 1:n")
+	all(i -> i == nodes[i].index, 1:length(nodes)) || @warn("Node indices are not 1:n")
 end
 
 function checkArcIndices(arcs::Vector{Arc})
-	all(i -> i == arcs[i].index, 1:length(arcs)) || warn("Arc indices are not 1:n")
+	all(i -> i == arcs[i].index, 1:length(arcs)) || @warn("Arc indices are not 1:n")
 end
 
 # check arc.fromNodeIndex and arc.toNodeIndex values are in expected range
 function checkArcNodeIndices(numNodes::Int, arcs::Vector{Arc})
-	all(i -> (1 <= arcs[i].fromNodeIndex <= numNodes) && (1 <= arcs[i].toNodeIndex <= numNodes), 1:length(arcs)) || warn("Arc from/to node indices are not all within 1:numNodes")
+	all(i -> (1 <= arcs[i].fromNodeIndex <= numNodes) && (1 <= arcs[i].toNodeIndex <= numNodes), 1:length(arcs)) || @warn("Arc from/to node indices are not all within 1:numNodes")
 end
 checkArcNodeIndices(nodes::Vector{Node}, arcs::Vector{Arc}) = checkArcNodeIndices(length(nodes), arcs)
 

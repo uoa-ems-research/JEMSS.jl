@@ -230,7 +230,7 @@ function animateClient(client::Client)
 		if !sim.used
 			backupSim!(sim)
 		else
-			warn("will not be able to restart animation because the simulation has been partially run and has no backup")
+			@warn("will not be able to restart animation because the simulation has been partially run and has no backup")
 		end
 	end
 	if sim.complete
@@ -300,8 +300,8 @@ function animateClient(client::Client)
 			try
 				animSetIcons(client)
 			catch e
-				warn("Could not update animation icons")
-				warn(e)
+				@warn("Could not update animation icons")
+				@warn(e)
 			end
 			
 		elseif msgType == "disconnect"

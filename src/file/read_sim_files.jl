@@ -191,7 +191,7 @@ function readCompTableFile(filename::String)
 	@assert(all(compTable .>= 0))
 	
 	# check that compliance table rows add up to row indices
-	@assert(vec(sum(compTable, 2)) == [1:numAmbs;])
+	@assert(vec(sum(compTable, dims=2)) == [1:numAmbs;])
 	
 	return compTable
 end

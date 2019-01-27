@@ -171,7 +171,7 @@ function initSim(configFilename::String;
 			initTime(t)
 		catch
 			doPrint && println()
-			warn("failed to use data from rNetTravels file")
+			@warn("failed to use data from rNetTravels file")
 			rNetTravelsLoaded = []
 			rNetTravelsFilename = ""
 		end
