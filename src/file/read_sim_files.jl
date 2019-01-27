@@ -181,7 +181,7 @@ function readCompTableFile(filename::String)
 	end
 	
 	# create compliance table
-	compTable = Array{Int,2}(undef, numAmbs, numStations)
+	compTable = CompTable(numAmbs, numStations)
 	for i in columns["numAmbs"]
 		for j = 1:numStations
 			compTable[i,j] = columns[string("station_", j)][i]
@@ -482,7 +482,7 @@ function readPriorityListFile(filename::String)
 	
 	# create priority list from data in table
 	columns = table.columns # shorthand
-	priorityList = Vector{Int}(undef, n)
+	priorityList = PriorityList(n)
 	for i = 1:n
 		@assert(columns["numAmbs"][i] == i)
 		priorityList[i] = columns["stationIndex"][i]

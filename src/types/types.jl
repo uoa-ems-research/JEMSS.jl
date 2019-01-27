@@ -555,12 +555,15 @@ mutable struct EmptyMoveUpData <: MoveUpDataType end
 # compliance table data
 mutable struct CompTableData <: MoveUpDataType
 	# parameters:
-	compTable::Array{Int,2} # compTable[i,j] = number of ambulances to place at station j, with i total idle ambs
+	compTable::CompTable # compTable[i,j] = number of ambulances to place at station j, with i total idle ambs
+	
+	compTableStationSlots::Vector{Vector{Int}} # sum(compTableStationSlots[i] .== j) == compTable[i,j]
 	
 	# arrays for recycling:
 	ambMovable::Vector{Bool} # ambMovable[i] = true if ambulance i is available for move up, false otherwise
 	
-	CompTableData() = new(Array{Int,2}(undef,0,0),
+	CompTableData() = new(CompTable(undef,0,0),
+		[],
 		[])
 end
 

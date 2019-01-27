@@ -4,6 +4,7 @@ Cbc
 Distributions
 GLPKMathProgInterface
 HTTP
+Hungarian
 HypothesisTests
 JSON
 JuMP
@@ -12,4 +13,4 @@ LightXML
 Plots
 StatsBase
 StatsFuns
-WebSockets 0.4.0
+WebSockets

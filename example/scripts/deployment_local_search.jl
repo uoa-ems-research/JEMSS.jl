@@ -28,9 +28,9 @@ const solFilename = "$outputFolder/solutions.csv" # final solutions from each lo
 const logFilename = "$outputFolder/log.csv" # log search progress to file
 const ObjVal = Int # type alias, return type of objFn
 const nullObjVal = -1 # depends on objective function, see objFn
-const sense = :min # :min or :max; direction of optimisation for objective function
+const sense = :max # :min or :max; direction of optimisation for objective function
 deployments = [] # leave empty (and set numSearches) if generating random deployments for random restarts
-const numSearches = isempty(deployments) ? 5 : length(deployments) # number of local searches to perform
+const numSearches = isempty(deployments) ? 1 : length(deployments) # number of local searches to perform
 deploymentRng = MersenneTwister(0) # useful for reproducing results, if using random restarts
 
 # some parameter checks
@@ -112,7 +112,7 @@ end
 # perform local search, starting at each of the deployments provided
 function repeatedLocalSearch()
 	println("Initialising simulation from config: ", configFilename)
-	sim = initSim(configFilename, doPrint = false)
+	sim = initSim(configFilename, createBackup = true, doPrint = false)
 	
 	# open files for writing solution
 	solFile = open(solFilename, "w")
@@ -126,7 +126,7 @@ function repeatedLocalSearch()
 	
 	global deployments
 	if isempty(deployments)
-		println("generating $numSearches random deployments")
+		println("generating $numSearches random deployment(s)")
 		deployments = makeRandDeployments(sim, numSearches; rng = deploymentRng)
 	end
 	
@@ -156,10 +156,11 @@ function repeatedLocalSearch()
 	println()
 	println("Station ambulance counts from completed local searches:")
 	for i = 1:numSearches
+		println()
 		println("Iteration: ", i)
 		stationsNumAmbs = stationsNumAmbsSols[i]
 		printStationsNumAmbs(stationsNumAmbs)
-		println("	objective value = ", objValLookup(stationsNumAmbs))
+		println("objective value = ", objValLookup(stationsNumAmbs))
 	end
 	
 	close(solFile)
@@ -172,8 +173,6 @@ end
 # Continue search until no improvement can be made.
 # mutates: sim, stationsNumAmbsObjVal, logFile
 function localSearch!(sim::Simulation, stationsNumAmbsObjVal::Dict{StationsNumAmbs,ObjVal}, logFile::IOStream)::StationsNumAmbs
-	
-	backupSim!(sim) # for restarting sim
 	
 	# shorthand
 	numStations = sim.numStations
@@ -274,6 +273,5 @@ end
 
 # run
 t = time()
-println("starting...")
 repeatedLocalSearch()
 println("total runtime: ", round(time()-t, digits = 2), " seconds")

@@ -48,6 +48,7 @@ import Random: AbstractRNG, GLOBAL_RNG, MersenneTwister
 using SparseArrays
 using LightGraphs
 using ArchGDAL # does not use precompile
+using Hungarian
 import Plots
 
 # simulation functions
@@ -78,7 +79,9 @@ export
 	rasterRandLocations, printRasterSize, # raster
 	shortestRouteTravelTime!, # route
 	getCallResponseTimes, getAvgCallResponseTime, getCallsReachedInTime, countCallsReachedInTime, printSimStats, printAmbsStats, printCallsStats, printHospitalsStats, calcBatchMeans, calcBatchMeanResponseTimes, meanErrorPlot, calcAR0DurbinWatsonTestPValue, # statistics
+	checkCompTable, checkCompTableIsNested, nestCompTable, unnestCompTable, makeRandNestedCompTable, # compliance table
 	makeRandDeployment, makeRandDeployments, deploymentToStationsNumAmbs, stationsNumAmbsToDeployment, getDeployment, getStationsNumAmbs, setAmbStation!, applyDeployment!, applyStationsNumAmbs!, simulateDeployment!, simulateDeployments!, # deployment
+	checkPriorityList, makeRandPriorityList, # priority list
 	solveMexclp! # mexclp
 
 # types
@@ -95,7 +98,7 @@ export
 	Float, FloatSpTime, IntRNode, IntFadj, # type alias
 	nullIndex, nullX, nullY, nullTime, nullDist, # nulls
 	priorities, numPriorities, # priorities
-	Deployment
+	Deployment, CompTable, NestedCompTable, PriorityList
 
 # defs - enums
 export
