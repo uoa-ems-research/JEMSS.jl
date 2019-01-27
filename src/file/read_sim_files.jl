@@ -520,8 +520,8 @@ function readRasterFile(rasterFilename::String)
 	xMin = x1 + 0.5*dx # we know dx > 0
 	# (xMin, dx, z) = (dx > 0) ? (x1 + 0.5*dx, dx, z) : (x1 + (nx-0.5)*dx, -dx, flipdim(z,1))
 	(yMin, dy, z) = (dy > 0) ? (y1 + 0.5*dy, dy, z) : (y1 + (ny-0.5)*dy, -dy, flipdim(z,2))
-	x = collect(Compat.range(xMin, step=dx, length=nx))
-	y = collect(Compat.range(yMin, step=dy, length=ny))
+	x = collect(range(xMin, step=dx, length=nx))
+	y = collect(range(yMin, step=dy, length=ny))
 	
 	return Raster(x, y, z)
 end

@@ -18,6 +18,7 @@ module JEMSS
 
 # animation
 using HTTP
+using Sockets
 using WebSockets
 using JSON
 
@@ -48,12 +49,6 @@ using SparseArrays
 using LightGraphs
 using ArchGDAL # does not use precompile
 import Plots
-
-# compat
-using Compat
-import Compat.Nothing
-import Compat.Sockets
-import Compat.Sys
 
 # simulation functions
 export
