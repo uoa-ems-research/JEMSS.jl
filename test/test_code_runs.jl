@@ -13,13 +13,17 @@
 # limitations under the License.
 ##########################################################################
 
-using JEMSS
-using Test
+# tests to check that code runs without crashing, but not checking that output is expected
 
-cd(@__DIR__) do
-	isdir("temp") || mkpath("temp")
-	include("test_network.jl")
-	include("test_demand.jl")
-	include("test_demand_coverage.jl")
-	include("test_code_runs.jl")
+# check that different sim configs can be opened, and sim can run
+@testset "sim configs" begin
+	@assert(isdir("data/regions/small/1"))
+	simConfigFolder = "data/regions/small/1/sim_configs"
+	for configFilename in readdir(simConfigFolder)
+		@info(string("Running sim config: ", configFilename))
+		filename = joinpath(pwd(), simConfigFolder, configFilename)
+		sim = initSim(filename, doPrint = false);
+		simulate!(sim)
+		@test true
+	end
 end

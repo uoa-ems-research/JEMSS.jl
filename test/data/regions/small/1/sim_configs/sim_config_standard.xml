@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<simConfig>
+	<!-- paths: -->
+	<inputPath>$sourcePath/../test/data/regions/small/1/generated</inputPath>
+	<outputPath/>
+	
+	<simFiles>
+		<!-- <path>inputPath</path> -->
+		<ambulances>ambulances.csv</ambulances>
+		<arcs>../misc/arcs.csv</arcs>
+		<calls>calls.csv</calls>
+		<hospitals>hospitals.csv</hospitals>
+		<map>map.csv</map>
+		<nodes>nodes.csv</nodes>
+		<priorities>priorities.csv</priorities>
+		<stations>stations.csv</stations>
+		<travel>travel.csv</travel>
+	</simFiles>
+	
+	<writeOutput>false</writeOutput>
+	<outputFiles/>
+	
+	<resim>false</resim>
+	
+	<decision>
+		<callQueueing>addCallToQueueSortPriorityThenTime!</callQueueing>
+		<dispatch>findNearestFreeAmbToCall!</dispatch>
+		<moveUp>
+			<module>none</module>
+		</moveUp>
+	</decision>
+	
+</simConfig>
