@@ -30,7 +30,7 @@ function readTntpNodesFile(tntpNodesFilename::String; delim::Char = '\t')
 	# read nodes file
 	println("Reading nodes file")
 	data = readDlmFile(tntpNodesFilename; delim = delim)
-	cols = find(.!isempty.(data[1,:])) # need to ignore any empty headers
+	cols = findall(.!isempty.(data[1,:])) # need to ignore any empty headers
 	table = Table("tntpNodes", data[1,cols], data[2:end,cols])
 	numNodes = size(table.data, 1)
 	nodes = Vector{Node}(undef, numNodes)
@@ -72,7 +72,7 @@ function readTntpNetworkFile(tntpNetworkFilename::String; delim::Char = '\t')
 	# find and read table data
 	row = first(findall(data[:,1] .== "~"))
 	header = data[row,:]
-	cols = find(.!isempty.(header))[2:end] # need to ignore any empty headers, and "~"
+	cols = findall(.!isempty.(header))[2:end] # need to ignore any empty headers, and "~"
 	table = Table("tntpNetwork", data[row, cols], data[row+1:end, cols])
 	rowsFields = tableRowsFieldDicts(table, setdiff(table.header, ["from", "to"]))
 	numArcs = size(table.data,1)

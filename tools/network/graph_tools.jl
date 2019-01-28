@@ -16,7 +16,8 @@
 # tools to help manipulate graphs
 
 using JEMSS
-# using LightGraphs # already in JEMSS
+using LightGraphs
+using SparseArrays
 
 travelModeString(i::Int) = "mode_$i"
 
@@ -98,7 +99,7 @@ function graphTagLargestComponentElts!(nodes::Vector{Node}, arcs::Vector{Arc};
 	
 	# find strongly connected components; note that Graphs.strongly_connected_components() did not work correctly (the output was not what I expected), so LightGraphs.strongly_connected_components() is needed instead
 	components = LightGraphs.strongly_connected_components(lightGraph)
-	largestComponent = components[indmax([length(c) for c in components])] # node indices of largest strongly connected component
+	largestComponent = components[argmax([length(c) for c in components])] # node indices of largest strongly connected component
 	
 	# tag nodes and arcs in largest strongly connected component
 	tagNode = fill(false, numNodes) # tagNode[i] = true if nodes[i] in largest component
