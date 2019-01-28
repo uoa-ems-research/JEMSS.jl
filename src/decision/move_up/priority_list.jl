@@ -98,6 +98,7 @@ function checkPriorityList(priorityList::PriorityList;
 			@assert(count(isequal(j), priorityList) <= stationCapacities[j])
 		end
 	end
+	return true
 end
 function checkPriorityList(priorityList::PriorityList, sim::Simulation)
 	checkPriorityList(priorityList; numAmbs = sim.numAmbs, numStations = sim.numStations, stationCapacities = [s.capacity for s in sim.stations])
@@ -117,7 +118,7 @@ function makeRandPriorityList(numAmbs::Int, numStations::Int;
 		remainingCapacity = copy(stationCapacities)
 		unfilledStations = Set(findall(!iszero, remainingCapacity))
 		priorityList = PriorityList(undef,numAmbs)
-		priorityList[:] = 0
+		priorityList[:] .= 0
 		for i = 1:numAmbs
 			j = rand(rng, unfilledStations) # station index
 			priorityList[i] = j

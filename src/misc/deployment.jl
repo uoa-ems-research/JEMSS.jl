@@ -142,7 +142,7 @@ function simulateDeployments!(sim::Simulation, deployments::Vector{Deployment}, 
 		results[i] = f(sim)
 		if showEta
 			remTime = (time() - t) / i * (numDeployments - i) / 60 # minutes
-			print(rpad(string(" remaining run time (minutes): ", ceil(remTime,1)), 100, " "), "\r")
+			print(rpad(string(" remaining run time (minutes): ", ceil(remTime, digits = 1)), 100, " "), "\r")
 		end
 	end
 	resetSim!(sim)

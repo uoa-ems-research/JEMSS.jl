@@ -27,3 +27,34 @@
 		@test true
 	end
 end
+
+# test the scripts in /example/scripts
+if true
+	@info("Skipped testing of example scripts") # default is to not run this test set
+else
+	@testset "example scripts" begin
+		scriptsFolder = joinpath(dirname(pathof(JEMSS)), "..", "example", "scripts")
+		
+		# local search scripts, tested with a very small sim for speed
+		cd("data/regions/small/2") do
+			runGenConfig("gen_config.xml", overwriteOutputPath = true, doPrint = false)
+			isdir("output") || mkdir("output")
+			for script in ["deployment_local_search.jl", "nested_comp_table_local_search.jl", "priority_list_local_search.jl"]
+				@info(string("Running script: ", script))
+				include(joinpath(scriptsFolder, script))
+				@test true
+			end
+			println()
+			rm("output", recursive = true)
+		end
+		
+		# deployment_ranking.jl
+		cd("data/regions/small/1") do
+			isdir("output") || mkdir("output")
+			@info("Running script: deployment_ranking.jl")
+			include(joinpath(scriptsFolder, "deployment_ranking.jl"))
+			rm("output", recursive = true)
+			@test true
+		end
+	end
+end

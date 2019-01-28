@@ -199,9 +199,10 @@ function checkCompTable(compTable::CompTable;
 			# @assert(all(compTable[:,j] .<= stationCapacities[j]))
 		end
 	end
+	return true
 end
 function checkCompTable(compTable::CompTable, sim::Simulation)
-	checkCompTable(compTable; numAmbs = sim.numAmbs, numStations = sim.numStations, stationCapacities = [s.capacity for s in sim.stations])
+	return checkCompTable(compTable; numAmbs = sim.numAmbs, numStations = sim.numStations, stationCapacities = [s.capacity for s in sim.stations])
 end
 
 function checkCompTableIsNested(compTable::CompTable)
@@ -209,6 +210,7 @@ function checkCompTableIsNested(compTable::CompTable)
 	for i = 2:size(compTable,1)
 		@assert(length(findall(!iszero, compTable[i,:] - compTable[i-1,:])) == 1) # should only have one change between rows
 	end
+	return true
 end
 
 # take a compliance table and return the nested form, if possible
@@ -228,9 +230,9 @@ function unnestCompTable(nestedCompTable::NestedCompTable, numStations::Int)::Co
 	m = length(nestedCompTable)
 	n = numStations
 	compTable = CompTable(undef,m,n)
-	compTable[:] = 0
+	compTable[:] .= 0
 	for i = 1:m
-		compTable[i:m, nestedCompTable[i]] += 1
+		compTable[i:m, nestedCompTable[i]] .+= 1
 	end
 	return compTable
 end
@@ -249,7 +251,7 @@ function makeRandNestedCompTable(numAmbs::Int, numStations::Int;
 		remainingCapacity = copy(stationCapacities)
 		unfilledStations = Set(findall(!iszero, remainingCapacity))
 		nestedCompTable = NestedCompTable(undef,numAmbs)
-		nestedCompTable[:] = 0
+		nestedCompTable[:] .= 0
 		for i = 1:numAmbs
 			j = rand(rng, unfilledStations) # station index
 			nestedCompTable[i] = j
