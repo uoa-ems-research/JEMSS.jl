@@ -16,7 +16,7 @@
 # tools to help manipulate graphs
 
 using JEMSS
-using LightGraphs
+import LightGraphs
 using SparseArrays
 
 travelModeString(i::Int) = "mode_$i"
