@@ -58,3 +58,10 @@ else
 		end
 	end
 end
+
+@testset "generate calls" begin
+	cd("data/regions/small/3") do
+		runGenConfig("gen_config.xml", overwriteOutputPath = true, doPrint = false)
+		@test true
+	end
+end

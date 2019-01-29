@@ -249,11 +249,11 @@ function runGenConfigCalls(genConfig::GenConfig; doPrint::Bool = true)
 	if genConfig.cropRaster
 		# crop raster to be within genConfig.map
 		doPrint && println("Before cropping:")
-		printRasterSize(raster)
+		doPrint && printRasterSize(raster)
 		mapTrimmed = trimmedMap(genConfig.map, genConfig.mapTrim)
 		if cropRaster!(raster, mapTrimmed)
 			doPrint && println("After cropping:")
-			printRasterSize(raster)
+			doPrint && printRasterSize(raster)
 		end
 	end
 	

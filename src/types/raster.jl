@@ -18,8 +18,8 @@
 function cropRaster!(raster::Raster, map::Map)
 	
 	# find x, y, and z values to keep
-	ix = find((map.xMin + raster.dx / 2 .<= raster.x) .* (raster.x .<= map.xMax - raster.dx / 2))
-	iy = find((map.yMin + raster.dy / 2 .<= raster.y) .* (raster.y .<= map.yMax - raster.dy / 2))
+	ix = findall((map.xMin + raster.dx / 2 .<= raster.x) .* (raster.x .<= map.xMax - raster.dx / 2))
+	iy = findall((map.yMin + raster.dy / 2 .<= raster.y) .* (raster.y .<= map.yMax - raster.dy / 2))
 	x = raster.x[ix]
 	y = raster.y[iy]
 	z = raster.z[ix,iy]
