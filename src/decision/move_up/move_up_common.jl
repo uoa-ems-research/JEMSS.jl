@@ -35,8 +35,9 @@ function ambMoveUpTravelTimes!(sim::Simulation, ambulance::Ambulance;
 	travelMode = getTravelMode!(travel, sim.responseTravelPriorities[priority], sim.time)
 	(node1, time1) = getRouteNextNode!(sim, ambulance.route, travelMode.index, sim.time) # next/nearest node in ambulance route
 	
-	# get travel times to each station given
-	ambToStationTimes = Vector{Float}(length(stations))
+	# get travel times to each station
+	numStations = length(stations)
+	ambToStationTimes = Vector{Float}(undef, numStations)
 	for (i,station) in enumerate(stations)
 		if ambulance.stationIndex == station.index && ambulance.status == ambIdleAtStation
 			# ambulance already idle at this station, travel time is 0
@@ -66,7 +67,7 @@ function createStationPairs(sim::Simulation, travelMode::TravelMode;
 	maxPairsPerStation = min(maxPairsPerStation, numStations)
 	
 	# calculate travel times between each pair of stations
-	stationToStationTimes = zeros(Float, numStations, numStations) #Array{Float,2}(numStations,numStations)
+	stationToStationTimes = zeros(Float, numStations, numStations) #Array{Float,2}(undef,numStations,numStations)
 	for i = 1:numStations, j = 1:numStations
 		if i != j
 			# check travel time from station i to j
@@ -77,8 +78,8 @@ function createStationPairs(sim::Simulation, travelMode::TravelMode;
 		end
 	end
 	
-	areStationsPaired = Array{Bool,2}(numStations,numStations) # areStationsPaired[i,j] = false if stations i, j, should not be paired
-	areStationsPaired[:] = true
+	areStationsPaired = Array{Bool,2}(undef,numStations,numStations) # areStationsPaired[i,j] = false if stations i, j, should not be paired
+	areStationsPaired[:] .= true
 	sortedTimes = sort(stationToStationTimes, 2)
 	areStationsPaired .*= (stationToStationTimes .<= sortedTimes[:, maxPairsPerStation])
 	areStationsPaired .*= (stationToStationTimes .<= maxPairSeparation)
@@ -87,7 +88,7 @@ function createStationPairs(sim::Simulation, travelMode::TravelMode;
 	areStationsPaired .*= areStationsPaired'
 	
 	# convert areStationsPaired to stationPairs
-	stationPairs = Vector{Vector{Int}}(0) # stationPairs[i][k] gives kth station in pair i (k = 1,2)
+	stationPairs = Vector{Vector{Int}}() # stationPairs[i][k] gives kth station in pair i (k = 1,2)
 	for i = 1:numStations, j = i+1:numStations
 		if areStationsPaired[i,j]
 			push!(stationPairs, [i,j])

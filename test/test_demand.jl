@@ -62,7 +62,7 @@ end
 	end
 	
 	# change in time beyond the last set start time should not cause demand set to change
-	for t = demand.setsStartTimes[end] + (0:0.1:1)
+	for t = demand.setsStartTimes[end] .+ (0:0.1:1)
 		JEMSS.updateDemandToTime!(demand, t)
 		@test demand.recentSetsStartTimesIndex == length(demand.setsStartTimes)
 	end

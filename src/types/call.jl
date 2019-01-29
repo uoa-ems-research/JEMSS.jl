@@ -29,7 +29,7 @@ function resetCalls!(sim::Simulation)
 	backupCalls = sim.backup.calls
 	numCalls = sim.numCalls
 	nullCall = Call()
-	fnames = Set(fieldnames(nullCall))
+	fnames = Set(fieldnames(Call))
 	
 	@assert(length(calls) == numCalls)
 	@assert(length(backupCalls) == numCalls)
@@ -40,7 +40,7 @@ function resetCalls!(sim::Simulation)
 		:nearestNodeIndex, :nearestNodeDist])
 	setdiff!(fnames, fnamesFixed)
 	
-	recentCallIndex = findlast(call -> call.arrivalTime <= sim.time, calls)
+	recentCallIndex = something(findlast(call -> call.arrivalTime <= sim.time, calls), 0)
 	@assert(all(i -> calls[i].status == callNullStatus, recentCallIndex+1:numCalls))
 	
 	# reset calls that arrived before (or at) sim.time

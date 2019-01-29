@@ -13,6 +13,9 @@
 # limitations under the License.
 ##########################################################################
 
+using LightGraphs
+using SparseArrays
+
 function readNetworkFiles(nodesFilename::String, arcsFilename::String)
 	net = Network()
 	fGraph = net.fGraph # shorthand
@@ -56,20 +59,22 @@ end
 			for arc in fGraph.arcs
 				arcTimes[arc.fromNodeIndex, arc.toNodeIndex] = fNetTravels[travelModeIndex].arcTimes[arc.index]
 			end
-			spTimes = Array{FloatSpTime,2}(numNodes, numNodes) # spTimes[i,j] is the shortest-path travel time from node i to node j, to be calculated
+			spTimes = Array{FloatSpTime,2}(undef, numNodes, numNodes) # spTimes[i,j] is the shortest-path travel time from node i to node j, to be calculated
 			for i = 1:numNodes
 				# calculate shortest paths for origin node i
 				spData = LightGraphs.dijkstra_shortest_paths(fGraph.light, i, arcTimes) # type: LightGraphs.DijkstraState{Float}
 				spTimes[i,:] = spData.dists
 			end
 			
+			rtol = eps(FloatSpTime)
 			atol = 2 * maximum(net.rNetTravels[travelModeIndex].arcTimes) * eps(FloatSpTime) # in NetTravel type, precision of fNodeToRNodeTime and fNodeFromRNodeTime (used in sp time calculation) are affected by rArc travel time. Multiplied by 2 since this can affect the travel time at both the start and end of the path.
 			
 			# compare travel time from shortestPathTravelTime function with spTimes values
 			allPass = true
 			for i = 1:numNodes, j = 1:numNodes
-				allPass &= isapprox(shortestPathTravelTime(net, travelModeIndex, i, j),
-					spTimes[i,j], atol = atol, rtol = eps(FloatSpTime))
+				t1 = shortestPathTravelTime(net, travelModeIndex, i, j)
+				t2 = spTimes[i,j]
+				allPass &= abs(t1-t2) <= atol + rtol*max(t1,t2) # equivalent to isapprox(t1, t2, atol = atol, rtol = rtol) for julia v0.6
 			end
 			@test allPass
 		end

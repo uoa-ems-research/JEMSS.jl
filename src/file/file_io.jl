@@ -15,7 +15,7 @@
 
 # misc file input/output functions
 
-Base.transpose(s::T) where T <: AbstractString = s # not sure where else to put this
+Base.adjoint(s::T) where T <: AbstractString = s # not sure where else to put this
 
 function readDlmFileNextLine!(file::IOStream; delim::Char = delimiter)
 	try
@@ -59,7 +59,7 @@ function arrayDict(array::Vector{Any})
 	return dict
 end
 
-immutable Table
+struct Table
 	name::String
 	header::Vector{Any} # header names for columns in data, header[i] is for data[:,i]
 	headerDict::Dict{Any,Int} # headerDict[h] gives index of h in header
@@ -90,7 +90,7 @@ immutable Table
 	function Table(name, header; rows = [], cols = [])
 		@assert(isempty(rows) + isempty(cols) == 1)
 		if !isempty(rows)
-			return Table(name, header, ctranspose(hcat(rows...)))
+			return Table(name, header, adjoint(hcat(rows...)))
 		elseif !isempty(cols)
 			return Table(name, header, hcat(cols...))
 		end
@@ -182,7 +182,7 @@ function readTablesFromData(data::Array{Any,2})
 		numRows == nullIndex ? numRows = j - i : @assert(numRows == j - i)
 		
 		# create table
-		tableData = data[i-1+(1:numRows), 1:numCols]
+		tableData = data[i-1 .+ (1:numRows), 1:numCols]
 		table = Table(convert(String,tableName), tableHeader, tableData)
 		
 		# add table to tables
@@ -216,7 +216,7 @@ end
 
 # crc checksum
 function fileChecksum(filename::String)
-	return Base.crc32c(Mmap.mmap(filename))
+	return CRC32c.crc32c(Mmap.mmap(filename))
 end
 
 function serializeToFile(filename::String, data::Any)
@@ -233,24 +233,24 @@ function deserializeFile(filename::String)
 end
 
 function interpolateString(s::String)
-	return eval(parse(string("\"", s, "\"")))
+	return eval(Meta.parse(string("\"", s, "\"")))
 end
 
 # some convenient functions for reading xml files
 xmlFileRoot(filename::String) = root(parse_file(filename))
 findElt = find_element # shorthand
 eltContent(elt::XMLElement) = content(elt)
-eltContentVal(elt::XMLElement) = eval(parse(eltContent(elt)))
+eltContentVal(elt::XMLElement) = eval(Meta.parse(eltContent(elt)))
 eltContentInterpVal(elt::XMLElement) = interpolateString(eltContent(elt))
 eltContent(parentElt::XMLElement, eltString::String) = try content(findElt(parentElt, eltString));
-	catch error("Element not found: $eltString"); end
-eltContentVal(parentElt::XMLElement, eltString::String) = eval(parse(eltContent(parentElt, eltString)))
+	catch; error("Element not found: $eltString"); end
+eltContentVal(parentElt::XMLElement, eltString::String) = eval(Meta.parse(eltContent(parentElt, eltString)))
 eltContentInterpVal(parentElt::XMLElement, eltString::String) = interpolateString(eltContent(parentElt, eltString))
 eltAttr = attribute
-eltAttrVal(elt::XMLElement, attrString::String) = eval(parse(eltAttr(elt, attrString)))
+eltAttrVal(elt::XMLElement, attrString::String) = eval(Meta.parse(eltAttr(elt, attrString)))
 
 function childrenNodeNames(parentElt::XMLElement)
-	childNodes = Vector{String}(0)
+	childNodes = Vector{String}()
 	for childNode in child_nodes(parentElt)
 		if is_elementnode(childNode)
 			push!(childNodes, name(childNode))
@@ -260,9 +260,9 @@ function childrenNodeNames(parentElt::XMLElement)
 end
 
 function selectXmlFile(; message::String = "Enter xml filename: ")
-	if is_windows()
+	if Sys.iswindows()
 		ps1Filename = "$sourcePath/file/select_xml.ps1"
-		str = readstring(`Powershell.exe -executionpolicy remotesigned -File $ps1Filename`)
+		str = read(`Powershell.exe -executionpolicy remotesigned -File $ps1Filename`, String)
 	else
 		print(message)
 		str = readline()

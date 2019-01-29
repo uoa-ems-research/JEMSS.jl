@@ -18,8 +18,8 @@
 function cropRaster!(raster::Raster, map::Map)
 	
 	# find x, y, and z values to keep
-	ix = find((map.xMin + raster.dx / 2 .<= raster.x) .* (raster.x .<= map.xMax - raster.dx / 2))
-	iy = find((map.yMin + raster.dy / 2 .<= raster.y) .* (raster.y .<= map.yMax - raster.dy / 2))
+	ix = findall((map.xMin + raster.dx / 2 .<= raster.x) .* (raster.x .<= map.xMax - raster.dx / 2))
+	iy = findall((map.yMin + raster.dy / 2 .<= raster.y) .* (raster.y .<= map.yMax - raster.dy / 2))
 	x = raster.x[ix]
 	y = raster.y[iy]
 	z = raster.z[ix,iy]
@@ -35,7 +35,7 @@ function cropRaster!(raster::Raster, map::Map)
 	end
 	
 	# overwrite raster field values in raster with those in croppedRaster
-	for fname in fieldnames(raster)
+	for fname in fieldnames(Raster)
 		setfield!(raster, fname, getfield(croppedRaster, fname))
 	end
 	
@@ -46,7 +46,7 @@ end
 # generate a random location within the cell
 # (x[i] +/- 0.5*dx, y[j] +/- 0.5*dy)
 function rasterCellRandLocation(raster::Raster, i::Int, j::Int;
-	rng::AbstractRNG = Base.GLOBAL_RNG)
+	rng::AbstractRNG = GLOBAL_RNG)
 	randLocation = Location()
 	randLocation.x = raster.x[i] + (rand(rng) - 0.5) * raster.dx
 	randLocation.y = raster.y[j] + (rand(rng) - 0.5) * raster.dy
@@ -65,13 +65,14 @@ end
 
 function rasterZIndexToXYIndices(raster::Raster, i::Int)
 	# return (x,y) indices for raster.z[i]
-	@assert(1 <= i && i <= length(raster.z)) # ind2sub does not check this
-	return ind2sub(raster.z, i)
+	@assert(1 <= i && i <= length(raster.z))
+	c = CartesianIndices(raster.z)[i]
+	return c[1], c[2]
 end
 
 # generate n random locations for a given raster sampler
 function rasterRandLocations(rasterSampler::RasterSampler, n::Int)
-	randLocations = Vector{Location}(n)
+	randLocations = Vector{Location}(undef, n)
 	zis = rand(rasterSampler.cellDistrRng, n) # z indices of random locations
 	for i = 1:n
 		zi = zis[i]

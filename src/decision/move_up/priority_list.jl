@@ -33,15 +33,15 @@ function initPriorityList!(sim::Simulation, priorityList::PriorityList)
 	checkPriorityList(priorityList, sim)
 	pld.priorityList = priorityList
 	
-	pld.stationNumIdleAmbs = Vector{Int}(numStations)
+	pld.stationNumIdleAmbs = Vector{Int}(undef, numStations)
 	
 	# check that ambulance to station assignments follow priority list
-	pld.stationNumIdleAmbs[:] = 0
+	pld.stationNumIdleAmbs[:] .= 0
 	for i = 1:sim.numAmbs
 		pld.stationNumIdleAmbs[ambulances[i].stationIndex] += 1
 	end
 	if !all(pld.stationNumIdleAmbs[i] == sum(pld.priorityList .== i) for i = 1:numStations)
-		warn("Number of ambulances at each station does not match priority list")
+		@warn("Number of ambulances at each station does not match priority list")
 	end
 end
 
@@ -57,7 +57,7 @@ function priorityListMoveUp(sim::Simulation, newlyIdleAmb::Ambulance)
 	numAmbs = sim.numAmbs
 	
 	# calculate the number of idle ambulances at (or travelling to) each station
-	stationNumIdleAmbs[:] = 0
+	stationNumIdleAmbs[:] .= 0
 	for i = 1:numAmbs
 		# do not count newly idle ambulance, it has not been assigned a station
 		if isAmbAvailableForMoveUp(ambulances[i]) && i != newlyIdleAmb.index
@@ -84,7 +84,7 @@ end
 # check that priority list is valid
 function checkPriorityList(priorityList::PriorityList;
 	numAmbs::Int = nullIndex, numStations::Int = nullIndex,
-	stationCapacities::Union{Vector{Int},Void} = nothing)
+	stationCapacities::Union{Vector{Int},Nothing} = nothing)
 	
 	m = length(priorityList) # number of ambulances
 	@assert(numAmbs == nullIndex || numAmbs == m)
@@ -98,6 +98,7 @@ function checkPriorityList(priorityList::PriorityList;
 			@assert(count(isequal(j), priorityList) <= stationCapacities[j])
 		end
 	end
+	return true
 end
 function checkPriorityList(priorityList::PriorityList, sim::Simulation)
 	checkPriorityList(priorityList; numAmbs = sim.numAmbs, numStations = sim.numStations, stationCapacities = [s.capacity for s in sim.stations])
@@ -105,7 +106,7 @@ end
 
 # returns a randomly generated priority list
 function makeRandPriorityList(numAmbs::Int, numStations::Int;
-	stationCapacities::Union{Vector{Int},Void} = nothing,
+	stationCapacities::Union{Vector{Int},Nothing} = nothing,
 	rng::AbstractRNG = Base.GLOBAL_RNG)::PriorityList
 	
 	@assert(numStations > 0)
@@ -115,9 +116,9 @@ function makeRandPriorityList(numAmbs::Int, numStations::Int;
 		@assert(numStations == length(stationCapacities))
 		@assert(numAmbs <= sum(stationCapacities))
 		remainingCapacity = copy(stationCapacities)
-		unfilledStations = Set(find(remainingCapacity))
-		priorityList = PriorityList(numAmbs)
-		priorityList[:] = 0
+		unfilledStations = Set(findall(!iszero, remainingCapacity))
+		priorityList = PriorityList(undef,numAmbs)
+		priorityList[:] .= 0
 		for i = 1:numAmbs
 			j = rand(rng, unfilledStations) # station index
 			priorityList[i] = j

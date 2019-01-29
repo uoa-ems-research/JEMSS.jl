@@ -18,11 +18,11 @@
 const Depol = Deployment # not sure how to deprecate a const
 
 @deprecate(
-makeRandDeploymentPolicy(numAmbs::Int, numStations::Int; rng::AbstractRNG = Base.GLOBAL_RNG),
+makeRandDeploymentPolicy(numAmbs::Int, numStations::Int; rng::AbstractRNG = GLOBAL_RNG),
 makeRandDeployment(numAmbs, numStations; rng = rng))
 
 @deprecate(
-makeRandDeploymentPolicies(numAmbs::Int, numStations::Int, numDeployments::Int; rng::AbstractRNG = Base.GLOBAL_RNG),
+makeRandDeploymentPolicies(numAmbs::Int, numStations::Int, numDeployments::Int; rng::AbstractRNG = GLOBAL_RNG),
 makeRandDeployments(numAmbs, numStations, numDeployments; rng = rng))
 
 @deprecate(
@@ -39,7 +39,7 @@ simulateDeployments!(sim, deployments, f; showEta = showEta))
 
 # write deployments to file
 function writeDeploymentPoliciesFile(filename::String, deployments::Vector{Deployment}, numStations::Int)
-	warn("'writeDeploymentPoliciesFile' is deprecated, should use 'writeDeploymentsFile' instead")
+	@warn("'writeDeploymentPoliciesFile' is deprecated, should use 'writeDeploymentsFile' instead")
 	numAmbs = length(deployments[1])
 	@assert(numStations >= maximum([maximum(d) for d in deployments]))
 	numDeployments = length(deployments)
@@ -52,7 +52,7 @@ function writeDeploymentPoliciesFile(filename::String, deployments::Vector{Deplo
 end
 
 function readDeploymentPoliciesFile(filename::String)
-	warn("'readDeploymentPoliciesFile' is deprecated, should save deployment with 'writeDeploymentsFile' and load again with 'readDeploymentsFile'")
+	@warn("'readDeploymentPoliciesFile' is deprecated, should save deployment with 'writeDeploymentsFile' and load again with 'readDeploymentsFile'")
 	tables = readTablesFromFile(filename)
 	
 	# get counts
@@ -71,7 +71,7 @@ function readDeploymentPoliciesFile(filename::String)
 		@assert(in("policy_$i stationIndex", table.header), "Missing deployment $i")
 	end
 	# create deployments from table
-	deployments = Vector{Deployment}(numDeployments)
+	deployments = Vector{Deployment}(undef, numDeployments)
 	for i = 1:numDeployments
 		deployments[i] = columns["policy_$i stationIndex"]
 		

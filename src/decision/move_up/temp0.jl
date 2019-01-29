@@ -48,7 +48,7 @@ function temp0MoveUp(sim::Simulation)
 	numStations = sim.numStations
 	
 	# get movable ambulances (movableAmbs)
-	ambMovable = Vector{Bool}(numAmbs) # ambMovable[i] = true if ambulances[i] can move-up
+	ambMovable = Vector{Bool}(undef, numAmbs) # ambMovable[i] = true if ambulances[i] can move-up
 	for i = 1:numAmbs
 		ambMovable[i] = isAmbAvailableForMoveUp(ambulances[i])
 	end
@@ -56,7 +56,7 @@ function temp0MoveUp(sim::Simulation)
 	numMovableAmbs = length(movableAmbs)
 	
 	# calculate travel time for each available ambulance to reach every station
-	ambToStationTimes = Array{Float,2}(numMovableAmbs, numStations)
+	ambToStationTimes = Array{Float,2}(undef, numMovableAmbs, numStations)
 	for i = 1:numMovableAmbs
 		ambToStationTimes[i,:] = ambMoveUpTravelTimes!(sim, movableAmbs[i])
 	end
@@ -68,8 +68,8 @@ function temp0MoveUp(sim::Simulation)
 	
 	# restrict which stations each ambulance can be moved to
 	# ambMovableToStation[i,j] = true if movableAmbs[i] can be moved to stations[j]; false otherwise
-	ambMovableToStation = Array{Bool,2}(numMovableAmbs, numStations)
-	ambMovableToStation[:,:] = true
+	ambMovableToStation = Array{Bool,2}(undef, numMovableAmbs, numStations)
+	ambMovableToStation[:,:] .= true
 	
 	# limit ambulance move-up to nearest stations
 	numNearestStations = min(maxNumNearestStations, numStations)
@@ -85,19 +85,20 @@ function temp0MoveUp(sim::Simulation)
 	end
 	
 	# useful lists for IP
-	(ambList, stationList) = findn(ambMovableToStation)
+	I = findall(ambMovableToStation)
+	(ambList, stationList) = (getindex.(I, 1), getindex.(I, 2))
 	# ambList and stationList together have all the information of ambMovableToStation:
 	# - movableAmbs[i] can move to stations stationList[ambList .== i]
 	# - stations[j] can have any of the ambulances in ambList[stationList .== j]
 	m = length(ambList) # number of variables needed for assignment of ambulances to stations
-	travelCostList = Vector{Float}(m)
+	travelCostList = Vector{Float}(undef, m)
 	for k = 1:m
 		travelCostList[k] = ambToStationTimes[ambList[k], stationList[k]] * travelTimeCost
 	end
 	
 	# counting number of ambulances at each station
-	stationSlots = Vector{Int}(0)
-	benefitSlots = Vector{Float}(0)
+	stationSlots = Vector{Int}()
+	benefitSlots = Vector{Float}()
 	for j = 1:numStations
 		numSlots = min(stations[j].capacity, sum(stationList .== j))
 		for i = 1:numSlots
@@ -126,8 +127,8 @@ function temp0MoveUp(sim::Simulation)
 	end)
 	
 	@constraints(model, begin
-		(ambAtOneLocation[i=1:a], sum(x[k] for k=find(ambList .== i)) == 1) # each ambulance must be assigned to one station
-		(stationAmbCounts[j=1:s], sum(x[k] for k=find(stationList .== j)) == sum(y[l] for l=find(stationSlots .== j)))
+		(ambAtOneLocation[i=1:a], sum(x[k] for k=findall(ambList .== i)) == 1) # each ambulance must be assigned to one station
+		(stationAmbCounts[j=1:s], sum(x[k] for k=findall(stationList .== j)) == sum(y[l] for l=findall(stationSlots .== j)))
 	end)
 	
 	@expressions(model, begin
@@ -146,7 +147,7 @@ function temp0MoveUp(sim::Simulation)
 	
 	# extract solution
 	sol = convert(Vector{Bool}, round.(getvalue(x)))
-	ambStations = Vector{Station}(numMovableAmbs)
+	ambStations = Vector{Station}(undef, numMovableAmbs)
 	for k = 1:m
 		if sol[k] == 1
 			ambStations[ambList[k]] = stations[stationList[k]]

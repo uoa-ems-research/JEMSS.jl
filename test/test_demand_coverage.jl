@@ -14,12 +14,12 @@
 ##########################################################################
 
 # create test data
-info("Creating test data")
+@info("Creating test data")
 testRegionDataFolder = "data/regions/small/1"
 runGenConfig(joinpath(testRegionDataFolder, "gen_config.xml"), overwriteOutputPath = true, doPrint = false)
 
 # initialise sim
-info("Initialising sim")
+@info("Initialising sim")
 sim = initSim(joinpath(testRegionDataFolder, "sim_config.xml"), doPrint = false);
 
 # initialise demand and demand coverage
@@ -91,7 +91,7 @@ travel = sim.travel;
 			end
 		end
 		
-		@test all(i -> all(j -> find(stationsCoverPoints[:,j]) == stationSets[i], pointSets[i]), 1:length(pointSets)) # assume that both vectors (stationsCoverPoints[:,j] and stationSets[i]) are sorted the same
+		@test all(i -> all(j -> findall(stationsCoverPoints[:,j]) == stationSets[i], pointSets[i]), 1:length(pointSets)) # assume that both vectors (stationsCoverPoints[:,j] and stationSets[i]) are sorted the same
 	end
 	
 	# check pointsCoverageModeLookup
@@ -104,7 +104,7 @@ end
 	# compare results of fast (using sim.demandCoverage) and slow calculation of demand point coverage
 	
 	stationsNumAmbs = ones(Int, numStations)
-	pointCoverCounts = Vector{Int}(numPoints)
+	pointCoverCounts = Vector{Int}(undef, numPoints)
 	times = vcat(travel.setsStartTimes, demand.setsStartTimes) |> unique |> sort # simulating to these points in time will cause each combination of travel and demand states to be checked
 	for t in times
 		# simulateToTime!(sim, t) # probably unnecessary, and sim.time may stop before t
@@ -113,7 +113,7 @@ end
 		for demandPriority in priorities
 			travelMode = JEMSS.getTravelMode!(travel, sim.responseTravelPriorities[demandPriority], sim.time)
 			coverTime = sim.demandCoverage.coverTimes[demandPriority]
-			pointCoverCounts[:] = 0
+			pointCoverCounts[:] .= 0
 			for (i,station) in enumerate(stations)
 				for (j,point) in enumerate(points)
 					# calculate travel time from station to point

@@ -17,29 +17,38 @@ __precompile__()
 module JEMSS
 
 # animation
-using HttpServer
+using HTTP
+using Sockets
 using WebSockets
 using JSON
 
 # files
+using DelimitedFiles
 using LightXML
+using Serialization
 
 # optimisation (move-up)
 using JuMP
 using Cbc
-using GLPKMathProgInterface # does not use precompile
+using GLPKMathProgInterface
 
 # statistics
 using Distributions
 using HypothesisTests
-using Stats
+using StatsBase
 using StatsFuns
 
 # misc
+using Base64
+using CRC32c
+using Mmap
+using Printf
+using Random
+import Random: AbstractRNG, GLOBAL_RNG, MersenneTwister
+using SparseArrays
 using LightGraphs
-using ArchGDAL # does not use precompile
+using ArchGDAL
 using Hungarian
-import Plots
 
 # simulation functions
 export

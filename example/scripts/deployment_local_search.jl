@@ -20,6 +20,8 @@
 # Ambulances are assumed to be identical, and station capacities are ignored.
 
 using JEMSS
+using Random
+using Statistics
 
 # parameters:
 const configFilename = "sim_config.xml"
@@ -31,7 +33,7 @@ const nullObjVal = -1 # depends on objective function, see objFn
 const sense = :max # :min or :max; direction of optimisation for objective function
 deployments = [] # leave empty (and set numSearches) if generating random deployments for random restarts
 const numSearches = isempty(deployments) ? 1 : length(deployments) # number of local searches to perform
-deploymentRng = MersenneTwister(0) # useful for reproducing results, if using random restarts
+deploymentRng = Random.MersenneTwister(0) # useful for reproducing results, if using random restarts
 
 # some parameter checks
 @assert(isfile(configFilename))
@@ -254,7 +256,7 @@ function localSearch!(sim::Simulation, stationsNumAmbsObjVal::Dict{StationsNumAm
 				logFileDict["usedMove"] = Int(usedMove)
 				logFileDict["objVal"] = objVal
 				logFileDict["bestObjVal"] = bestObjVal
-				logFileDict["iterTimeSeconds"] = round(time() - startTime, 2)
+				logFileDict["iterTimeSeconds"] = round(time() - startTime, digits = 2)
 				logFileWriteDlmLine!(logFile, logFileDict, stationsNumAmbs)
 				
 				iter += 1
@@ -274,4 +276,4 @@ end
 # run
 t = time()
 repeatedLocalSearch()
-println("Total runtime: ", round(time()-t, 2), " seconds")
+println("total runtime: ", round(time()-t, digits = 2), " seconds")

@@ -68,8 +68,8 @@ function createRGraphFromFGraph!(net::Network)
 	
 	# only keep nodes with >= 3 adjacent nodes, or 2 adjacent nodes if the incoming and outgoing arcs cannot be replaced
 	# Also, for easier programming, put leaf nodes in fGraph into rGraph, hopefully there are not too many...
-	keepNode = Vector{Bool}(numFNodes) # find which fNodes belong in rGraph
-	keepNode[:] = false
+	keepNode = Vector{Bool}(undef, numFNodes) # find which fNodes belong in rGraph
+	keepNode[:] .= false
 	for i = 1:numFNodes
 		if fNodeNumAdjacent[i] >= 3
 			keepNode[i] = true
@@ -81,7 +81,7 @@ function createRGraphFromFGraph!(net::Network)
 	end
 	if !any(keepNode) keepNode[1] = true end # if there are still no rNodes, make one (can happen if network is just a loop)
 	rGraph.nodes = deepcopy(fNodes[keepNode]) # need to renumber rNode indices later
-	net.rNodeFNode = find(keepNode)
+	net.rNodeFNode = findall(keepNode)
 	net.fNodeRNode = [nullIndex for i = 1:numFNodes]
 	net.fNodeRNode[keepNode] = [1:sum(keepNode);]
 	
@@ -114,7 +114,7 @@ function createRGraphFromFGraph!(net::Network)
 	for i = 1:length(rGraph.nodes)
 		rGraph.nodes[i].index = i
 	end
-	net.rNodeFNode = find(keepNode)
+	net.rNodeFNode = findall(keepNode)
 	net.fNodeRNode = [nullIndex for i = 1:numFNodes]
 	net.fNodeRNode[keepNode] = [1:sum(keepNode);]
 	
@@ -134,9 +134,9 @@ function createRGraphFromFGraph!(net::Network)
 	
 	# calculate rArcs, rArcFNodes, fNodeRArcs
 	# find outgoing arcs from each rNode to other rNodes
-	net.fNodeFromRNodes = [Vector{Int}(0) for i = 1:numFNodes]
+	net.fNodeFromRNodes = [Vector{Int}() for i = 1:numFNodes]
 	net.rArcFNodes = []
-	net.fNodeRArcs = [Vector{Int}(0) for i = 1:numFNodes]
+	net.fNodeRArcs = [Vector{Int}() for i = 1:numFNodes]
 	rArcFNodes = net.rArcFNodes # shorthand
 	fNodeRArcs = net.fNodeRArcs # shorthand
 	rArcs = rGraph.arcs # shorthand
@@ -210,8 +210,8 @@ function createRGraphFromFGraph!(net::Network)
 	
 	# calculate fNodeToRNodes and fNodeFromRNodes
 	
-	net.fNodeToRNodes = [Vector{Int}(0) for i = 1:numFNodes]
-	net.fNodeFromRNodes = [Vector{Int}(0) for i = 1:numFNodes]
+	net.fNodeToRNodes = [Vector{Int}() for i = 1:numFNodes]
+	net.fNodeFromRNodes = [Vector{Int}() for i = 1:numFNodes]
 	net.fNodeToRNodeNextFNode = [Dict{Int,Int}() for i = 1:numFNodes]
 	
 	# shorthand:
@@ -281,7 +281,7 @@ function createRNetTravelsFromFNetTravels!(net::Network;
 		fNetTravel = fNetTravels[travelModeIndex]
 		rNetTravel = rNetTravels[travelModeIndex]
 		
-		rNetTravel.arcTimes = Vector{Float}(numRArcs)
+		rNetTravel.arcTimes = Vector{Float}(undef, numRArcs)
 		fNetTravel.fNodeToRNodeTime = [Dict{Int, Float}() for i = 1:numFNodes]
 		fNetTravel.fNodeFromRNodeTime = [Dict{Int, Float}() for i = 1:numFNodes]
 		fNetTravel.rArcFNodesTimes = [Vector{Float}() for i = 1:numRArcs]
@@ -390,8 +390,8 @@ function calcRNetTravelShortestPaths!(net::Network, rNetTravel::NetTravel)
 	
 	# calculate shortest paths for each possible destination node
 	spData = LightGraphs.DijkstraState{Float} # init
-	spTimes = rNetTravel.spTimes = Array{FloatSpTime,2}(numRNodes, numRNodes)
-	spSuccs = Array{IntRNode,2}(numRNodes, numRNodes)
+	spTimes = rNetTravel.spTimes = Array{FloatSpTime,2}(undef, numRNodes, numRNodes)
+	spSuccs = Array{IntRNode,2}(undef, numRNodes, numRNodes)
 	for i = 1:numRNodes
 		spData = LightGraphs.dijkstra_shortest_paths(revRGraph, i, revRArcsTimes)
 		spTimes[:,i] = spData.dists
@@ -410,7 +410,7 @@ function calcRNetTravelShortestPaths!(net::Network, rNetTravel::NetTravel)
 		end
 		if j != k
 			# for any paths from i that have successor node k, change successor to be j
-			spSuccs[i, spSuccs[i,:] .== k] = j
+			spSuccs[i, spSuccs[i,:] .== k] .= j
 		end
 	end
 	
@@ -424,14 +424,14 @@ function calcRNetTravelShortestPaths!(net::Network, rNetTravel::NetTravel)
 		@assert(spTimes[i,j] <= t)
 		if spSuccs[i,j] == j && spTimes[i,j] == t
 			spNodePairArcIndex[i,j] = rArc.index
-			spFadjArcList[i][findfirst(fadjList[i], j)] = rArc.index
+			spFadjArcList[i][findfirst(isequal(j), fadjList[i])] = rArc.index
 		end
 	end
 	
 	# set spFadjIndex
-	spFadjIndex = rNetTravel.spFadjIndex = Array{IntFadj,2}(numRNodes, numRNodes)
+	spFadjIndex = rNetTravel.spFadjIndex = Array{IntFadj,2}(undef, numRNodes, numRNodes)
 	for i = 1:numRNodes, j = 1:numRNodes
-		spFadjIndex[i,j] = (i == j ? nullIndex : findfirst(fadjList[i], spSuccs[i,j]))
+		spFadjIndex[i,j] = (i == j ? nullIndex : findfirst(isequal(spSuccs[i,j]), fadjList[i]))
 	end
 	
 	# check stored shortest path times are same as those from traversing stored shortest paths
@@ -596,8 +596,8 @@ function shortestPath(net::Network, travelModeIndex::Int, startFNode::Int, endFN
 	fNodeToRNodeNextFNode = net.fNodeToRNodeNextFNode
 	
 	# return values:
-	fNodeList = Vector{Int}(0) # list of indices of nodes to travel through, in traversal order
-	fNodeTimeList = Vector{Float}(0) # time at which each node in fNodeList will be reached
+	fNodeList = Vector{Int}() # list of indices of nodes to travel through, in traversal order
+	fNodeTimeList = Vector{Float}() # time at which each node in fNodeList will be reached
 	
 	if startFNode == endFNode
 		fNodeList = [startFNode]
@@ -722,11 +722,11 @@ function setCommonFNodes!(net::Network, commonFNodes::Vector{Int})
 	
 	# calculate and store shortest path travel data between all fNodes and commonFNodes
 	for fNetTravel in net.fNetTravels
-		fNetTravel.commonFNodeToFNodeTime = Array{Float,2}(numCommonFNodes, numFNodes)
-		fNetTravel.commonFNodeToFNodeRNodes = Array{Vector{Int},2}(numCommonFNodes, numFNodes)
+		fNetTravel.commonFNodeToFNodeTime = Array{Float,2}(undef, numCommonFNodes, numFNodes)
+		fNetTravel.commonFNodeToFNodeRNodes = Array{Vector{Int},2}(undef, numCommonFNodes, numFNodes)
 		
-		fNetTravel.fNodeToCommonFNodeTime = Array{Float,2}(numFNodes, numCommonFNodes)
-		fNetTravel.fNodeToCommonFNodeRNodes = Array{Vector{Int},2}(numFNodes, numCommonFNodes)
+		fNetTravel.fNodeToCommonFNodeTime = Array{Float,2}(undef, numFNodes, numCommonFNodes)
+		fNetTravel.fNodeToCommonFNodeRNodes = Array{Vector{Int},2}(undef, numFNodes, numCommonFNodes)
 		
 		for commonFNode in commonFNodes, fNode = 1:numFNodes
 			i = fNodeCommonFNodeIndex[commonFNode]

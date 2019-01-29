@@ -14,15 +14,25 @@
 ##########################################################################
 
 # Script to generate many different deployments, and rank them by batch mean response times.
-# Run from julia:
-# ARGS = [simConfigFilename, numDeployments] # these are optional
-# include("deployment_ranking.jl")
 
 using JEMSS
+using Random
+# using Statistics
+
+# parameters:
+const configFilename = "sim_config.xml"
+const outputFolder = "output"
+const batchMeanResponseTimesFilename = joinpath(outputFolder, "deployments_batch_mean_response_times.csv")
+const batchTime = 1.0 # batch by day
+const warmUpTime = 1.0 # one day warm-up period
+
+# additional parameters to use if config does not include deployments:
+const deploymentsOutFilename = joinpath(outputFolder, "deployments.csv")
+numDeployments = 2 # number of deployments to generate and test
+deploymentRng = Random.MersenneTwister(0)
 
 # load sim
-configFilename = (length(ARGS) >= 1 ? ARGS[1] : selectXmlFile())
-sim = initSim(configFilename)
+sim = initSim(configFilename, createBackup = true, doPrint = false)
 (numAmbs, numStations) = (sim.numAmbs, sim.numStations)
 @assert(numAmbs > 0 && numStations > 1) # otherwise only one deployment is possible
 
@@ -37,11 +47,9 @@ elseif haskey(sim.inputFiles, "deploymentPolicies") # compat
 	@assert(numStations == numStations2)
 else
 	# generate unique random deployments
-	numDeployments = (length(ARGS) >= 2 ? ARGS[2] : 100) # number of deployments to test
-	deployments = makeRandDeployments(numAmbs, numStations, numDeployments)
-	filename = joinpath(sim.outputPath, "deployments.csv")
-	writeDeploymentsFile(filename, deployments, numStations)
-	println("'deployments' input file not found in config, generated $numDeployments deployments and saved to $filename")
+	deployments = makeRandDeployments(numAmbs, numStations, numDeployments; rng = deploymentRng)
+	writeDeploymentsFile(deploymentsOutFilename, deployments, numStations)
+	println("'deployments' input file not found in config, generated $numDeployments deployments and saved to $deploymentsOutFilename")
 end
 
 # run sim for one day, to compile simulation functions
@@ -54,19 +62,19 @@ getCallResponseTimes(sim::Simulation) = [call.responseTime * 24 * 60 for call in
 responseTimeUnits = "minutes"
 t = time()
 callResponseTimes = simulateDeployments!(sim, deployments, getCallResponseTimes; showEta = true)
-println("total time for simulating $numDeployments deployments (seconds): ", round(time() - t, 2))
+println("total time for simulating $numDeployments deployments (seconds): ", round(time() - t, digits = 2))
 
 # calculate batch mean response times
-x = [] # will populate with batch mean response times
+x = Vector{Vector{Float}}() # will populate with batch mean response times
 callArrivalTimes = [call.arrivalTime for call in sim.calls] # same for each simulation
-batchTime = 7.0; startTime = sim.startTime + 1.0; endTime = callArrivalTimes[end] # batch response times by week, with one day warm-up; ignore last call (cool-down period)
+startTime = sim.startTime + warmUpTime; endTime = callArrivalTimes[end] # ignore last call (cool-down period)
 for i = 1:numDeployments
 	push!(x, calcBatchMeans(callResponseTimes[i], callArrivalTimes, batchTime;
 		startTime = startTime, endTime = endTime, rmPartialBatch = true))
 end
-batchMeanResponseTimes = hcat(x...)' # batchMeanResponseTimes[i,j] is for calls in simulation i, batch j
+batchMeanResponseTimes = collect(hcat(x...)') # batchMeanResponseTimes[i,j] is for calls in simulation i, batch j
 
-warn("Have assumed that batch time of $batchTime is sufficient for values in batchMeanResponseTimes[i,:] to be from a normal distribution (for each i).")
+@warn("Have assumed that batch time of $batchTime is sufficient for values in batchMeanResponseTimes[i,:] to be from a normal distribution (for each i).")
 
 # Check for serial autocorrelation of batchMeanResponseTimes for each deployment,
 # if autocorrelation is detected, then the batch sizes / durations need to be increased.
@@ -79,18 +87,20 @@ end
 # number of p-values <= p should be approximately <= p * numDeployments, for there to be no evidence against null hypothesis (H0: no serial autocorrelation)
 
 # save batch mean response times to file
-filename = joinpath(sim.outputPath, "deployments_batch_mean_response_times.csv")
-writeBatchMeanResponseTimesFile(filename, batchMeanResponseTimes;
+writeBatchMeanResponseTimesFile(batchMeanResponseTimesFilename, batchMeanResponseTimes;
 	batchTime = batchTime, startTime = startTime, endTime = endTime, responseTimeUnits = responseTimeUnits)
-println("Saved batch mean response times to $filename")
+println("Saved batch mean response times to $batchMeanResponseTimesFilename")
 
 # calculate mean and standard error of batch mean response times, plot for each deployment
+false && begin
+using Plots
 x = batchMeanResponseTimes # shorthand
 conf = 0.95
-order = sortperm(squeeze(mean(x,2),2)) # sort by average value
+order = sortperm(squeeze(mean(x, dims = 2),2)) # sort by average value
 Plots.plotly()
 plot = meanErrorPlot(x[order,:], conf);
 Plots.title!(plot, "Deployment : batch mean response time, mean & error");
 Plots.xaxis!(plot, "Deployment");
 Plots.yaxis!(plot, "Batch mean response time ($responseTimeUnits)");
 display(plot);
+end

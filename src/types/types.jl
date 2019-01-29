@@ -13,7 +13,7 @@
 # limitations under the License.
 ##########################################################################
 
-type Location
+mutable struct Location
 	x::Float # latitude, or other
 	y::Float # longitude, or other
 	
@@ -21,7 +21,7 @@ type Location
 	Location(x,y) = new(x,y)
 end
 
-type Point
+mutable struct Point
 	index::Int
 	location::Location
 	value::Any
@@ -34,7 +34,7 @@ type Point
 		nullIndex, nullDist)
 end
 
-type Node
+mutable struct Node
 	index::Int
 	location::Location
 	offRoadAccess::Bool # if node can be used to get on-road and off-road
@@ -45,7 +45,7 @@ type Node
 		Dict{String,Any}())
 end
 
-type Arc
+mutable struct Arc
 	index::Int
 	fromNodeIndex::Int
 	toNodeIndex::Int
@@ -57,7 +57,7 @@ type Arc
 end
 
 # graph data for network (actually a digraph)
-type Graph
+mutable struct Graph
 	# parameters:
 	isReduced::Bool
 	nodes::Vector{Node}
@@ -76,7 +76,7 @@ type Graph
 end
 
 # travel data for network
-type NetTravel
+mutable struct NetTravel
 	# parameters:
 	isReduced::Bool
 	modeIndex::Int
@@ -101,12 +101,12 @@ type NetTravel
 	fNodeNearestHospitalIndex::Vector{Int} # fNodeNearestHospitalIndex[i] gives index of nearest hospital from fNode[i]
 	
 	NetTravel(isReduced::Bool) = new(isReduced, nullIndex, [],
-		Array{FloatSpTime,2}(0,0), Array{IntFadj,2}(0,0), spzeros(Int, 0, 0), [],
+		Array{FloatSpTime,2}(undef,0,0), Array{IntFadj,2}(undef,0,0), spzeros(Int, 0, 0), [],
 		[], [], [],
-		Array{Float,2}(0,0), Array{Float,2}(0,0), Array{Vector{Int},2}(0,0), Array{Vector{Int},2}(0,0), [])
+		Array{Float,2}(undef,0,0), Array{Float,2}(undef,0,0), Array{Vector{Int},2}(undef,0,0), Array{Vector{Int},2}(undef,0,0), [])
 end
 
-type Network
+mutable struct Network
 	fGraph::Graph # full graph
 	rGraph::Graph # reduced graph
 	
@@ -119,13 +119,13 @@ type Network
 	fNodeRNode::Vector{Int} # fNodeRNode[i] returns index of fNode i in rGraph, nullIndex if not in rGraph
 	rArcFNodes::Vector{Vector{Int}} # rArcFNodes[i] gives array of fNode indices that belong to rArc i (ordered: fromNodeIndex -> toNodeIndex)
 	fNodeRArcs::Vector{Vector{Int}} # fNodeRArcs[i] gives indices of rArcs that fNode[i] is on
-	rArcFNodeIndex::Vector{Dict{Int,Int}} # rArcFNodeIndex[i][j] gives index that fNode[j] appears in rArc[i]; should be same as find(rArcFNodes[i] .== j), so rArcFNodes[i][rArcFNodeIndex[i][j]] = j
+	rArcFNodeIndex::Vector{Dict{Int,Int}} # rArcFNodeIndex[i][j] gives index that fNode[j] appears in rArc[i]; should be same as findall(rArcFNodes[i] .== j), so rArcFNodes[i][rArcFNodeIndex[i][j]] = j
 	fNodeToRNodes::Vector{Vector{Int}} # fNodeToRNodes[i] gives indices of rNodes that fNode[i] can travel to, and is "near" ("near" meaning that the fNode is on an rArc incident to rNode, or fNode is rNode in rGraph; it is similar to adjacency)
 	fNodeFromRNodes::Vector{Vector{Int}} # fNodeFromRNodes[i] gives indices of rNodes that can travel to fNode[i], and is "near"
 	fNodeToRNodeNextFNode::Vector{Dict{Int,Int}} # fNodeToRNodeNextFNode[i][j] gives index of fNode after fNode[i] on path to rNode[j], where j is in fNodeToRNodes[i]. Needed to find path from an fNode to an rNode
 	
 	# fNodes that are common start/end points for travel (e.g, fNodes nearest to stations, hospitals):
-	commonFNodes::Vector{Int} # list of common fNodes; = find(isFNodeCommon)
+	commonFNodes::Vector{Int} # list of common fNodes; = findall(isFNodeCommon)
 	isFNodeCommon::Vector{Bool} # isFNodeCommon[i] = true if fNode i is common, false otherwise
 	fNodeCommonFNodeIndex::Vector{Int} # fNodeCommonFNodeIndex[i] gives index of fNode i in commonFNodes, if isFNodeCommon[i] = true
 	
@@ -136,7 +136,7 @@ type Network
 end
 
 # travel information, for on-road and off-road
-type TravelMode
+mutable struct TravelMode
 	index::Int
 	
 	offRoadSpeed::Float
@@ -151,7 +151,7 @@ end
 
 # for storing travel modes, travel sets (a set of travel modes apply to each time period),
 # and conditions for when to use each travel set/mode
-type Travel
+mutable struct Travel
 	numModes::Int # number of travel modes
 	numSets::Int # number of sets of travel modes; each set may contain multiple travel modes e.g. for different combinations of travel priorities and ambulance classes. Different sets can overlap, by containing the same travel modes.
 	
@@ -163,13 +163,13 @@ type Travel
 	recentSetsStartTimesIndex::Int # index of most recently used value in setsStartTimes (and setsTimeOrder), should only ever increase in value
 	
 	Travel() = new(nullIndex, nullIndex,
-		[], Array{Int,2}(0,0),
+		[], Array{Int,2}(undef,0,0),
 		[], [], nullIndex)
 end
 
 # for storing ambulance routes
 # routes include a path (on fGraph), and may start/end off the graph
-type Route
+mutable struct Route
 	priority::Priority # travel priority
 	travelModeIndex::Int
 	
@@ -218,7 +218,7 @@ type Route
 		nullIndex, nullIndex, nullTime)
 end
 
-type Event
+mutable struct Event
 	index::Int # index of event in list of events that have occurred (not for sim.eventList)
 	parentIndex::Int # index of parent event
 	form::EventForm # "type" is taken
@@ -231,7 +231,7 @@ type Event
 	Event() = new(nullIndex, nullIndex, nullEvent, nullTime, nullIndex, nullIndex, nullIndex)
 end
 
-type Ambulance
+mutable struct Ambulance
 	index::Int
 	status::AmbStatus
 	stationIndex::Int
@@ -261,7 +261,7 @@ type Ambulance
 		0.0, 0.0, 0, 0, 0, 0, 0, 0)
 end
 
-type Call
+mutable struct Call
 	index::Int
 	status::CallStatus
 	ambIndex::Int
@@ -298,7 +298,7 @@ type Call
 		nullTime, nullTime, nullTime, nullTime, 0, false)
 end
 
-type Hospital
+mutable struct Hospital
 	index::Int
 	location::Location
 	nearestNodeIndex::Int
@@ -311,7 +311,7 @@ type Hospital
 		0)
 end
 
-type Station
+mutable struct Station
 	index::Int
 	location::Location
 	capacity::Int # maximum number of ambulances that station can hold
@@ -324,7 +324,7 @@ type Station
 	Station() = new(nullIndex, Location(), 0, nullIndex, nullDist)
 end
 
-type Map
+mutable struct Map
 	xMin::Float
 	xMax::Float
 	yMin::Float
@@ -343,7 +343,7 @@ end
 # grid search rectangle, part of type Grid
 # for keeping track of search progress,
 # while looking for nearest node in grid
-type GridSearchRect
+mutable struct GridSearchRect
 	# distance of search rectangle borders from a given location
 	xDist::Vector{Float}
 	yDist::Vector{Float}
@@ -366,7 +366,7 @@ type GridSearchRect
 end
 
 # grid rectangle, part of type Grid
-type GridRect
+mutable struct GridRect
 	nodeIndices::Vector{Int}
 	
 	GridRect() = new([])
@@ -375,7 +375,7 @@ end
 # grid breaks map region into rectangles,
 # each rectangle stores graph node indices (from full graph)
 # this is for quickly finding the nearest node to a location
-type Grid
+mutable struct Grid
 	nx::Int # number of divisions in x direction
 	ny::Int # number of divisions in y direction
 	xRange::Float # size of divisions in x direction, = map.xRange / nx
@@ -385,9 +385,9 @@ type Grid
 	rects::Array{GridRect,2} # rectangles
 	searchRect::GridSearchRect
 	
-	Grid() = new(nullIndex, nullIndex, nullDist, nullDist, nullDist, nullDist, Array{GridRect,2}(0, 0), GridSearchRect())
+	Grid() = new(nullIndex, nullIndex, nullDist, nullDist, nullDist, nullDist, Array{GridRect,2}(undef, 0, 0), GridSearchRect())
 	function Grid(map::Map, nx, ny)
-		grid = new(nx, ny, nullDist, nullDist, nullDist, nullDist, Array{GridRect,2}(nx, ny))
+		grid = new(nx, ny, nullDist, nullDist, nullDist, nullDist, Array{GridRect,2}(undef, nx, ny))
 		for i = 1:nx
 			for j = 1:ny
 				grid.rects[i,j] = GridRect()
@@ -406,7 +406,7 @@ end
 # stores data for rectangular grid of cells,
 # cell (i,j) has centre x[i], y[j], and value z[i,j]
 # requires at least 2 cells in each direction
-type Raster
+mutable struct Raster
 	# parameters:
 	x::Vector{Float}
 	y::Vector{Float}
@@ -417,7 +417,7 @@ type Raster
 	dx::Float # x step size
 	dy::Float # y step size
 	
-	Raster() = new([], [], Array{Float,2}(0,0),
+	Raster() = new([], [], Array{Float,2}(undef,0,0),
 		0, 0, 0.0, 0.0)
 	function Raster(x, y, z)
 		nx = length(x)
@@ -437,7 +437,7 @@ end
 # where raster z values are proportional to probability of location being
 # within corresponding cell (i.e. z values are for categorical distribution),
 # and locations are generated uniformly within the cell
-type RasterSampler
+mutable struct RasterSampler
 	raster::Raster
 	cellDistrRng::DistrRng # to generate index of raster cell
 	cellLocRng::AbstractRNG # rng used when generating location within raster cell
@@ -458,7 +458,7 @@ end
 
 # to model call demand for a single priority
 # can use multiple demand modes to model change in demand with time, using Demand type
-type DemandMode
+mutable struct DemandMode
 	# parameters:
 	index::Int # mode index
 	rasterIndex::Int # index of demand raster in Demand.rasters
@@ -475,7 +475,7 @@ end
 # To model demand (calls).
 # Stores demand modes, demand sets (a set of demand modes apply to each time period),
 # and conditions for when to use each demand set/mode.
-type Demand
+mutable struct Demand
 	initialised::Bool
 	numRasters::Int # number of demand rasters
 	numModes::Int # number of demand modes
@@ -493,14 +493,14 @@ type Demand
 	
 	Demand() = new(false, nullIndex, nullIndex, nullIndex,
 		[], [],
-		[], Array{Int,2}(0,0),
+		[], Array{Int,2}(undef,0,0),
 		[], [], nullIndex)
 end
 
 # For a given set of points, coverage time, and travel mode,
 # for each station store the points that can be reached by
 # travelling from the station within the coverage time.
-type PointsCoverageMode
+mutable struct PointsCoverageMode
 	# parameters:
 	index::Int
 	points::Vector{Point} # reference to DemandCoverage.points
@@ -515,7 +515,7 @@ type PointsCoverageMode
 		[], [], [])
 end
 
-type DemandCoverage
+mutable struct DemandCoverage
 	# params
 	coverTimes::Dict{Priority,Float} # coverTimes[p] gives the target cover time for demand of priority p
 	rasterCellNumRows::Int # number of rows of points to create per demand raster cell
@@ -532,7 +532,7 @@ type DemandCoverage
 	
 	DemandCoverage() = new(Dict(), 0, 0,
 		false, [], [], [],
-		[], [], Array{Vector{Float},2}(0,0))
+		[], [], Array{Vector{Float},2}(undef,0,0))
 	
 	function DemandCoverage(coverTimes::Dict{Priority,Float}, rasterCellNumRows::Int, rasterCellNumCols::Int)
 		dc = demandCoverage = DemandCoverage()
@@ -550,10 +550,10 @@ end
 
 # move up data types
 abstract type MoveUpDataType end
-type EmptyMoveUpData <: MoveUpDataType end
+mutable struct EmptyMoveUpData <: MoveUpDataType end
 
 # compliance table data
-type CompTableData <: MoveUpDataType
+mutable struct CompTableData <: MoveUpDataType
 	# parameters:
 	compTable::CompTable # compTable[i,j] = number of ambulances to place at station j, with i total idle ambs
 	
@@ -562,13 +562,13 @@ type CompTableData <: MoveUpDataType
 	# arrays for recycling:
 	ambMovable::Vector{Bool} # ambMovable[i] = true if ambulance i is available for move up, false otherwise
 	
-	CompTableData() = new(CompTable(0,0),
+	CompTableData() = new(CompTable(undef,0,0),
 		[],
 		[])
 end
 
 # dmexclp - dynamic maximum expected coverage location problem
-type DmexclpData <: MoveUpDataType
+mutable struct DmexclpData <: MoveUpDataType
 	# parameters:
 	busyFraction::Float # fraction for which each ambulance is busy, approximate
 	demandWeights::Dict{Priority,Float} # weight of each demand priority on the objective function
@@ -586,7 +586,7 @@ type DmexclpData <: MoveUpDataType
 		[], [])
 end
 
-type PriorityListData <: MoveUpDataType
+mutable struct PriorityListData <: MoveUpDataType
 	# parameters:
 	priorityList::Vector{Int} # priorityList[i] gives station index that the ith free ambulance should be moved to
 	
@@ -597,7 +597,7 @@ type PriorityListData <: MoveUpDataType
 		[])
 end
 
-type ZhangIpData <: MoveUpDataType
+mutable struct ZhangIpData <: MoveUpDataType
 	# parameters:
 	marginalBenefits::Vector{Vector{Float}} # marginalBenefits[i][j] = benefit of adding a jth ambulance to station i
 	stationCapacities::Vector{Int} # stationCapacities[i] is the number of ambulances that station i can hold on completion of move up, should be <= stations[i].capacity
@@ -612,10 +612,10 @@ type ZhangIpData <: MoveUpDataType
 	stationSlotsOrderPairs::Array{Int,2} # stationSlotsOrderConstraintPairs[i,1:2] gives two stationSlots indices, first should be filled (with ambulance) before second
 	
 	ZhangIpData() = new([], [], 1.0, 1.0, nullTime, nullTime,
-		[], [], false, Array{Int,2}(0,0))
+		[], [], false, Array{Int,2}(undef,0,0))
 end
 
-type Temp0Data <: MoveUpDataType
+mutable struct Temp0Data <: MoveUpDataType
 	# parameters:
 	busyFraction::Float # ambulance busy fraction - should remove this, make marginalBenefit a parameter
 	travelTimeCost::Float # travel time cost multiplier
@@ -628,7 +628,7 @@ type Temp0Data <: MoveUpDataType
 		[])
 end
 
-type Temp1Data <: MoveUpDataType
+mutable struct Temp1Data <: MoveUpDataType
 	# parameters:
 	benefit::Array{Vector{Float},2} # benefit[i1,i2][k] = benefit from having k ambulances collectively at stations i1 and i2
 	busyFraction::Float # ambulance busy fraction - should remove this, make marginalBenefit a parameter
@@ -639,11 +639,11 @@ type Temp1Data <: MoveUpDataType
 	
 	marginalBenefit::Array{Vector{Float},2} # marginal benefit values from ambulance to station allocations, calculated from 'benefit'
 	
-	Temp1Data() = new(Array{Vector{Float},2}(0,0), 0.0, Vector{Vector{Int}}(0), 0.0, Inf, 0,
-		Array{Vector{Float},2}(0,0))
+	Temp1Data() = new(Array{Vector{Float},2}(undef,0,0), 0.0, Vector{Vector{Int}}(), 0.0, Inf, 0,
+		Array{Vector{Float},2}(undef,0,0))
 end
 
-type Temp2Data <: MoveUpDataType
+mutable struct Temp2Data <: MoveUpDataType
 	# parameters:
 	benefit::Array{Array{Float,2},2} # benefit[i1,i2][k1,k2] = benefit from having k1 and k2 ambulances at stations i1 and i2, respectively
 	busyFraction::Float # ambulance busy fraction - should remove this, make marginalBenefit a parameter
@@ -654,11 +654,11 @@ type Temp2Data <: MoveUpDataType
 	
 	marginalBenefit::Array{Array{Float,2},2} # marginal benefit values from ambulance to station allocations, calculated from 'benefit'
 	
-	Temp2Data() = new(Array{Array{Float,2},2}(0,0), 0.0, Vector{Vector{Int}}(0), 0.0, Inf, 0,
-		Array{Array{Float,2},2}(0,0))
+	Temp2Data() = new(Array{Array{Float,2},2}(undef,0,0), 0.0, Vector{Vector{Int}}(), 0.0, Inf, 0,
+		Array{Array{Float,2},2}(undef,0,0))
 end
 
-type MoveUpData
+mutable struct MoveUpData
 	# parameters:
 	useMoveUp::Bool
 	moveUpModule::MoveUpModule # indicates move up module to be used
@@ -676,7 +676,7 @@ type MoveUpData
 		CompTableData(), DmexclpData(), PriorityListData(), ZhangIpData(), Temp0Data(), Temp1Data(), Temp2Data())
 end
 
-type File
+mutable struct File
 	name::String
 	path::String # includes name
 	iostream::IOStream
@@ -686,7 +686,7 @@ type File
 	File() = new("", "", IOStream(""), 0)
 end
 
-type Resimulation
+mutable struct Resimulation
 	# parameters:
 	use::Bool # true if resimulating (will follow event trace), false otherwise
 	timeTolerance::Float
@@ -699,7 +699,7 @@ type Resimulation
 		[], [], nullIndex)
 end
 
-type Simulation
+mutable struct Simulation
 	startTime::Float
 	time::Float # time of most recent event, or time of recent animation frame if animating
 	endTime::Float # calculated after simulating

@@ -122,8 +122,8 @@ function resimMoveUp(sim::Simulation)
 	@assert(resimEvent.form == considerMoveUp)
 	
 	# find all ambulances to move up
-	movableAmbs = Vector{Ambulance}(0)
-	ambStations = Vector{Station}(0)
+	movableAmbs = Vector{Ambulance}()
+	ambStations = Vector{Station}()
 	eventChildren = resim.eventsChildren[resimEvent.index]
 	for event in reverse(eventChildren)
 		@assert(event.form == ambMoveUp)

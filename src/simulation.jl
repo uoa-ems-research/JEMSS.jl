@@ -99,13 +99,15 @@ function resetSim!(sim::Simulation)
 	if sim.used
 		resetCalls!(sim) # reset calls from sim.backup, need to do this before resetting sim.time
 		
-		fnames = Set(fieldnames(sim))
+		fnames = Set(fieldnames(Simulation))
 		fnamesDontCopy = Set([:backup, :net, :travel, :grid, :resim, :calls, :demand, :demandCoverage, :animating]) # will not (yet) copy these fields from sim.backup to sim
 		# note that sim.backup does not contain a backup of all fields
 		setdiff!(fnames, fnamesDontCopy) # remove fnamesDontCopy from fnames
 		for fname in fnames
 			try
 				setfield!(sim, fname, deepcopy(getfield(sim.backup, fname)))
+			catch e
+				error(e)
 			end
 		end
 		

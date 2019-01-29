@@ -39,11 +39,11 @@ function countCallsReachedInTime(sim::Simulation;
 	return count(call -> call.responseTime <= targetResponseTimes[Int(call.priority)], sim.calls)
 end
 
-printDays(t::Float) = string(round(t, 2), " days")
-printHours(t::Float) = string(round(t*24, 2), " hours") # convert days to hours, round
-printMinutes(t::Float) = string(round(t*24*60, 2), " minutes") # convert days to minutes, round
-printSeconds(t::Float) = string(round(t*24*60*60, 2), " seconds") # convert days to seconds, round
-printPercent(p::Float) = string(round(p*100, 2), "%")
+printDays(t::Float) = string(round(t, digits = 2), " days")
+printHours(t::Float) = string(round(t*24, digits = 2), " hours") # convert days to hours, round
+printMinutes(t::Float) = string(round(t*24*60, digits = 2), " minutes") # convert days to minutes, round
+printSeconds(t::Float) = string(round(t*24*60*60, digits = 2), " seconds") # convert days to seconds, round
+printPercent(p::Float) = string(round(p*100, digits = 2), "%")
 
 function printSimStats(sim::Simulation)
 	println("=== Simulation statistics ===")
@@ -112,8 +112,8 @@ function printHospitalsStats(sim::Simulation)
 	println("Number of hospitals = ", sim.numHospitals)
 	println("Transfers:")
 	hospitalsNumTransfers = map(h -> h.numTransfers, sim.hospitals)
-	println(" mean = ", round(mean(hospitalsNumTransfers), 2))
-	println(" std = ", round(std(hospitalsNumTransfers), 2))
+	println(" mean = ", round(mean(hospitalsNumTransfers), digits = 2))
+	println(" std = ", round(std(hospitalsNumTransfers), digits = 2))
 end
 
 """
@@ -228,9 +228,11 @@ function calcBatchMeanResponseTimes(sim::Simulation;
 		rmPartialBatch = rmPartialBatch, returnBatchSizes = returnBatchSizes)
 end
 
-# calculate Stats.sem for each row of x
-function Stats.sem{T<:Real}(x::Array{T,2})
-	return [Stats.sem(x[i,:]) for i = 1:size(x,1)]
+# calculate sem for 2d array, calculating along given dim
+function semDim(x::Array{T,2}, dim::Int = 1) where T <: Real
+	@assert(dim == 1 || dim == 2)
+	dim == 1 && return collect([sem(x[:,j]) for j = 1:size(x,2)]') # sem of each col
+	dim == 2 && return [sem(x[i,:]) for i = 1:size(x,1)] # sem of each row
 end
 
 # For each x[i], plot mean of y[i,:] with two sided confidence interval.
@@ -240,7 +242,8 @@ function meanErrorPlot(x::Vector{Float}, y::Array{Float,2}, conf::Float=0.95)
 	@assert(0 < conf < 1)
 	t = StatsFuns.tdistinvcdf(size(y,2)-1, 1-(1-conf)/2) # t-value, for two sided confidence interval
 	# StatsFuns.tdistinvcdf(dof, p) # for n samples, dof = n - 1
-	return Plots.scatter(x, mean(y,2), yerror=repmat(t*Stats.sem(y), 1, 2),
+	@warn("meanErrorPlot still requires use of Plots package; need to change this to RecipesBase")
+	return Plots.scatter(x, mean(y, dims = 2), yerror=repeat(t*semDim(y,2), 1, 2),
 		xaxis=("x"), yaxis=("y"), m=(:hline), lab="")
 end
 function meanErrorPlot(x, y, conf::Float=0.95)
@@ -254,8 +257,8 @@ end
 # For a vector of values, fit an AR(0) model, and return a p-value for the Durbin-Watson test.
 # From wikipedia: "the Durbin–Watson statistic is a test statistic used to detect the presence
 # of autocorrelation at lag 1 in the residuals (prediction errors) from a regression analysis".
-function calcAR0DurbinWatsonTestPValue{T<:Real}(x::Vector{T})
-	xFit = repmat([mean(x)], length(x), 1)
+function calcAR0DurbinWatsonTestPValue(x::Vector{T}) where T <: Real
+	xFit = repeat([mean(x)], length(x), 1)
 	residuals = x - xFit
 	dwTest = HypothesisTests.DurbinWatsonTest(xFit, residuals)
 	return HypothesisTests.pvalue(dwTest)

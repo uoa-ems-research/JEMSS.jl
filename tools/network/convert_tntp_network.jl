@@ -30,10 +30,10 @@ function readTntpNodesFile(tntpNodesFilename::String; delim::Char = '\t')
 	# read nodes file
 	println("Reading nodes file")
 	data = readDlmFile(tntpNodesFilename; delim = delim)
-	cols = find(.!isempty.(data[1,:])) # need to ignore any empty headers
+	cols = findall(.!isempty.(data[1,:])) # need to ignore any empty headers
 	table = Table("tntpNodes", data[1,cols], data[2:end,cols])
 	numNodes = size(table.data, 1)
-	nodes = Vector{Node}(numNodes)
+	nodes = Vector{Node}(undef, numNodes)
 	for i = 1:numNodes
 		nodes[i] = Node()
 		nodes[i].index = table.columns["node"][i]
@@ -62,7 +62,7 @@ function readTntpNetworkFile(tntpNetworkFilename::String; delim::Char = '\t')
 	data = readDlmFile(tntpNetworkFilename; delim = delim)
 	
 	# first few lines have metadata
-	f(r::Regex, s::AbstractString) = parse(match(r,s).captures[1])
+	f(r::Regex, s::AbstractString) = Meta.parse(match(r,s).captures[1])
 	numZones = f(r"<NUMBER OF ZONES> (\d+)", data[1,1])
 	numNodes = f(r"<NUMBER OF NODES> (\d+)", data[2,1])
 	firstThruNode = f(r"<FIRST THRU NODE> (\d+)", data[3,1])
@@ -70,14 +70,14 @@ function readTntpNetworkFile(tntpNetworkFilename::String; delim::Char = '\t')
 	numArcs = f(r"<NUMBER OF LINKS> (\d+)", data[4,1])
 	
 	# find and read table data
-	row = first(find(data[:,1] .== "~"))
+	row = first(findall(data[:,1] .== "~"))
 	header = data[row,:]
-	cols = find(.!isempty.(header))[2:end] # need to ignore any empty headers, and "~"
+	cols = findall(.!isempty.(header))[2:end] # need to ignore any empty headers, and "~"
 	table = Table("tntpNetwork", data[row, cols], data[row+1:end, cols])
 	rowsFields = tableRowsFieldDicts(table, setdiff(table.header, ["from", "to"]))
 	numArcs = size(table.data,1)
-	arcs = Vector{Arc}(numArcs)
-	travelTimes = Vector{Float}(numArcs)
+	arcs = Vector{Arc}(undef, numArcs)
+	travelTimes = Vector{Float}(undef, numArcs)
 	for i = 1:numArcs
 		arcs[i] = Arc()
 		arcs[i].index = i

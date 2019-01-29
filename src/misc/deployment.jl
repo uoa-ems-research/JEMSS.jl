@@ -18,8 +18,8 @@
 # make a single random deployment
 # assumes ambulances are homogeneous
 function makeRandDeployment(numAmbs::Int, numStations::Int;
-	stationCapacities::Union{Vector{Int},Void} = nothing,
-	rng::AbstractRNG = Base.GLOBAL_RNG)::Deployment
+	stationCapacities::Union{Vector{Int},Nothing} = nothing,
+	rng::AbstractRNG = GLOBAL_RNG)::Deployment
 	
 	@assert(numStations > 0)
 	if stationCapacities == nothing
@@ -28,7 +28,7 @@ function makeRandDeployment(numAmbs::Int, numStations::Int;
 		@assert(numStations == length(stationCapacities))
 		@assert(numAmbs <= sum(stationCapacities))
 		remainingCapacity = copy(stationCapacities)
-		unfilledStations = Set(find(remainingCapacity))
+		unfilledStations = Set(findall(remainingCapacity))
 		deployment = zeros(Int, numAmbs)
 		for i = 1:numAmbs
 			j = rand(rng, unfilledStations) # station index
@@ -45,7 +45,7 @@ end
 # generate a number of unique random deployments
 # ignores station capacities, assumes ambulances are homogeneous
 function makeRandDeployments(numAmbs::Int, numStations::Int, numDeployments::Int;
-	rng::AbstractRNG = Base.GLOBAL_RNG)
+	rng::AbstractRNG = GLOBAL_RNG)
 	@assert(numAmbs >= 1)
 	@assert(numStations >= 1)
 	@assert(numDeployments >= 1)
@@ -60,7 +60,7 @@ function makeRandDeployments(numAmbs::Int, numStations::Int, numDeployments::Int
 	return deployments
 end
 function makeRandDeployments(sim::Simulation, numDeployments::Int;
-	rng::AbstractRNG = Base.GLOBAL_RNG)
+	rng::AbstractRNG = GLOBAL_RNG)
 	return makeRandDeployments(sim.numAmbs, sim.numStations, numDeployments; rng = rng)
 end
 
@@ -135,14 +135,14 @@ end
 function simulateDeployments!(sim::Simulation, deployments::Vector{Deployment}, f::Function;
 	showEta::Bool = false)
 	numDeployments = length(deployments)
-	results = Vector{Any}(numDeployments)
+	results = Vector{Any}(undef, numDeployments)
 	t = time() # for estimating expected time remaining
 	for i = 1:numDeployments
 		simulateDeployment!(sim, deployments[i])
 		results[i] = f(sim)
 		if showEta
 			remTime = (time() - t) / i * (numDeployments - i) / 60 # minutes
-			print(rpad(string(" remaining run time (minutes): ", ceil(remTime,1)), 100, " "), "\r")
+			print(rpad(string(" remaining run time (minutes): ", ceil(remTime, digits = 1)), 100, " "), "\r")
 		end
 	end
 	resetSim!(sim)

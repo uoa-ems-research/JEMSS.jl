@@ -79,7 +79,7 @@ function createDemandPointsFromRasters(demand::Demand; numCellRows::Int = 1, num
 	numCellPoints = numCellRows * numCellCols # number of points per cell
 	points = Vector{Point}()
 	maxNumPoints = (nx * numCellCols) * (ny * numCellRows)
-	rastersPointDemands = [Vector{Float}(maxNumPoints) for i = 1:numRasters] # rastersPointDemands[i][j] gives demand at point j for raster i
+	rastersPointDemands = [Vector{Float}(undef, maxNumPoints) for i = 1:numRasters] # rastersPointDemands[i][j] gives demand at point j for raster i
 	for i = 1:nx, j = 1:ny # raster cell indices
 		if all(raster -> raster.z[i,j] == 0, rasters)
 			continue
@@ -191,12 +191,12 @@ function createPointsCoverageMode(sim::Simulation, travelMode::TravelMode, cover
 		push!(stationSets, j)
 	end
 	pointSets = collect(values(stationSetsPoints)) # pointSets[i] has set of all point indices covered by the same unique set of stations
-	stationSets = [find(stationSet) for stationSet in keys(stationSetsPoints)] # stationSets[i] = unique set of stations for pointSets[i]
+	stationSets = [findall(stationSet) for stationSet in keys(stationSetsPoints)] # stationSets[i] = unique set of stations for pointSets[i]
 	# according to documentation, 'values' and 'keys' return elements in the same order, so pointSets[i] corresponds with stationSets[i]
 	
-	stationsCoverPointSets = Vector{Vector{Int}}(numStations) # stationsCoverPointSets[i] = list of point set indices covered by station i
+	stationsCoverPointSets = Vector{Vector{Int}}(undef, numStations) # stationsCoverPointSets[i] = list of point set indices covered by station i
 	for i = 1:numStations
-		stationsCoverPointSets[i] = find(stationSet -> in(i,stationSet), stationSets)
+		stationsCoverPointSets[i] = findall(stationSet -> in(i,stationSet), stationSets)
 	end
 	
 	pointsCoverageMode.pointSets = pointSets
@@ -228,7 +228,7 @@ end
 
 # mutates: sim.travel and sim.demand states
 function getPointSetsDemands!(sim::Simulation, demandPriority::Priority, currentTime::Float;
-	pointsCoverageMode::Union{PointsCoverageMode,Void} = nothing)
+	pointsCoverageMode::Union{PointsCoverageMode,Nothing} = nothing)
 	if pointsCoverageMode == nothing
 		pointsCoverageMode = getPointsCoverageMode!(sim, demandPriority, currentTime)
 	end
@@ -238,7 +238,7 @@ function getPointSetsDemands!(sim::Simulation, demandPriority::Priority, current
 end
 
 """
-	function initDemand!(sim::Simulation, demand::Union{Demand,Void} = nothing;
+	function initDemand!(sim::Simulation, demand::Union{Demand,Nothing} = nothing;
 		demandFilename::String = "")
 Initialise demand data for `sim`.
 Will initialise from the first item in this list: `demand`, `demandFilename` file, `sim.demand` (if set), `sim.inputFiles[\"demand\"].path` file.
@@ -246,7 +246,7 @@ Deletes old demand coverage data in `sim.demandCoverage`.
 
 Mutates: `sim.demand`, `sim.demandCoverage`
 """
-function initDemand!(sim::Simulation, demand::Union{Demand,Void} = nothing;
+function initDemand!(sim::Simulation, demand::Union{Demand,Nothing} = nothing;
 	demandFilename::String = "")
 	if demand == nothing
 		if demandFilename != ""
@@ -296,7 +296,7 @@ end
 
 """
 	function initDemandCoverage!(sim::Simulation;
-		coverTimes::Union{Dict{Priority,Float},Void} = nothing,
+		coverTimes::Union{Dict{Priority,Float},Nothing} = nothing,
 		rasterCellNumRows::Int = 1, rasterCellNumCols::Int = 1)
 Initialises demand coverage data for `sim`.
 If `coverTimes` is given, will use this (along with `rasterCellNumRows` and `rasterCellNumCols`), otherwise will use the previous parameter values set in `sim.demandCoverage`.
@@ -308,7 +308,7 @@ If `coverTimes` is given, will use this (along with `rasterCellNumRows` and `ras
 Mutates: `sim.demandCoverage`
 """
 function initDemandCoverage!(sim::Simulation;
-	coverTimes::Union{Dict{Priority,Float},Void} = nothing,
+	coverTimes::Union{Dict{Priority,Float},Nothing} = nothing,
 	rasterCellNumRows::Int = 1, rasterCellNumCols::Int = 1)
 	
 	@assert(!sim.used)

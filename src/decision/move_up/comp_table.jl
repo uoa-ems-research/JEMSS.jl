@@ -29,7 +29,7 @@ function initCompTable!(sim::Simulation, compTable::CompTable)
 	ctd.compTableStationSlots = [vcat([[stationIndex for j = 1:stationSlotCount] for (stationIndex, stationSlotCount) in enumerate(ctd.compTable[i,:])]...) for i = 1:numAmbs] # compTableStationSlots[i] gives the indices of stations as many times as the number of ambulances required at the station for compTable[i,:]
 	
 	# set array sizes
-	ctd.ambMovable = Vector{Bool}(numAmbs)
+	ctd.ambMovable = Vector{Bool}(undef, numAmbs)
 end
 function initCompTable!(sim::Simulation, nestedCompTable::NestedCompTable)
 	compTable = unnestCompTable(nestedCompTable, sim.numStations)
@@ -65,7 +65,7 @@ function compTableMoveUp(sim::Simulation)
 	
 	# calculate travel time for each available ambulance to reach every station that requires >= 1 amb
 	ambToStationTimes = zeros(Float, numMovableAmbs, numStations) # ambToStationTimes[i,j] = time for movable ambulance i to travel to station j
-	moveUpStations = find(compTable[numMovableAmbs,:]) # indices of stations that require >= 1 amb
+	moveUpStations = findall(!iszero, compTable[numMovableAmbs,:]) # indices of stations that require >= 1 amb
 	for i = 1:numMovableAmbs
 		ambToStationTimes[i,moveUpStations] = ambMoveUpTravelTimes!(sim, movableAmbs[i]; stations = stations[moveUpStations])
 	end
@@ -130,7 +130,8 @@ function solveCompTableIP(compTableRow::Vector{Int}, ambToStationCost::Array{Flo
 	
 	# extract solution
 	sol = convert(Array{Bool,2}, round.(getvalue(x)))
-	(ambIndices, stationIndices) = findn(sol)
+	I = findall(sol)
+	(ambIndices, stationIndices) = (getindex.(I, 1), getindex.(I, 2))
 	ambStationIndices = zeros(Int,numMovableAmbs) # ambStationIndices[i] gives index of the station that movable ambulance i should be assigned to
 	ambStationIndices[ambIndices] = stationIndices
 	
@@ -166,7 +167,8 @@ function solveCompTableAssignmentProblem(stationSlots::Vector{Int}, ambToStation
 	# (assignment, cost) = hungarian(weights) # slightly slower than Hungarian.munkres(weights); it allows for dummy nodes but I don't need this functionality
 	
 	# extract solution
-	(ambIndices, stationSlotIndices) = findn(matching .== Hungarian.STAR)
+	I = findall(matching .== Hungarian.STAR)
+	(ambIndices, stationSlotIndices) = (getindex.(I, 1), getindex.(I, 2))
 	ambStationIndices = zeros(Int,numMovableAmbs) # ambStationIndices[i] gives index of the station that movable ambulance i should be assigned to
 	ambStationIndices[ambIndices] = stationSlots[stationSlotIndices]
 	
@@ -181,7 +183,7 @@ end
 # check that compliance table is valid
 function checkCompTable(compTable::CompTable;
 	numAmbs::Int = nullIndex, numStations::Int = nullIndex,
-	stationCapacities::Union{Vector{Int},Void} = nothing)
+	stationCapacities::Union{Vector{Int},Nothing} = nothing)
 	
 	(m,n) = size(compTable)
 	@assert(all(v -> v >= 0, compTable)) # need non-negative integers
@@ -197,23 +199,25 @@ function checkCompTable(compTable::CompTable;
 			# @assert(all(compTable[:,j] .<= stationCapacities[j]))
 		end
 	end
+	return true
 end
 function checkCompTable(compTable::CompTable, sim::Simulation)
-	checkCompTable(compTable; numAmbs = sim.numAmbs, numStations = sim.numStations, stationCapacities = [s.capacity for s in sim.stations])
+	return checkCompTable(compTable; numAmbs = sim.numAmbs, numStations = sim.numStations, stationCapacities = [s.capacity for s in sim.stations])
 end
 
 function checkCompTableIsNested(compTable::CompTable)
 	checkCompTable(compTable)
 	for i = 2:size(compTable,1)
-		@assert(length(find(compTable[i,:] - compTable[i-1,:])) == 1) # should only have one change between rows
+		@assert(length(findall(!iszero, compTable[i,:] - compTable[i-1,:])) == 1) # should only have one change between rows
 	end
+	return true
 end
 
 # take a compliance table and return the nested form, if possible
 function nestCompTable(compTable::CompTable)::NestedCompTable
 	checkCompTableIsNested(compTable) # check if nesting is possible
 	(m,n) = size(compTable)
-	nestedCompTable = NestedCompTable(m)
+	nestedCompTable = NestedCompTable(undef,m)
 	nestedCompTable[1] = findfirst(compTable[1,:])
 	for i = 2:m
 		nestedCompTable[i] = findfirst(compTable[i,:] - compTable[i-1,:])
@@ -225,17 +229,17 @@ end
 function unnestCompTable(nestedCompTable::NestedCompTable, numStations::Int)::CompTable
 	m = length(nestedCompTable)
 	n = numStations
-	compTable = CompTable(m,n)
-	compTable[:] = 0
+	compTable = CompTable(undef,m,n)
+	compTable[:] .= 0
 	for i = 1:m
-		compTable[i:m, nestedCompTable[i]] += 1
+		compTable[i:m, nestedCompTable[i]] .+= 1
 	end
 	return compTable
 end
 
 # returns a randomly generated nested comp table
 function makeRandNestedCompTable(numAmbs::Int, numStations::Int;
-	stationCapacities::Union{Vector{Int},Void} = nothing,
+	stationCapacities::Union{Vector{Int},Nothing} = nothing,
 	rng::AbstractRNG = Base.GLOBAL_RNG)::NestedCompTable
 	
 	@assert(numStations > 0)
@@ -245,9 +249,9 @@ function makeRandNestedCompTable(numAmbs::Int, numStations::Int;
 		@assert(numStations == length(stationCapacities))
 		@assert(numAmbs <= sum(stationCapacities))
 		remainingCapacity = copy(stationCapacities)
-		unfilledStations = Set(find(remainingCapacity))
-		nestedCompTable = NestedCompTable(numAmbs)
-		nestedCompTable[:] = 0
+		unfilledStations = Set(findall(!iszero, remainingCapacity))
+		nestedCompTable = NestedCompTable(undef,numAmbs)
+		nestedCompTable[:] .= 0
 		for i = 1:numAmbs
 			j = rand(rng, unfilledStations) # station index
 			nestedCompTable[i] = j

@@ -16,9 +16,8 @@
 # for converting OpenStreetMap files with road networks to format usable for JEMSS
 
 using JEMSS
-using Geodesy # need v0.0.1 for type Bounds
-import OpenStreetMap
-const OSM = OpenStreetMap
+import OpenStreetMapX
+const OSM = OpenStreetMapX
 
 include("graph_tools.jl")
 
@@ -29,68 +28,54 @@ include("graph_tools.jl")
 # Output may need further processing, such as only keeping the largest strongly connected component, and removing duplicate arcs.
 # Note that distance calculations done here are different (more accurate) than those in JEMSS.
 function readOsmNetworkFile(osmFilename::String;
-	levels::Union{Set{Int},Void} = nothing, boundsLLA::Union{Geodesy.Bounds{LLA},Void} = nothing)
+	levels::Union{Set{Int},Nothing} = nothing, boundsLLA::Union{OSM.Bounds{OSM.LLA},Nothing} = nothing)
+	
+	if levels == nothing levels = OSM.ROAD_CLASSES |> values |> Set end
 	
 	# read osm file
 	@assert(isfile(osmFilename))
-	(nodesLLA, highways, buildings, features) = OSM.getOSMData(osmFilename)
+	osmData = OSM.get_map_data(osmFilename; road_levels = levels, use_cache = false) # 'use_cache = true' ignores other kwargs (e.g. road_levels)
+	(nodesENU, roadways) = (osmData.nodes, osmData.roadways)
+	@assert(length(nodesENU) > 0)
+	@assert(length(roadways) > 0)
+	@assert(typeof(first(nodesENU)[2]) == OSM.ENU)
 	
-	if boundsLLA == nothing
-		try
-			# get map bounds from file (may be missing bounds)
-			xdoc = OSM.parseMapXML(osmFilename)
-			boundsLLA = OSM.getBounds(xdoc)
-		catch
-			# set map bounds to fit nodesLLA
-			nodeCoords = collect(values(nodesLLA))
-			minLat = minimum(c->c.lat, nodeCoords)
-			maxLat = maximum(c->c.lat, nodeCoords)
-			minLon = minimum(c->c.lon, nodeCoords)
-			maxLon = maximum(c->c.lon, nodeCoords)
-			boundsLLA = Geodesy.Bounds{LLA}(minLat, maxLat, minLon, maxLon)
-		end
-	end
 	# crop map within bounds
-	# even if cropping is not required, it is useful to remove highway references to nodes that may not exist
-	OSM.cropMap!(nodesLLA, boundsLLA; highways=highways, buildings=buildings, features=features)
+	if boundsLLA == nothing
+		boundsLLA = osmData.bounds
+		@assert(boundsLLA != OSM.Bounds{OSM.LLA}(0.0, 0.0, 0.0, 0.0), "missing bounds")
+	end
+	nodesLLA = OSM.LLA(nodesENU, boundsLLA)
+	OSM.crop!(nodesLLA, boundsLLA, roadways)
 	
-	# convert from LLA to ENU coordinates
-	lla_reference = Geodesy.center(boundsLLA)
-	nodesENU = ENU(nodesLLA, lla_reference)
+	# get network data from nodes and ways
+	edges, class = OSM.get_edges(nodesENU, roadways) # edges = vector of tuple of vertex keys; class[i] is class (in levels) of edges[i]
+	@assert(issubset(Set(class), levels))
+	vertices = OSM.get_vertices(edges) # Dict{Int,Int}; vertices[k] gives index (from 1:n) of vertex key k
+	weights = OSM.distance(nodesENU, edges) # weights[i] is weight of edges[i]; appears to be equivalent to Geodesy.distance, based on output
 	
-	# create network
-	if levels == nothing levels = OSM.ROAD_CLASSES |> values |> Set end
-	classes = OSM.roadways(highways)
-	network = OSM.createGraph(nodesENU, highways, classes, levels)
-	
-	graph = network.g # graph type: Graphs.GenericIncidenceList
-	@assert(graph.is_directed)
-	edges = OSM.getEdges(network)
-	
-	# create nodes from graph.vertices
-	numNodes = length(graph.vertices)
-	nodes = Vector{Node}(numNodes)
-	for i = 1:numNodes
-		vertex = graph.vertices[i]
+	# create nodes from vertices
+	numNodes = length(vertices)
+	nodes = Vector{Node}(undef, numNodes)
+	for (key, i) in vertices
 		nodes[i] = Node()
 		nodes[i].index = i
-		nodes[i].location.x = nodesLLA[vertex.key].lon
-		nodes[i].location.y = nodesLLA[vertex.key].lat
-		nodes[i].fields["osm_key"] = vertex.key
+		nodes[i].location.x = nodesLLA[key].lon
+		nodes[i].location.y = nodesLLA[key].lat
+		nodes[i].fields["osm_key"] = key
 	end
 	
 	# create arcs from edges
-	numArcs = graph.nedges
-	arcs = Vector{Arc}(numArcs)
+	numArcs = length(edges)
+	arcs = Vector{Arc}(undef, numArcs)
 	for i = 1:numArcs
-		edge = edges[i]
+		v1, v2 = edges[i] # vertex keys (to, from) for edge
 		arcs[i] = Arc()
 		arcs[i].index = i
-		arcs[i].fromNodeIndex = edge.source.index
-		arcs[i].toNodeIndex = edge.target.index
-		arcs[i].fields["osm_class"] = network.class[edge.index]
-		arcs[i].fields["osm_weight"] = network.w[edge.index] # edge weight = length
-		@assert(network.w[edge.index] == distance(nodesENU, edge.source.key, edge.target.key))
+		arcs[i].fromNodeIndex = vertices[v1]
+		arcs[i].toNodeIndex = vertices[v2]
+		arcs[i].fields["osm_class"] = class[i]
+		arcs[i].fields["osm_weight"] = weights[i] # edge weight = length
 	end
 	
 	return nodes, arcs
@@ -118,7 +103,7 @@ mergeDuplicateOsmArcs!(arcs::Vector{Arc}, i::Int, j::Int) = mergeDuplicateOsmArc
 # - classOffRoadAccess: dict indicating which nodes of different arc classes can be used to get on and off road; node will not have off-road access if all connecting arcs have class returning false in dict
 # - mergeArcsFunction: function to merge any duplicate arcs found, given the arcs and two arc indices
 function convertOsmNetwork!(nodes::Vector{Node}, arcs::Vector{Arc};
-	levels::Union{Set{Int},Void} = nothing, classSpeeds::Vector{Dict{Int,Float}} = [], classOffRoadAccess::Dict{Int,Bool} = Dict{Int,Bool}(), mergeArcsFunction::Function = mergeDuplicateOsmArcs!)
+	levels::Union{Set{Int},Nothing} = nothing, classSpeeds::Vector{Dict{Int,Float}} = Dict{Int,Float}[], classOffRoadAccess::Dict{Int,Bool} = Dict{Int,Bool}(), mergeArcsFunction::Function = mergeDuplicateOsmArcs!)
 	
 	numTravelModes = length(classSpeeds)
 	
@@ -199,7 +184,7 @@ function convertOsmNetworkExample!(nodes::Vector{Node}, arcs::Vector{Arc})
 end
 
 function convertOsmNetworkFile(osmFilename::String;
-	levels::Union{Set{Int},Void} = nothing, boundsLLA::Union{Geodesy.Bounds{LLA},Void} = nothing, classSpeeds::Vector{Dict{Int,Float}} = [], classOffRoadAccess::Dict{Int,Bool} = Dict{Int,Bool}(), mergeArcsFunction::Function = mergeDuplicateOsmArcs!)
+	levels::Union{Set{Int},Nothing} = nothing, boundsLLA::Union{OSM.Bounds{OSM.LLA},Nothing} = nothing, classSpeeds::Vector{Dict{Int,Float}} = Dict{Int,Float}[], classOffRoadAccess::Dict{Int,Bool} = Dict{Int,Bool}(), mergeArcsFunction::Function = mergeDuplicateOsmArcs!)
 	
 	(nodes, arcs) = readOsmNetworkFile(osmFilename; levels = levels, boundsLLA = boundsLLA)
 	convertOsmNetwork!(nodes, arcs; levels = levels, classSpeeds = classSpeeds, classOffRoadAccess = classOffRoadAccess, mergeArcsFunction = mergeArcsFunction)

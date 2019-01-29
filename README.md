@@ -9,10 +9,9 @@ This package is currently being developed.
 Expect bugs, and backward compatibility issues between commits.
 
 ## Installation
-This package (and others that it requires) is unregistered so you will need to `Pkg.clone` it as follows:
+To install this package, run the following command in the Pkg REPL mode:
 ```julia
-Pkg.clone("https://github.com/samridler/ArchGDAL.jl.git") # ArchGDAL fork, required for julia v0.6
-Pkg.clone("https://github.com/uoa-ems-research/JEMSS.jl.git")
+pkg> add https://github.com/uoa-ems-research/JEMSS.jl
 ```
 
 ## Usage

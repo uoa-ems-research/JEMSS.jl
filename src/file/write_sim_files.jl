@@ -119,7 +119,7 @@ function writeTravelFile(filename::String, travel::Travel)
 	tml = travel.modeLookup # shorthand
 	@assert(size(tml) == (length(travel.modes), numPriorities)) # should have value for each combination of travel mode and priority
 	travelSetsTable = Table("travelSets", ["travelSetIndex", "priority", "travelModeIndex"];
-		rows = [[ind2sub(tml,i)[1], string(Priority(ind2sub(tml,i)[2])), tml[i]] for i = 1:length(tml)])
+		rows = [[[i, string(Priority(j)), tml[i,j]] for i = 1:size(tml,1), j = 1:size(tml,2)]...])
 	
 	# travel sets timing table
 	startTimes = travel.setsStartTimes # shorthand
@@ -201,12 +201,12 @@ function writeStatsFiles!(sim::Simulation)
 	# save ambulance stats
 	writeTablesToFile(outputFilePath("ambulances"), Table("ambStats",
 		["index", "stationIndex", "totalTravelTime", "totalBusyTime", "numCallsTreated", "numCallsTransferred", "atStationDispatches", "onRoadDispatches", "afterServiceDispatches", "numDiversions"];
-		rows = [vcat(a.index, a.stationIndex, round.([a.totalTravelTime, a.totalBusyTime], timeRounding)..., a.numCallsTreated, a.numCallsTransferred, a.atStationDispatches, a.onRoadDispatches, a.afterServiceDispatches, a.numDiversions) for a in sim.ambulances]))
+		rows = [vcat(a.index, a.stationIndex, round.([a.totalTravelTime, a.totalBusyTime], digits = timeRounding)..., a.numCallsTreated, a.numCallsTransferred, a.atStationDispatches, a.onRoadDispatches, a.afterServiceDispatches, a.numDiversions) for a in sim.ambulances]))
 	
 	# save call stats
 	writeTablesToFile(outputFilePath("calls"), Table("callStats",
 		["index", "priority", "ambIndex", "transfer", "arrivalTime", "dispatchDelay", "onSceneDuration", "hospitalArrivalTime", "transferDuration", "dispatchTime", "ambArrivalTime", "hospitalIndex", "numBumps", "wasQueued"];
-		rows = [vcat(c.index, Int(c.priority), c.ambIndex, Int(c.transfer), round.([c.arrivalTime, c.dispatchDelay, c.onSceneDuration, c.hospitalArrivalTime, c.transferDuration * c.transfer, c.dispatchTime, c.ambArrivalTime], timeRounding)..., c.hospitalIndex, c.numBumps, Int(c.wasQueued)) for c in sim.calls]))
+		rows = [vcat(c.index, Int(c.priority), c.ambIndex, Int(c.transfer), round.([c.arrivalTime, c.dispatchDelay, c.onSceneDuration, c.hospitalArrivalTime, c.transferDuration * c.transfer, c.dispatchTime, c.ambArrivalTime], digits = timeRounding)..., c.hospitalIndex, c.numBumps, Int(c.wasQueued)) for c in sim.calls]))
 	
 	# save hospital stats file
 	writeTablesToFile(outputFilePath("hospitals"), Table("hospitalStats", ["index", "numTransfers"];
@@ -237,7 +237,7 @@ function writeBatchMeanResponseTimesFile(filename::String, batchMeanResponseTime
 		rows=[[numRows, numCols, batchTime, startTime, endTime, responseTimeUnits]])
 	avgBatchMeansTable = Table("avg_batch_mean_response_times",
 		["sim_index", "avg_batch_mean_response_time", "standard_error"];
-		rows = [[i, mean(x[i,:]), Stats.sem(x[i,:])] for i = 1:numRows])
+		rows = [[i, mean(x[i,:]), sem(x[i,:])] for i = 1:numRows])
 	batchMeansTable = Table("batch_mean_response_times",
 		["batch_index", ["sim_$i" for i = 1:numRows]...];
 		rows = [[i, x[:,i]...] for i = 1:numCols])

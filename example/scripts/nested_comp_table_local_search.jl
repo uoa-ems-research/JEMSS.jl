@@ -20,6 +20,8 @@
 # Ambulances are assumed to be identical, and station capacities are ignored.
 
 using JEMSS
+using Random
+using Statistics
 
 # parameters:
 const configFilename = "sim_config.xml"
@@ -31,7 +33,7 @@ const nullObjVal = -1 # depends on objective function, see objFn
 const sense = :max # :min or :max; direction of optimisation for objective function
 nestedCompTables = [] # leave empty (and set numSearches) if generating random nested compliance tables for random restarts
 const numSearches = isempty(nestedCompTables) ? 1 : length(nestedCompTables) # number of local searches to perform
-const nestedCompTableRng = MersenneTwister(0) # useful for reproducing results, if using random restarts
+const nestedCompTableRng = Random.MersenneTwister(0) # useful for reproducing results, if using random restarts
 
 # some parameter checks
 @assert(isfile(configFilename))
@@ -109,7 +111,7 @@ function logFileWriteDlmLine!(logFile::IOStream, data::Dict{String,Any}, nestedC
 	flush(logFile)
 end
 
-nestedCompTableSols = Vector{NestedCompTable}(0) # solution of each complete local search
+nestedCompTableSols = Vector{NestedCompTable}() # solution of each complete local search
 
 # perform local search, starting at each of the nested compliance tables provided
 function repeatedLocalSearch()
@@ -264,7 +266,7 @@ function localSearch!(sim::Simulation, nestedCompTable::NestedCompTable, logFile
 			logFileDict["usedMove"] = Int(usedMove)
 			logFileDict["objVal"] = objVal
 			logFileDict["bestObjVal"] = bestObjVal
-			logFileDict["iterTimeSeconds"] = round(time() - startTime, 2)
+			logFileDict["iterTimeSeconds"] = round(time() - startTime, digits = 2)
 			logFileWriteDlmLine!(logFile, logFileDict, nestedCompTable)
 			
 			iter += 1
@@ -372,4 +374,4 @@ end
 # run
 t = time()
 repeatedLocalSearch()
-println("Total runtime: ", round(time()-t, 2), " seconds")
+println("Total runtime: ", round(time()-t, digits = 2), " seconds")

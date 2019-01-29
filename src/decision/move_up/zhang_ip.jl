@@ -41,8 +41,8 @@ function initZhangIp!(sim::Simulation;
 	
 	zid.marginalBenefitsDecreasing = all(i -> issorted(zid.marginalBenefits[i], lt=<=, rev=true), 1:numStations)
 	if !zid.marginalBenefitsDecreasing
-		p1 = vcat([find(zid.stationSlots .== j)[1:end-1] for j = 1:numStations]...)
-		p2 = vcat([find(zid.stationSlots .== j)[2:end] for j = 1:numStations]...)
+		p1 = vcat([findall(zid.stationSlots .== j)[1:end-1] for j = 1:numStations]...)
+		p2 = vcat([findall(zid.stationSlots .== j)[2:end] for j = 1:numStations]...)
 		zid.stationSlotsOrderPairs = hcat(p1, p2)
 	end
 	
@@ -71,7 +71,7 @@ function zhangIpMoveUp(sim::Simulation)
 	numMoveUpAmbs = length(moveUpAmbs)
 	
 	# calculate travel time for each move-up ambulance to reach every station
-	ambToStationTimes = Array{Float,2}(numMoveUpAmbs, numStations)
+	ambToStationTimes = Array{Float,2}(undef, numMoveUpAmbs, numStations)
 	for i = 1:numMoveUpAmbs
 		ambToStationTimes[i,:] = ambMoveUpTravelTimes!(sim, moveUpAmbs[i])
 	end
@@ -110,7 +110,7 @@ function zhangIpMoveUp(sim::Simulation)
 				end
 			end
 		elseif ambulance.status == ambAtHospital
-			adjustedAmbToStationTimes[i,:] += zid.expectedHospitalTransferDuration
+			adjustedAmbToStationTimes[i,:] .+= zid.expectedHospitalTransferDuration
 		else
 			error()
 		end
@@ -123,8 +123,8 @@ function zhangIpMoveUp(sim::Simulation)
 	
 	# shorthand variable names:
 	a = numMoveUpAmbs
-	ai = findin(moveUpAmbs, movableAmbs) # indices of movableAmbs in moveUpAmbs
-	aj = findin(moveUpAmbs, atHospitalAmbs) # indices of atHospitalAmbs in moveUpAmbs
+	ai = findall(in(movableAmbs), moveUpAmbs) # indices of movableAmbs in moveUpAmbs
+	aj = findall(in(atHospitalAmbs), moveUpAmbs) # indices of atHospitalAmbs in moveUpAmbs
 	s = numStations
 	n = length(stationSlots) # = length(benefitSlots)
 	
@@ -147,8 +147,8 @@ function zhangIpMoveUp(sim::Simulation)
 	@constraints(model, begin
 		(movableAmbAtOneLocation[i=ai], sum(x[i,:]) == 1) # each movable ambulance must be assigned to one station
 		(atHospitalAmbAtMostOneLocation[i=aj], sum(x[i,:]) <= 1) # each at-hospital ambulance may be assigned to zero or one station
-		(stationAmbCounts[j=1:s], sum(x[:,j]) == sum(y[k] for k=find(stationSlots .== j)))
-		# (stationAmbCounts[j=1:s], sum(x[:,j]) >= sum(y[k] for k=find(stationSlots .== j))) # should have same effect as "==" constraint (instead of ">="), but may be faster?
+		(stationAmbCounts[j=1:s], sum(x[:,j]) == sum(y[k] for k=findall(stationSlots .== j)))
+		# (stationAmbCounts[j=1:s], sum(x[:,j]) >= sum(y[k] for k=findall(stationSlots .== j))) # should have same effect as "==" constraint (instead of ">="), but may be faster?
 	end)
 	
 	if !zid.marginalBenefitsDecreasing
@@ -176,7 +176,7 @@ function zhangIpMoveUp(sim::Simulation)
 	ambStations = [stations[findfirst(sol[i,:])] for i = ai] # only consider movableAmbs (ignore atHospitalAmbs)
 	
 	if checkMode
-		@assert(all(sum(sol,2) .<= 1)) # each ambulance can be used in move up at most once
+		@assert(all(sum(sol, dims=2) .<= 1)) # each ambulance can be used in move up at most once
 		
 		# check that y values are ordered correctly
 		stationSlotsFilled = convert(Vector{Bool}, round.(getvalue(y)))

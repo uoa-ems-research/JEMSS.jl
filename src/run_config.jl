@@ -42,9 +42,9 @@ function initSim(configFilename::String;
 	@assert(name(rootElt) == "simConfig", string("xml root has incorrect name: ", name(rootElt)))
 	
 	# for progress messages:
-	t = Vector{Float}(1)
+	t = [0.0]
 	initMessage(t, msg) = doPrint && (t[1] = time(); print(msg))
-	initTime(t) = doPrint && println(": ", round(time() - t[1], 2), " seconds")
+	initTime(t) = doPrint && println(": ", round(time() - t[1], digits = 2), " seconds")
 	
 	##################
 	# sim config
@@ -171,7 +171,7 @@ function initSim(configFilename::String;
 			initTime(t)
 		catch
 			doPrint && println()
-			warn("failed to use data from rNetTravels file")
+			@warn("failed to use data from rNetTravels file")
 			rNetTravelsLoaded = []
 			rNetTravelsFilename = ""
 		end
@@ -240,7 +240,7 @@ function initSim(configFilename::String;
 	
 	# create event list
 	# try to add events to eventList in reverse time order, to reduce sorting required
-	sim.eventList = Vector{Event}(0)
+	sim.eventList = Vector{Event}()
 	
 	# add first call to event list
 	addEvent!(sim.eventList, sim.calls[1])
@@ -265,7 +265,7 @@ function initSim(configFilename::String;
 	# find the nearest hospital to travel to from each node in fGraph
 	numFNodes = length(fGraph.nodes) # shorthand
 	for fNetTravel in net.fNetTravels
-		fNetTravel.fNodeNearestHospitalIndex = Vector{Int}(numFNodes)
+		fNetTravel.fNodeNearestHospitalIndex = Vector{Int}(undef, numFNodes)
 		travelModeIndex = fNetTravel.modeIndex # shorthand
 		travelMode = travel.modes[travelModeIndex] # shorthand
 		for node in fGraph.nodes

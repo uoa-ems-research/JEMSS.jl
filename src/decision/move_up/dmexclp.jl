@@ -64,7 +64,7 @@ function dmexclpMoveUp(sim::Simulation, newlyIdleAmb::Ambulance)
 	numStations = sim.numStations
 	
 	# calculate the number of idle ambulances at (or travelling to) each station
-	dcd.stationNumIdleAmbs[:] = 0
+	dcd.stationNumIdleAmbs[:] .= 0
 	for (i,ambulance) in enumerate(ambulances)
 		# do not count newly idle ambulance, it has not been assigned a station
 		if isAmbAvailableForMoveUp(ambulance) && i != newlyIdleAmb.index
@@ -77,7 +77,7 @@ function dmexclpMoveUp(sim::Simulation, newlyIdleAmb::Ambulance)
 	
 	# find station allocation for newly idle ambulance that gives greatest
 	# increase in expected demand coverage
-	dcd.stationMarginalCoverages[:] = 0.0
+	dcd.stationMarginalCoverages[:] .= 0.0
 	for demandPriority in priorities
 		if !haskey(dcd.demandWeights, demandPriority) || dcd.demandWeights[demandPriority] == 0
 			continue

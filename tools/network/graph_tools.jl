@@ -16,21 +16,22 @@
 # tools to help manipulate graphs
 
 using JEMSS
-# using LightGraphs # already in JEMSS
+import LightGraphs
+using SparseArrays
 
 travelModeString(i::Int) = "mode_$i"
 
 function checkNodeIndices(nodes::Vector{Node})
-	all(i -> i == nodes[i].index, 1:length(nodes)) || warn("Node indices are not 1:n")
+	all(i -> i == nodes[i].index, 1:length(nodes)) || @warn("Node indices are not 1:n")
 end
 
 function checkArcIndices(arcs::Vector{Arc})
-	all(i -> i == arcs[i].index, 1:length(arcs)) || warn("Arc indices are not 1:n")
+	all(i -> i == arcs[i].index, 1:length(arcs)) || @warn("Arc indices are not 1:n")
 end
 
 # check arc.fromNodeIndex and arc.toNodeIndex values are in expected range
 function checkArcNodeIndices(numNodes::Int, arcs::Vector{Arc})
-	all(i -> (1 <= arcs[i].fromNodeIndex <= numNodes) && (1 <= arcs[i].toNodeIndex <= numNodes), 1:length(arcs)) || warn("Arc from/to node indices are not all within 1:numNodes")
+	all(i -> (1 <= arcs[i].fromNodeIndex <= numNodes) && (1 <= arcs[i].toNodeIndex <= numNodes), 1:length(arcs)) || @warn("Arc from/to node indices are not all within 1:numNodes")
 end
 checkArcNodeIndices(nodes::Vector{Node}, arcs::Vector{Arc}) = checkArcNodeIndices(length(nodes), arcs)
 
@@ -49,7 +50,7 @@ getNumTravelModes(arcs::Vector{Arc}) = getNumTravelModes(arcs[1]) # assume all a
 # get travel times for each travel mode of an arc
 function getArcTravelTimes(arc::Arc)
 	numModes = getNumTravelModes(arcs)
-	travelTimes = Vector{Float}(numModes)
+	travelTimes = Vector{Float}(undef, numModes)
 	for i = 1:numModes
 		travelTimes[i] = arc.fields[travelModeString(i)]
 	end
@@ -61,7 +62,7 @@ end
 function getArcsTravelTimes(arcs::Vector{Arc})
 	numArcs = length(arcs)
 	numModes = getNumTravelModes(arcs)
-	travelTimes = Array{Float,2}(numModes, numArcs)
+	travelTimes = Array{Float,2}(undef, numModes, numArcs)
 	for i = 1:numModes
 		modeString = travelModeString(i)
 		for j = 1:numArcs
@@ -98,7 +99,7 @@ function graphTagLargestComponentElts!(nodes::Vector{Node}, arcs::Vector{Arc};
 	
 	# find strongly connected components; note that Graphs.strongly_connected_components() did not work correctly (the output was not what I expected), so LightGraphs.strongly_connected_components() is needed instead
 	components = LightGraphs.strongly_connected_components(lightGraph)
-	largestComponent = components[indmax([length(c) for c in components])] # node indices of largest strongly connected component
+	largestComponent = components[argmax([length(c) for c in components])] # node indices of largest strongly connected component
 	
 	# tag nodes and arcs in largest strongly connected component
 	tagNode = fill(false, numNodes) # tagNode[i] = true if nodes[i] in largest component
@@ -130,7 +131,7 @@ function graphRemoveElts!(nodes::Vector{Node}, arcs::Vector{Arc};
 	nodeFilter::Function = (x->true), arcFilter::Function = (x->true))
 	
 	# before filtering, create mapping from old indices to new
-	keepNodeIndices = find(nodeFilter, nodes)
+	keepNodeIndices = findall(nodeFilter, nodes)
 	nodeNewIndex = fill(nullIndex, length(nodes))
 	nodeNewIndex[keepNodeIndices] = 1:length(keepNodeIndices) # nodeNewIndex[i] gives new node index for old nodes[i]
 	
@@ -255,7 +256,7 @@ function graphTagSpElts!(nodes::Vector{Node}, arcs::Vector{Arc};
 	spHeader::String = "in_a_sp", chosenNodes::Vector{Int} = Int[], originNodes::Vector{Int} = Int[], destNodes::Vector{Int} = Int[], dijkstraSpDistmxAllowDict::Bool = false)
 	
 	@assert(!graphContainsDuplicateArcs(arcs), "Cannot handle duplicate arcs")
-	if dijkstraSpDistmxAllowDict info("Setting `dijkstraSpDistmxAllowDict` = true requires LightGraphs.dijkstra_shortest_paths function to be changed, to allow arg `distmx` to be type Dict") end
+	if dijkstraSpDistmxAllowDict @info("Setting `dijkstraSpDistmxAllowDict` = true requires LightGraphs.dijkstra_shortest_paths function to be changed, to allow arg `distmx` to be type Dict") end
 	
 	# shorthand
 	numArcs = length(arcs)
@@ -266,8 +267,8 @@ function graphTagSpElts!(nodes::Vector{Node}, arcs::Vector{Arc};
 	arcTagged = fill(false, numArcs)
 	
 	# to be used, and reset, for each SP tree:
-	tagNode = Vector{Bool}(numNodes)
-	tagArc = Vector{Bool}(numArcs)
+	tagNode = Vector{Bool}(undef, numNodes)
+	tagArc = Vector{Bool}(undef, numArcs)
 	
 	nodePairArcIndex = Dict{Tuple{Int,Int},Int}()
 	revNodePairArcIndex = Dict{Tuple{Int,Int},Int}()
@@ -321,9 +322,9 @@ function graphTagSpElts!(nodes::Vector{Node}, arcs::Vector{Arc};
 		i = originNode # shorthand
 		spData = LightGraphs.dijkstra_shortest_paths(lightGraph, i, arcTimes)
 		spPreds = spData.parents # spPreds[j] gives index of node before j on shortest path from i to j
-		tagNode[:] = false
+		tagNode[:] .= false
 		tagNode[i] = true
-		tagArc[:] = false
+		tagArc[:] .= false
 		for nodeIndices in destNodeSets
 			for j in nodeIndices
 				while !tagNode[j]

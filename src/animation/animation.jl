@@ -16,7 +16,8 @@
 # EMS simulation animation
 
 # global variables; hacky...
-global animConnections = Dict{Int,WebSocket}() # store open connections
+const Client = HTTP.WebSockets.WebSocket{HTTP.ConnectionPool.Transaction{Sockets.TCPSocket}}
+global animClients = [] # store open connections
 global animSimQueue = Vector{Union{Simulation,String}}() # to store sims and sim filenames between animation request and start
 global animPort = nullIndex # localhost port for animation, to be set
 
@@ -45,14 +46,14 @@ function changeMessageDict!(messageDict::Dict, message::String)
 	messageDict["message"] = message
 end
 
-function writeClient!(client::WebSocket, messageDict::Dict, message::String)
+function writeClient!(client::Client, messageDict::Dict, message::String)
 	# common enough lines to warrant the use of a function, I guess
 	changeMessageDict!(messageDict, message)
 	write(client, json(messageDict))
 end
 
 # set icons for ambulances, hospitals, etc.
-function animSetIcons(client::WebSocket)
+function animSetIcons(client::Client)
 	messageDict = createMessageDict("set_icons")
 	pngFileUrl(filename) = string("data:image/png;base64,", filename |> read |> base64encode)
 	iconPath = joinpath(@__DIR__, "..", "..", "assets", "animation", "icons")
@@ -66,7 +67,7 @@ function animSetIcons(client::WebSocket)
 end
 
 # adds nodes from fGraph
-function animAddNodes(client::WebSocket, nodes::Vector{Node})
+function animAddNodes(client::Client, nodes::Vector{Node})
 	messageDict = createMessageDict("add_node")
 	for node in nodes
 		messageDict["node"] = node
@@ -75,7 +76,7 @@ function animAddNodes(client::WebSocket, nodes::Vector{Node})
 end
 
 # adds arcs from rGraph, should only be called after animAddNodes()
-function animAddArcs(client::WebSocket, net::Network)
+function animAddArcs(client::Client, net::Network)
 	messageDict = createMessageDict("add_arc")
 	for arc in net.rGraph.arcs
 		messageDict["arc"] = arc
@@ -85,7 +86,7 @@ function animAddArcs(client::WebSocket, net::Network)
 end
 
 # calculate and set speeds for arcs in rGraph, should only be called after animAddArcs()
-function animSetArcSpeeds(client::WebSocket, map::Map, net::Network)
+function animSetArcSpeeds(client::Client, map::Map, net::Network)
 	# shorthand:
 	fNodes = net.fGraph.nodes
 	rNetTravels = net.rNetTravels
@@ -113,7 +114,7 @@ function animSetArcSpeeds(client::WebSocket, map::Map, net::Network)
 	end
 end
 
-function animAddBuildings(client::WebSocket, sim::Simulation)
+function animAddBuildings(client::Client, sim::Simulation)
 	messageDict = createMessageDict("add_hospital")
 	for h in sim.hospitals
 		messageDict["hospital"] = h
@@ -129,7 +130,7 @@ function animAddBuildings(client::WebSocket, sim::Simulation)
 	# delete!(messageDict, "station")
 end
 
-function animAddAmbs!(client::WebSocket, sim::Simulation)
+function animAddAmbs!(client::Client, sim::Simulation)
 	messageDict = createMessageDict("add_ambulance")
 	for amb in sim.ambulances
 		ambLocation = getRouteCurrentLocation!(sim.net, amb.route, sim.time)
@@ -140,7 +141,7 @@ function animAddAmbs!(client::WebSocket, sim::Simulation)
 end
 
 # write frame updates to client
-function updateFrame!(client::WebSocket, sim::Simulation, time::Float)
+function updateFrame!(client::Client, sim::Simulation, time::Float)
 	
 	# check which ambulances have moved since last frame
 	# need to do this before showing call locations
@@ -202,14 +203,14 @@ function updateCallLocation!(sim::Simulation, call::Call)
 	end
 end
 
-wsh = WebSocketHandler() do req::Request, client::WebSocket
-	global animConnections, animSimQueue
+function animateClient(client::Client)
+	global animClients, animSimQueue
 	
-	animConnections[client.id] = client
-	println("Client ", client.id, " connected")
+	push!(animClients, client)
+	println("Client connected")
 	
 	# get first item in animSimQueue, or get filename now
-	nextAnimItem = (length(animSimQueue) > 0 ? shift!(animSimQueue) : selectXmlFile())
+	nextAnimItem = (length(animSimQueue) > 0 ? popfirst!(animSimQueue) : selectXmlFile())
 	sim = nothing # init
 	if typeof(nextAnimItem) == Simulation
 		sim = nextAnimItem
@@ -229,7 +230,7 @@ wsh = WebSocketHandler() do req::Request, client::WebSocket
 		if !sim.used
 			backupSim!(sim)
 		else
-			warn("will not be able to restart animation because the simulation has been partially run and has no backup")
+			@warn("will not be able to restart animation because the simulation has been partially run and has no backup")
 		end
 	end
 	if sim.complete
@@ -265,8 +266,8 @@ wsh = WebSocketHandler() do req::Request, client::WebSocket
 	sim.animating = true
 	
 	messageDict = createMessageDict("")
-	while true
-		msg = read(client) # waits for message from client
+	while !eof(client)
+		msg = readavailable(client) # waits for message from client?
 		msgString = decodeMessage(msg)
 		(msgType, msgData) = parseMessage(msgString)
 		
@@ -299,14 +300,15 @@ wsh = WebSocketHandler() do req::Request, client::WebSocket
 			try
 				animSetIcons(client)
 			catch e
-				warn("Could not update animation icons")
-				warn(e)
+				@warn("Could not update animation icons")
+				@warn(e)
 			end
 			
 		elseif msgType == "disconnect"
 			sim.animating = false
 			close(client)
-			println("Client ", client.id, " disconnected")
+			deleteat!(animClients, findfirst(isequal(client), animClients))
+			println("Client disconnected")
 			break
 		else
 			sim.animating = false
@@ -316,7 +318,7 @@ wsh = WebSocketHandler() do req::Request, client::WebSocket
 end
 
 """
-	function animate!(sim::Union{Simulation,Void} = nothing;
+	function animate!(sim::Union{Simulation,Nothing} = nothing;
 		configFilename::String = "", port::Int = 8001, openWindow::Bool = true)
 Open a web browser window to animate the simulation.
 Will animate for either `sim` or `configFilename`. If neither of these are given then there will be a prompt for the simulation configuration filename once the browser window has opened.
@@ -326,7 +328,7 @@ Will animate for either `sim` or `configFilename`. If neither of these are given
 - `port` is the port number for the local host url, e.g. `port = 8001` will use localhost:8001; this can only be set once for all animation windows
 - `openWindow` can be set to `false` to prevent the window from being opened automatically, which is useful if you wish to use a non-default browser
 """
-function animate!(sim::Union{Simulation,Void} = nothing;
+function animate!(sim::Union{Simulation,Nothing} = nothing;
 	configFilename::String = "", port::Int = 8001, openWindow::Bool = true)
 	@assert(sim == nothing || configFilename == "", "can only set one of: sim, configFilename")
 	global animSimQueue
@@ -356,32 +358,40 @@ function runAnimServer(port::Int)
 		return false
 	end
 	try
-		socket = connect(port)
+		socket = Sockets.connect(port)
 		if socket.status == 3 # = open
 			println("port $port is already in use, try another")
 			return false
 		end
+	catch
 	end
 	
 	# create and run server
-	onepage = readstring("$sourcePath/animation/index.html")
-	httph = HttpHandler() do req::Request, res::Response
-		Response(onepage)
+	onepage = read("$sourcePath/animation/index.html", String)
+	@async HTTP.listen(Sockets.localhost, port) do http::HTTP.Stream
+		if HTTP.WebSockets.is_upgrade(http.message)
+			HTTP.WebSockets.upgrade(http) do client
+				animateClient(client)
+			end
+		else
+			HTTP.Servers.handle_request(http) do req::HTTP.Request
+				HTTP.Response(200, onepage)
+			end
+		end
 	end
-	server = Server(httph, wsh)
-	@async run(server, port)
 	animPort = port
 	println("opened port $animPort, use this for subsequent animation windows")
+	
 	return true
 end
 
 # opens browser window for url
 function openUrl(url::String)
-	if is_windows()
+	if Sys.iswindows()
 		run(`$(ENV["COMSPEC"]) /c start $url`)
-	elseif is_apple()
+	elseif Sys.isapple()
 		run(`open $url`)
-	elseif is_linux() || is_bsd()
+	elseif Sys.islinux() || Sys.isbsd()
 		run(`xdg-open $url`)
 	end
 end
