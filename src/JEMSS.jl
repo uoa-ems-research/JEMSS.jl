@@ -30,7 +30,7 @@ using Serialization
 # optimisation (move-up)
 using JuMP
 using Cbc
-using GLPKMathProgInterface # does not use precompile
+using GLPKMathProgInterface
 
 # statistics
 using Distributions
@@ -47,9 +47,8 @@ using Random
 import Random: AbstractRNG, GLOBAL_RNG, MersenneTwister
 using SparseArrays
 using LightGraphs
-using ArchGDAL # does not use precompile
+using ArchGDAL
 using Hungarian
-import Plots
 
 # simulation functions
 export

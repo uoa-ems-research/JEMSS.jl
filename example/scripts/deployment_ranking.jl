@@ -96,7 +96,7 @@ false && begin
 using Plots
 x = batchMeanResponseTimes # shorthand
 conf = 0.95
-order = sortperm(squeeze(mean(x,2),2)) # sort by average value
+order = sortperm(squeeze(mean(x, dims = 2),2)) # sort by average value
 Plots.plotly()
 plot = meanErrorPlot(x[order,:], conf);
 Plots.title!(plot, "Deployment : batch mean response time, mean & error");

@@ -10,7 +10,6 @@ JSON
 JuMP
 LightGraphs
 LightXML
-Plots
 StatsBase
 StatsFuns
 WebSockets

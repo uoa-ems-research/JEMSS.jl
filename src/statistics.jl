@@ -242,7 +242,8 @@ function meanErrorPlot(x::Vector{Float}, y::Array{Float,2}, conf::Float=0.95)
 	@assert(0 < conf < 1)
 	t = StatsFuns.tdistinvcdf(size(y,2)-1, 1-(1-conf)/2) # t-value, for two sided confidence interval
 	# StatsFuns.tdistinvcdf(dof, p) # for n samples, dof = n - 1
-	return Plots.scatter(x, mean(y,2), yerror=repeat(t*semDim(y,2), 1, 2),
+	@warn("meanErrorPlot still requires use of Plots package; need to change this to RecipesBase")
+	return Plots.scatter(x, mean(y, dims = 2), yerror=repeat(t*semDim(y,2), 1, 2),
 		xaxis=("x"), yaxis=("y"), m=(:hline), lab="")
 end
 function meanErrorPlot(x, y, conf::Float=0.95)
