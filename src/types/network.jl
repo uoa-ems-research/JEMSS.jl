@@ -37,7 +37,7 @@ end
 function createRGraphFromFGraph!(net::Network)
 	# assumptions:
 	# - no nodes are connected to themselves
-	# - there is at least one intersection node (node adjacent to more than 2 other nodes)
+	# - fGraph has no duplicate arcs
 	
 	net.rGraph = Graph(true)
 	
