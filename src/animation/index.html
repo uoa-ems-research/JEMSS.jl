@@ -98,8 +98,9 @@ limitations under the License.
 		</div>
 		<div>Time: <span id="sim_time" size="8" maxlength="11"></span></div>
 		<div>Jump to time: <input id="new_sim_time" type="text" value="" size="7" maxlength="10"></input></div>
-		<div>Speed ( ≥ 1): <input id="sim_speed" type="text" value="200" size="5" maxlength="8"></input></div>
-		<div>FPS (1-100): <input id="fps" type="text" value="30" size="1" maxlength="3"></input></div>
+		<div>Sim speed: <input id="sim_speed" type="text" value="200" size="5" maxlength="8"></input></div>
+		<div>Frame rate: <input id="fps" type="text" value="30" size="1" maxlength="3"></input></div>
+		<div>Show routes <input type="checkbox" id="show_routes"/></div>
 		<div>Show arcs <input type="checkbox" id="show_arcs"/></div>
 	</div>
 
@@ -167,10 +168,12 @@ limitations under the License.
 				case "add_ambulance":
 					var a = msgObj.ambulance
 					addAmb(a.index, a.currentLoc.y, a.currentLoc.x)
+					updateAmbRoute(a)
 					break;
 				case "move_ambulance":
 					var a = msgObj.ambulance
 					moveAmb(a.index, a.currentLoc.y, a.currentLoc.x)
+					updateAmbRoute(a)
 					break;
 				case "add_call":
 					var c = msgObj.call
@@ -230,6 +233,15 @@ limitations under the License.
 				stopAnimation();
 			}
 		})
+		
+		show_routes.checked = true
+		$('#show_routes').change(function() {
+			if (this.checked) {
+				showAmbRoutes()
+			} else {
+				hideAmbRoutes()
+			}
+		});
 		
 		show_arcs.checked = true
 		$('#show_arcs').change(function() {
@@ -457,28 +469,32 @@ limitations under the License.
 		
 		function updateMarkerIcons() {
 			// set icons of existing markers
-			for (i in ambs) {
-				ambs[i].marker.setIcon(icons.ambulance);
+			for (id in ambs) {
+				ambs[id].marker.setIcon(icons.ambulance);
 			}
-			for (i in calls) {
-				callIcon = icons[calls[i].iconName];
-				calls[i].marker.setIcon(callIcon);
+			for (id in calls) {
+				callIcon = icons[calls[id].iconName];
+				calls[id].marker.setIcon(callIcon);
 			}
-			for (i in hospitals) {
-				hospitals[i].marker.setIcon(icons.hospital);
+			for (id in hospitals) {
+				hospitals[id].marker.setIcon(icons.hospital);
 			}
-			for (i in stations) {
-				stations[i].marker.setIcon(icons.station);
+			for (id in stations) {
+				stations[id].marker.setIcon(icons.station);
 			}
 		}
 		
 		////////////////////////////////////////////////////////////////
 		// ambulances
 		
-		var ambs = []
+		var ambs = {}
 		
 		function addAmb(id, lat, lon) {
-			ambs[ambs.length] = new ambulance(id, lat, lon);
+			if (id in ambs) {
+				throw new Error("Cannot add ambulance with id " + id + " as it exists already")
+			}
+			ambs[id] = new ambulance(id, lat, lon);
+			addAmbRoute(id, lat, lon);
 		}
 		
 		function ambulance(id, lat, lon) {
@@ -487,23 +503,54 @@ limitations under the License.
 		}
 		
 		function moveAmb(id, lat, lon) {
-			if (1 <= id && id <= ambs.length) {
-				if (ambs[id-1].id != id) {
-					console.log("ambulance id does not match index correctly") // debugging
-				}
-				latlng = new L.LatLng(lat, lon)
-				if (ambs[id-1].marker.getLatLng() != latlng) {
-					ambs[id-1].marker.setLatLng(latlng);
-				}
-				
-			}
+			var amb = ambs[id]
+			amb.marker.setLatLng([lat, lon])
 		}
 		
 		function removeAmbs() {
-			for (i = 0; i < ambs.length; i++) {
-				map.removeLayer(ambs[i].marker)
+			for (id in ambs) {
+				map.removeLayer(ambs[id].marker)
 			}
-			ambs = []
+			hideAmbRoutes()
+			ambs = {}
+		}
+		
+		////////////////////////////////////////////////////////////////
+		// ambulance routes
+		
+		function addAmbRoute(id) {
+			amb = ambs[id]
+			amb.routeLine = new L.polyline(
+				[], // coords, empty for now
+				{
+					color: "#0033ff",
+					weight: 3,
+					opacity: .5
+				}
+			)
+			if (show_routes.checked) {
+				map.addLayer(amb.routeLine)
+			}
+		}
+		
+		function updateAmbRoute(a) {
+			// 'a' is ambulance from julia
+			ambs[a.index].routeLine.setLatLngs([
+				[a.currentLoc.y, a.currentLoc.x],
+				[a.endLoc.y, a.endLoc.x]
+			])
+		}
+		
+		function showAmbRoutes() {
+			for (id in ambs) {
+				map.addLayer(ambs[id].routeLine)
+			}
+		}
+		
+		function hideAmbRoutes() {
+			for (id in ambs) {
+				map.removeLayer(ambs[id].routeLine)
+			}
 		}
 		
 		////////////////////////////////////////////////////////////////
@@ -514,8 +561,7 @@ limitations under the License.
 		// add call
 		function addCall(id, lat, lon, priority) {
 			if (id in calls) {
-				console.log("error: call with id", id, "exists already") // debugging
-				return
+				throw new Error("Cannot add call with id " + id + " as it exists already")
 			}
 			calls[id] = new call(id, lat, lon, priority)
 		}
@@ -537,21 +583,10 @@ limitations under the License.
 		}
 		
 		function moveCall(id, lat, lon) {
-			if (!(id in calls)) {
-				console.log("call id", id, "not found") // debugging
-				return
-			}
-			latlng = new L.LatLng(lat, lon)
-			if (calls[id].marker.getLatLng() != latlng) {
-				calls[id].marker.setLatLng(latlng);
-			}
+			calls[id].marker.setLatLng([lat, lon])
 		}
 		
 		function removeCall(id) {
-			if (!(id in calls)) {
-				console.log("call id", id, "not found") // debugging
-				return
-			}
 			map.removeLayer(calls[id].marker)
 			delete calls[id]
 		}
@@ -566,10 +601,13 @@ limitations under the License.
 		////////////////////////////////////////////////////////////////
 		// hospitals
 		
-		var hospitals = []
+		var hospitals = {}
 		
 		function addHospital(id, lat, lon) {
-			hospitals[hospitals.length] = new hospital(id, lat, lon);
+			if (id in hospitals) {
+				throw new Error("Cannot add hospital with id " + id + " as it exists already")
+			}
+			hospitals[id] = new hospital(id, lat, lon);
 		}
 		
 		function hospital(id, lat, lon) {
@@ -580,10 +618,13 @@ limitations under the License.
 		////////////////////////////////////////////////////////////////
 		// stations
 		
-		var stations = []
+		var stations = {}
 		
 		function addStation(id, lat, lon) {
-			stations[stations.length] = new station(id, lat, lon);
+			if (id in stations) {
+				throw new Error("Cannot add station with id " + id + " as it exists already")
+			}
+			stations[id] = new station(id, lat, lon);
 		}
 		
 		function station(id, lat, lon) {
