@@ -28,7 +28,7 @@ function initTemp0!(sim::Simulation;
 	tmp.maxIdleAmbTravelTime = maxIdleAmbTravelTime # (days)
 	tmp.maxNumNearestStations = maxNumNearestStations
 	
-	tmp.marginalBenefit  = (busyFraction.^[0:numAmbs-1;])*(1-busyFraction)
+	tmp.marginalBenefit = (busyFraction.^[0:numAmbs-1;])*(1-busyFraction)
 end
 
 # determine move ups to make at current time

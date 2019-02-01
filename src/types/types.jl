@@ -227,7 +227,6 @@ mutable struct Event
 	callIndex::Int
 	stationIndex::Int # for now, only use this for resimulation, otherwise use ambulances[ambIndex].stationIndex
 	
-	
 	Event() = new(nullIndex, nullIndex, nullEvent, nullTime, nullIndex, nullIndex, nullIndex)
 end
 

@@ -27,7 +27,7 @@ using DelimitedFiles
 using LightXML
 using Serialization
 
-# optimisation (move-up)
+# optimisation
 using JuMP
 using Cbc
 using GLPKMathProgInterface
