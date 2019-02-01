@@ -195,7 +195,8 @@ limitations under the License.
 					break;
 				case "got_last_frame":
 					console.log("finished sim")
-					stopAnimation()
+					pauseAnimation()
+					nextSimTime = simTime;
 					break;
 				case "jump_to_time":
 					jumpToSimTime(msgObj.time)
