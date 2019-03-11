@@ -518,8 +518,8 @@ function readRasterFile(rasterFilename::String)
 	# convert data for easier use
 	# find x and y vectors to represent raster cell centres, make sure values are increasing
 	xMin = x1 + 0.5*dx # we know dx > 0
-	# (xMin, dx, z) = (dx > 0) ? (x1 + 0.5*dx, dx, z) : (x1 + (nx-0.5)*dx, -dx, flipdim(z,1))
-	(yMin, dy, z) = (dy > 0) ? (y1 + 0.5*dy, dy, z) : (y1 + (ny-0.5)*dy, -dy, flipdim(z,2))
+	# (xMin, dx, z) = (dx > 0) ? (x1 + 0.5*dx, dx, z) : (x1 + (nx-0.5)*dx, -dx, reverse(z, dims = 1))
+	(yMin, dy, z) = (dy > 0) ? (y1 + 0.5*dy, dy, z) : (y1 + (ny-0.5)*dy, -dy, reverse(z, dims = 2))
 	x = collect(range(xMin, step=dx, length=nx))
 	y = collect(range(yMin, step=dy, length=ny))
 	
