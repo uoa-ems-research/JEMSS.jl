@@ -239,6 +239,7 @@ end
 # some convenient functions for reading xml files
 xmlFileRoot(filename::String) = root(parse_file(filename))
 findElt = find_element # shorthand
+xName(x) = LightXML.name(x) # to avoid conflict with JuMP.name
 eltContent(elt::XMLElement) = content(elt)
 eltContentVal(elt::XMLElement) = eval(Meta.parse(eltContent(elt)))
 eltContentInterpVal(elt::XMLElement) = interpolateString(eltContent(elt))
@@ -253,7 +254,7 @@ function childrenNodeNames(parentElt::XMLElement)
 	childNodes = Vector{String}()
 	for childNode in child_nodes(parentElt)
 		if is_elementnode(childNode)
-			push!(childNodes, name(childNode))
+			push!(childNodes, xName(childNode))
 		end
 	end
 	return childNodes
