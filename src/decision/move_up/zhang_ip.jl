@@ -129,9 +129,13 @@ function zhangIpMoveUp(sim::Simulation)
 	n = length(stationSlots) # = length(benefitSlots)
 	
 	# using JuMP
-	model = Model()
-	
-	setsolver(model, GLPKSolverMIP(presolve=true))
+	model = nothing
+	if pkgVersions["JuMP"] >= v"0.19.0"
+		model = Model(with_optimizer(GLPK.Optimizer))
+		# model = Model(with_optimizer(Cbc.Optimizer)) # not sure how to mute output from cbc
+	else
+		model = Model(solver = GLPKSolverMIP(presolve=true))
+	end
 	
 	@variables(model, begin
 		(x[i=1:a,j=1:s], Bin) # x[i,j] = 1 if ambulance moveUpAmbs[i] should be moved to station j
@@ -162,24 +166,33 @@ function zhangIpMoveUp(sim::Simulation)
 		totalAmbTravelCosts, sum(x .* travelCosts)
 	end)
 	
-	@objective(model, :Max, totalBenefitAtStations - totalAmbTravelCosts)
+	# solve
+	xValue = yValue = nothing # init
+	if pkgVersions["JuMP"] >= v"0.19.0"
+		@objective(model, Max, totalBenefitAtStations - totalAmbTravelCosts)
+		optimize!(model)
+		@assert(termination_status(model) == MOI.OPTIMAL)
+		xValue = JuMP.value.(x); yValue = JuMP.value.(y) # JuMP and LightXML both export value()
+	else
+		@objective(model, :Max, totalBenefitAtStations - totalAmbTravelCosts)
+		solve(model)
+		xValue = getvalue(x); yValue = getvalue(y)
+	end
 	
 	# # testing: giving back fake results, for testing runtime without solving IP model
 	# if true
 		# return moveUpNull()
 	# end
 	
-	solve(model)
-	
-	# extract solution
-	sol = convert(Array{Bool,2}, round.(getvalue(x)))
+	# solution
+	sol = convert(Array{Bool,2}, round.(xValue))
 	ambStations = [stations[findfirst(sol[i,:])] for i = ai] # only consider movableAmbs (ignore atHospitalAmbs)
 	
 	if checkMode
 		@assert(all(sum(sol, dims=2) .<= 1)) # each ambulance can be used in move up at most once
 		
 		# check that y values are ordered correctly
-		stationSlotsFilled = convert(Vector{Bool}, round.(getvalue(y)))
+		stationSlotsFilled = convert(Vector{Bool}, round.(yValue))
 		for j = 1:numStations
 			@assert(issorted(stationSlotsFilled[stationSlots .== j], rev=true))
 		end
