@@ -100,12 +100,13 @@ function solveCompTableIP(compTableRow::Vector{Int}, ambToStationCost::Array{Flo
 	s = numStations = length(compTableRow)
 	
 	# using JuMP
-	model = nothing # init
-	if pkgVersions["JuMP"] >= v"0.19.0"
-		model = Model(with_optimizer(GLPK.Optimizer))
-		# model = Model(with_optimizer(Cbc.Optimizer)) # not sure how to mute output from cbc
+	model = Model()
+	jump_ge_0_19 = pkgVersions["JuMP"] >= v"0.19"
+	if jump_ge_0_19
+		set_optimizer(model, with_optimizer(GLPK.Optimizer)) # solve speed not tested
+		# set_optimizer(model, with_optimizer(Cbc.Optimizer)) # not sure how to mute output from cbc
 	else
-		model = Model(solver = GLPKSolverMIP(presolve=true))
+		setsolver(model, GLPKSolverMIP(presolve=true))
 	end
 	
 	@variables(model, begin
@@ -123,9 +124,14 @@ function solveCompTableIP(compTableRow::Vector{Int}, ambToStationCost::Array{Flo
 		totalAmbTravelCost, sum(x[i,j] * ambToStationCost[i,j] for i=1:a, j=1:s)
 	end)
 	
+	# # testing: giving back fake results, for testing runtime without solving IP model
+	# if true
+		# return moveUpNull()
+	# end
+	
 	# solve
 	xValue = nothing # init
-	if pkgVersions["JuMP"] >= v"0.19.0"
+	if jump_ge_0_19
 		@objective(model, Min, totalAmbTravelCost) # or maxTravelCost
 		optimize!(model)
 		@assert(termination_status(model) == MOI.OPTIMAL)
@@ -135,11 +141,6 @@ function solveCompTableIP(compTableRow::Vector{Int}, ambToStationCost::Array{Flo
 		solve(model)
 		xValue = getvalue(x)
 	end
-	
-	# # testing: giving back fake results, for testing runtime without solving IP model
-	# if true
-		# return moveUpNull()
-	# end
 	
 	# extract solution
 	sol = convert(Array{Bool,2}, round.(xValue))

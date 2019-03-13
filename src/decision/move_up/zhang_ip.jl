@@ -129,12 +129,13 @@ function zhangIpMoveUp(sim::Simulation)
 	n = length(stationSlots) # = length(benefitSlots)
 	
 	# using JuMP
-	model = nothing
-	if pkgVersions["JuMP"] >= v"0.19.0"
-		model = Model(with_optimizer(GLPK.Optimizer))
-		# model = Model(with_optimizer(Cbc.Optimizer)) # not sure how to mute output from cbc
+	model = Model()
+	jump_ge_0_19 = pkgVersions["JuMP"] >= v"0.19"
+	if jump_ge_0_19
+		set_optimizer(model, with_optimizer(GLPK.Optimizer)) # solve speed not tested
+		# set_optimizer(model, with_optimizer(Cbc.Optimizer)) # not sure how to mute output from cbc
 	else
-		model = Model(solver = GLPKSolverMIP(presolve=true))
+		setsolver(model, GLPKSolverMIP(presolve=true))
 	end
 	
 	@variables(model, begin
@@ -166,9 +167,14 @@ function zhangIpMoveUp(sim::Simulation)
 		totalAmbTravelCosts, sum(x .* travelCosts)
 	end)
 	
+	# # testing: giving back fake results, for testing runtime without solving IP model
+	# if true
+		# return moveUpNull()
+	# end
+	
 	# solve
 	xValue = yValue = nothing # init
-	if pkgVersions["JuMP"] >= v"0.19.0"
+	if jump_ge_0_19
 		@objective(model, Max, totalBenefitAtStations - totalAmbTravelCosts)
 		optimize!(model)
 		@assert(termination_status(model) == MOI.OPTIMAL)
@@ -178,11 +184,6 @@ function zhangIpMoveUp(sim::Simulation)
 		solve(model)
 		xValue = getvalue(x); yValue = getvalue(y)
 	end
-	
-	# # testing: giving back fake results, for testing runtime without solving IP model
-	# if true
-		# return moveUpNull()
-	# end
 	
 	# solution
 	sol = convert(Array{Bool,2}, round.(xValue))
