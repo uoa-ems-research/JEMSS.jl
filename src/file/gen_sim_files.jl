@@ -85,7 +85,7 @@ end
 function readGenConfig(genConfigFilename::String)
 	# read gen config xml file
 	rootElt = xmlFileRoot(genConfigFilename)
-	@assert(name(rootElt) == "genConfig", string("xml root has incorrect name: ", name(rootElt)))
+	@assert(xName(rootElt) == "genConfig", string("xml root has incorrect name: ", xName(rootElt)))
 	
 	genConfig = GenConfig()
 	

@@ -87,9 +87,15 @@ function solveMexclp!(sim::Simulation;
 	p = numPoints
 	
 	model = Model()
+	jump_ge_0_19 = pkgVersions["JuMP"] >= v"0.19"
+	if jump_ge_0_19
+		set_optimizer(model, with_optimizer(GLPK.Optimizer)) # solve speed not tested
+	end
 	
 	if !all(v -> issorted(v, rev=true), pointCoverCountBenefit)
-		setsolver(model, GLPKSolverMIP(presolve=true)) # GLPKSolverMIP solves faster than CbcSolver for this formulation
+		if !jump_ge_0_19
+			setsolver(model, GLPKSolverMIP(presolve=true)) # GLPKSolverMIP solves faster than CbcSolver for this formulation
+		end
 		
 		@variables(model, begin
 			(x[i=1:s] >= 0, Int) # x[i] = number of ambulances assigned to station i
@@ -108,8 +114,10 @@ function solveMexclp!(sim::Simulation;
 		# - can leave out the constraint 'pointCoverOrder'
 		# - could have x variables as non-integer, though if there are multiple solutions then x values might not be naturally integer, so will leave the integer constraint
 		
-		setsolver(model, CbcSolver()) # CbcSolver solves faster than GLPKSolverMIP for this formulation
-		# using CbcSolver here would be faster with presolve, but using this causes a line print when solving
+		if !jump_ge_0_19
+			setsolver(model, CbcSolver()) # CbcSolver solves faster than GLPKSolverMIP for this formulation
+			# using CbcSolver here would be faster with presolve, but using this causes a line print when solving
+		end
 		
 		@variables(model, begin
 			(x[i=1:s] >= 0, Int) # x[i] = number of ambulances assigned to station i
@@ -128,18 +136,28 @@ function solveMexclp!(sim::Simulation;
 		(expectedCoverage, sum(y[j,k] * pointCoverCountBenefit[j][k] for j=1:p, k=1:a))
 	end)
 	
-	@objective(model, :Max, expectedCoverage)
-	
-	solve(model)
+	# solve
+	xValue = yValue = nothing # init
+	if jump_ge_0_19
+		@objective(model, Max, expectedCoverage)
+		optimize!(model)
+		@assert(termination_status(model) == MOI.OPTIMAL)
+		xValue = JuMP.value.(x); yValue = JuMP.value.(y) # JuMP and LightXML both export value()
+	else
+		@objective(model, :Max, expectedCoverage)
+		solve(model)
+		xValue = getvalue(x); yValue = getvalue(y)
+	end
 	
 	# extract solution
-	stationsNumAmbs = convert(Vector{Int}, round.(getvalue(x))) # solution; stationsNumAmbs[i] gives number of ambulances to allocate to station i
-	pointSlotCover = convert(Array{Bool,2}, round.(getvalue(y))) # pointSlotCover[j,k] = true if point j is covered by at least k ambulances
+	stationsNumAmbs = convert(Vector{Int}, round.(xValue)) # solution; stationsNumAmbs[i] gives number of ambulances to allocate to station i
+	pointSlotCover = convert(Array{Bool,2}, round.(yValue)) # pointSlotCover[j,k] = true if point j is covered by at least k ambulances
 	
 	if checkMode
 		# check constraints
 		@assert(sum(stationsNumAmbs) == a) # useAllAmbs constraint
 		@assert(all(j -> sum(pointSlotCover[j,:]) == sum(stationsNumAmbs[pointStations[j]]), 1:p)) # pointCoverCount constraint
+		@assert(all(i -> 0 <= stationsNumAmbs[i] <= stationCapacities[i], 1:s)) # stationMaxNumAmbs constraint
 		@assert(all(j -> issorted(pointSlotCover[j], rev=true), 1:p)) # pointCoverOrder constraint
 	end
 	

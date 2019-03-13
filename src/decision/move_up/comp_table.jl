@@ -99,9 +99,15 @@ function solveCompTableIP(compTableRow::Vector{Int}, ambToStationCost::Array{Flo
 	a = numMovableAmbs = sum(compTableRow)
 	s = numStations = length(compTableRow)
 	
+	# using JuMP
 	model = Model()
-	
-	setsolver(model, GLPKSolverMIP(presolve=true))
+	jump_ge_0_19 = pkgVersions["JuMP"] >= v"0.19"
+	if jump_ge_0_19
+		set_optimizer(model, with_optimizer(GLPK.Optimizer)) # solve speed not tested
+		# set_optimizer(model, with_optimizer(Cbc.Optimizer)) # not sure how to mute output from cbc
+	else
+		setsolver(model, GLPKSolverMIP(presolve=true))
+	end
 	
 	@variables(model, begin
 		(x[i=1:a,j=1:s], Bin) # x[i,j] = 1 if ambulance: movableAmbs[i] should be moved to station: stations[j]
@@ -118,18 +124,26 @@ function solveCompTableIP(compTableRow::Vector{Int}, ambToStationCost::Array{Flo
 		totalAmbTravelCost, sum(x[i,j] * ambToStationCost[i,j] for i=1:a, j=1:s)
 	end)
 	
-	@objective(model, :Min, totalAmbTravelCost)
-	# @objective(model, :Min, maxTravelCost)
-	
 	# # testing: giving back fake results, for testing runtime without solving IP model
 	# if true
 		# return moveUpNull()
 	# end
 	
-	solve(model)
+	# solve
+	xValue = nothing # init
+	if jump_ge_0_19
+		@objective(model, Min, totalAmbTravelCost) # or maxTravelCost
+		optimize!(model)
+		@assert(termination_status(model) == MOI.OPTIMAL)
+		xValue = JuMP.value.(x) # JuMP and LightXML both export value()
+	else
+		@objective(model, :Min, totalAmbTravelCost) # or maxTravelCost
+		solve(model)
+		xValue = getvalue(x)
+	end
 	
 	# extract solution
-	sol = convert(Array{Bool,2}, round.(getvalue(x)))
+	sol = convert(Array{Bool,2}, round.(xValue))
 	I = findall(sol)
 	(ambIndices, stationIndices) = (getindex.(I, 1), getindex.(I, 2))
 	ambStationIndices = zeros(Int,numMovableAmbs) # ambStationIndices[i] gives index of the station that movable ambulance i should be assigned to

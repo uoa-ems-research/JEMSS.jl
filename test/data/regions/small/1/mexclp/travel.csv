@@ -1,0 +1,15 @@
+travelModes,,
+travelModeIndex,offRoadSpeed,
+1,1440,
+2,1152,
+3,960,
+,,
+travelSets,,
+travelSetIndex,priority,travelModeIndex
+1,highPriority,1
+1,medPriority,2
+1,lowPriority,3
+,,
+travelSetsTiming,,
+startTime,travelSetIndex,
+0,1,

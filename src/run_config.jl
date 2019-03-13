@@ -39,7 +39,7 @@ function initSim(configFilename::String;
 	
 	# read sim config xml file
 	rootElt = xmlFileRoot(configFilename)
-	@assert(name(rootElt) == "simConfig", string("xml root has incorrect name: ", name(rootElt)))
+	@assert(xName(rootElt) == "simConfig", string("xml root has incorrect name: ", xName(rootElt)))
 	
 	# for progress messages:
 	t = [0.0]

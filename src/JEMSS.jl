@@ -30,6 +30,7 @@ using Serialization
 # optimisation
 using JuMP
 using Cbc
+using GLPK
 using GLPKMathProgInterface
 
 # statistics
@@ -42,6 +43,7 @@ using StatsFuns
 using Base64
 using CRC32c
 using Mmap
+using Pkg
 using Printf
 using Random
 import Random: AbstractRNG, GLOBAL_RNG, MersenneTwister
