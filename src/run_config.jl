@@ -63,7 +63,7 @@ function initSim(configFilename::String;
 	sim.inputFiles = Dict{String,File}()
 	for inputFile in inputFiles
 		file = File()
-		file.path = joinPathIfNotAbs(sim.inputPath, eltContent(simFilesElt, inputFile))
+		file.path = joinPathIfNotAbs(sim.inputPath, eltContentInterpVal(simFilesElt, inputFile))
 		file.name = splitdir(file.path)[2]
 		if inputFile != "rNetTravels" # do not need checksum of rNetTravels file
 			file.checksum = fileChecksum(file.path)
@@ -79,7 +79,7 @@ function initSim(configFilename::String;
 	sim.outputFiles = Dict{String,File}()
 	for outputFile in outputFiles
 		file = File()
-		file.path = joinPathIfNotAbs(sim.outputPath, eltContent(outputFilesElt, outputFile))
+		file.path = joinPathIfNotAbs(sim.outputPath, eltContentInterpVal(outputFilesElt, outputFile))
 		file.name = splitdir(file.path)[2]
 		sim.outputFiles[outputFile] = file
 	end
