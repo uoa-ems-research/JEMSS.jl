@@ -232,9 +232,13 @@ function deserializeFile(filename::String)
 	return data
 end
 
+# if path is absolute then return it, otherwise prepend with (assumed) absolute path
+joinPathIfNotAbs(absPath::String, path::String) = isabspath(path) ? path : joinpath(absPath, path)
+
 function interpolateString(s::String)
-	return eval(Meta.parse(string("\"", s, "\"")))
+	return string("\"", escape_string(s), "\"") |> Meta.parse |> eval
 end
+interpolateString(s::SubString{String}) = interpolateString(String(s))
 
 # some convenient functions for reading xml files
 xmlFileRoot(filename::String) = root(parse_file(filename))

@@ -209,11 +209,13 @@ function readDemandFile(filename::String)
 	columns = table.columns # shorthand
 	demand.rasters = Vector{Raster}(undef, n)
 	demand.rasterFilenames = Vector{String}(undef, n)
-	@assert(allunique(columns["rasterFilename"]), "There are duplicate raster filenames in the demand file, this is unnecessary.")
+	allunique(columns["rasterFilename"]) || @warn("There are duplicate raster filenames in the demand file, this is unnecessary.")
+	demandFilepath = splitdir(realpath(filename))[1]
 	for i = 1:n
 		@assert(columns["rasterIndex"][i] == i)
 		
 		rasterFilename = String(columns["rasterFilename"][i])
+		rasterFilename = joinPathIfNotAbs(demandFilepath, interpolateString(rasterFilename)) # raster filename should be absolute (after interpolating), or relative to the demand filepath
 		@assert(isfile(rasterFilename))
 		demand.rasterFilenames[i] = rasterFilename
 		demand.rasters[i] = readRasterFile(rasterFilename)

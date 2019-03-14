@@ -54,8 +54,6 @@ function initSim(configFilename::String;
 	sim = Simulation()
 	sim.configRootElt = rootElt
 	
-	joinPathIfNotAbs(absPath::String, path::String) = isabspath(path) ? path : joinpath(absPath, path)
-	
 	# input
 	sim.inputPath = abspath(eltContentInterpVal(rootElt, "inputPath"))
 	simFilesElt = findElt(rootElt, "simFiles")
