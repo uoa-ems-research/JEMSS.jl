@@ -310,7 +310,7 @@ function initSim(configFilename::String;
 		if moveUpModuleName == "comp_table"
 			mud.moveUpModule = compTableModule
 			compTableElt = findElt(moveUpElt, "compTable")
-			compTableFilename = joinPathIfNotAbs(sim.inputPath, eltContent(compTableElt, "filename"))
+			compTableFilename = joinPathIfNotAbs(sim.inputPath, eltContentInterpVal(compTableElt, "filename"))
 			initCompTable!(sim, compTableFilename)
 			
 		elseif moveUpModuleName == "dmexclp"
@@ -321,13 +321,13 @@ function initSim(configFilename::String;
 		elseif moveUpModuleName == "priority_list"
 			mud.moveUpModule = priorityListModule
 			priorityListElt = findElt(moveUpElt, "priorityList")
-			priorityListFilename = joinPathIfNotAbs(sim.inputPath, eltContent(priorityListElt, "filename"))
+			priorityListFilename = joinPathIfNotAbs(sim.inputPath, eltContentInterpVal(priorityListElt, "filename"))
 			initPriorityList!(sim, priorityListFilename)
 			
 		elseif moveUpModuleName == "zhang_ip"
 			mud.moveUpModule = zhangIpModule
 			zhangIpElt = findElt(moveUpElt, "zhangIp")
-			zhangIpParamsFilename = joinPathIfNotAbs(sim.inputPath, eltContent(zhangIpElt, "paramsFilename"))
+			zhangIpParamsFilename = joinPathIfNotAbs(sim.inputPath, eltContentInterpVal(zhangIpElt, "paramsFilename"))
 			initZhangIp!(sim;
 				paramsFilename = zhangIpParamsFilename)
 			
