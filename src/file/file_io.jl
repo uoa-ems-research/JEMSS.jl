@@ -241,7 +241,7 @@ end
 interpolateString(s::SubString{String}) = interpolateString(String(s))
 
 # some convenient functions for reading xml files
-xmlFileRoot(filename::String) = root(parse_file(filename))
+xmlFileRoot(filename::String) = root(parse_file(interpolateString(filename)))
 findElt = find_element # shorthand
 xName(x) = LightXML.name(x) # to avoid conflict with JuMP.name
 eltContent(elt::XMLElement) = content(elt)
