@@ -84,17 +84,19 @@ end
 
 function readGenConfig(genConfigFilename::String)
 	# read gen config xml file
+	genConfigFilename = genConfigFilename |> interpolateString |> abspath
+	genConfigFileDir = splitdir(genConfigFilename)[1]
 	rootElt = xmlFileRoot(genConfigFilename)
 	@assert(xName(rootElt) == "genConfig", string("xml root has incorrect name: ", xName(rootElt)))
 	
 	genConfig = GenConfig()
 	
-	genConfig.outputPath = abspath(eltContentInterpVal(rootElt, "outputPath"))
+	genConfig.outputPath = joinPathIfNotAbs(genConfigFileDir, eltContentInterpVal(rootElt, "outputPath")) # output path can be absolute, or relative to genConfigFileDir
 	genConfig.mode = eltContent(rootElt, "mode")
 	
 	# output filenames
 	simFilesElt = findElt(rootElt, "simFiles")
-	simFilePath(filename::String) = joinpath(genConfig.outputPath, eltContent(simFilesElt, filename))
+	simFilePath(filename::String) = joinPathIfNotAbs(genConfig.outputPath, eltContentInterpVal(simFilesElt, filename)) # filename can be absolute, or relative to output path
 	genConfig.ambsFilename = simFilePath("ambulances")
 	genConfig.arcsFilename = simFilePath("arcs")
 	genConfig.callsFilename = simFilePath("calls")

@@ -38,6 +38,8 @@ function initSim(configFilename::String;
 	allowResim::Bool = false, createBackup::Bool = true, allowWriteOutput::Bool = false, doPrint::Bool = true)
 	
 	# read sim config xml file
+	configFilename = configFilename |> interpolateString |> abspath
+	configFileDir = splitdir(configFilename)[1]
 	rootElt = xmlFileRoot(configFilename)
 	@assert(xName(rootElt) == "simConfig", string("xml root has incorrect name: ", xName(rootElt)))
 	
@@ -55,7 +57,7 @@ function initSim(configFilename::String;
 	sim.configRootElt = rootElt
 	
 	# input
-	sim.inputPath = abspath(eltContentInterpVal(rootElt, "inputPath"))
+	sim.inputPath = joinPathIfNotAbs(configFileDir, eltContentInterpVal(rootElt, "inputPath")) # input path can be absolute, or relative to configFilename
 	simFilesElt = findElt(rootElt, "simFiles")
 	inputFiles = childrenNodeNames(simFilesElt)
 	sim.inputFiles = Dict{String,File}()
@@ -71,7 +73,7 @@ function initSim(configFilename::String;
 	
 	# output
 	sim.writeOutput = allowWriteOutput && eltContentVal(rootElt, "writeOutput")
-	sim.outputPath = abspath(eltContentInterpVal(rootElt, "outputPath"))
+	sim.outputPath = joinPathIfNotAbs(configFileDir, eltContentInterpVal(rootElt, "outputPath")) # output path can be absolute, or relative to configFilename
 	outputFilesElt = findElt(rootElt, "outputFiles")
 	outputFiles = childrenNodeNames(outputFilesElt)
 	sim.outputFiles = Dict{String,File}()

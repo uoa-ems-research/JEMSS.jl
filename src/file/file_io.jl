@@ -233,7 +233,7 @@ function deserializeFile(filename::String)
 end
 
 # if path is absolute then return it, otherwise prepend with (assumed) absolute path
-joinPathIfNotAbs(absPath::String, path::String) = isabspath(path) ? path : joinpath(absPath, path)
+joinPathIfNotAbs(absPath::String, path::String) = isabspath(path) ? abspath(path) : joinpath(absPath, path)
 
 function interpolateString(s::String)
 	return string("\"", escape_string(s), "\"") |> Meta.parse |> eval
