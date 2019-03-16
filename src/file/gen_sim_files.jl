@@ -18,6 +18,7 @@
 mutable struct GenConfig
 	outputPath::String
 	mode::String # "all" or "calls"
+	numCallsFiles::Int
 	
 	# output file names
 	ambsFilename::String
@@ -73,7 +74,7 @@ mutable struct GenConfig
 	
 	travelTimeFactorDistrRng::DistrRng
 	
-	GenConfig() = new("", "",
+	GenConfig() = new("", "", 1,
 		"", "", "", "", "", "", "", "", "",
 		nullIndex, nullIndex, nullIndex, nullIndex,
 		nullIndex, nullIndex,
@@ -93,6 +94,8 @@ function readGenConfig(genConfigFilename::String)
 	
 	genConfig.outputPath = joinPathIfNotAbs(genConfigFileDir, eltContentInterpVal(rootElt, "outputPath")) # output path can be absolute, or relative to genConfigFileDir
 	genConfig.mode = eltContent(rootElt, "mode")
+	genConfig.numCallsFiles = findElt(rootElt, "numCallsFiles") == nothing ? 1 : eltContentVal(rootElt, "numCallsFiles")
+	@assert(genConfig.numCallsFiles >= 1)
 	
 	# output filenames
 	simFilesElt = findElt(rootElt, "simFiles")
@@ -241,9 +244,6 @@ end
 # raster may be cropped to be within map borders
 function runGenConfigCalls(genConfig::GenConfig; doPrint::Bool = true)
 	
-	calls = makeCalls(genConfig) # will later overwrite location field values for each call
-	numCalls = length(calls) # shorthand
-	
 	# read call density raster file
 	doPrint && println("Reading raster file: ", genConfig.callDensityRasterFilename)
 	raster = readRasterFile(genConfig.callDensityRasterFilename)
@@ -260,13 +260,24 @@ function runGenConfigCalls(genConfig::GenConfig; doPrint::Bool = true)
 	end
 	
 	rasterSampler = RasterSampler(raster, genConfig.callRasterCellSeed, genConfig.callRasterCellLocSeed)
-	randLocations = rasterRandLocations(rasterSampler, numCalls)
-	for i = 1:numCalls
-		calls[i].location = randLocations[i]
-	end
 	
-	doPrint && println("Saving calls file to: ", genConfig.callsFilename)
-	writeCallsFile(genConfig.callsFilename, genConfig.startTime, calls)
+	numFiles = genConfig.numCallsFiles # shorthand
+	if numFiles == 1
+		filename = genConfig.callsFilename
+		doPrint && println("Saving calls file to: ", filename)
+		calls = makeCalls(genConfig; rasterSampler = rasterSampler)
+		writeCallsFile(filename, genConfig.startTime, calls)
+	else
+		@assert(numFiles > 1)
+		doPrint && println("Saving calls files to: ", genConfig.outputPath)
+		for j = 1:numFiles
+			filename = joinpath(genConfig.outputPath, "calls_$j.csv")
+			doPrint && print("\rCreating calls file $j (of $numFiles)")
+			calls = makeCalls(genConfig; rasterSampler = rasterSampler)
+			writeCallsFile(filename, genConfig.startTime, calls)
+		end
+		doPrint && (println(); println("Generated $numFiles calls files"))
+	end
 end
 
 function makeAmbs(genConfig::GenConfig)
@@ -304,13 +315,14 @@ function makeArcs(genConfig::GenConfig, graph::LightGraphs.Graph, nodes::Vector{
 	return arcs, travelTimes
 end
 
-# make calls that are spatially randomly uniform in map
-function makeCalls(genConfig::GenConfig)
-	calls = Vector{Call}(undef, genConfig.numCalls)
+# make calls that are spatially randomly uniform in map, or distributed according to raster
+function makeCalls(genConfig::GenConfig; rasterSampler::Union{RasterSampler,Nothing} = nothing)
+	numCalls = genConfig.numCalls # shorthand
+	calls = Vector{Call}(undef, numCalls)
 	
 	currentTime = genConfig.startTime
 	# first call will arrive at genConfig.startTime + rand(genConfig.interarrivalTimeDistrRng)
-	for i = 1:genConfig.numCalls
+	for i = 1:numCalls
 		currentTime += rand(genConfig.interarrivalTimeDistrRng) # apply time step
 		
 		calls[i] = Call()
@@ -323,6 +335,13 @@ function makeCalls(genConfig::GenConfig)
 		calls[i].transfer = (rand(genConfig.transferDistrRng) == 1)
 		calls[i].hospitalIndex = nullIndex
 		calls[i].transferDuration = rand(genConfig.transferDurationDistrRng)
+	end
+	
+	if rasterSampler != nothing
+		randLocations = rasterRandLocations(rasterSampler, numCalls)
+		for i = 1:numCalls
+			calls[i].location = randLocations[i]
+		end
 	end
 	
 	return calls

@@ -7,6 +7,9 @@
 	<!-- modes: all, calls -->
 	<mode>all</mode>
 	
+	<!-- if mode = calls, can generate multiple calls files -->
+	<numCallsFiles>1</numCallsFiles>
+	
 	<simFiles>
 		<!-- filenames can be relative to outputPath, or absolute -->
 		<ambulances>ambulances.csv</ambulances>
