@@ -1,12 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <genConfig>
-	<outputPath>$sourcePath/../test/data/regions/small/1/generated</outputPath>
+	<outputPath>generated</outputPath>
 	
 	<!-- modes: all, calls -->
 	<mode>all</mode>
 	
 	<simFiles>
-		<!-- <path>outputPath</path> -->
 		<ambulances>ambulances.csv</ambulances>
 		<arcs>arcs.csv</arcs>
 		<calls>calls.csv</calls>
