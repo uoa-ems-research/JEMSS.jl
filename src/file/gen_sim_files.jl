@@ -16,6 +16,7 @@
 # for generating simulation objects based on a config file
 
 mutable struct GenConfig
+	inputPath::String
 	outputPath::String
 	mode::String # "all" or "calls"
 	numCallsFiles::Int
@@ -74,7 +75,7 @@ mutable struct GenConfig
 	
 	travelTimeFactorDistrRng::DistrRng
 	
-	GenConfig() = new("", "", 1,
+	GenConfig() = new("", "", "", 1,
 		"", "", "", "", "", "", "", "", "",
 		nullIndex, nullIndex, nullIndex, nullIndex,
 		nullIndex, nullIndex,
@@ -92,6 +93,7 @@ function readGenConfig(genConfigFilename::String)
 	
 	genConfig = GenConfig()
 	
+	genConfig.inputPath = findElt(rootElt, "inputPath") == nothing ? genConfigFileDir : joinPathIfNotAbs(genConfigFileDir, eltContentInterpVal(rootElt, "inputPath"))
 	genConfig.outputPath = joinPathIfNotAbs(genConfigFileDir, eltContentInterpVal(rootElt, "outputPath")) # output path can be absolute, or relative to genConfigFileDir
 	genConfig.mode = eltContent(rootElt, "mode")
 	genConfig.numCallsFiles = findElt(rootElt, "numCallsFiles") == nothing ? 1 : eltContentVal(rootElt, "numCallsFiles")
@@ -167,7 +169,7 @@ function readGenConfig(genConfigFilename::String)
 	# call gen parameters
 	# call density raster
 	callDensityRasterElt = findElt(simElt, "callDensityRaster")
-	genConfig.callDensityRasterFilename = abspath(eltContentInterpVal(callDensityRasterElt, "filename"))
+	genConfig.callDensityRasterFilename = joinPathIfNotAbs(genConfig.inputPath, eltContentInterpVal(callDensityRasterElt, "filename"))
 	genConfig.cropRaster = eltContentVal(callDensityRasterElt, "cropRaster")
 	# seeds
 	function callRasterSeedVal(seedName::String)

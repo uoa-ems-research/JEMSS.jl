@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <genConfig>
 	<outputPath>$sourcePath/../test/data/regions/small/3/generated</outputPath>
+	<inputPath/>
 	
 	<!-- modes: all, calls -->
 	<mode>calls</mode>
@@ -37,7 +38,7 @@
 		
 		<!-- if mode = calls, will only generate calls, using call density raster -->
 		<callDensityRaster cellSeed="2" cellLocSeed="3">
-			<filename>$sourcePath/../test/data/regions/small/3/raster.xyz</filename>
+			<filename>raster.xyz</filename>
 			<cropRaster>true</cropRaster> <!-- crop raster to be within map -->
 		</callDensityRaster>
 		
