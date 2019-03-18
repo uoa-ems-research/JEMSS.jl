@@ -250,7 +250,7 @@ mutable struct Ambulance
 	# totalStationTime::Float # total time spent at station
 	numCallsTreated::Int # total number of calls that ambulance provided treatment for
 	numCallsTransferred::Int # total number of calls transferred to hospital
-	numDiversions::Int # number of times that ambulance is diverted from one call to another
+	numRedispatches::Int # number of times that ambulance is redispatched from one call to another
 	atStationDispatches::Int # total number of dispatches while at station
 	onRoadDispatches::Int # total number of dispatches while on road
 	afterServiceDispatches::Int # total number of dispatches directly after providing service at callout
