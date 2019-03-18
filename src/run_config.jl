@@ -292,6 +292,7 @@ function initSim(configFilename::String;
 	decisionElt = findElt(rootElt, "decision")
 	sim.addCallToQueue! = eltContentVal(decisionElt, "callQueueing")
 	sim.findAmbToDispatch! = eltContentVal(decisionElt, "dispatch")
+	haskey(sim.inputFiles, "redispatch") && (sim.redispatch = readRedispatchFile(simFilePath("redispatch")))
 	
 	# move up
 	mud = sim.moveUpData # shorthand

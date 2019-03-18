@@ -323,6 +323,22 @@ mutable struct Station
 	Station() = new(nullIndex, Location(), 0, nullIndex, nullDist)
 end
 
+# conditions that determine ambulance redispatch behaviour
+mutable struct Redispatch
+	allow::Bool # true if redispatch is allowed, false otherwise
+	conditions::Array{Bool,2} # conditions[Int(p1),Int(p2)] returns true if ambulance may be redispatched from its current call (priority p1) to another call (priority p2). Change this var to match modelling needs.
+	
+	Redispatch() = new(false, fill(false,numPriorities,numPriorities))
+	function Redispatch(::Type{Val{:default}})
+		redispatch = Redispatch()
+		redispatch.allow = true
+		@assert(!any(redispatch.conditions)) # all values should be false so far
+		redispatch.conditions[Int(lowPriority), Int(highPriority)] = true
+		redispatch.conditions[Int(medPriority), Int(highPriority)] = true
+		return redispatch
+	end
+end
+
 mutable struct Map
 	xMin::Float
 	xMax::Float
@@ -729,6 +745,7 @@ mutable struct Simulation
 	# decision logic
 	addCallToQueue!::Function
 	findAmbToDispatch!::Function
+	redispatch::Redispatch
 	moveUpData::MoveUpData
 	
 	# demand
@@ -765,7 +782,7 @@ mutable struct Simulation
 		0, 0, 0, 0,
 		[], 0, [],
 		Resimulation(),
-		nullFunction, nullFunction, MoveUpData(),
+		nullFunction, nullFunction, Redispatch(Val{:default}), MoveUpData(),
 		Demand(), DemandCoverage(),
 		Dict(), [],
 		Set(), Set(),

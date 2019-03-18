@@ -93,6 +93,13 @@ function writeNodesFile(filename::String, nodes::Vector{Node})
 	writeTablesToFile(filename, table)
 end
 
+function writeRedispatchFile(filename::String, redispatch::Redispatch)
+	miscTable = Table("miscData", ["allowRedispatch"], rows = [[Int(redispatch.allow)]])
+	conditionsTable = Table("redispatchConditions", ["fromCallPriority", "toCallPriority", "allowRedispatch"],
+		rows = [[[string(p1), string(p2), Int(redispatch.conditions[Int(p1),Int(p2)])] for p1 in priorities, p2 in priorities]...])
+	writeTablesToFile(filename, [miscTable, conditionsTable])
+end
+
 function writeRNetTravelsFile(filename::String, rNetTravels::Vector{NetTravel})
 	@assert(all([rNetTravel.isReduced for rNetTravel in rNetTravels]))
 	serializeToFile(filename, rNetTravels)
