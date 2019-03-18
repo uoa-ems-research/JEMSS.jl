@@ -25,7 +25,9 @@ const FloatSpTime = Float64 # precision for storing shortest path travel times
 const IntRNode = Int16 # precision for storing number of nodes in rGraph
 const IntFadj = Int8 # precision for storing maximum number of nodes adjacent to any node in rGraph (= length of longest vector in network.rGraph.fadjList)
 
-const sourcePath = @__DIR__
+const sourceDir = @__DIR__
+const sourcePath = sourceDir # for compat
+const jemssDir = realpath(joinpath(sourceDir, ".."))
 
 const pkgVersions = Pkg.installed()
 

@@ -367,7 +367,7 @@ function runAnimServer(port::Int)
 	end
 	
 	# create and run server
-	onepage = read("$sourcePath/animation/index.html", String)
+	onepage = read("$sourceDir/animation/index.html", String)
 	@async HTTP.listen(Sockets.localhost, port) do http::HTTP.Stream
 		if HTTP.WebSockets.is_upgrade(http.message)
 			HTTP.WebSockets.upgrade(http) do client

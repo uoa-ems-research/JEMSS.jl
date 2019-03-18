@@ -2,7 +2,7 @@
 <genConfig>
 	<!-- path of output files, can be relative to this file, or absolute -->
 	<outputPath>input</outputPath>
-	<!-- an equivalent absolute path, with string interpolation: <outputPath>$sourcePath/../example/input</outputPath> -->
+	<!-- an equivalent absolute path, with string interpolation: <outputPath>$jemssDir/example/input</outputPath> -->
 	
 	<!-- modes: all, calls -->
 	<mode>all</mode>

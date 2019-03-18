@@ -266,7 +266,7 @@ end
 
 function selectXmlFile(; message::String = "Enter xml filename: ")
 	if Sys.iswindows()
-		ps1Filename = "$sourcePath/file/select_xml.ps1"
+		ps1Filename = "$sourceDir/file/select_xml.ps1"
 		str = read(`Powershell.exe -executionpolicy remotesigned -File $ps1Filename`, String)
 	else
 		print(message)

@@ -3,7 +3,7 @@
 	<!-- paths of input and output files, can be relative to this file, or absolute -->
 	<inputPath>input</inputPath>
 	<outputPath>output</outputPath>
-	<!-- an equivalent absolute path, with string interpolation: <outputPath>$sourcePath/../example/output</outputPath> -->
+	<!-- an equivalent absolute path, with string interpolation: <outputPath>$jemssDir/example/output</outputPath> -->
 	
 	<simFiles>
 		<!-- filenames can be relative to inputPath, or absolute -->
