@@ -22,16 +22,22 @@ using SparseArrays
 travelModeString(i::Int) = "mode_$i"
 
 function checkNodeIndices(nodes::Vector{Node})
-	all(i -> i == nodes[i].index, 1:length(nodes)) || @warn("Node indices are not 1:n")
+	result = all(i -> i == nodes[i].index, 1:length(nodes)) # true if ok
+	result || @warn("Node indices are not 1:n")
+	return result
 end
 
 function checkArcIndices(arcs::Vector{Arc})
-	all(i -> i == arcs[i].index, 1:length(arcs)) || @warn("Arc indices are not 1:n")
+	result = all(i -> i == arcs[i].index, 1:length(arcs)) # true if ok
+	result || @warn("Arc indices are not 1:n")
+	return result
 end
 
 # check arc.fromNodeIndex and arc.toNodeIndex values are in expected range
 function checkArcNodeIndices(numNodes::Int, arcs::Vector{Arc})
-	all(i -> (1 <= arcs[i].fromNodeIndex <= numNodes) && (1 <= arcs[i].toNodeIndex <= numNodes), 1:length(arcs)) || @warn("Arc from/to node indices are not all within 1:numNodes")
+	result = all(i -> (1 <= arcs[i].fromNodeIndex <= numNodes) && (1 <= arcs[i].toNodeIndex <= numNodes), 1:length(arcs)) # true if ok
+	result || @warn("Arc from/to node indices are not all within 1:numNodes")
+	return result
 end
 checkArcNodeIndices(nodes::Vector{Node}, arcs::Vector{Arc}) = checkArcNodeIndices(length(nodes), arcs)
 
@@ -71,6 +77,23 @@ function getArcsTravelTimes(arcs::Vector{Arc})
 	end
 	return travelTimes
 end
+
+function nodesAddField!(nodes::Vector{Node}, field::String; default::Any = nothing, overwrite::Bool = false)
+	if !overwrite && haskey(nodes[1].fields, field) return end
+	for node in nodes
+		node.fields[field] = default
+	end
+end
+
+function arcsAddField!(arcs::Vector{Arc}, field::String; default::Any = nothing, overwrite::Bool = false)
+	if !overwrite && haskey(arcs[1].fields, field) return end
+	for arc in arcs
+		arc.fields[field] = default
+	end
+end
+
+nodesDeleteField!(nodes::Vector{Node}, field::String) = for node in nodes delete!(node.fields, field) end
+arcsDeleteField!(arcs::Vector{Arc}, field::String) = for arc in arcs delete!(arc.fields, field) end
 
 function JEMSS.writeArcsFile(arcsFilename::String, arcs::Vector{Arc}, arcForm::String)
 	travelTimes = getArcsTravelTimes(arcs)
@@ -207,6 +230,11 @@ function graphFindDuplicateArcs(arcs::Vector{Arc})
 end
 
 graphContainsDuplicateArcs(arcs::Vector{Arc}) = graphFindDuplicateArcs(arcs) != []
+function checkGraphContainsNoDuplicateArcs(arcs::Vector{Arc})
+	result = !graphContainsDuplicateArcs(arcs) # true if ok
+	result || @warn("There are duplicate arcs.")
+	return result
+end
 
 # merge arc2 into arc1, keeping minimum travel time (from both arcs) for each travel mode in arc1
 # arc2 will need to be removed in separate step
@@ -244,6 +272,119 @@ function graphMergeDuplicateArcs!(nodes::Vector{Node}, arcs::Vector{Arc};
 	# remove duplicate arcs
 	arcFilter(arc::Arc) = arc.fields[mergeHeader] != "merged_in"
 	graphRemoveElts!(nodes, arcs, arcFilter = arcFilter)
+end
+
+# Divide an arc into even sections a given number of times, 0 divides makes no change.
+# Only some nodes and arcs fields are updated (node offRoadAccess, arc travel times and osm weight), the rest are unchanged but may need changing.
+function graphDivideArc!(nodes::Vector{Node}, arcs::Vector{Arc}; arcIndex::Int = 0, numDivides::Int = 1)
+	if numDivides <= 0 return end
+	@assert(1 <= arcIndex <= length(arcs))
+	
+	# shorthand
+	numNodes = length(nodes)
+	numArcs = length(arcs)
+	arc = arcs[arcIndex]
+	fromNode = nodes[arc.fromNodeIndex]
+	toNode = nodes[arc.toNodeIndex]
+	
+	# keep track of which nodes have been added, and which arcs have been divided
+	addedHeader = "added"
+	divArcHeader = "dividedArcIndex"
+	nodesAddField!(nodes, addedHeader; default = false)
+	arcsAddField!(arcs, divArcHeader; default = nullIndex)
+	
+	# change some fields of arc
+	for i = 1:getNumTravelModes(arc)
+		arc.fields[travelModeString(i)] /= numDivides + 1
+	end
+	if haskey(arc.fields, "osm_weight")
+		arc.fields["osm_weight"] /= numDivides + 1
+	end
+	arc.fields[divArcHeader] = arc.index
+	
+	tempNode = deepcopy(fromNode) # could copy any node
+	tempNode.fields[addedHeader] = true
+	tempArc = deepcopy(arc)
+	# some fields of these new nodes and arcs will have incorrect/irrelevant information and should be ignored
+	
+	for i = 1:numDivides
+		# add node
+		newNode = deepcopy(tempNode)
+		newNode.index = numNodes + i
+		newNode.location = linearInterpLocation(fromNode.location, toNode.location, 0.0, 1.0, i/(numDivides+1))
+		newNode.offRoadAccess = fromNode.offRoadAccess && toNode.offRoadAccess
+		push!(nodes, newNode)
+		
+		# add arc
+		newArc = deepcopy(tempArc)
+		newArc.index = numArcs + i
+		newArc.fromNodeIndex = newNode.index
+		newArc.toNodeIndex = newNode.index + 1
+		push!(arcs, newArc)
+	end
+	arc.toNodeIndex = numNodes + 1
+	arcs[end].toNodeIndex = toNode.index
+end
+
+# Divide arcs into multiple arcs (with added nodes) so that the the maximum arc travel time <= maxArcTravelTime.
+function graphDivideArcs!(nodes::Vector{Node}, arcs::Vector{Arc}; maxArcTravelTime::Float = Inf)
+	if maxArcTravelTime == Inf return end
+	@assert(maxArcTravelTime > 0)
+	
+	nodePairArcIndex = Dict{Tuple{Int,Int},Int}()
+	for arc in arcs
+		@assert(!haskey(nodePairArcIndex, (arc.fromNodeIndex, arc.toNodeIndex)), arc) # duplicate arcs not allowed
+		nodePairArcIndex[arc.fromNodeIndex, arc.toNodeIndex] = arc.index
+	end
+	
+	travelTimes = getArcsTravelTimes(arcs) # values before dividing arcs, actual values will change (but not in this var)
+	arcsDivided = fill(false, length(arcs))
+	for (node1, node2) in keys(nodePairArcIndex)
+		if arcsDivided[nodePairArcIndex[node1, node2]] continue end # arc has already been divided
+		numNodes = length(nodes) # keep track of number of nodes before current divide
+		if !haskey(nodePairArcIndex, (node2, node1)) # no arc in opposite direction
+			i = nodePairArcIndex[node1, node2]
+			numDivides = ceil(Int, maximum(travelTimes[:,i]) / maxArcTravelTime) - 1
+			if numDivides < 1 continue end
+			graphDivideArc!(nodes, arcs; arcIndex = i, numDivides = numDivides)
+			arcsDivided[i] = true
+			
+			# testing, delete
+			@assert(checkNodeIndices(nodes))
+			@assert(checkArcIndices(arcs))
+			@assert(checkArcNodeIndices(nodes, arcs))
+		else
+			# there are two arcs in opposite directions, need to split both simultaneously
+			arc1 = nodePairArcIndex[node1, node2]
+			arc2 = nodePairArcIndex[node2, node1]
+			numDivides = ceil(Int, maximum(travelTimes[:,[arc1,arc2]]) / maxArcTravelTime) - 1 # look at maximum travel time of both arcs
+			if numDivides < 1 continue end
+			graphDivideArc!(nodes, arcs; arcIndex = arc1, numDivides = numDivides)
+			graphDivideArc!(nodes, arcs; arcIndex = arc2, numDivides = numDivides)
+			arcsDivided[arc1] = true
+			arcsDivided[arc2] = true
+			
+			# have created extra nodes when dividing arc2; need to remove these and instead use nodes that were created when dividing arc1
+			for i = 1:numDivides
+				pop!(nodes)
+			end
+			for i = 1:numDivides
+				arc = arcs[end-i+1]
+				arc.fromNodeIndex = numNodes + i
+				i == 1 || (arc.toNodeIndex = numNodes + i - 1)
+			end
+			arcs[arc2].toNodeIndex = numNodes + numDivides
+		end
+	end
+	
+	# check max arc travel time
+	travelTimes = getArcsTravelTimes(arcs)
+	@assert(maximum(travelTimes) <= maxArcTravelTime)
+	
+	checkNodeIndices(nodes)
+	checkArcIndices(arcs)
+	checkArcNodeIndices(nodes, arcs)
+	checkGraphContainsNoDuplicateArcs(arcs)
 end
 
 # Tag all nodes and arcs that are used in any shortest path:
