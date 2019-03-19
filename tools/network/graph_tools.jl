@@ -190,8 +190,8 @@ function graphKeepLargestComponent!(nodes::Vector{Node}, arcs::Vector{Arc};
 	nodeFilter(node::Node) = node.fields[lsccHeader]
 	arcFilter(arc::Arc) = arc.fields[lsccHeader]
 	graphRemoveElts!(nodes, arcs, nodeFilter = nodeFilter, arcFilter = arcFilter)
-	for node in nodes delete!(node.fields, lsccHeader) end
-	for arc in arcs delete!(arc.fields, lsccHeader) end
+	nodesDeleteField!(nodes, lsccHeader)
+	arcsDeleteField!(arcs, lsccHeader)
 	return
 end
 
@@ -254,9 +254,7 @@ mergeDuplicateArcs!(arcs::Vector{Arc}, i::Int, j::Int) = mergeDuplicateArcs!(arc
 function graphMergeDuplicateArcs!(nodes::Vector{Node}, arcs::Vector{Arc};
 	mergeArcsFunction::Function = mergeDuplicateArcs!, mergeHeader::String = "merge_result")
 	
-	for arc in arcs
-		arc.fields[mergeHeader] = "unmerged"
-	end
+	arcsAddField!(arcs, mergeHeader, default = "unmerged")
 	
 	# find which arcs are duplicates
 	duplicateArcsSets = graphFindDuplicateArcs(arcs) # duplicateArcsSets[i] has a vector of indices of duplicate arcs
@@ -276,7 +274,7 @@ end
 
 # Divide an arc into even sections a given number of times, 0 divides makes no change.
 # Only some nodes and arcs fields are updated (node offRoadAccess, arc travel times and osm weight), the rest are unchanged but may need changing.
-function graphDivideArc!(nodes::Vector{Node}, arcs::Vector{Arc}; arcIndex::Int = 0, numDivides::Int = 1)
+function graphDivideArc!(nodes::Vector{Node}, arcs::Vector{Arc}; arcIndex::Int = 0, numDivides::Int = 0)
 	if numDivides <= 0 return end
 	@assert(1 <= arcIndex <= length(arcs))
 	
@@ -289,7 +287,7 @@ function graphDivideArc!(nodes::Vector{Node}, arcs::Vector{Arc}; arcIndex::Int =
 	
 	# keep track of which nodes have been added, and which arcs have been divided
 	addedHeader = "added"
-	divArcHeader = "dividedArcIndex"
+	divArcHeader = "divided_arc_index"
 	nodesAddField!(nodes, addedHeader; default = false)
 	arcsAddField!(arcs, divArcHeader; default = nullIndex)
 	
@@ -348,11 +346,6 @@ function graphDivideArcs!(nodes::Vector{Node}, arcs::Vector{Arc}; maxArcTravelTi
 			if numDivides < 1 continue end
 			graphDivideArc!(nodes, arcs; arcIndex = i, numDivides = numDivides)
 			arcsDivided[i] = true
-			
-			# testing, delete
-			@assert(checkNodeIndices(nodes))
-			@assert(checkArcIndices(arcs))
-			@assert(checkArcNodeIndices(nodes, arcs))
 		else
 			# there are two arcs in opposite directions, need to split both simultaneously
 			arc1 = nodePairArcIndex[node1, node2]
