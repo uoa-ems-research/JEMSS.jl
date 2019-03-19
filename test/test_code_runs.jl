@@ -61,7 +61,9 @@ end
 
 @testset "generate calls" begin
 	cd("data/regions/small/3") do
-		runGenConfig("gen_config.xml", overwriteOutputPath = true, doPrint = false)
+		runGenConfig("gen_config_calls.xml", overwriteOutputPath = true, doPrint = false) # single calls file, limit calls by count
+		runGenConfig("gen_config_calls_2.xml", overwriteOutputPath = true, doPrint = false) # single calls file, limit calls by time
+		runGenConfig("gen_config_calls_multiple.xml", overwriteOutputPath = true, doPrint = false) # multiple calls files
 		@test true
 	end
 end

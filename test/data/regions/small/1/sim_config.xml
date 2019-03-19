@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <simConfig>
 	<!-- paths: -->
-	<inputPath>$sourcePath/../test/data/regions/small/1/generated</inputPath>
+	<inputPath>$jemssDir/test/data/regions/small/1/generated</inputPath>
 	<outputPath></outputPath>
 	
 	<simFiles>
@@ -14,6 +14,7 @@
 		<nodes>nodes.csv</nodes>
 		<priorities>priorities.csv</priorities>
 		<rNetTravels>r_net_travels.jls</rNetTravels>
+		<redispatch>../misc/redispatch.csv</redispatch>
 		<stations>stations.csv</stations>
 		<travel>../travel.csv</travel>
 	</simFiles>

@@ -1,9 +1,9 @@
 demandRasters,,,,
 rasterIndex,rasterFilename,note,,
-1,data/regions/small/1/demand/raster_1.xyz,"rest hours, high priority demand",,
-2,data/regions/small/1/demand/raster_2.xyz,"work hours, high priority demand",,
-3,data/regions/small/1/demand/raster_3.xyz,"rest hours, medium/low priority demand",,
-4,data/regions/small/1/demand/raster_4.xyz,"work hours, medium/low priority demand",,
+1,raster_1.xyz,"rest hours, high priority demand",,
+2,raster_2.xyz,"work hours, high priority demand",,
+3,raster_3.xyz,"rest hours, medium/low priority demand",,
+4,raster_4.xyz,"work hours, medium/low priority demand",,
 ,,,,
 demandModes,,,,
 modeIndex,rasterIndex,priority,arrivalRate,note

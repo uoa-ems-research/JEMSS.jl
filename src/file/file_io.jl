@@ -232,14 +232,19 @@ function deserializeFile(filename::String)
 	return data
 end
 
+# if path is absolute then return it, otherwise prepend with (assumed) absolute path
+joinPathIfNotAbs(absPath::String, path::String) = isabspath(path) ? abspath(path) : joinpath(absPath, path)
+
 function interpolateString(s::String)
-	return eval(Meta.parse(string("\"", s, "\"")))
+	return string("\"", escape_string(s), "\"") |> Meta.parse |> eval
 end
+interpolateString(s::SubString{String}) = interpolateString(String(s))
 
 # some convenient functions for reading xml files
-xmlFileRoot(filename::String) = root(parse_file(filename))
+xmlFileRoot(filename::String) = root(parse_file(interpolateString(filename)))
 findElt = find_element # shorthand
 xName(x) = LightXML.name(x) # to avoid conflict with JuMP.name
+containsElt(parentElt::XMLElement, eltString::String) = findElt(parentElt, eltString) != nothing
 eltContent(elt::XMLElement) = content(elt)
 eltContentVal(elt::XMLElement) = eval(Meta.parse(eltContent(elt)))
 eltContentInterpVal(elt::XMLElement) = interpolateString(eltContent(elt))
@@ -262,7 +267,7 @@ end
 
 function selectXmlFile(; message::String = "Enter xml filename: ")
 	if Sys.iswindows()
-		ps1Filename = "$sourcePath/file/select_xml.ps1"
+		ps1Filename = "$sourceDir/file/select_xml.ps1"
 		str = read(`Powershell.exe -executionpolicy remotesigned -File $ps1Filename`, String)
 	else
 		print(message)

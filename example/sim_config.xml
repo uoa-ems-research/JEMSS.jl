@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <simConfig>
-	<!-- paths: -->
-	<inputPath>$sourcePath/../example/input</inputPath>
-	<outputPath>$sourcePath/../example/output</outputPath>
+	<!-- paths of input and output files, can be relative to this file, or absolute -->
+	<inputPath>input</inputPath>
+	<outputPath>output</outputPath>
+	<!-- an equivalent absolute path, with string interpolation: <outputPath>$jemssDir/example/output</outputPath> -->
 	
 	<simFiles>
-		<!-- <path>inputPath</path> -->
+		<!-- filenames can be relative to inputPath, or absolute -->
 		<ambulances>ambulances.csv</ambulances>
 		<arcs>arcs.csv</arcs>
 		<calls>calls.csv</calls>
@@ -13,14 +14,14 @@
 		<map>map.csv</map>
 		<nodes>nodes.csv</nodes>
 		<priorities>priorities.csv</priorities>
-		<rNetTravels>r_net_travels.jls</rNetTravels>
+		<rNetTravels>r_net_travels_jl-v$(VERSION).jls</rNetTravels>
 		<stations>stations.csv</stations>
 		<travel>travel.csv</travel>
 	</simFiles>
 	
 	<writeOutput>true</writeOutput>
 	<outputFiles>
-		<!-- <path>outputPath</path> -->
+		<!-- filenames can be relative to outputPath, or absolute -->
 		<ambulances>ambulances.csv</ambulances>
 		<calls>calls.csv</calls>
 		<events>events.csv</events>
@@ -37,14 +38,12 @@
 			<module>none</module>
 			<!-- module: none / comp_table / dmexclp / priority_list / zhang_ip / temp0 / temp1 / temp2 -->
 			<compTable>
-				<!-- <path>inputPath</path> -->
 				<filename>comp_table.csv</filename>
 			</compTable>
 			<dmexclp>
 				<busyFraction>0.25</busyFraction>
 			</dmexclp>
 			<priorityList>
-				<!-- <path>inputPath</path> -->
 				<filename>priority_list.csv</filename>
 			</priorityList>
 			<zhangIp>

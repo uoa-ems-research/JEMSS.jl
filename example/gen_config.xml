@@ -1,12 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <genConfig>
-	<outputPath>$sourcePath/../example/input</outputPath>
+	<!-- path of output files, can be relative to this file, or absolute -->
+	<outputPath>input</outputPath>
+	<!-- an equivalent absolute path, with string interpolation: <outputPath>$jemssDir/example/input</outputPath> -->
 	
 	<!-- modes: all, calls -->
 	<mode>all</mode>
 	
+	<!-- if mode = calls, can generate multiple calls files -->
+	<numCallsFiles>1</numCallsFiles>
+	
 	<simFiles>
-		<!-- <path>outputPath</path> -->
+		<!-- filenames can be relative to outputPath, or absolute -->
 		<ambulances>ambulances.csv</ambulances>
 		<arcs>arcs.csv</arcs>
 		<calls>calls.csv</calls>

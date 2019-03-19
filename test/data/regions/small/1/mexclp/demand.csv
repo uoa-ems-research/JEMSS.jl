@@ -1,8 +1,8 @@
 demandRasters,,,
 rasterIndex,rasterFilename,,
-1,data/regions/small/1/demand/raster_1.xyz,,
-2,data/regions/small/1/demand/raster_2.xyz,,
-3,data/regions/small/1/demand/raster_3.xyz,,
+1,../demand/raster_1.xyz,,
+2,../demand/raster_2.xyz,,
+3,../demand/raster_3.xyz,,
 ,,,
 demandModes,,,
 modeIndex,rasterIndex,priority,arrivalRate

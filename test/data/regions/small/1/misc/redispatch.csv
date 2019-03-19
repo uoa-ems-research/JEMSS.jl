@@ -1,0 +1,9 @@
+miscData,,
+allowRedispatch,,
+1,,
+,,
+redispatchConditions,,
+fromCallPriority,toCallPriority,allowRedispatch
+medPriority,highPriority,1
+lowPriority,highPriority,1
+lowPriority,medPriority,1

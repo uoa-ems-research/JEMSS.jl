@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <genConfig>
+	<inputPath/>
 	<outputPath>generated</outputPath>
 	
 	<!-- modes: all, calls -->
-	<mode>all</mode>
+	<mode>calls</mode>
+	
+	<numCallsFiles>3</numCallsFiles>
 	
 	<simFiles>
 		<ambulances>ambulances.csv</ambulances>
@@ -34,8 +37,8 @@
 		
 		<!-- if mode = calls, will only generate calls, using call density raster -->
 		<callDensityRaster cellSeed="2" cellLocSeed="3">
-			<filename></filename>
-			<cropRaster>false</cropRaster> <!-- crop raster to be within map -->
+			<filename>raster.xyz</filename>
+			<cropRaster>true</cropRaster> <!-- crop raster to be within map -->
 		</callDensityRaster>
 		
 		<graph>
@@ -44,11 +47,11 @@
 		</graph>
 		
 		<map>
-			<xMin>0</xMin>
-			<xMax>0.1</xMax>
+			<xMin>-0.01</xMin>
+			<xMax>0.21</xMax>
 			<xScale>111.32</xScale>
-			<yMin>0</yMin>
-			<yMax>0.1</yMax>
+			<yMin>-0.01</yMin>
+			<yMax>0.21</yMax>
 			<yScale>111.32</yScale>
 		</map>
 		

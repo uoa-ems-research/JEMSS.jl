@@ -209,11 +209,13 @@ function readDemandFile(filename::String)
 	columns = table.columns # shorthand
 	demand.rasters = Vector{Raster}(undef, n)
 	demand.rasterFilenames = Vector{String}(undef, n)
-	@assert(allunique(columns["rasterFilename"]), "There are duplicate raster filenames in the demand file, this is unnecessary.")
+	allunique(columns["rasterFilename"]) || @warn("There are duplicate raster filenames in the demand file, this is unnecessary.")
+	demandFileDir = splitdir(realpath(filename))[1]
 	for i = 1:n
 		@assert(columns["rasterIndex"][i] == i)
 		
 		rasterFilename = String(columns["rasterFilename"][i])
+		rasterFilename = joinPathIfNotAbs(demandFileDir, interpolateString(rasterFilename)) # raster filename should be absolute (after interpolating), or relative to the demand file directory
 		@assert(isfile(rasterFilename))
 		demand.rasterFilenames[i] = rasterFilename
 		demand.rasters[i] = readRasterFile(rasterFilename)
@@ -524,6 +526,35 @@ function readRasterFile(rasterFilename::String)
 	y = collect(range(yMin, step=dy, length=ny))
 	
 	return Raster(x, y, z)
+end
+
+function readRedispatchFile(filename::String)::Redispatch
+	tables = readTablesFromFile(filename)
+	
+	redispatch = Redispatch()
+	
+	table = tables["miscData"]
+	redispatch.allow = Bool(table.columns["allowRedispatch"][1])
+	
+	table = tables["redispatchConditions"]
+	n = size(table.data,1)
+	priorityPairUsed = fill(false, numPriorities, numPriorities)
+	for i = 1:n
+		p1 = eval(Meta.parse(table.columns["fromCallPriority"][i]))
+		p2 = eval(Meta.parse(table.columns["toCallPriority"][i]))
+		redispatch.conditions[Int(p1),Int(p2)] = Bool(table.columns["allowRedispatch"][i])
+		
+		# check that condition will not overwrite existing condition
+		@assert(priorityPairUsed[Int(p1),Int(p2)] == false, "Redispatch file has multiple conditions for call priority pair [$p1, $p2].")
+		priorityPairUsed[Int(p1),Int(p2)] = true
+		
+		p1 == p2 && @assert(!redispatch.conditions[Int(p1),Int(p2)], "Redispatch file has condition that allows redispatch for calls of same priority ($p1).")
+	end
+	
+	# should not allow redispatch from priority: p1 -> p1, or p1 -> p2 -> p1, or p1 -> p2 -> p3 -> p1, etc, otherwise may redispatch indefinitely
+	@assert(all(x -> x == 0, redispatch.conditions ^ numPriorities), "Redispatch file has conditions with a cycle that may cause unlimited redispatching.")
+	
+	return redispatch
 end
 
 function readRNetTravelsFile(filename::String)

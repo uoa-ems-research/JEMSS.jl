@@ -18,10 +18,18 @@ function isAmbAvailableForDispatch(sim::Simulation, ambulance::Ambulance, call::
 	status = ambulance.status
 	if status == ambIdleAtStation || status == ambGoingToStation
 		return true
-	elseif status == ambGoingToCall && sim.calls[ambulance.callIndex].priority != highPriority && call.priority == highPriority
-		return true
+	elseif status == ambGoingToCall
+		return isAmbRedispatchAllowed(sim, ambulance, sim.calls[ambulance.callIndex], call)
 	end
 	return false
+end
+
+# return true if ambulance may be redispatched from its current call to a different call, false otherwise.
+function isAmbRedispatchAllowed(sim::Simulation, ambulance::Ambulance, fromCall::Call, toCall::Call)
+	@assert(ambulance.status == ambGoingToCall)
+	@assert(ambulance.callIndex == fromCall.index)
+	sim.redispatch.allow || return false
+	return sim.redispatch.conditions[Int(fromCall.priority), Int(toCall.priority)]
 end
 
 # return the index of the nearest available ambulance to dispatch to a call

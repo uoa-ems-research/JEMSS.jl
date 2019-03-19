@@ -23,7 +23,7 @@
 	rm(tempDemandFilename)
 	
 	# check that input and output files have same raster filenames
-	@test demand.rasterFilenames == tempDemand.rasterFilenames
+	@test abspath.(demand.rasterFilenames) == abspath.(tempDemand.rasterFilenames)
 	
 	# check that demand files were read correctly
 	for d in [demand, tempDemand]

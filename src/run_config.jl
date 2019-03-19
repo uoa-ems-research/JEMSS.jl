@@ -38,6 +38,8 @@ function initSim(configFilename::String;
 	allowResim::Bool = false, createBackup::Bool = true, allowWriteOutput::Bool = false, doPrint::Bool = true)
 	
 	# read sim config xml file
+	configFilename = configFilename |> interpolateString |> abspath
+	configFileDir = splitdir(configFilename)[1]
 	rootElt = xmlFileRoot(configFilename)
 	@assert(xName(rootElt) == "simConfig", string("xml root has incorrect name: ", xName(rootElt)))
 	
@@ -54,16 +56,14 @@ function initSim(configFilename::String;
 	sim = Simulation()
 	sim.configRootElt = rootElt
 	
-	joinPathIfNotAbs(absPath::String, path::String) = isabspath(path) ? path : joinpath(absPath, path)
-	
 	# input
-	sim.inputPath = abspath(eltContentInterpVal(rootElt, "inputPath"))
+	sim.inputPath = joinPathIfNotAbs(configFileDir, eltContentInterpVal(rootElt, "inputPath")) # input path can be absolute, or relative to configFilename
 	simFilesElt = findElt(rootElt, "simFiles")
 	inputFiles = childrenNodeNames(simFilesElt)
 	sim.inputFiles = Dict{String,File}()
 	for inputFile in inputFiles
 		file = File()
-		file.path = joinPathIfNotAbs(sim.inputPath, eltContent(simFilesElt, inputFile))
+		file.path = joinPathIfNotAbs(sim.inputPath, eltContentInterpVal(simFilesElt, inputFile))
 		file.name = splitdir(file.path)[2]
 		if inputFile != "rNetTravels" # do not need checksum of rNetTravels file
 			file.checksum = fileChecksum(file.path)
@@ -73,13 +73,13 @@ function initSim(configFilename::String;
 	
 	# output
 	sim.writeOutput = allowWriteOutput && eltContentVal(rootElt, "writeOutput")
-	sim.outputPath = abspath(eltContentInterpVal(rootElt, "outputPath"))
+	sim.outputPath = joinPathIfNotAbs(configFileDir, eltContentInterpVal(rootElt, "outputPath")) # output path can be absolute, or relative to configFilename
 	outputFilesElt = findElt(rootElt, "outputFiles")
 	outputFiles = childrenNodeNames(outputFilesElt)
 	sim.outputFiles = Dict{String,File}()
 	for outputFile in outputFiles
 		file = File()
-		file.path = joinPathIfNotAbs(sim.outputPath, eltContent(outputFilesElt, outputFile))
+		file.path = joinPathIfNotAbs(sim.outputPath, eltContentInterpVal(outputFilesElt, outputFile))
 		file.name = splitdir(file.path)[2]
 		sim.outputFiles[outputFile] = file
 	end
@@ -292,6 +292,7 @@ function initSim(configFilename::String;
 	decisionElt = findElt(rootElt, "decision")
 	sim.addCallToQueue! = eltContentVal(decisionElt, "callQueueing")
 	sim.findAmbToDispatch! = eltContentVal(decisionElt, "dispatch")
+	haskey(sim.inputFiles, "redispatch") && (sim.redispatch = readRedispatchFile(simFilePath("redispatch")))
 	
 	# move up
 	mud = sim.moveUpData # shorthand
@@ -310,7 +311,7 @@ function initSim(configFilename::String;
 		if moveUpModuleName == "comp_table"
 			mud.moveUpModule = compTableModule
 			compTableElt = findElt(moveUpElt, "compTable")
-			compTableFilename = joinPathIfNotAbs(sim.inputPath, eltContent(compTableElt, "filename"))
+			compTableFilename = joinPathIfNotAbs(sim.inputPath, eltContentInterpVal(compTableElt, "filename"))
 			initCompTable!(sim, compTableFilename)
 			
 		elseif moveUpModuleName == "dmexclp"
@@ -321,13 +322,13 @@ function initSim(configFilename::String;
 		elseif moveUpModuleName == "priority_list"
 			mud.moveUpModule = priorityListModule
 			priorityListElt = findElt(moveUpElt, "priorityList")
-			priorityListFilename = joinPathIfNotAbs(sim.inputPath, eltContent(priorityListElt, "filename"))
+			priorityListFilename = joinPathIfNotAbs(sim.inputPath, eltContentInterpVal(priorityListElt, "filename"))
 			initPriorityList!(sim, priorityListFilename)
 			
 		elseif moveUpModuleName == "zhang_ip"
 			mud.moveUpModule = zhangIpModule
 			zhangIpElt = findElt(moveUpElt, "zhangIp")
-			zhangIpParamsFilename = joinPathIfNotAbs(sim.inputPath, eltContent(zhangIpElt, "paramsFilename"))
+			zhangIpParamsFilename = joinPathIfNotAbs(sim.inputPath, eltContentInterpVal(zhangIpElt, "paramsFilename"))
 			initZhangIp!(sim;
 				paramsFilename = zhangIpParamsFilename)
 			
