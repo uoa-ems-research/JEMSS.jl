@@ -48,6 +48,7 @@ mutable struct GenConfig
 	
 	# misc
 	startTime::Float
+	maxCallArrivalTime::Float
 	targetResponseTime::Float
 	offRoadSpeed::Float
 	stationCapacity::Int
@@ -80,7 +81,7 @@ mutable struct GenConfig
 		nullIndex, nullIndex, nullIndex, nullIndex,
 		nullIndex, nullIndex,
 		Map(), 1e-6,
-		nullTime, nullTime, nullTime, nullIndex, [],
+		nullTime, nullTime, nullTime, nullTime, nullIndex, [],
 		"", false, nullIndex, nullIndex)
 end
 
@@ -93,10 +94,10 @@ function readGenConfig(genConfigFilename::String)
 	
 	genConfig = GenConfig()
 	
-	genConfig.inputPath = findElt(rootElt, "inputPath") == nothing ? genConfigFileDir : joinPathIfNotAbs(genConfigFileDir, eltContentInterpVal(rootElt, "inputPath"))
+	genConfig.inputPath = containsElt(rootElt, "inputPath") ? joinPathIfNotAbs(genConfigFileDir, eltContentInterpVal(rootElt, "inputPath")) : genConfigFileDir
 	genConfig.outputPath = joinPathIfNotAbs(genConfigFileDir, eltContentInterpVal(rootElt, "outputPath")) # output path can be absolute, or relative to genConfigFileDir
 	genConfig.mode = eltContent(rootElt, "mode")
-	genConfig.numCallsFiles = findElt(rootElt, "numCallsFiles") == nothing ? 1 : eltContentVal(rootElt, "numCallsFiles")
+	genConfig.numCallsFiles = containsElt(rootElt, "numCallsFiles") ? eltContentVal(rootElt, "numCallsFiles") : 1
 	@assert(genConfig.numCallsFiles >= 1)
 	
 	# output filenames
@@ -148,7 +149,7 @@ function readGenConfig(genConfigFilename::String)
 	
 	# number of ambulances, calls, hospitals, stations
 	genConfig.numAmbs = eltContentVal(simElt, "numAmbs")
-	genConfig.numCalls = eltContentVal(simElt, "numCalls")
+	genConfig.numCalls = containsElt(simElt, "numCalls") ? eltContentVal(simElt, "numCalls") : nullIndex # can alternatively specify maxCallArrivalTime
 	genConfig.numHospitals = eltContentVal(simElt, "numHospitals")
 	genConfig.numStations = eltContentVal(simElt, "numStations")
 	
@@ -160,6 +161,9 @@ function readGenConfig(genConfigFilename::String)
 	# misc values
 	genConfig.startTime = eltContentVal(simElt, "startTime")
 	@assert(genConfig.startTime >= 0)
+	genConfig.maxCallArrivalTime = containsElt(simElt, "maxCallArrivalTime") ? eltContentVal(simElt, "maxCallArrivalTime") : nullTime
+	@assert((genConfig.numCalls != nullIndex) + (genConfig.maxCallArrivalTime != nullTime) == 1, "Need exactly one of these values: numCalls, maxCallArrivalTime.")
+	@assert(genConfig.startTime <= genConfig.maxCallArrivalTime || genConfig.maxCallArrivalTime == nullTime)
 	genConfig.targetResponseTime = eltContentVal(simElt, "targetResponseTime")
 	genConfig.offRoadSpeed = eltContentVal(simElt, "offRoadSpeed") # km / day
 	genConfig.stationCapacity = eltContentVal(simElt, "stationCapacity")
@@ -319,31 +323,28 @@ end
 
 # make calls that are spatially randomly uniform in map, or distributed according to raster
 function makeCalls(genConfig::GenConfig; rasterSampler::Union{RasterSampler,Nothing} = nothing)
-	numCalls = genConfig.numCalls # shorthand
-	calls = Vector{Call}(undef, numCalls)
-	
+	calls = Call[]
 	currentTime = genConfig.startTime
-	# first call will arrive at genConfig.startTime + rand(genConfig.interarrivalTimeDistrRng)
-	for i = 1:numCalls
+	while length(calls) < genConfig.numCalls || genConfig.numCalls == nullIndex
 		currentTime += rand(genConfig.interarrivalTimeDistrRng) # apply time step
+		if (currentTime > genConfig.maxCallArrivalTime && genConfig.maxCallArrivalTime != nullTime) break end
 		
-		calls[i] = Call()
-		calls[i].index = i
-		calls[i].priority = Priority(rand(genConfig.priorityDistrRng))
-		calls[i].location = randLocation(genConfig.map; trim = genConfig.mapTrim, rng = genConfig.callLocRng)
-		calls[i].arrivalTime = currentTime
-		calls[i].dispatchDelay = rand(genConfig.dispatchDelayDistrRng)
-		calls[i].onSceneDuration = rand(genConfig.onSceneDurationDistrRng)
-		calls[i].transfer = (rand(genConfig.transferDistrRng) == 1)
-		calls[i].hospitalIndex = nullIndex
-		calls[i].transferDuration = rand(genConfig.transferDurationDistrRng)
-	end
-	
-	if rasterSampler != nothing
-		randLocations = rasterRandLocations(rasterSampler, numCalls)
-		for i = 1:numCalls
-			calls[i].location = randLocations[i]
+		call = Call()
+		call.index = length(calls) + 1
+		call.priority = Priority(rand(genConfig.priorityDistrRng))
+		call.arrivalTime = currentTime
+		call.dispatchDelay = rand(genConfig.dispatchDelayDistrRng)
+		call.onSceneDuration = rand(genConfig.onSceneDurationDistrRng)
+		call.transfer = (rand(genConfig.transferDistrRng) == 1)
+		call.hospitalIndex = nullIndex
+		call.transferDuration = rand(genConfig.transferDurationDistrRng)
+		if rasterSampler == nothing
+			call.location = randLocation(genConfig.map; trim = genConfig.mapTrim, rng = genConfig.callLocRng)
+		else
+			call.location = rasterRandLocations(rasterSampler, 1)[1]
 		end
+		
+		push!(calls, call)
 	end
 	
 	return calls

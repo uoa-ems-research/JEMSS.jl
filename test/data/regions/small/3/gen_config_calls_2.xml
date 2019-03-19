@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<genConfig>
+	<inputPath/>
+	<outputPath>generated</outputPath>
+	
+	<!-- modes: all, calls -->
+	<mode>calls</mode>
+	
+	<simFiles>
+		<ambulances>ambulances.csv</ambulances>
+		<arcs>arcs.csv</arcs>
+		<calls>calls.csv</calls>
+		<hospitals>hospitals.csv</hospitals>
+		<map>map.csv</map>
+		<nodes>nodes.csv</nodes>
+		<priorities>priorities.csv</priorities>
+		<stations>stations.csv</stations>
+		<travel>travel.csv</travel>
+	</simFiles>
+	
+	<sim>
+		<numAmbs>5</numAmbs>
+		<numHospitals>2</numHospitals>
+		<numStations>3</numStations>
+		
+		<callDistributions>
+			<interarrivalTime seed="0">Exponential(1/200)</interarrivalTime>
+			<priority seed="1">Categorical([0.57, 0.245, 0.185])</priority>
+			<dispatchDelay seed="2">Truncated(Normal(2/60/24, 1/60/24), 20/60/60/24, 5/60/24)</dispatchDelay>
+			<onSceneDuration seed="3">Truncated(Exponential(12/60/24), 2/60/24, 30/60/24)</onSceneDuration>
+			<transfer seed="4">Bernoulli(0.8)</transfer>
+			<transferDuration seed="5">Truncated(Exponential(12/60/24), 2/60/24, 30/60/24)</transferDuration>
+		</callDistributions>
+		
+		<!-- if mode = calls, will only generate calls, using call density raster -->
+		<callDensityRaster cellSeed="2" cellLocSeed="3">
+			<filename>raster.xyz</filename>
+			<cropRaster>true</cropRaster> <!-- crop raster to be within map -->
+		</callDensityRaster>
+		
+		<graph>
+			<xNodes>5</xNodes>
+			<yNodes>5</yNodes>
+		</graph>
+		
+		<map>
+			<xMin>-0.01</xMin>
+			<xMax>0.21</xMax>
+			<xScale>111.32</xScale>
+			<yMin>-0.01</yMin>
+			<yMax>0.21</yMax>
+			<yScale>111.32</yScale>
+		</map>
+		
+		<!-- misc: -->
+		<targetResponseTime>20/60/24</targetResponseTime>
+		<startTime>0.0</startTime>
+		<maxCallArrivalTime>1.0</maxCallArrivalTime>
+		<stationCapacity>2</stationCapacity>
+		<offRoadSpeed>1200</offRoadSpeed>
+	</sim>
+	
+</genConfig>

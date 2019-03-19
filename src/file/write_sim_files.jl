@@ -33,6 +33,7 @@ function writeArcsFile(filename::String, arcs::Vector{Arc}, travelTimes::Array{F
 end
 
 function writeCallsFile(filename::String, startTime::Float, calls::Vector{Call})
+	@assert(length(calls) >= 1)
 	miscTable = Table("miscData", ["startTime"]; rows = [[startTime]])
 	callsTable = Table("calls", ["index", "priority", "x", "y", "arrivalTime", "dispatchDelay", "onSceneDuration", "transfer", "hospitalIndex", "transferDuration"];
 		rows = [[c.index, Int(c.priority), c.location.x, c.location.y, c.arrivalTime, c.dispatchDelay, c.onSceneDuration, Int(c.transfer), c.hospitalIndex, c.transferDuration] for c in calls])
