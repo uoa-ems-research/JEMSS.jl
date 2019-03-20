@@ -34,6 +34,7 @@ function readOsmNetworkFile(osmFilename::String;
 	
 	# read osm file
 	@assert(isfile(osmFilename))
+	# get osm data; this fails if the osm file does not contain bounds, e.g. <bounds minlat="1.0" minlon="2.0" maxlat="3.0" maxlon="4.0"/>
 	osmData = OSM.get_map_data(osmFilename; road_levels = levels, use_cache = false) # 'use_cache = true' ignores other kwargs (e.g. road_levels)
 	(nodesENU, roadways) = (osmData.nodes, osmData.roadways)
 	@assert(length(nodesENU) > 0)
