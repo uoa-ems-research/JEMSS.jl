@@ -15,6 +15,7 @@
 
 # priority list, for newly freed ambulances only
 # (a priority list which uses all free ambulances can be described as a nested compliance table)
+# From thesis: "Simulation optimisation and Markov models for dynamic ambulance redeployment"
 
 # initialise data relevant to move up
 function initPriorityList!(sim::Simulation, priorityListFilename::String)

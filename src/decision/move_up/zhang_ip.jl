@@ -14,6 +14,7 @@
 ##########################################################################
 
 # integer program formulation by Oddo Zhang, for move-up
+# From thesis: "Simulation optimisation and Markov models for dynamic ambulance redeployment"
 
 # initialise data relevant to move up
 function initZhangIp!(sim::Simulation;

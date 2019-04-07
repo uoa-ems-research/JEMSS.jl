@@ -14,6 +14,7 @@
 ##########################################################################
 
 # Maximum Expected Coverage Location Problem (MEXCLP)
+# From paper: "A maximum expected covering location model: formulation, properties and heuristic solution"
 
 """
 	solveMexclp!(sim::Simulation;
