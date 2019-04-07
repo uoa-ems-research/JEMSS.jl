@@ -76,7 +76,7 @@ end
 
 # given a route and time, get current location
 function getRouteCurrentLocation!(net::Network, route::Route, time::Float)
-
+	
 	updateRouteToTime!(net, route, time)
 	
 	fNodes = net.fGraph.nodes # shorthand
@@ -157,6 +157,7 @@ end
 
 # updates route fields for given time
 function updateRouteToTime!(net::Network, route::Route, time::Float)
+	@assert(route.recentFNodeTime == nullTime || route.recentFNodeTime <= time)
 	
 	if time <= route.startFNodeTime
 		@assert(route.nextFNode == route.startFNode) # see setRouteStateBeforeStartFNode!()
@@ -278,7 +279,7 @@ end
 # minIndex is an optional lower bound on the index
 function findMaxIndexLeqTime(times::Vector{Float}, time::Float, minIndex::Int = 1)
 	
-	if checkMode
+	if checkMode && false # skip this check, it is slow
 		@assert(issorted(times, lt=<=)) # values should be strictly increasing
 	end
 	
