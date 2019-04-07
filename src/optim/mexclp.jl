@@ -165,5 +165,5 @@ function solveMexclp!(sim::Simulation;
 	# convert to a deployment
 	deployment = stationsNumAmbsToDeployment(stationsNumAmbs)
 	
-	return stationsNumAmbs, deployment
+	return stationsNumAmbs, deployment # also return model?
 end

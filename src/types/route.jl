@@ -301,6 +301,10 @@ function findMaxIndexLeqTime(times::Vector{Float}, time::Float, minIndex::Int = 
 	end
 	# should now have: times[i] <= time < times[j]
 	
+	# # or, instead of finding an upper bound for j, just set j to n
+	# i = minIndex
+	# j = n
+	
 	# binary search between i and j
 	# maintain the property: times[i] <= time < times[j]
 	while i < j-1

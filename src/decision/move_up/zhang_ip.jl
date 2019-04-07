@@ -134,7 +134,7 @@ function zhangIpMoveUp(sim::Simulation)
 	jump_ge_0_19 = pkgVersions["JuMP"] >= v"0.19"
 	if jump_ge_0_19
 		set_optimizer(model, with_optimizer(GLPK.Optimizer)) # solve speed not tested
-		# set_optimizer(model, with_optimizer(Cbc.Optimizer)) # not sure how to mute output from cbc
+		# set_optimizer(model, with_optimizer(Cbc.Optimizer, logLevel=0)) # try this instead?
 	else
 		setsolver(model, GLPKSolverMIP(presolve=true))
 	end
