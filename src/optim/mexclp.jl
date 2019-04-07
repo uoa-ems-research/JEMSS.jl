@@ -89,12 +89,11 @@ function solveMexclp!(sim::Simulation;
 	
 	model = Model()
 	jump_ge_0_19 = pkgVersions["JuMP"] >= v"0.19"
-	if jump_ge_0_19
-		set_optimizer(model, with_optimizer(GLPK.Optimizer)) # solve speed not tested
-	end
 	
 	if !all(v -> issorted(v, rev=true), pointCoverCountBenefit)
-		if !jump_ge_0_19
+		if jump_ge_0_19
+			set_optimizer(model, with_optimizer(GLPK.Optimizer)) # solve speed not tested
+		else
 			setsolver(model, GLPKSolverMIP(presolve=true)) # GLPKSolverMIP solves faster than CbcSolver for this formulation
 		end
 		
@@ -115,7 +114,9 @@ function solveMexclp!(sim::Simulation;
 		# - can leave out the constraint 'pointCoverOrder'
 		# - could have x variables as non-integer, though if there are multiple solutions then x values might not be naturally integer, so will leave the integer constraint
 		
-		if !jump_ge_0_19
+		if jump_ge_0_19
+			set_optimizer(model, with_optimizer(Cbc.Optimizer, logLevel=0)) # solve speed not tested
+		else
 			setsolver(model, CbcSolver()) # CbcSolver solves faster than GLPKSolverMIP for this formulation
 			# using CbcSolver here would be faster with presolve, but using this causes a line print when solving
 		end
