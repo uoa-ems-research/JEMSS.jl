@@ -60,7 +60,7 @@ function compTableMoveUp(sim::Simulation)
 	numMovableAmbs = length(movableAmbs)
 	
 	if numMovableAmbs == 0
-		return [], []
+		return moveUpNull()
 	end
 	
 	# calculate travel time for each available ambulance to reach every station that requires >= 1 amb

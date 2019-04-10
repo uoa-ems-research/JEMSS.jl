@@ -86,7 +86,7 @@ mutable struct NetTravel
 	spTimes::Array{FloatSpTime,2} # spTimes[i,j] = shortest path time between node i and j
 	spFadjIndex::Array{IntFadj,2} # for shortest path from rNode i to j, spFadjIndex[i,j] gives the index (in fadjList[i], see Graph) of the successor rNode of i for this path
 	spNodePairArcIndex::SparseMatrixCSC{Int,Int} # spNodePairArcIndex[i,j] = index of arc incident to nodes i,j, if it provides shortest travel time
-	spFadjArcList::Vector{Vector{Int}} # spFadjArcList[i][j] gives index of rArc from rNode[i] to jth outoing rNode of rNode[i] (i.e. rGraph.fadjList[i][j])
+	spFadjArcList::Vector{Vector{Int}} # spFadjArcList[i][j] gives index of rArc from rNode[i] to jth outgoing rNode of rNode[i] (i.e. rGraph.fadjList[i][j])
 	
 	# for use in full graph:
 	fNodeToRNodeTime::Vector{Dict{Int,Float}} # fNodeToRNodeTime[i][j] gives time from fNode[i] to rNode[j], as long as rNode[j] is in fNodeToRNodes[i] (see type Network)

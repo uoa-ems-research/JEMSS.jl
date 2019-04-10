@@ -14,6 +14,7 @@
 ##########################################################################
 
 # Dynamic Maximum Expected Coverage Location Problem (DMEXCLP)
+# From paper: "An efficient heuristic for real-time ambulance redeployment"
 
 """
 	function initDmexclp!(sim::Simulation;
