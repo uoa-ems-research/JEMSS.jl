@@ -67,44 +67,27 @@ end
 
 # change the options for ddsm
 function ddsmOptions!(sim, options::Dict{Symbol,Any})
-	currentOptions = sim.moveUpData.ddsmData.options # shorthand
-	options = merge!(currentOptions, options) # update currentOptions with options
+	options = merge!(sim.moveUpData.ddsmData.options, options) # update currentOptions with options
 	
 	@assert(in(options[:solver], ["cbc", "glpk", "gurobi"]))
 	@assert(typeof(options[:v]) == VersionNumber)
 	@assert(typeof(options[:z_var]) == Bool)
 	
-	if options[:v] == v"1"
-		options[:x_bin] = true
-		options[:y11_bin] = true
-		options[:y12_bin] = true
-		options[:y2_bin] = true
-	elseif options[:v] == v"2"
-		options[:x_bin] = true
-		options[:y11_bin] = true
-		options[:y12_bin] = false
-		options[:y2_bin] = false
-	elseif options[:v] == v"3"
-		options[:x_bin] = false
-		options[:y11_bin] = true
-		options[:y12_bin] = false
-		options[:y2_bin] = false
-	elseif options[:v] == v"4"
-		options[:x_bin] = false
-		options[:y11_bin] = true
-		options[:y12_bin] = true
-		options[:y2_bin] = true
-	elseif options[:v] == v"5"
-		# version to customise which variables are bin
-		@assert(all(key -> haskey(options, key), [:x_bin, :y11_bin, :y12_bin, :y2_bin]))
-	else
-		# only have x as bin, though solution is not guaranteed to be correct
-		# might be a good bound?
-		options[:x_bin] = true
-		options[:y11_bin] = false
-		options[:y12_bin] = false
-		options[:y2_bin] = false
+	# options[:v] == v"0" # do nothing, values should already be set in options if using this
+	options[:v] == v"1" && merge!(options, Dict([:x_bin => true, :y11_bin => true, :y12_bin => true, :y2_bin => true]))
+	options[:v] == v"2" && merge!(options, Dict([:x_bin => true, :y11_bin => true, :y12_bin => false, :y2_bin => false]))
+	options[:v] == v"3" && merge!(options, Dict([:x_bin => false, :y11_bin => true, :y12_bin => false, :y2_bin => false]))
+	options[:v] == v"4" && merge!(options, Dict([:x_bin => false, :y11_bin => true, :y12_bin => true, :y2_bin => true]))
+	if !(v"0" <= options[:v] <= v"4")
+		# Only have x as bin, though solution is not guaranteed to be correct. Might be a good bound?
+		@warn("Ddsm option ':v' may fail due to variables with binary constraint relaxed not being naturally integer.")
+		merge!(options, Dict([:x_bin => true, :y11_bin => false, :y12_bin => false, :y2_bin => false]))
 	end
+	@assert(all(key -> haskey(options, key), [:x_bin, :y11_bin, :y12_bin, :y2_bin]))
+	
+	if isdefined(sim, :backup) sim.backup.moveUpData.ddsmData.options = options end # to keep options if sim is reset
+	
+	return options
 end
 
 function ddsmMoveUp(sim::Simulation)
