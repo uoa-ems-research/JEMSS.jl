@@ -32,6 +32,7 @@ using JuMP
 using Cbc
 using GLPK
 using GLPKMathProgInterface
+using Gurobi
 
 # statistics
 using Distributions
@@ -90,7 +91,7 @@ export
 	Location, Point, Node, Arc, Graph, NetTravel, Network, TravelMode, Travel, Route,
 	Event, Ambulance, Call, Hospital, Station, Redispatch,
 	Map, GridSearchRect, GridRect, Grid, Raster, RasterSampler, DemandMode, Demand, PointsCoverageMode, DemandCoverage,
-	CompTableData, DmexclpData, PriorityListData, ZhangIpData, Temp0Data, Temp1Data, Temp2Data, MoveUpData,
+	CompTableData, DdsmData, DmexclpData, PriorityListData, ZhangIpData, Temp0Data, Temp1Data, Temp2Data, MoveUpData,
 	File, Table, Resimulation, Simulation,
 	DistrRng
 
@@ -116,6 +117,7 @@ export
 
 include("defs.jl")
 
+include("misc/stream.jl")
 include("misc/rand.jl")
 
 include("types/types.jl")
@@ -139,6 +141,7 @@ include("decision/call.jl")
 include("decision/dispatch.jl")
 
 include("decision/move_up/comp_table.jl")
+include("decision/move_up/ddsm.jl")
 include("decision/move_up/dmexclp.jl")
 include("decision/move_up/move_up_common.jl")
 include("decision/move_up/priority_list.jl")

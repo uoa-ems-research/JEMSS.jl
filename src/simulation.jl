@@ -287,7 +287,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		
 		if sim.moveUpData.useMoveUp
 			m = sim.moveUpData.moveUpModule # shorthand
-			if m == compTableModule || m == zhangIpModule || m == temp0Module || m == temp1Module || m == temp2Module
+			if m == compTableModule || m == ddsmModule || m == zhangIpModule || m == temp0Module || m == temp1Module || m == temp2Module
 				addEvent!(sim.eventList; parentEvent = event, form = considerMoveUp, time = sim.time, ambulance = ambulance, addEventToAmb = false)
 			end
 		end
@@ -401,7 +401,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 			
 			if sim.moveUpData.useMoveUp
 				m = sim.moveUpData.moveUpModule # shorthand
-				if m == compTableModule || m == dmexclpModule || m == priorityListModule || m == zhangIpModule || m == temp0Module || m == temp1Module || m == temp2Module
+				if m == compTableModule || m == ddsmModule || m == dmexclpModule || m == priorityListModule || m == zhangIpModule || m == temp0Module || m == temp1Module || m == temp2Module
 					addEvent!(sim.eventList; parentEvent = event, form = considerMoveUp, time = sim.time, ambulance = ambulance, addEventToAmb = false)
 				end
 			end
@@ -438,6 +438,8 @@ function simulateEvent!(sim::Simulation, event::Event)
 		else
 			if mud.moveUpModule == compTableModule
 				(movableAmbs, ambStations) = compTableMoveUp(sim)
+			elseif mud.moveUpModule == ddsmModule
+				(movableAmbs, ambStations) = ddsmMoveUp(sim)
 			elseif mud.moveUpModule == dmexclpModule
 				(movableAmbs, ambStations) = dmexclpMoveUp(sim, ambulance)
 			elseif mud.moveUpModule == priorityListModule

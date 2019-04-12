@@ -582,6 +582,21 @@ mutable struct CompTableData <: MoveUpDataType
 		[])
 end
 
+# ddsm - dynamic double standard model
+mutable struct DdsmData <: MoveUpDataType
+	# parameters:
+	alpha::Float # proportion of demand to cover within coverTimes[1]
+	travelTimeCost::Float
+	slackWeight::Float
+	coverTimeDemandPriorities::Vector{Priority} # coverTimeDemandPriorities[i] is demand priority for coverTimes[i]
+	
+	coverTimes::Vector{Float} # target coverage response times; coverTimes[1] <= coverTimes[2]
+	options::Dict{Symbol,Any}
+	
+	DdsmData() = new(0.0, 0.0, 0.0, [],
+		[], Dict())
+end
+
 # dmexclp - dynamic maximum expected coverage location problem
 mutable struct DmexclpData <: MoveUpDataType
 	# parameters:
@@ -680,6 +695,7 @@ mutable struct MoveUpData
 	
 	# move up data types:
 	compTableData::CompTableData
+	ddsmData::DdsmData
 	dmexclpData::DmexclpData
 	priorityListData::PriorityListData
 	zhangIpData::ZhangIpData
@@ -688,7 +704,7 @@ mutable struct MoveUpData
 	temp2Data::Temp2Data
 	
 	MoveUpData() = new(false, nullMoveUpModule,
-		CompTableData(), DmexclpData(), PriorityListData(), ZhangIpData(), Temp0Data(), Temp1Data(), Temp2Data())
+		CompTableData(), DdsmData(), DmexclpData(), PriorityListData(), ZhangIpData(), Temp0Data(), Temp1Data(), Temp2Data())
 end
 
 mutable struct File
