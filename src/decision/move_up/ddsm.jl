@@ -34,7 +34,6 @@ function initDdsm!(sim::Simulation;
 	debugMode && @warn("Need to check which combinations of bin and float variables give correct solutions.")
 	debugMode && @info("Should test solving with IP gap > 0.")
 	debugMode && @info("Should move `options` into config xml.")
-	debugMode && @info("Should add an intermediate variable to count number of ambs per station, and branch on this.")
 	
 	@assert(0 <= alpha <= 1)
 	@assert(length(coverTimeDemandPriorities) == 2)
@@ -56,6 +55,7 @@ function initDdsm!(sim::Simulation;
 	ddsmd = sim.moveUpData.ddsmData # shorthand
 	ddsmd.options[:solver] = "cbc" # can be slower than glpk, but more reliable for some reason
 	ddsmd.options[:v] = v"1"
+	ddsmd.options[:z_var] = false
 	ddsmOptions!(sim, options)
 	
 	ddsmd.alpha = alpha
@@ -72,6 +72,7 @@ function ddsmOptions!(sim, options::Dict{Symbol,Any})
 	
 	@assert(in(options[:solver], ["cbc", "glpk", "gurobi"]))
 	@assert(typeof(options[:v]) == VersionNumber)
+	@assert(typeof(options[:z_var]) == Bool)
 	
 	if options[:v] == v"1"
 		options[:x_bin] = true
@@ -200,12 +201,24 @@ function ddsmMoveUp(sim::Simulation)
 	
 	@constraints(model, begin
 		(ambAtOneLocation[i=1:a], sum(x[i,:]) == 1) # each ambulance must be assigned to one station
-		(pointCoverCountY1[p=1:np[1]], y11[p] + y12[p] <= sum(x[:,pointStations[1][p]]))
-		(pointCoverCountY2[p=1:np[2]], sum(y2[p]) <= sum(x[:,pointStations[2][p]]))
 		(pointCoverOrderY1[p=1:np[1]], y11[p] >= y12[p]) # single coverage before double coverage; not needed for y2
 		(demandCoveredOnceT1, sum(y11[p] * pointDemands[1][p] for p=1:np[1]) + s1 >= alpha * sum(pointDemands[1])) # fraction (alpha) of demand covered once within t[1]
 		(demandCoveredOnceT2, sum(y2[p] * pointDemands[2][p] for p=1:np[2]) + s2 >= sum(pointDemands[2])) # all demand covered once within t[2]
 	end)
+	
+	if options[:z_var]
+		@variable(model, z[j=1:s], Int) # z[j] = number of ambulances to assign to station j
+		@constraints(model, begin
+			(ambStationCount[j=1:s], z[j] == sum(x[:,j]))
+			(pointCoverCountY1[p=1:np[1]], y11[p] + y12[p] <= sum(z[pointStations[1][p]]))
+			(pointCoverCountY2[p=1:np[2]], sum(y2[p]) <= sum(z[pointStations[2][p]]))
+		end)
+	else
+		@constraints(model, begin
+			(pointCoverCountY1[p=1:np[1]], y11[p] + y12[p] <= sum(x[:,pointStations[1][p]]))
+			(pointCoverCountY2[p=1:np[2]], sum(y2[p]) <= sum(x[:,pointStations[2][p]]))
+		end)
+	end
 	
 	@expressions(model, begin
 		demandCoveredTwiceT1, sum(y12[p] * pointDemands[1][p] for p=1:np[1])
