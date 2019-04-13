@@ -585,7 +585,7 @@ end
 # ddsm - dynamic double standard model
 mutable struct DdsmData <: MoveUpDataType
 	# parameters:
-	alpha::Float # proportion of demand to cover within coverTimes[1]
+	coverFractionTargetT1::Float # fraction of demand to cover within coverTimes[1]
 	travelTimeCost::Float
 	slackWeight::Float
 	coverTimeDemandPriorities::Vector{Priority} # coverTimeDemandPriorities[i] is demand priority for coverTimes[i]

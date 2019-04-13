@@ -22,18 +22,17 @@
 
 # initialise data relevant to move up
 function initDdsm!(sim::Simulation;
-	alpha::Float = 0.5, travelTimeCost::Float = 50.0, slackWeight::Float = 1000.0,
+	coverFractionTargetT1::Float = 0.5, travelTimeCost::Float = 50.0, slackWeight::Float = 1000.0,
 	coverTimeDemandPriorities::Vector{Priority} = [highPriority, lowPriority],
 	options::Dict{Symbol,Any} = Dict{Symbol,Any}())
 	# coverTimeDemandPriorities[i] is demand priority for coverTimes[i], where coverTimes[1] and [2] are the targets for ddsm
 	
 	debugMode && @warn("Have not finished implementing ddsm.")
 	debugMode && @warn("Have allowed redeploying after mission, though original DDSM only redeployed on call arrival.")
-	debugMode && @info("Should change variable `alpha` to be more descriptive.")
 	debugMode && @info("Should try Gurobi with presolve.") # Presolve=0
 	debugMode && @info("Should test solving with IP gap > 0.")
 	
-	@assert(0 <= alpha <= 1)
+	@assert(0 <= coverFractionTargetT1 <= 1)
 	@assert(length(coverTimeDemandPriorities) == 2)
 	
 	# initialise demand and demand coverage data if not already initialised
@@ -56,7 +55,7 @@ function initDdsm!(sim::Simulation;
 	ddsmd.options[:z_var] = true
 	ddsmOptions!(sim, options)
 	
-	ddsmd.alpha = alpha
+	ddsmd.coverFractionTargetT1 = coverFractionTargetT1
 	ddsmd.travelTimeCost = travelTimeCost
 	ddsmd.slackWeight = slackWeight
 	ddsmd.coverTimeDemandPriorities = coverTimeDemandPriorities # coverTimeDemandPriorities[i] is demand priority for coverTimes[i]
@@ -97,7 +96,7 @@ function ddsmMoveUp(sim::Simulation)
 	ddsmd = sim.moveUpData.ddsmData
 	coverTimes = ddsmd.coverTimes
 	coverTimeDemandPriorities = ddsmd.coverTimeDemandPriorities
-	alpha = ddsmd.alpha
+	coverFractionTargetT1 = ddsmd.coverFractionTargetT1
 	slackWeight = ddsmd.slackWeight
 	options = ddsmd.options
 	
@@ -180,7 +179,7 @@ function ddsmMoveUp(sim::Simulation)
 	@constraints(model, begin
 		(ambAtOneLocation[i=1:a], sum(x[i,:]) == 1) # each ambulance must be assigned to one station
 		(pointCoverOrderY1[p=1:np[1]], y11[p] >= y12[p]) # single coverage before double coverage; not needed for y2
-		(demandCoveredOnceT1, sum(y11[p] * pointDemands[1][p] for p=1:np[1]) + s1 >= alpha * sum(pointDemands[1])) # fraction (alpha) of demand covered once within t[1]
+		(demandCoveredOnceT1, sum(y11[p] * pointDemands[1][p] for p=1:np[1]) + s1 >= coverFractionTargetT1 * sum(pointDemands[1])) # fraction of demand covered once within t[1]
 		(demandCoveredOnceT2, sum(y2[p] * pointDemands[2][p] for p=1:np[2]) + s2 >= sum(pointDemands[2])) # all demand covered once within t[2]
 	end)
 	

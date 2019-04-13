@@ -318,7 +318,7 @@ function initSim(configFilename::String;
 			mud.moveUpModule = ddsmModule
 			ddsmElt = findElt(moveUpElt, "ddsm")
 			initDdsm!(sim;
-				alpha = eltContentVal(ddsmElt, "alpha"),
+				coverFractionTargetT1 = eltContentVal(ddsmElt, "coverFractionTargetT1"),
 				travelTimeCost = eltContentVal(ddsmElt, "travelTimeCost"),
 				slackWeight = eltContentVal(ddsmElt, "slackWeight"),
 				coverTimeDemandPriorities = eltContentVal(ddsmElt, "coverTimeDemandPriorities"),
