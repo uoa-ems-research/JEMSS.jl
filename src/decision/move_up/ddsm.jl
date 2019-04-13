@@ -53,6 +53,7 @@ function initDdsm!(sim::Simulation;
 	ddsmd.options[:solver] = "cbc" # can be slower than glpk, but more reliable for some reason
 	ddsmd.options[:v] = v"1"
 	ddsmd.options[:z_var] = true
+	merge!(ddsmd.options, Dict([:x_bin => true, :y11_bin => true, :y12_bin => true, :y2_bin => true]))
 	ddsmOptions!(sim, options)
 	
 	ddsmd.coverFractionTargetT1 = coverFractionTargetT1

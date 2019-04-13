@@ -322,7 +322,7 @@ function initSim(configFilename::String;
 				travelTimeCost = eltContentVal(ddsmElt, "travelTimeCost"),
 				slackWeight = eltContentVal(ddsmElt, "slackWeight"),
 				coverTimeDemandPriorities = eltContentVal(ddsmElt, "coverTimeDemandPriorities"),
-				options = Dict(eltContentVal(ddsmElt, "options")))
+				options = convert(Dict{Symbol,Any}, Dict(eltContentVal(ddsmElt, "options"))))
 			
 		elseif moveUpModuleName == "dmexclp"
 			mud.moveUpModule = dmexclpModule
