@@ -67,7 +67,7 @@ end
 
 # change the options for ddsm
 function ddsmOptions!(sim, options::Dict{Symbol,Any})
-	options = merge!(sim.moveUpData.ddsmData.options, options) # update currentOptions with options
+	options = merge!(sim.moveUpData.ddsmData.options, options) # update options
 	
 	@assert(in(options[:solver], ["cbc", "glpk", "gurobi"]))
 	@assert(typeof(options[:v]) == VersionNumber)
@@ -78,11 +78,7 @@ function ddsmOptions!(sim, options::Dict{Symbol,Any})
 	options[:v] == v"2" && merge!(options, Dict([:x_bin => true, :y11_bin => true, :y12_bin => false, :y2_bin => false]))
 	options[:v] == v"3" && merge!(options, Dict([:x_bin => false, :y11_bin => true, :y12_bin => false, :y2_bin => false]))
 	options[:v] == v"4" && merge!(options, Dict([:x_bin => false, :y11_bin => true, :y12_bin => true, :y2_bin => true]))
-	if !(v"0" <= options[:v] <= v"4")
-		# Only have x as bin, though solution is not guaranteed to be correct. Might be a good bound?
-		@warn("Ddsm option ':v' may fail due to variables with binary constraint relaxed not being naturally integer.")
-		merge!(options, Dict([:x_bin => true, :y11_bin => false, :y12_bin => false, :y2_bin => false]))
-	end
+	if options[:x_bin] == false && options[:solver] == "gurobi" @warn("Removing binary constraint for `x` may not work with Gurobi.") end
 	@assert(all(key -> haskey(options, key), [:x_bin, :y11_bin, :y12_bin, :y2_bin]))
 	
 	if isdefined(sim, :backup) sim.backup.moveUpData.ddsmData.options = options end # to keep options if sim is reset
