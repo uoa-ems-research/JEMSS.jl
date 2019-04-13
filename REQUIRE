@@ -4,7 +4,6 @@ Cbc
 Distributions
 GLPK
 GLPKMathProgInterface
-Gurobi
 HTTP
 Hungarian
 HypothesisTests
