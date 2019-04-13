@@ -71,6 +71,8 @@ function ddsmOptions!(sim, options::Dict{Symbol,Any})
 	@assert(typeof(options[:v]) == VersionNumber)
 	@assert(typeof(options[:z_var]) == Bool)
 	
+	if options[:solver] == "gurobi" try using Gurobi; catch; options[:solver] = "cbc"; @warn("Failed to use Gurobi, using Cbc instead.") end end
+	
 	# options[:v] == v"0" # do nothing, values should already be set in options if using this
 	options[:v] == v"1" && merge!(options, Dict([:x_bin => true, :y11_bin => true, :y12_bin => true, :y2_bin => true]))
 	options[:v] == v"2" && merge!(options, Dict([:x_bin => true, :y11_bin => true, :y12_bin => false, :y2_bin => false]))
