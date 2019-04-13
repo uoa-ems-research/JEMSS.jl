@@ -45,7 +45,7 @@ using JuMP
 using Cbc
 using GLPK
 using GLPKMathProgInterface
-if haskey(Pkg.installed(), "Gurobi") using Gurobi end
+if haskey(Pkg.installed(), "Gurobi") && haskey(ENV, "GUROBI_HOME") using Gurobi end
 
 # statistics
 using Distributions
