@@ -1,0 +1,17 @@
+demandRasters,,,
+rasterIndex,rasterFilename,,
+1,../demand/raster_2.xyz,,
+,,,
+demandModes,,,
+modeIndex,rasterIndex,priority,arrivalRate
+1,1,highPriority,25
+2,1,medPriority,15
+3,1,lowPriority,5
+,,,
+demandSets,,,
+setIndex,modeIndices,,
+1,[1; 2; 3],,
+,,,
+demandSetsTiming,,,
+startTime,setIndex,,
+0,1,,
