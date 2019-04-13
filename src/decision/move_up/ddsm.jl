@@ -31,9 +31,7 @@ function initDdsm!(sim::Simulation;
 	debugMode && @warn("Have allowed redeploying after mission, though original DDSM only redeployed on call arrival.")
 	debugMode && @info("Should change variable `alpha` to be more descriptive.")
 	debugMode && @info("Should try Gurobi with presolve.") # Presolve=0
-	debugMode && @warn("Need to check which combinations of bin and float variables give correct solutions.")
 	debugMode && @info("Should test solving with IP gap > 0.")
-	debugMode && @info("Should move `options` into config xml.")
 	
 	@assert(0 <= alpha <= 1)
 	@assert(length(coverTimeDemandPriorities) == 2)
@@ -55,7 +53,7 @@ function initDdsm!(sim::Simulation;
 	ddsmd = sim.moveUpData.ddsmData # shorthand
 	ddsmd.options[:solver] = "cbc" # can be slower than glpk, but more reliable for some reason
 	ddsmd.options[:v] = v"1"
-	ddsmd.options[:z_var] = false
+	ddsmd.options[:z_var] = true
 	ddsmOptions!(sim, options)
 	
 	ddsmd.alpha = alpha
@@ -78,6 +76,7 @@ function ddsmOptions!(sim, options::Dict{Symbol,Any})
 	options[:v] == v"2" && merge!(options, Dict([:x_bin => true, :y11_bin => true, :y12_bin => false, :y2_bin => false]))
 	options[:v] == v"3" && merge!(options, Dict([:x_bin => false, :y11_bin => true, :y12_bin => false, :y2_bin => false]))
 	options[:v] == v"4" && merge!(options, Dict([:x_bin => false, :y11_bin => true, :y12_bin => true, :y2_bin => true]))
+	if options[:y11_bin] == false && in(options[:solver], ["cbc", "glpk"]) @warn("Removing binary constraint for `y11` may not work with CBC or GLPK.") end
 	if options[:x_bin] == false && options[:solver] == "gurobi" @warn("Removing binary constraint for `x` may not work with Gurobi.") end
 	@assert(all(key -> haskey(options, key), [:x_bin, :y11_bin, :y12_bin, :y2_bin]))
 	
