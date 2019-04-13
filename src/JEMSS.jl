@@ -27,18 +27,6 @@ using DelimitedFiles
 using LightXML
 using Serialization
 
-# optimisation
-using JuMP
-using Cbc
-using GLPK
-using GLPKMathProgInterface
-
-# statistics
-using Distributions
-using HypothesisTests
-using StatsBase
-using StatsFuns
-
 # misc
 using Base64
 using CRC32c
@@ -51,6 +39,19 @@ using SparseArrays
 using LightGraphs
 using ArchGDAL
 using Hungarian
+
+# optimisation
+using JuMP
+using Cbc
+using GLPK
+using GLPKMathProgInterface
+if haskey(Pkg.installed(), "Gurobi") using Gurobi end
+
+# statistics
+using Distributions
+using HypothesisTests
+using StatsBase
+using StatsFuns
 
 # simulation functions
 export
