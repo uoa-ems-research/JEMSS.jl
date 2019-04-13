@@ -32,7 +32,6 @@ using JuMP
 using Cbc
 using GLPK
 using GLPKMathProgInterface
-using Gurobi
 
 # statistics
 using Distributions
