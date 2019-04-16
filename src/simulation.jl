@@ -401,7 +401,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 			
 			if sim.moveUpData.useMoveUp
 				m = sim.moveUpData.moveUpModule # shorthand
-				if m == compTableModule || m == ddsmModule || m == dmexclpModule || m == priorityListModule || m == zhangIpModule || m == temp0Module || m == temp1Module || m == temp2Module
+				if m == compTableModule || m == dmexclpModule || m == priorityListModule || m == zhangIpModule || m == temp0Module || m == temp1Module || m == temp2Module
 					addEvent!(sim.eventList; parentEvent = event, form = considerMoveUp, time = sim.time, ambulance = ambulance, addEventToAmb = false)
 				end
 			end

@@ -28,7 +28,6 @@ function initDdsm!(sim::Simulation;
 	# coverTimeDemandPriorities[i] is demand priority for coverTimes[i], where coverTimes[1] and [2] are the targets for ddsm
 	
 	debugMode && @warn("Have not finished implementing ddsm.")
-	debugMode && @warn("Have allowed redeploying after mission, though original DDSM only redeployed on call arrival.")
 	debugMode && @info("Should try Gurobi with presolve.") # Presolve=0
 	debugMode && @info("Should test solving with IP gap > 0.")
 	
