@@ -53,6 +53,7 @@ function initDdsm!(sim::Simulation;
 	ddsmd.options[:solver_kwargs] = []
 	ddsmd.options[:v] = v"1"
 	ddsmd.options[:z_var] = true
+	ddsmd.options[:x_rm_symmetry] = false
 	merge!(ddsmd.options, Dict([:x_bin => true, :y11_bin => true, :y12_bin => true, :y2_bin => true]))
 	ddsmOptions!(sim, options)
 	
@@ -70,6 +71,7 @@ function ddsmOptions!(sim, options::Dict{Symbol,Any})
 	@assert(in(options[:solver], ["cbc", "glpk", "gurobi"]))
 	@assert(typeof(options[:v]) == VersionNumber)
 	@assert(typeof(options[:z_var]) == Bool)
+	@assert(typeof(options[:x_rm_symmetry]) == Bool)
 	
 	if options[:solver] == "gurobi" try Gurobi; catch; options[:solver] = "cbc"; @warn("Failed to use Gurobi, using Cbc instead.") end end
 	
@@ -200,6 +202,19 @@ function ddsmMoveUp(sim::Simulation)
 			(pointCoverCountY1[p=1:np[1]], y11[p] + y12[p] <= sum(x[:,pointStations[1][p]]))
 			(pointCoverCountY2[p=1:np[2]], sum(y2[p]) <= sum(x[:,pointStations[2][p]]))
 		end)
+	end
+	
+	if options[:x_rm_symmetry]
+		# remove symmetry in problem - multiple ambs at a station are equivalent, put constraint on order of move-up of ambs from a station
+		ambsStationIndices = [amb.status == ambIdleAtStation ? amb.stationIndex : nullIndex for amb in movableAmbs]
+		ambAtStationPairs = []
+		for j = 1:s
+			ambs = findall(ambsStationIndices .== j)
+			for i = 1:length(ambs)-1
+				push!(ambAtStationPairs, [[ambs[i],j], [ambs[i+1],j]])
+			end
+		end
+		@constraint(model, orderMoveAmbsFromStations[i=1:length(ambAtStationPairs)], x[ambAtStationPairs[i][1]...] <= x[ambAtStationPairs[i][2]...]) # move one amb from a station before considering moving another
 	end
 	
 	@expressions(model, begin
