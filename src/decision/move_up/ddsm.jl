@@ -27,9 +27,6 @@ function initDdsm!(sim::Simulation;
 	options::Dict{Symbol,Any} = Dict{Symbol,Any}())
 	# coverTimeDemandPriorities[i] is demand priority for coverTimes[i], where coverTimes[1] and [2] are the targets for ddsm
 	
-	debugMode && @warn("Have not finished implementing ddsm.")
-	debugMode && @info("Should test solving with IP gap > 0.")
-	
 	@assert(0 <= coverFractionTargetT1 <= 1)
 	@assert(length(coverTimeDemandPriorities) == 2)
 	
@@ -38,7 +35,6 @@ function initDdsm!(sim::Simulation;
 	sim.demandCoverage.initialised || initDemandCoverage!(sim)
 	demand = sim.demand # shorthand
 	
-	# @show([[demandMode.rasterIndex for demandMode in demand.modes[demand.modeLookup[i,:]]] for i = 1:demand.numSets])
 	@assert(all([demandMode.rasterIndex for demandMode in demand.modes[demand.modeLookup[i,:]]] |> unique |> length == 1 for i = 1:demand.numSets)) # distribution of demand must be same for all demand priorities, in any given time period
 	
 	# two target cover times for ddsm
@@ -65,7 +61,7 @@ function initDdsm!(sim::Simulation;
 end
 
 # change the options for ddsm
-function ddsmOptions!(sim, options::Dict{Symbol,Any})
+function ddsmOptions!(sim, options::Dict{Symbol,T}) where T <: Any
 	options = merge!(sim.moveUpData.ddsmData.options, options) # update options
 	
 	@assert(in(options[:solver], ["cbc", "glpk", "gurobi"]))
@@ -119,7 +115,7 @@ function ddsmMoveUp(sim::Simulation)
 	for i = 1:numMovableAmbs
 		ambToStationTimes[i,:] = ambMoveUpTravelTimes!(sim, movableAmbs[i])
 	end
-	ambToStationCost = ambToStationTimes * ddsmd.travelTimeCost
+	ambToStationCosts = ambToStationTimes * ddsmd.travelTimeCost
 	
 	# get demand point coverage data for the two target cover times
 	# for coverTimes[ti], point j has demand pointDemands[ti][j] and is covered by stations pointStations[ti][j]
@@ -138,6 +134,7 @@ function ddsmMoveUp(sim::Simulation)
 		push!(pointDemands, pointSetsDemands)
 		push!(numPoints, length(pointSetsDemands))
 	end
+	@assert(isapprox(sum(pointDemands[1]), sum(pointDemands[2])))
 	# could have it so that pointStations, pointDemands, and numPoints are only updated if the demandSet has changed since last query,
 	# but this may only shave off a couple of seconds per 100 sim days, which is not the current bottleneck
 	
@@ -153,7 +150,7 @@ function ddsmMoveUp(sim::Simulation)
 	# using JuMP
 	model = Model()
 	jump_ge_0_19 = pkgVersions["JuMP"] >= v"0.19"
-	solver = options[:solver]
+	solver = options[:solver] # shorthand
 	args = options[:solver_args] # shorthand
 	kwargs = options[:solver_kwargs] # shorthand
 	if jump_ge_0_19
@@ -195,12 +192,12 @@ function ddsmMoveUp(sim::Simulation)
 		@constraints(model, begin
 			(ambStationCount[j=1:s], z[j] == sum(x[:,j]))
 			(pointCoverCountY1[p=1:np[1]], y11[p] + y12[p] <= sum(z[pointStations[1][p]]))
-			(pointCoverCountY2[p=1:np[2]], sum(y2[p]) <= sum(z[pointStations[2][p]]))
+			(pointCoverCountY2[p=1:np[2]], y2[p] <= sum(z[pointStations[2][p]]))
 		end)
 	else
 		@constraints(model, begin
 			(pointCoverCountY1[p=1:np[1]], y11[p] + y12[p] <= sum(x[:,pointStations[1][p]]))
-			(pointCoverCountY2[p=1:np[2]], sum(y2[p]) <= sum(x[:,pointStations[2][p]]))
+			(pointCoverCountY2[p=1:np[2]], y2[p] <= sum(x[:,pointStations[2][p]]))
 		end)
 	end
 	
@@ -219,7 +216,7 @@ function ddsmMoveUp(sim::Simulation)
 	
 	@expressions(model, begin
 		demandCoveredTwiceT1, sum(y12[p] * pointDemands[1][p] for p=1:np[1])
-		totalAmbTravelCost, sum(x[i,j] * ambToStationCost[i,j] for i=1:a, j=1:s)
+		totalAmbTravelCost, sum(x[i,j] * ambToStationCosts[i,j] for i=1:a, j=1:s)
 		slackCost, (s1 + s2) * slackWeight
 	end)
 	
@@ -246,9 +243,9 @@ function ddsmMoveUp(sim::Simulation)
 	if checkMode
 		@assert(all(sum(sol, dims=2) .== 1)) # check constraint: ambAtOneLocation
 		# check that values are binary/integer
-		for s in [:x, :y11, :y12, :y2]
-			err = maximum(abs.(vals[s] - round.(vals[s])))
-			@assert(err <= 10*eps(Float32), (s, err))
+		for sym in [:x, :y11, :y12, :y2]
+			err = maximum(abs.(vals[sym] - round.(vals[sym])))
+			@assert(err <= 10*eps(Float32), (sym, err))
 		end
 	end
 	

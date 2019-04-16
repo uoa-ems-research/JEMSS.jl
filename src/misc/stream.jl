@@ -19,6 +19,8 @@ macro stdout_silent(f)
 		redirect_stdout()
 		try
 			$f
+		catch e
+			throw(e)
 		finally
 			redirect_stdout(stdouttemp)
 		end
