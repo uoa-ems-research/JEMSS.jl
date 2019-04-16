@@ -28,7 +28,6 @@ function initDdsm!(sim::Simulation;
 	# coverTimeDemandPriorities[i] is demand priority for coverTimes[i], where coverTimes[1] and [2] are the targets for ddsm
 	
 	debugMode && @warn("Have not finished implementing ddsm.")
-	debugMode && @info("Should try Gurobi with presolve.") # Presolve=0
 	debugMode && @info("Should test solving with IP gap > 0.")
 	
 	@assert(0 <= coverFractionTargetT1 <= 1)
@@ -50,6 +49,8 @@ function initDdsm!(sim::Simulation;
 	# set options
 	ddsmd = sim.moveUpData.ddsmData # shorthand
 	ddsmd.options[:solver] = "cbc" # can be slower than glpk, but more reliable for some reason
+	ddsmd.options[:solver_args] = []
+	ddsmd.options[:solver_kwargs] = []
 	ddsmd.options[:v] = v"1"
 	ddsmd.options[:z_var] = true
 	merge!(ddsmd.options, Dict([:x_bin => true, :y11_bin => true, :y12_bin => true, :y2_bin => true]))
@@ -151,15 +152,17 @@ function ddsmMoveUp(sim::Simulation)
 	model = Model()
 	jump_ge_0_19 = pkgVersions["JuMP"] >= v"0.19"
 	solver = options[:solver]
+	args = options[:solver_args] # shorthand
+	kwargs = options[:solver_kwargs] # shorthand
 	if jump_ge_0_19
-		if solver == "cbc" set_optimizer(model, with_optimizer(Cbc.Optimizer, logLevel=0))
-		elseif solver == "glpk" set_optimizer(model, with_optimizer(GLPK.Optimizer))
-		elseif solver == "gurobi" @stdout_silent(set_optimizer(model, with_optimizer(Gurobi.Optimizer, OutputFlag=0)))
+		if solver == "cbc" set_optimizer(model, with_optimizer(Cbc.Optimizer, logLevel=0, args...; kwargs...))
+		elseif solver == "glpk" set_optimizer(model, with_optimizer(GLPK.Optimizer, args...; kwargs...))
+		elseif solver == "gurobi" @stdout_silent(set_optimizer(model, with_optimizer(Gurobi.Optimizer, OutputFlag=0, args...; kwargs...)))
 		end
 	else
-		if solver == "cbc" setsolver(model, CbcSolver())
-		elseif solver == "glpk" setsolver(model, GLPKSolverMIP(presolve=true))
-		elseif solver == "gurobi" @stdout_silent(setsolver(model, GurobiSolver(OutputFlag=0)))
+		if solver == "cbc" setsolver(model, CbcSolver(args...; kwargs...))
+		elseif solver == "glpk" setsolver(model, GLPKSolverMIP(args...; kwargs...))
+		elseif solver == "gurobi" @stdout_silent(setsolver(model, GurobiSolver(OutputFlag=0, args...; kwargs...)))
 		end
 	end
 	
