@@ -179,7 +179,7 @@ function ddsmMoveUp(sim::Simulation)
 	end)
 	
 	@constraints(model, begin
-		(ambAtOneLocation[i=1:a], sum(x[i,:]) == 1) # each ambulance must be assigned to one station
+		(ambAtOneStation[i=1:a], sum(x[i,:]) == 1) # each ambulance must be assigned to one station
 		(pointCoverOrderY1[p=1:np[1]], y11[p] >= y12[p]) # single coverage before double coverage; not needed for y2
 		(demandCoveredOnceT1, sum(y11[p] * pointDemands[1][p] for p=1:np[1]) + s1 >= coverFractionTargetT1 * sum(pointDemands[1])) # fraction of demand covered once within t[1]
 		(demandCoveredOnceT2, sum(y2[p] * pointDemands[2][p] for p=1:np[2]) + s2 >= sum(pointDemands[2])) # all demand covered once within t[2]
@@ -188,7 +188,7 @@ function ddsmMoveUp(sim::Simulation)
 	if options[:z_var]
 		@variable(model, z[j=1:s], Int) # z[j] = number of ambulances to assign to station j
 		@constraints(model, begin
-			(ambStationCount[j=1:s], z[j] == sum(x[:,j]))
+			(stationAmbCount[j=1:s], z[j] == sum(x[:,j]))
 			(pointCoverCountY1[p=1:np[1]], y11[p] + y12[p] <= sum(z[pointStations[1][p]]))
 			(pointCoverCountY2[p=1:np[2]], y2[p] <= sum(z[pointStations[2][p]]))
 		end)
@@ -226,7 +226,7 @@ function ddsmMoveUp(sim::Simulation)
 	sol = convert(Array{Bool,2}, round.(vals[:x]))
 	
 	if checkMode
-		@assert(all(sum(sol, dims=2) .== 1)) # check constraint: ambAtOneLocation
+		@assert(all(sum(sol, dims=2) .== 1)) # check constraint: ambAtOneStation
 		# check that values are binary/integer
 		for sym in [:x, :y11, :y12, :y2]
 			err = maximum(abs.(vals[sym] - round.(vals[sym])))
