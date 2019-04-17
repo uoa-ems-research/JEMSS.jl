@@ -5,7 +5,7 @@ Distributions
 GLPK
 GLPKMathProgInterface
 Gurobi
-HTTP
+HTTP 0.8
 Hungarian
 HypothesisTests
 JSON
