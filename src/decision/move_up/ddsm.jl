@@ -22,9 +22,10 @@
 
 # initialise data relevant to move up
 function initDdsm!(sim::Simulation;
-	coverFractionTargetT1::Float = 0.5, travelTimeCost::Float = 50.0, slackWeight::Float = 1000.0,
+	coverFractionTargetT1::Float = 0.5, travelTimeCost::Float = 50.0, slackWeight::Float = 1e9,
 	coverTimeDemandPriorities::Vector{Priority} = [highPriority, lowPriority],
 	options::Dict{Symbol,Any} = Dict{Symbol,Any}())
+	# slackWeight is the weight to apply to slack variables, needs to be sufficiently large so that the slack variables are zero when possible
 	# coverTimeDemandPriorities[i] is demand priority for coverTimes[i], where coverTimes[1] and [2] are the targets for ddsm
 	
 	@assert(0 <= coverFractionTargetT1 <= 1)
