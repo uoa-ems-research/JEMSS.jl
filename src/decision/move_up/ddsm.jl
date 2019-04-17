@@ -22,9 +22,10 @@
 
 # initialise data relevant to move up
 function initDdsm!(sim::Simulation;
-	coverFractionTargetT1::Float = 0.5, travelTimeCost::Float = 50.0, slackWeight::Float = 1000.0,
+	coverFractionTargetT1::Float = 0.5, travelTimeCost::Float = 50.0, slackWeight::Float = 1e9,
 	coverTimeDemandPriorities::Vector{Priority} = [highPriority, lowPriority],
 	options::Dict{Symbol,Any} = Dict{Symbol,Any}())
+	# slackWeight is the weight to apply to slack variables, needs to be sufficiently large so that the slack variables are zero when possible
 	# coverTimeDemandPriorities[i] is demand priority for coverTimes[i], where coverTimes[1] and [2] are the targets for ddsm
 	
 	@assert(0 <= coverFractionTargetT1 <= 1)
@@ -49,6 +50,7 @@ function initDdsm!(sim::Simulation;
 	ddsmd.options[:solver_kwargs] = []
 	ddsmd.options[:v] = v"1"
 	ddsmd.options[:z_var] = true
+	ddsmd.options[:bin_tol] = 1e-5
 	merge!(ddsmd.options, Dict([:x_bin => true, :y11_bin => true, :y12_bin => true, :y2_bin => true]))
 	ddsmOptions!(sim, options)
 	
@@ -66,6 +68,7 @@ function ddsmOptions!(sim, options::Dict{Symbol,T}) where T <: Any
 	@assert(in(options[:solver], ["cbc", "glpk", "gurobi"]))
 	@assert(typeof(options[:v]) == VersionNumber)
 	@assert(typeof(options[:z_var]) == Bool)
+	@assert(0 < options[:bin_tol] < 0.1)
 	
 	if options[:solver] == "gurobi" try Gurobi; catch; options[:solver] = "cbc"; @warn("Failed to use Gurobi, using Cbc instead.") end end
 	
@@ -227,10 +230,10 @@ function ddsmMoveUp(sim::Simulation)
 	
 	if checkMode
 		@assert(all(sum(sol, dims=2) .== 1)) # check constraint: ambAtOneStation
-		# check that values are binary/integer
+		# check that values are binary
 		for sym in [:x, :y11, :y12, :y2]
 			err = maximum(abs.(vals[sym] - round.(vals[sym])))
-			@assert(err <= 10*eps(Float32), (sym, err))
+			@assert(err <= options[:bin_tol], (sym, err))
 		end
 	end
 	
