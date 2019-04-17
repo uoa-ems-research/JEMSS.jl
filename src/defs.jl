@@ -69,4 +69,4 @@ const numPriorities = length(priorities)
 # call statuses
 @enum CallStatus callNullStatus callScreening callQueued callWaitingForAmb callOnSceneCare callGoingToHospital callAtHospital callProcessed
 
-@enum MoveUpModule nullMoveUpModule compTableModule dmexclpModule priorityListModule zhangIpModule temp0Module temp1Module temp2Module
+@enum MoveUpModule nullMoveUpModule compTableModule ddsmModule dmexclpModule priorityListModule zhangIpModule temp0Module temp1Module temp2Module

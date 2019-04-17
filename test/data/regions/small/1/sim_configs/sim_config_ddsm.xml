@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<simConfig>
+	<!-- paths: -->
+	<inputPath>$jemssDir/test/data/regions/small/1/generated</inputPath>
+	<outputPath/>
+	
+	<simFiles>
+		<!-- <path>inputPath</path> -->
+		<ambulances>ambulances.csv</ambulances>
+		<arcs>arcs.csv</arcs>
+		<calls>calls.csv</calls>
+		<demand>../demand/demand_2.csv</demand>
+		<demandCoverage>../demand/demand_coverage.csv</demandCoverage>
+		<hospitals>hospitals.csv</hospitals>
+		<map>map.csv</map>
+		<nodes>nodes.csv</nodes>
+		<priorities>priorities.csv</priorities>
+		<stations>stations.csv</stations>
+		<travel>../travel.csv</travel>
+	</simFiles>
+	
+	<writeOutput>false</writeOutput>
+	<outputFiles/>
+	
+	<resim>false</resim>
+	
+	<decision>
+		<callQueueing>addCallToQueueSortPriorityThenTime!</callQueueing>
+		<dispatch>findNearestFreeAmbToCall!</dispatch>
+		<moveUp>
+			<module>ddsm</module>
+			<ddsm>
+				<coverFractionTargetT1>0.5</coverFractionTargetT1>
+				<travelTimeCost>50.0</travelTimeCost>
+				<slackWeight>1000.0</slackWeight>
+				<coverTimeDemandPriorities>[highPriority, lowPriority]</coverTimeDemandPriorities>
+				<options>[:solver => "glpk", :solver_kwargs => [:presolve => true], :v => v"2"]</options>
+			</ddsm>
+		</moveUp>
+	</decision>
+	
+</simConfig>

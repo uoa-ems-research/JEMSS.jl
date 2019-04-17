@@ -314,6 +314,16 @@ function initSim(configFilename::String;
 			compTableFilename = joinPathIfNotAbs(sim.inputPath, eltContentInterpVal(compTableElt, "filename"))
 			initCompTable!(sim, compTableFilename)
 			
+		elseif moveUpModuleName == "ddsm"
+			mud.moveUpModule = ddsmModule
+			ddsmElt = findElt(moveUpElt, "ddsm")
+			initDdsm!(sim;
+				coverFractionTargetT1 = eltContentVal(ddsmElt, "coverFractionTargetT1"),
+				travelTimeCost = eltContentVal(ddsmElt, "travelTimeCost"),
+				slackWeight = eltContentVal(ddsmElt, "slackWeight"),
+				coverTimeDemandPriorities = eltContentVal(ddsmElt, "coverTimeDemandPriorities"),
+				options = convert(Dict{Symbol,Any}, Dict(eltContentVal(ddsmElt, "options"))))
+			
 		elseif moveUpModuleName == "dmexclp"
 			mud.moveUpModule = dmexclpModule
 			dmexclpElt = findElt(moveUpElt, "dmexclp")
