@@ -218,7 +218,7 @@ function animateClient(client::Client)
 		@assert(typeof(nextAnimItem) == String)
 		configFilename = nextAnimItem
 		println("Initialising simulation from config:", configFilename)
-		sim = initSim(configFilename; allowResim = true)
+		sim = initSim(configFilename; allowResim = true, doPrint = false)
 		println("...initialised")
 	end
 	
@@ -368,15 +368,16 @@ function runAnimServer(port::Int)
 	
 	# create and run server
 	onepage = read("$sourceDir/animation/index.html", String)
-	@async HTTP.listen(Sockets.localhost, port) do http::HTTP.Stream
+	@async HTTP.listen(Sockets.localhost, port, readtimeout = 0) do http::HTTP.Stream
 		if HTTP.WebSockets.is_upgrade(http.message)
 			HTTP.WebSockets.upgrade(http) do client
 				animateClient(client)
 			end
 		else
-			HTTP.Servers.handle_request(http) do req::HTTP.Request
+			h = HTTP.Handlers.RequestHandlerFunction() do req::HTTP.Request
 				HTTP.Response(200, onepage)
 			end
+			HTTP.Handlers.handle(h, http)
 		end
 	end
 	animPort = port
