@@ -49,6 +49,7 @@ function initDdsm!(sim::Simulation;
 	ddsmd.options[:solver_kwargs] = []
 	ddsmd.options[:v] = v"1"
 	ddsmd.options[:z_var] = true
+	ddsmd.options[:bin_tol] = 1e-5
 	merge!(ddsmd.options, Dict([:x_bin => true, :y11_bin => true, :y12_bin => true, :y2_bin => true]))
 	ddsmOptions!(sim, options)
 	
@@ -66,6 +67,7 @@ function ddsmOptions!(sim, options::Dict{Symbol,T}) where T <: Any
 	@assert(in(options[:solver], ["cbc", "glpk", "gurobi"]))
 	@assert(typeof(options[:v]) == VersionNumber)
 	@assert(typeof(options[:z_var]) == Bool)
+	@assert(0 < options[:bin_tol] < 0.1)
 	
 	if options[:solver] == "gurobi" try Gurobi; catch; options[:solver] = "cbc"; @warn("Failed to use Gurobi, using Cbc instead.") end end
 	
@@ -227,10 +229,10 @@ function ddsmMoveUp(sim::Simulation)
 	
 	if checkMode
 		@assert(all(sum(sol, dims=2) .== 1)) # check constraint: ambAtOneStation
-		# check that values are binary/integer
+		# check that values are binary
 		for sym in [:x, :y11, :y12, :y2]
 			err = maximum(abs.(vals[sym] - round.(vals[sym])))
-			@assert(err <= 10*eps(Float32), (sym, err))
+			@assert(err <= options[:bin_tol], (sym, err))
 		end
 	end
 	
