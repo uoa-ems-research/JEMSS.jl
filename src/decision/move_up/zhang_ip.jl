@@ -52,7 +52,7 @@ end
 
 # determine move ups to make at current time
 # returns list of ambulances to be moved, and list of their destinations (stations)
-function zhangIpMoveUp(sim::Simulation)
+function zhangIpMoveUp(sim::Simulation)::Tuple{Vector{Ambulance}, Vector{Station}}
 	
 	# shorthand names:
 	zid = sim.moveUpData.zhangIpData
@@ -66,6 +66,7 @@ function zhangIpMoveUp(sim::Simulation)
 	movableAmbs = filter(a -> isAmbAvailableForMoveUp(a), ambulances)
 	atHospitalAmbs = filter(a -> a.status == ambAtHospital, ambulances)
 	@assert(intersect(movableAmbs, atHospitalAmbs) == [])
+	if isempty(movableAmbs) return moveUpNull() end
 	
 	# let "move-up ambulances" be the ambulances that can be moved now, and those that can be moved later (currently at-hospital)
 	moveUpAmbs = vcat(movableAmbs, atHospitalAmbs)
@@ -117,15 +118,53 @@ function zhangIpMoveUp(sim::Simulation)
 		end
 	end
 	
-	travelCosts = adjustedAmbToStationTimes * zid.travelTimeCost
+	ambToStationCosts = adjustedAmbToStationTimes * zid.travelTimeCost
 	
-	######################
-	# IP
+	# solve
+	if zid.marginalBenefitsDecreasing
+		# solve as assignment problem
+		(movableAmbStations, atHospitalAmbStations) = solveZhangIpAssignmentProblem(stationSlots, benefitSlots, ambToStationCosts, length(movableAmbs), length(atHospitalAmbs))
+	else
+		# solve as an integer program
+		(movableAmbStations, atHospitalAmbStations) = solveZhangIp(stationSlots, benefitSlots, ambToStationCosts, length(movableAmbs), length(atHospitalAmbs), zid.marginalBenefitsDecreasing;
+			stationSlotsOrderPairs = zid.stationSlotsOrderPairs)
+	end
 	
-	# shorthand variable names:
+	ambStations = stations[movableAmbStations]
+	
+	return movableAmbs, ambStations
+end
+
+# solve as an integer program
+function solveZhangIp(stationSlots::Vector{Int}, benefitSlots::Vector{Float}, ambToStationCosts::Array{Float,2},
+	numMovableAmbs::Int, numAtHospitalAmbs::Int,
+	marginalBenefitsDecreasing::Bool; stationSlotsOrderPairs::Array{Int,2} = Array{Int,2}(undef,0,0))::Tuple{Vector{Int}, Vector{Int}}
+	# ambToStationCosts[:,j] gives costs to move different ambulances to station j
+	# ambToStationCosts[1:numMovableAmbs,:] are for ambs that can be moved now
+	# ambToStationCosts[(1:numAtHospitalAmbs).+numMovableAmbs,:] are for ambs that are at hospital
+	# stationSlotsOrderPairs is not needed if marginalBenefitsDecreasing = true
+	
+	(numMoveUpAmbs, numStations) = size(ambToStationCosts)
+	if numMoveUpAmbs == 0 return (Int[], Int[]) end
+	numStationSlots = length(stationSlots)
+	@assert(numMoveUpAmbs == numMovableAmbs + numAtHospitalAmbs)
+	@assert(numStationSlots >= numMoveUpAmbs)
+	@assert(numStationSlots == length(benefitSlots))
+	@assert(all(in(1:numStations), stationSlots))
+	
+	if checkMode
+		if marginalBenefitsDecreasing
+			for j = 1:numStations
+				# check that benefit of ambulance k at station j is > benefit of ambulance k+1, otherwise marginalBenefitsDecreasing should be false
+				@assert(issorted(benefitSlots[findall(stationSlots .== j)], lt=<=, rev=true))
+			end
+		end
+	end
+	
+	# shorthand:
 	a = numMoveUpAmbs
-	ai = findall(in(movableAmbs), moveUpAmbs) # indices of movableAmbs in moveUpAmbs
-	aj = findall(in(atHospitalAmbs), moveUpAmbs) # indices of atHospitalAmbs in moveUpAmbs
+	ai = 1:numMovableAmbs # row indices of ambToStationCosts that are for movable ambs
+	aj = (1:numAtHospitalAmbs).+numMovableAmbs # row indices of ambToStationCosts that are for at-hospital ambs
 	s = numStations
 	n = length(stationSlots) # = length(benefitSlots)
 	
@@ -137,18 +176,13 @@ function zhangIpMoveUp(sim::Simulation)
 		# set_optimizer(model, with_optimizer(Cbc.Optimizer, logLevel=0)) # try this instead?
 	else
 		setsolver(model, GLPKSolverMIP(presolve=true))
+		# @stdout_silent(setsolver(model, GurobiSolver(OutputFlag=0))) # slower than glpk
 	end
 	
-	@variables(model, begin
-		(x[i=1:a,j=1:s], Bin) # x[i,j] = 1 if ambulance moveUpAmbs[i] should be moved to station j
-		(y[k=1:n]) # sum(y[stationSlots .== j]) = number of ambulances assigned to station j
-	end)
-	if zid.marginalBenefitsDecreasing
-		# y should be naturally binary
-		for k = 1:n setlowerbound(y[k], 0); setupperbound(y[k], 1) end
-	else
-		for k = 1:n setcategory(y[k], :Bin) end
-	end
+	@variable(model, x[i=1:a,j=1:s], Bin)
+	marginalBenefitsDecreasing ? @variable(model, 0 <= y[k=1:n] <= 1) : @variable(model, y[k=1:n], Bin)
+	# x[i,j] = 1 if ambulance moveUpAmbs[i] should be moved to station j
+	# sum(y[stationSlots .== j]) = number of ambulances assigned to station j
 	
 	@constraints(model, begin
 		(movableAmbAtOneLocation[i=ai], sum(x[i,:]) == 1) # each movable ambulance must be assigned to one station
@@ -157,48 +191,115 @@ function zhangIpMoveUp(sim::Simulation)
 		# (stationAmbCounts[j=1:s], sum(x[:,j]) >= sum(y[k] for k=findall(stationSlots .== j))) # should have same effect as "==" constraint (instead of ">="), but may be faster?
 	end)
 	
-	if !zid.marginalBenefitsDecreasing
+	if !marginalBenefitsDecreasing
 		# need to enforce station slot filling order
-		p = zid.stationSlotsOrderPairs # shorthand
+		p = stationSlotsOrderPairs # shorthand
 		@constraint(model, stationSlotsFillingOrder[k=1:size(p,1)], y[p[k,1]] >= y[p[k,2]])
 	end
 	
 	@expressions(model, begin
 		totalBenefitAtStations, sum(y .* benefitSlots)
-		totalAmbTravelCosts, sum(x .* travelCosts)
+		totalAmbTravelCosts, sum(x .* ambToStationCosts)
 	end)
 	
-	# # testing: giving back fake results, for testing runtime without solving IP model
-	# if true
-		# return moveUpNull()
-	# end
-	
 	# solve
-	xValue = yValue = nothing # init
 	if jump_ge_0_19
 		@objective(model, Max, totalBenefitAtStations - totalAmbTravelCosts)
-		optimize!(model)
+		@stdout_silent optimize!(model)
 		@assert(termination_status(model) == MOI.OPTIMAL)
-		xValue = JuMP.value.(x); yValue = JuMP.value.(y) # JuMP and LightXML both export value()
 	else
 		@objective(model, :Max, totalBenefitAtStations - totalAmbTravelCosts)
-		solve(model)
-		xValue = getvalue(x); yValue = getvalue(y)
+		status = @stdout_silent solve(model)
+		@assert(status == :Optimal)
 	end
 	
+	# get solution
+	vals = Dict()
+	vals[:x] = jump_ge_0_19 ? JuMP.value.(x) : getvalue(x)
+	vals[:y] = jump_ge_0_19 ? JuMP.value.(y) : getvalue(y)
+	
 	# solution
-	sol = convert(Array{Bool,2}, round.(xValue))
-	ambStations = [stations[findfirst(sol[i,:])] for i = ai] # only consider movableAmbs (ignore atHospitalAmbs)
+	sol = convert(Array{Bool,2}, round.(vals[:x]))
+	movableAmbStations = [findfirst(sol[i,:]) for i = ai]
+	atHospitalAmbStations = [findfirst(sol[i,:]) for i = aj]
+	atHospitalAmbStations = convert(Vector{Int}, replace(atHospitalAmbStations, nothing => nullIndex))
 	
 	if checkMode
 		@assert(all(sum(sol, dims=2) .<= 1)) # each ambulance can be used in move up at most once
 		
 		# check that y values are ordered correctly
-		stationSlotsFilled = convert(Vector{Bool}, round.(yValue))
+		stationSlotsFilled = convert(Vector{Bool}, round.(vals[:y]))
 		for j = 1:numStations
 			@assert(issorted(stationSlotsFilled[stationSlots .== j], rev=true))
 		end
 	end
 	
-	return movableAmbs, ambStations
+	return movableAmbStations, atHospitalAmbStations # atHospitalAmbStations[i] == nullIndex if amb i (of those at hospital) is not moved
+end
+
+# solve as an assignment problem
+# this assumes that the benefit of adding amb k to a station is > benefit of adding amb k+1
+function solveZhangIpAssignmentProblem(stationSlots::Vector{Int}, benefitSlots::Vector{Float}, ambToStationCosts::Array{Float,2},
+	numMovableAmbs::Int, numAtHospitalAmbs::Int)::Tuple{Vector{Int}, Vector{Int}}
+	# ambToStationCosts[:,j] gives costs to move different ambulances to station j
+	# ambToStationCosts[1:numMovableAmbs,:] are for ambs that can be moved now
+	# ambToStationCosts[(1:numAtHospitalAmbs).+numMovableAmbs,:] are for ambs that are at hospital
+	
+	(numMoveUpAmbs, numStations) = size(ambToStationCosts)
+	if numMoveUpAmbs == 0 return (Int[], Int[]) end
+	@assert(numMoveUpAmbs == numMovableAmbs + numAtHospitalAmbs)
+	numStationSlots = length(stationSlots)
+	@assert(numStationSlots >= numMoveUpAmbs)
+	@assert(numStationSlots == length(benefitSlots))
+	@assert(all(in(1:numStations), stationSlots))
+	
+	if checkMode && false # skip this check, it is slow
+		for j = 1:numStations
+			# check that benefit of ambulance k at station j is > benefit of ambulance k+1, otherwise cannot solve as assignment problem
+			@assert(issorted(benefitSlots[findall(stationSlots .== j)], lt=<=, rev=true))
+		end
+	end
+	
+	# shorthand
+	a = numMoveUpAmbs
+	ai = 1:numMovableAmbs # row indices of ambToStationCosts that are for movable ambs
+	aj = (1:numAtHospitalAmbs).+numMovableAmbs # row indices of ambToStationCosts that are for at-hospital ambs
+	n = numStationSlots + numAtHospitalAmbs # total number of slots, need one dummy per each amb at hospital
+	si = 1:numStationSlots # column indices of ambToStationCosts that are for real stations
+	sj = numStationSlots+1:n # column indices of ambToStationCosts that are for dummy stations
+	
+	# formulate assignment problem and solve
+	@assert(a <= n) # needed for Hungarian algorithm
+	weights = zeros(Float, a, n)
+	for i = 1:a, j = si
+		weights[i,j] = -(benefitSlots[j] - ambToStationCosts[i,stationSlots[j]]) # note that Hungarian algorithm looks for min cost assignment
+	end
+	weights[ai, sj] .= Inf # movable ambs cannot be assigned to dummy stations
+	matching = Hungarian.munkres(weights) # returns a sparse matrix
+	
+	# extract solution
+	I = findall(matching .== Hungarian.STAR)
+	(ambIndices, stationSlotIndices) = (getindex.(I,1), getindex.(I,2))
+	ambStations = zeros(Int,a) # will be the station (real or dummy) of each ambulance
+	stationSlotsExtended = vcat(stationSlots, fill(nullIndex, numAtHospitalAmbs)) # add dummy station indices
+	ambStations[ambIndices] = stationSlotsExtended[stationSlotIndices]
+	movableAmbStations = ambStations[ai]
+	atHospitalAmbStations = ambStations[aj]
+	
+	if checkMode
+		@assert(!any(isequal(nullIndex), movableAmbStations)) # make sure that no movable ambs are assigned to dummy stations
+		
+		if false # skip this check, it is slow
+			# check that station slots are filled in correct order
+			stationSlotsFilled = fill(false, numStationSlots)
+			for i in stationSlotIndices
+				if i <= numStationSlots stationSlotsFilled[i] = true end
+			end
+			for j = 1:numStations
+				@assert(issorted(stationSlotsFilled[findall(stationSlots .== j)], rev=true))
+			end
+		end
+	end
+	
+	return movableAmbStations, atHospitalAmbStations # atHospitalAmbStations[i] == nullIndex if amb i (of those at hospital) is not moved
 end
