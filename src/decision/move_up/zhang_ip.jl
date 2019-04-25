@@ -52,7 +52,7 @@ end
 
 # determine move ups to make at current time
 # returns list of ambulances to be moved, and list of their destinations (stations)
-function zhangIpMoveUp(sim::Simulation)
+function zhangIpMoveUp(sim::Simulation)::Tuple{Vector{Ambulance}, Vector{Station}}
 	
 	# shorthand names:
 	zid = sim.moveUpData.zhangIpData
@@ -138,8 +138,8 @@ end
 # solve as an integer program
 function solveZhangIp(stationSlots::Vector{Int}, benefitSlots::Vector{Float}, ambToStationCosts::Array{Float,2},
 	numMovableAmbs::Int, numAtHospitalAmbs::Int,
-	marginalBenefitsDecreasing::Bool; stationSlotsOrderPairs::Array{Int,2} = Array{Int,2}(undef,0,0))
-	# ambToStationCosts[:,j] gives costs to move each ambulance to station j
+	marginalBenefitsDecreasing::Bool; stationSlotsOrderPairs::Array{Int,2} = Array{Int,2}(undef,0,0))::Tuple{Vector{Int}, Vector{Int}}
+	# ambToStationCosts[:,j] gives costs to move different ambulances to station j
 	# ambToStationCosts[1:numMovableAmbs,:] are for ambs that can be moved now
 	# ambToStationCosts[(1:numAtHospitalAmbs).+numMovableAmbs,:] are for ambs that are at hospital
 	# stationSlotsOrderPairs is not needed if marginalBenefitsDecreasing = true
@@ -155,8 +155,7 @@ function solveZhangIp(stationSlots::Vector{Int}, benefitSlots::Vector{Float}, am
 	if checkMode
 		if marginalBenefitsDecreasing
 			for j = 1:numStations
-				# check that benefit of ambulance k at station j is < benefit of ambulance k-1, otherwise cannot solve as assignment problem
-				# otherwise, marginalBenefitsDecreasing should be false
+				# check that benefit of ambulance k at station j is > benefit of ambulance k+1, otherwise marginalBenefitsDecreasing should be false
 				@assert(issorted(benefitSlots[findall(stationSlots .== j)], lt=<=, rev=true))
 			end
 		end
@@ -204,7 +203,6 @@ function solveZhangIp(stationSlots::Vector{Int}, benefitSlots::Vector{Float}, am
 	end)
 	
 	# solve
-	
 	if jump_ge_0_19
 		@objective(model, Max, totalBenefitAtStations - totalAmbTravelCosts)
 		@stdout_silent optimize!(model)
@@ -240,9 +238,10 @@ function solveZhangIp(stationSlots::Vector{Int}, benefitSlots::Vector{Float}, am
 end
 
 # solve as an assignment problem
+# this assumes that the benefit of adding amb k to a station is > benefit of adding amb k+1
 function solveZhangIpAssignmentProblem(stationSlots::Vector{Int}, benefitSlots::Vector{Float}, ambToStationCosts::Array{Float,2},
-	numMovableAmbs::Int, numAtHospitalAmbs::Int)
-	# ambToStationCosts[:,j] gives costs to move each ambulance to station j
+	numMovableAmbs::Int, numAtHospitalAmbs::Int)::Tuple{Vector{Int}, Vector{Int}}
+	# ambToStationCosts[:,j] gives costs to move different ambulances to station j
 	# ambToStationCosts[1:numMovableAmbs,:] are for ambs that can be moved now
 	# ambToStationCosts[(1:numAtHospitalAmbs).+numMovableAmbs,:] are for ambs that are at hospital
 	
@@ -254,9 +253,9 @@ function solveZhangIpAssignmentProblem(stationSlots::Vector{Int}, benefitSlots::
 	@assert(numStationSlots == length(benefitSlots))
 	@assert(all(in(1:numStations), stationSlots))
 	
-	if checkMode
+	if checkMode && false # skip this check, it is slow
 		for j = 1:numStations
-			# check that benefit of ambulance k at station j is < benefit of ambulance k-1, otherwise cannot solve as assignment problem
+			# check that benefit of ambulance k at station j is > benefit of ambulance k+1, otherwise cannot solve as assignment problem
 			@assert(issorted(benefitSlots[findall(stationSlots .== j)], lt=<=, rev=true))
 		end
 	end
@@ -288,15 +287,17 @@ function solveZhangIpAssignmentProblem(stationSlots::Vector{Int}, benefitSlots::
 	atHospitalAmbStations = ambStations[aj]
 	
 	if checkMode
-		@assert(all(movableAmbStations .!= nullIndex)) # make sure that no movable ambs are assigned to dummy stations
+		@assert(!any(isequal(nullIndex), movableAmbStations)) # make sure that no movable ambs are assigned to dummy stations
 		
-		# check that station slots are filled in correct order
-		stationSlotsFilled = fill(false, numStationSlots)
-		for i in stationSlotIndices
-			if i <= numStationSlots stationSlotsFilled[i] = true end
-		end
-		for j = 1:numStations
-			@assert(issorted(stationSlotsFilled[findall(stationSlots .== j)], rev=true))
+		if false # skip this check, it is slow
+			# check that station slots are filled in correct order
+			stationSlotsFilled = fill(false, numStationSlots)
+			for i in stationSlotIndices
+				if i <= numStationSlots stationSlotsFilled[i] = true end
+			end
+			for j = 1:numStations
+				@assert(issorted(stationSlotsFilled[findall(stationSlots .== j)], rev=true))
+			end
 		end
 	end
 	
