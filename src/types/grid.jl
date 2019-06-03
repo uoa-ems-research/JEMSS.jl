@@ -13,7 +13,7 @@
 # limitations under the License.
 ##########################################################################
 
-# returns grid indicies for given location
+# returns grid indices for given location
 function locationToGridIndex(map::Map, grid::Grid, location::Location)
 	# fails if location.x == map.xMin or location.y == map.yMin, can fix this later if needed
 	ix = Int(ceil((location.x - map.xMin) / map.xRange * grid.nx))
