@@ -269,11 +269,11 @@ function simulateEvent!(sim::Simulation, event::Event)
 		
 		# stats:
 		if status == ambIdleAtStation
-			ambulance.atStationDispatches += 1
+			ambulance.numDispatchesAtStation += 1
 		elseif status == ambGoingToCall || status == ambGoingToStation
-			ambulance.onRoadDispatches += 1
+			ambulance.numDispatchesOnRoad += 1
 		elseif status == ambAtCall || status == ambAtHospital
-			ambulance.afterServiceDispatches += 1
+			ambulance.numDispatchesAfterService += 1
 		end
 		
 		ambulance.status = ambGoingToCall

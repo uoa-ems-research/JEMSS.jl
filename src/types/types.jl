@@ -251,9 +251,9 @@ mutable struct Ambulance
 	numCallsTreated::Int # total number of calls that ambulance provided treatment for
 	numCallsTransferred::Int # total number of calls transferred to hospital
 	numRedispatches::Int # number of times that ambulance is redispatched from one call to another
-	atStationDispatches::Int # total number of dispatches while at station
-	onRoadDispatches::Int # total number of dispatches while on road
-	afterServiceDispatches::Int # total number of dispatches directly after providing service at callout
+	numDispatchesAtStation::Int # total number of dispatches while at station
+	numDispatchesOnRoad::Int # total number of dispatches while on road
+	numDispatchesAfterService::Int # total number of dispatches directly after providing service at callout
 	
 	Ambulance() = new(nullIndex, ambNullStatus, nullIndex, nullIndex, Route(), Event(), nullAmbClass,
 		Location(), false,
