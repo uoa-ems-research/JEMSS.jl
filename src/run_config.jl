@@ -400,7 +400,7 @@ function initSim(configFilename::String;
 	
 	if createBackup
 		initMessage(t, "creating sim backup")
-		backupSim!(sim) # for restarting sim
+		backup!(sim) # for restarting sim
 		initTime(t)
 	end
 	

@@ -64,7 +64,7 @@ end
 # mutates: sim, priorityListsObjVal
 function simObjVal!(sim::Simulation, priorityList::PriorityList)::ObjVal
 	@assert(!haskey(priorityListsObjVal, priorityList))
-	resetSim!(sim)
+	reset!(sim)
 	for i = 1:sim.numAmbs
 		setAmbStation!(sim.ambulances[i], sim.stations[priorityList[i]])
 	end
@@ -121,7 +121,7 @@ function repeatedLocalSearch()
 	sim.moveUpData.moveUpModule = priorityListModule
 	sim.moveUpData.useMoveUp = true
 	
-	backupSim!(sim)
+	backup!(sim)
 	
 	global stationCapacities = [station.capacity for station in sim.stations]
 	

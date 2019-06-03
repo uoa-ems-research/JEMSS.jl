@@ -788,7 +788,7 @@ mutable struct Simulation
 	complete::Bool # true if simulation has ended (no events remaining)
 	animating::Bool # true if being used for animation, false otherwise
 	
-	backup::Simulation # copy of simulation, for restarts (does not include a backup of all fields in order to save on memory, see backupSim! function for missing fields)
+	backup::Simulation # copy of simulation, for restarts (does not include a backup of all fields in order to save on memory, see backup! function for missing fields)
 	
 	configRootElt::XMLElement
 	

@@ -35,7 +35,7 @@ printSimStats(sim)
 
 # reset simulation and run again (useful for restarting animation)
 println("\n=== Re-running simulation ===")
-resetSim!(sim)
+reset!(sim)
 simulate!(sim)
 
 # create and run simulation again, this time writing output files

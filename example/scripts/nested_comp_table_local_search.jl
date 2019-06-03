@@ -63,7 +63,7 @@ end
 # mutates: sim, nestedCompTablesObjVal
 function simObjVal!(sim::Simulation, nestedCompTable::NestedCompTable)::ObjVal
 	@assert(!haskey(nestedCompTablesObjVal, nestedCompTable))
-	resetSim!(sim)
+	reset!(sim)
 	for i = 1:sim.numAmbs
 		setAmbStation!(sim.ambulances[i], sim.stations[nestedCompTable[i]])
 	end
@@ -122,7 +122,7 @@ function repeatedLocalSearch()
 	sim.moveUpData.moveUpModule = compTableModule
 	sim.moveUpData.useMoveUp = true
 	
-	backupSim!(sim)
+	backup!(sim)
 	
 	global stationCapacities = [station.capacity for station in sim.stations]
 	
