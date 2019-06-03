@@ -124,7 +124,7 @@ end
 # runs simulation for the deployment
 # mutates: sim
 function simulateDeployment!(sim::Simulation, deployment::Deployment)
-	resetSim!(sim)
+	reset!(sim)
 	applyDeployment!(sim, deployment)
 	simulateToEnd!(sim)
 end
@@ -145,6 +145,6 @@ function simulateDeployments!(sim::Simulation, deployments::Vector{Deployment}, 
 			print(rpad(string(" remaining run time (minutes): ", ceil(remTime, digits = 1)), 100, " "), "\r")
 		end
 	end
-	resetSim!(sim)
+	reset!(sim)
 	return results
 end

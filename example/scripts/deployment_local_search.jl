@@ -62,7 +62,7 @@ end
 # mutates: sim, stationsNumAmbsObjVal
 function simObjVal!(sim::Simulation, stationsNumAmbs::StationsNumAmbs)::ObjVal
 	@assert(!haskey(stationsNumAmbsObjVal, stationsNumAmbs))
-	resetSim!(sim)
+	reset!(sim)
 	applyStationsNumAmbs!(sim, stationsNumAmbs)
 	simulateToEnd!(sim)
 	objVal = objFn(sim)
@@ -151,7 +151,7 @@ function repeatedLocalSearch()
 		writeDlmLine!(solFile, i, objValLookup(stationsNumAmbs), "", stationsNumAmbs...)
 		flush(solFile)
 		
-		resetSim!(sim)
+		reset!(sim)
 	end
 	
 	# print out all results from each finished local search
@@ -219,7 +219,7 @@ function localSearch!(sim::Simulation, stationsNumAmbsObjVal::Dict{StationsNumAm
 				
 				print("move: i = ", i, ", j = ", j)
 				
-				# resetSim!(sim) # only resets if sim was used
+				# reset!(sim) # only resets if sim was used
 				
 				# change station ambulance counts, later keep if improvement made
 				stationsNumAmbs = copy(bestStationsNumAmbs)

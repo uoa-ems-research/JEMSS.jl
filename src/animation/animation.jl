@@ -228,13 +228,13 @@ function animateClient(client::Client)
 	@assert(!sim.writeOutput, "cannot animate simulation which is writing to output files")
 	if !isdefined(sim, :backup)
 		if !sim.used
-			backupSim!(sim)
+			backup!(sim)
 		else
 			@warn("will not be able to restart animation because the simulation has been partially run and has no backup")
 		end
 	end
 	if sim.complete
-		resetSim!(sim)
+		reset!(sim)
 	end
 	
 	# set map
@@ -293,7 +293,7 @@ function animateClient(client::Client)
 		
 		elseif msgType == "stop"
 			# reset
-			resetSim!(sim)
+			reset!(sim)
 			animAddAmbs!(client, sim)
 			
 		elseif msgType == "update_icons"

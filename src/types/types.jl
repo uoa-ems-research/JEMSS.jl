@@ -639,7 +639,7 @@ mutable struct ZhangIpData <: MoveUpDataType
 	stationSlots::Vector{Int}
 	benefitSlots::Vector{Float}
 	marginalBenefitsDecreasing::Bool # true if benefit of adding ambulance j to a station is < benefit of adding ambulance j-1, for all stations
-	stationSlotsOrderPairs::Array{Int,2} # stationSlotsOrderConstraintPairs[i,1:2] gives two stationSlots indices, first should be filled (with ambulance) before second
+	stationSlotsOrderPairs::Array{Int,2} # stationSlotsOrderPairs[i,1:2] gives two stationSlots indices, first should be filled (with ambulance) before second
 	
 	ZhangIpData() = new([], [], 1.0, 1.0, nullTime, nullTime,
 		[], [], false, Array{Int,2}(undef,0,0))
@@ -788,7 +788,7 @@ mutable struct Simulation
 	complete::Bool # true if simulation has ended (no events remaining)
 	animating::Bool # true if being used for animation, false otherwise
 	
-	backup::Simulation # copy of simulation, for restarts (does not include a backup of all fields in order to save on memory, see backupSim! function for missing fields)
+	backup::Simulation # copy of simulation, for restarts (does not include a backup of all fields in order to save on memory, see backup! function for missing fields)
 	
 	configRootElt::XMLElement
 	

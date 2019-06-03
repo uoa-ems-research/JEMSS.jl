@@ -498,6 +498,7 @@ end
 
 # read raster file using ArchGDAL package, return as custom Raster type
 function readRasterFile(rasterFilename::String)
+	@assert(isfile(rasterFilename))
 	
 	# open raster, get data, close raster
 	# only gets first raster band, may change this later

@@ -80,7 +80,7 @@ end
 
 # set sim.backup to copy of sim (before running)
 # note that for reducing memory usage, sim.backup does not contain backups of all fields
-function backupSim!(sim::Simulation)
+function backup!(sim::Simulation)
 	@assert(!sim.used)
 	
 	# remove certain fields from sim before copying sim
@@ -91,9 +91,10 @@ function backupSim!(sim::Simulation)
 	
 	(sim.net, sim.travel, sim.grid, sim.resim, sim.demand, sim.demandCoverage) = (net, travel, grid, resim, demand, demandCoverage)
 end
+backupSim!(sim::Simulation) = backup!(sim) # compat
 
 # reset sim from sim.backup
-function resetSim!(sim::Simulation)
+function reset!(sim::Simulation)
 	@assert(!sim.backup.used)
 	
 	if sim.used
@@ -119,6 +120,7 @@ function resetSim!(sim::Simulation)
 		sim.demand.recentSetsStartTimesIndex = 1
 	end
 end
+resetSim!(sim::Simulation) = reset!(sim) # compat
 
 # simulate next event in list
 function simulateNextEvent!(sim::Simulation)

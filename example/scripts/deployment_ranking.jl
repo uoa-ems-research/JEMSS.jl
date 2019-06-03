@@ -55,7 +55,7 @@ end
 # run sim for one day, to compile simulation functions
 applyDeployment!(sim, deployments[1])
 simulateToTime!(sim, 1.0)
-resetSim!(sim)
+reset!(sim)
 
 # run simulation for each deployment, save call response times
 getCallResponseTimes(sim::Simulation) = [call.responseTime * 24 * 60 for call in sim.calls] # times in minutes

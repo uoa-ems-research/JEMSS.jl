@@ -172,11 +172,12 @@ function solveZhangIp(stationSlots::Vector{Int}, benefitSlots::Vector{Float}, am
 	model = Model()
 	jump_ge_0_19 = pkgVersions["JuMP"] >= v"0.19"
 	if jump_ge_0_19
-		set_optimizer(model, with_optimizer(GLPK.Optimizer)) # solve speed not tested
-		# set_optimizer(model, with_optimizer(Cbc.Optimizer, logLevel=0)) # try this instead?
+		set_optimizer(model, with_optimizer(GLPK.Optimizer)) # faster without presolve; have not compared with other solvers
+		# set_optimizer(model, with_optimizer(Cbc.Optimizer, logLevel=0))
 	else
-		setsolver(model, GLPKSolverMIP(presolve=true))
-		# @stdout_silent(setsolver(model, GurobiSolver(OutputFlag=0))) # slower than glpk
+		setsolver(model, GLPKSolverMIP(presolve=true)) # presolve does not seem to affect solve time
+		# setsolver(model, CbcSolver()) # slower than glpk
+		# @stdout_silent(setsolver(model, GurobiSolver(OutputFlag=0))) # slower than glpk, with any gurobi presolve value
 	end
 	
 	@variable(model, x[i=1:a,j=1:s], Bin)
