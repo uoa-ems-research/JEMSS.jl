@@ -144,8 +144,15 @@ function readGenConfig(genConfigFilename::String)
 	genConfig.priorityDistrRng = callDistrsEltContent("priority")
 	genConfig.dispatchDelayDistrRng = callDistrsEltContent("dispatchDelay")
 	genConfig.onSceneDurationDistrRng = callDistrsEltContent("onSceneDuration")
-	genConfig.transportDistrRng = callDistrsEltContent("transport")
-	genConfig.handoverDurationDistrRng = callDistrsEltContent("handoverDuration")
+	if containsElt(callDistrsElt, "transport") && containsElt(callDistrsElt, "handoverDuration")
+		genConfig.transportDistrRng = callDistrsEltContent("transport")
+		genConfig.handoverDurationDistrRng = callDistrsEltContent("handoverDuration")
+	else # compat
+		@assert(containsElt(callDistrsElt, "transfer") && containsElt(callDistrsElt, "transferDuration"))
+		@warn("`transfer` and `transferDuration` elements for call distributions in gen config are deprecated, use `transport` and `handoverDuration` instead.")
+		genConfig.transportDistrRng = callDistrsEltContent("transfer")
+		genConfig.handoverDurationDistrRng = callDistrsEltContent("transferDuration")
+	end
 	
 	# number of ambulances, calls, hospitals, stations
 	genConfig.numAmbs = eltContentVal(simElt, "numAmbs")

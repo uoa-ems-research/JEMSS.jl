@@ -122,7 +122,15 @@ function readCallsFile(filename::String)
 	n = size(data,1) # number of calls
 	@assert(n >= 1)
 	c = table.columns # shorthand
-	(indexCol = c["index"]); (priorityCol = c["priority"]); (xCol = c["x"]); (yCol = c["y"]); (arrivalTimeCol = c["arrivalTime"]); (dispatchDelayCol = c["dispatchDelay"]); (onSceneDurationCol = c["onSceneDuration"]); (handoverDurationCol = c["handoverDuration"]); (transportCol = c["transport"]); (hospitalIndexCol = c["hospitalIndex"]) # shorthand, to avoid repeated dict lookups
+	(indexCol = c["index"]); (priorityCol = c["priority"]); (xCol = c["x"]); (yCol = c["y"]); (arrivalTimeCol = c["arrivalTime"]); (dispatchDelayCol = c["dispatchDelay"]); (onSceneDurationCol = c["onSceneDuration"]); (hospitalIndexCol = c["hospitalIndex"]) # shorthand, to avoid repeated dict lookups
+	if haskey(c, "transport") && haskey(c, "handoverDuration")
+		(transportCol = c["transport"]); (handoverDurationCol = c["handoverDuration"]);
+	else # compat
+		@assert(haskey(c, "transfer") && haskey(c, "transferDuration"))
+		@warn("`transfer` and `transferDuration` headers in calls file are deprecated, use `transport` and `handoverDuration` instead.")
+		(transportCol = c["transfer"]); (handoverDurationCol = c["transferDuration"]);
+	end
+	
 	calls = Vector{Call}(undef, n)
 	for i = 1:n
 		calls[i] = Call()
@@ -691,9 +699,16 @@ function readZhangIpParamsFile(filename::String)
 	
 	table = tables["miscParams"]
 	@assert(size(table.data,1) == 1) # table should have one data row
-	for fname in [:travelTimeCost, :onRoadMoveUpDiscountFactor, :regretTravelTimeThreshold, :expectedHospitalHandoverDuration]
+	for fname in [:travelTimeCost, :onRoadMoveUpDiscountFactor, :regretTravelTimeThreshold]
 		# setfield!(zid, fname, table.columns[string(fname)][1])
 		setfield!(zid, fname, convert(fieldtype(typeof(zid), fname), table.columns[string(fname)][1]))
+	end
+	if haskey(table.columns, "expectedHospitalHandoverDuration")
+		zid.expectedHospitalHandoverDuration = table.columns["expectedHospitalHandoverDuration"][1]
+	else # compat
+		@assert(haskey(table.columns, "expectedHospitalTransferDuration"))
+		@warn("`expectedHospitalTransferDuration` header in Zhang IP params file is deprecated, use `expectedHospitalHandoverDuration` instead.")
+		zid.expectedHospitalHandoverDuration = table.columns["expectedHospitalTransferDuration"][1]
 	end
 	
 	table = tables["stationCapacities"]
