@@ -81,7 +81,7 @@ function zhangIpMoveUp(sim::Simulation)::Tuple{Vector{Ambulance}, Vector{Station
 	# calculate adjustedAmbToStationTimes from ambToStationTimes, according to Zhang's thesis
 	# for at-station or newly-freed ambulances: adjusted time = original time
 	# for on-road ambulances: adjusted time = original time * ( time spent on route + time to drive to station - time from route origin to station <= regret-travel-time threshold ? discount factor : 1 )
-	# for at-hospital ambulances: adjusted time = original time + expected remaining transfer duration
+	# for at-hospital ambulances: adjusted time = original time + expected remaining handover duration
 	adjustedAmbToStationTimes = deepcopy(ambToStationTimes)
 	ambIsNewlyIdle(a::Ambulance) = (a.status == ambGoingToStation && a.route.startTime == sim.time)
 	travelMode = getTravelMode!(sim.travel, lowPriority, sim.time)
@@ -112,7 +112,7 @@ function zhangIpMoveUp(sim::Simulation)::Tuple{Vector{Ambulance}, Vector{Station
 				end
 			end
 		elseif ambulance.status == ambAtHospital
-			adjustedAmbToStationTimes[i,:] .+= zid.expectedHospitalTransferDuration
+			adjustedAmbToStationTimes[i,:] .+= zid.expectedHospitalHandoverDuration
 		else
 			error()
 		end

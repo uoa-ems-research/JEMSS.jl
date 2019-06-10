@@ -65,8 +65,8 @@ mutable struct GenConfig
 	priorityDistrRng::DistrRng
 	dispatchDelayDistrRng::DistrRng
 	onSceneDurationDistrRng::DistrRng
-	transferDistrRng::DistrRng
-	transferDurationDistrRng::DistrRng
+	transportDistrRng::DistrRng
+	handoverDurationDistrRng::DistrRng
 	
 	# misc RNGs
 	ambStationRng::AbstractRNG
@@ -144,8 +144,15 @@ function readGenConfig(genConfigFilename::String)
 	genConfig.priorityDistrRng = callDistrsEltContent("priority")
 	genConfig.dispatchDelayDistrRng = callDistrsEltContent("dispatchDelay")
 	genConfig.onSceneDurationDistrRng = callDistrsEltContent("onSceneDuration")
-	genConfig.transferDistrRng = callDistrsEltContent("transfer")
-	genConfig.transferDurationDistrRng = callDistrsEltContent("transferDuration")
+	if containsElt(callDistrsElt, "transport") && containsElt(callDistrsElt, "handoverDuration")
+		genConfig.transportDistrRng = callDistrsEltContent("transport")
+		genConfig.handoverDurationDistrRng = callDistrsEltContent("handoverDuration")
+	else # compat
+		@assert(containsElt(callDistrsElt, "transfer") && containsElt(callDistrsElt, "transferDuration"))
+		@warn("`transfer` and `transferDuration` elements for call distributions in gen config are deprecated, use `transport` and `handoverDuration` instead.")
+		genConfig.transportDistrRng = callDistrsEltContent("transfer")
+		genConfig.handoverDurationDistrRng = callDistrsEltContent("transferDuration")
+	end
 	
 	# number of ambulances, calls, hospitals, stations
 	genConfig.numAmbs = eltContentVal(simElt, "numAmbs")
@@ -335,9 +342,9 @@ function makeCalls(genConfig::GenConfig; rasterSampler::Union{RasterSampler,Noth
 		call.arrivalTime = currentTime
 		call.dispatchDelay = rand(genConfig.dispatchDelayDistrRng)
 		call.onSceneDuration = rand(genConfig.onSceneDurationDistrRng)
-		call.transfer = (rand(genConfig.transferDistrRng) == 1)
+		call.transport = (rand(genConfig.transportDistrRng) == 1)
 		call.hospitalIndex = nullIndex
-		call.transferDuration = rand(genConfig.transferDurationDistrRng)
+		call.handoverDuration = rand(genConfig.handoverDurationDistrRng)
 		if rasterSampler == nothing
 			call.location = randLocation(genConfig.map; trim = genConfig.mapTrim, rng = genConfig.callLocRng)
 		else

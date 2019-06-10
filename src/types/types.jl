@@ -249,11 +249,11 @@ mutable struct Ambulance
 	totalBusyTime::Float # total time that ambulance has been busy
 	# totalStationTime::Float # total time spent at station
 	numCallsTreated::Int # total number of calls that ambulance provided treatment for
-	numCallsTransferred::Int # total number of calls transferred to hospital
+	numCallsTransported::Int # total number of calls transported to hospital
 	numRedispatches::Int # number of times that ambulance is redispatched from one call to another
-	atStationDispatches::Int # total number of dispatches while at station
-	onRoadDispatches::Int # total number of dispatches while on road
-	afterServiceDispatches::Int # total number of dispatches directly after providing service at callout
+	numDispatchesAtStation::Int # total number of dispatches while at station
+	numDispatchesOnRoad::Int # total number of dispatches while on road
+	numDispatchesAfterService::Int # total number of dispatches directly after providing service at callout
 	
 	Ambulance() = new(nullIndex, ambNullStatus, nullIndex, nullIndex, Route(), Event(), nullAmbClass,
 		Location(), false,
@@ -265,14 +265,14 @@ mutable struct Call
 	status::CallStatus
 	ambIndex::Int
 	priority::Priority
-	transfer::Bool # true if requires transfer to hospital
-	hospitalIndex::Int # hospital (if any) that ambulance is transferred to. If hospitalIndex == nullIndex, will transfer to nearest hospital
+	transport::Bool # true if requires transport to hospital
+	hospitalIndex::Int # hospital (if any) that call is transported to. If hospitalIndex == nullIndex, will transport to nearest hospital
 	location::Location # where call occurs
 	
 	arrivalTime::Float # time at which call arrives
 	dispatchDelay::Float # delay between call arrival and considering dispatching an ambulance
 	onSceneDuration::Float # time spent at call location
-	transferDuration::Float # for hospital transfer
+	handoverDuration::Float # for hospital handover
 	
 	# node nearest to call location:
 	nearestNodeIndex::Int
@@ -304,7 +304,7 @@ mutable struct Hospital
 	nearestNodeDist::Float
 	
 	# for statistics:
-	numTransfers::Int # total number of patient transfers from ambulances to hospital
+	numCalls::Int # total number of calls taken to hospital
 	
 	Hospital() = new(nullIndex, Location(), nullIndex, nullDist,
 		0)
@@ -634,7 +634,7 @@ mutable struct ZhangIpData <: MoveUpDataType
 	travelTimeCost::Float # travel time cost multiplier
 	onRoadMoveUpDiscountFactor::Float # discount of travel cost of move up of ambulance on-road and with "regret" travel time <= regretTravelTimeThreshold
 	regretTravelTimeThreshold::Float
-	expectedHospitalTransferDuration::Float
+	expectedHospitalHandoverDuration::Float
 	
 	stationSlots::Vector{Int}
 	benefitSlots::Vector{Float}

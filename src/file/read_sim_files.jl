@@ -122,7 +122,15 @@ function readCallsFile(filename::String)
 	n = size(data,1) # number of calls
 	@assert(n >= 1)
 	c = table.columns # shorthand
-	(indexCol = c["index"]); (priorityCol = c["priority"]); (xCol = c["x"]); (yCol = c["y"]); (arrivalTimeCol = c["arrivalTime"]); (dispatchDelayCol = c["dispatchDelay"]); (onSceneDurationCol = c["onSceneDuration"]); (transferDurationCol = c["transferDuration"]); (transferCol = c["transfer"]); (hospitalIndexCol = c["hospitalIndex"]) # shorthand, to avoid repeated dict lookups
+	(indexCol = c["index"]); (priorityCol = c["priority"]); (xCol = c["x"]); (yCol = c["y"]); (arrivalTimeCol = c["arrivalTime"]); (dispatchDelayCol = c["dispatchDelay"]); (onSceneDurationCol = c["onSceneDuration"]); (hospitalIndexCol = c["hospitalIndex"]) # shorthand, to avoid repeated dict lookups
+	if haskey(c, "transport") && haskey(c, "handoverDuration")
+		(transportCol = c["transport"]); (handoverDurationCol = c["handoverDuration"]);
+	else # compat
+		@assert(haskey(c, "transfer") && haskey(c, "transferDuration"))
+		@warn("`transfer` and `transferDuration` headers in calls file are deprecated, use `transport` and `handoverDuration` instead.")
+		(transportCol = c["transfer"]); (handoverDurationCol = c["transferDuration"]);
+	end
+	
 	calls = Vector{Call}(undef, n)
 	for i = 1:n
 		calls[i] = Call()
@@ -133,8 +141,8 @@ function readCallsFile(filename::String)
 		calls[i].arrivalTime = arrivalTimeCol[i]
 		calls[i].dispatchDelay = dispatchDelayCol[i]
 		calls[i].onSceneDuration = onSceneDurationCol[i]
-		calls[i].transferDuration = transferDurationCol[i]
-		calls[i].transfer = transferCol[i]
+		calls[i].handoverDuration = handoverDurationCol[i]
+		calls[i].transport = transportCol[i]
 		calls[i].hospitalIndex = hospitalIndexCol[i]
 		
 		@assert(calls[i].index == i)
@@ -142,8 +150,8 @@ function readCallsFile(filename::String)
 		@assert(calls[i].arrivalTime >= 0)
 		@assert(calls[i].dispatchDelay >= 0)
 		@assert(calls[i].onSceneDuration >= 0)
-		if calls[i].transfer
-			@assert(calls[i].transferDuration >= 0)
+		if calls[i].transport
+			@assert(calls[i].handoverDuration >= 0)
 		end
 	end
 	
@@ -691,9 +699,16 @@ function readZhangIpParamsFile(filename::String)
 	
 	table = tables["miscParams"]
 	@assert(size(table.data,1) == 1) # table should have one data row
-	for fname in [:travelTimeCost, :onRoadMoveUpDiscountFactor, :regretTravelTimeThreshold, :expectedHospitalTransferDuration]
+	for fname in [:travelTimeCost, :onRoadMoveUpDiscountFactor, :regretTravelTimeThreshold]
 		# setfield!(zid, fname, table.columns[string(fname)][1])
 		setfield!(zid, fname, convert(fieldtype(typeof(zid), fname), table.columns[string(fname)][1]))
+	end
+	if haskey(table.columns, "expectedHospitalHandoverDuration")
+		zid.expectedHospitalHandoverDuration = table.columns["expectedHospitalHandoverDuration"][1]
+	else # compat
+		@assert(haskey(table.columns, "expectedHospitalTransferDuration"))
+		@warn("`expectedHospitalTransferDuration` header in Zhang IP params file is deprecated, use `expectedHospitalHandoverDuration` instead.")
+		zid.expectedHospitalHandoverDuration = table.columns["expectedHospitalTransferDuration"][1]
 	end
 	
 	table = tables["stationCapacities"]

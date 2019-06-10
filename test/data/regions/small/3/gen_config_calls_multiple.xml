@@ -31,8 +31,8 @@
 			<priority seed="1">Categorical([0.57, 0.245, 0.185])</priority>
 			<dispatchDelay seed="2">Truncated(Normal(2/60/24, 1/60/24), 20/60/60/24, 5/60/24)</dispatchDelay>
 			<onSceneDuration seed="3">Truncated(Exponential(12/60/24), 2/60/24, 30/60/24)</onSceneDuration>
-			<transfer seed="4">Bernoulli(0.8)</transfer>
-			<transferDuration seed="5">Truncated(Exponential(12/60/24), 2/60/24, 30/60/24)</transferDuration>
+			<transport seed="4">Bernoulli(0.8)</transport>
+			<handoverDuration seed="5">Truncated(Exponential(12/60/24), 2/60/24, 30/60/24)</handoverDuration>
 		</callDistributions>
 		
 		<!-- if mode = calls, will only generate calls, using call density raster -->

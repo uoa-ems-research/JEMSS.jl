@@ -1,5 +1,5 @@
 miscParams,,,
-travelTimeCost,onRoadMoveUpDiscountFactor,regretTravelTimeThreshold,expectedHospitalTransferDuration
+travelTimeCost,onRoadMoveUpDiscountFactor,regretTravelTimeThreshold,expectedHospitalHandoverDuration
 50,0.5,0.001388889,0.007638889
 ,,,
 stationCapacities,,,
