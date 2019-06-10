@@ -122,7 +122,7 @@ function readCallsFile(filename::String)
 	n = size(data,1) # number of calls
 	@assert(n >= 1)
 	c = table.columns # shorthand
-	(indexCol = c["index"]); (priorityCol = c["priority"]); (xCol = c["x"]); (yCol = c["y"]); (arrivalTimeCol = c["arrivalTime"]); (dispatchDelayCol = c["dispatchDelay"]); (onSceneDurationCol = c["onSceneDuration"]); (handoverDurationCol = c["handoverDuration"]); (transferCol = c["transfer"]); (hospitalIndexCol = c["hospitalIndex"]) # shorthand, to avoid repeated dict lookups
+	(indexCol = c["index"]); (priorityCol = c["priority"]); (xCol = c["x"]); (yCol = c["y"]); (arrivalTimeCol = c["arrivalTime"]); (dispatchDelayCol = c["dispatchDelay"]); (onSceneDurationCol = c["onSceneDuration"]); (handoverDurationCol = c["handoverDuration"]); (transportCol = c["transport"]); (hospitalIndexCol = c["hospitalIndex"]) # shorthand, to avoid repeated dict lookups
 	calls = Vector{Call}(undef, n)
 	for i = 1:n
 		calls[i] = Call()
@@ -134,7 +134,7 @@ function readCallsFile(filename::String)
 		calls[i].dispatchDelay = dispatchDelayCol[i]
 		calls[i].onSceneDuration = onSceneDurationCol[i]
 		calls[i].handoverDuration = handoverDurationCol[i]
-		calls[i].transfer = transferCol[i]
+		calls[i].transport = transportCol[i]
 		calls[i].hospitalIndex = hospitalIndexCol[i]
 		
 		@assert(calls[i].index == i)
@@ -142,7 +142,7 @@ function readCallsFile(filename::String)
 		@assert(calls[i].arrivalTime >= 0)
 		@assert(calls[i].dispatchDelay >= 0)
 		@assert(calls[i].onSceneDuration >= 0)
-		if calls[i].transfer
+		if calls[i].transport
 			@assert(calls[i].handoverDuration >= 0)
 		end
 	end

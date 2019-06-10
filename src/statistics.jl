@@ -110,10 +110,10 @@ function printHospitalsStats(sim::Simulation)
 	
 	println("Hospital statistics:")
 	println("Number of hospitals = ", sim.numHospitals)
-	println("Transfers:")
-	hospitalsNumTransfers = map(h -> h.numTransfers, sim.hospitals)
-	println(" mean = ", round(mean(hospitalsNumTransfers), digits = 2))
-	println(" std = ", round(std(hospitalsNumTransfers), digits = 2))
+	println("Calls:")
+	hospitalsNumCalls = map(h -> h.numCalls, sim.hospitals)
+	println(" mean = ", round(mean(hospitalsNumCalls), digits = 2))
+	println(" std = ", round(std(hospitalsNumCalls), digits = 2))
 end
 
 """

@@ -35,7 +35,7 @@ function resetCalls!(sim::Simulation)
 	@assert(length(backupCalls) == numCalls)
 	
 	# from fnames, remove fixed parameters
-	fnamesFixed = Set([:index, :priority, :transfer, :location,
+	fnamesFixed = Set([:index, :priority, :transport, :location,
 		:arrivalTime, :dispatchDelay, :onSceneDuration, :handoverDuration,
 		:nearestNodeIndex, :nearestNodeDist])
 	setdiff!(fnames, fnamesFixed)
