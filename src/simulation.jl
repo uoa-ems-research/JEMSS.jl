@@ -367,7 +367,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		call.hospitalArrivalTime = sim.time # stats
 		sim.hospitals[call.hospitalIndex].numTransfers += 1 # stats
 		
-		addEvent!(sim.eventList; parentEvent = event, form = ambBecomesIdle, time = sim.time + call.transferDuration, ambulance = ambulance, call = call)
+		addEvent!(sim.eventList; parentEvent = event, form = ambBecomesIdle, time = sim.time + call.handoverDuration, ambulance = ambulance, call = call)
 		
 ################
 	
@@ -381,7 +381,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		delete!(sim.currentCalls, call)
 		call.status = callProcessed
 		
-		ambulance.totalBusyTime += call.onSceneDuration + call.transfer * call.transferDuration # stats
+		ambulance.totalBusyTime += call.onSceneDuration + call.transfer * call.handoverDuration # stats
 		
 		# if queued call exists, respond
 		# otherwise return to station

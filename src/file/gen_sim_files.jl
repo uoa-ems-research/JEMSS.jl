@@ -66,7 +66,7 @@ mutable struct GenConfig
 	dispatchDelayDistrRng::DistrRng
 	onSceneDurationDistrRng::DistrRng
 	transferDistrRng::DistrRng
-	transferDurationDistrRng::DistrRng
+	handoverDurationDistrRng::DistrRng
 	
 	# misc RNGs
 	ambStationRng::AbstractRNG
@@ -145,7 +145,7 @@ function readGenConfig(genConfigFilename::String)
 	genConfig.dispatchDelayDistrRng = callDistrsEltContent("dispatchDelay")
 	genConfig.onSceneDurationDistrRng = callDistrsEltContent("onSceneDuration")
 	genConfig.transferDistrRng = callDistrsEltContent("transfer")
-	genConfig.transferDurationDistrRng = callDistrsEltContent("transferDuration")
+	genConfig.handoverDurationDistrRng = callDistrsEltContent("handoverDuration")
 	
 	# number of ambulances, calls, hospitals, stations
 	genConfig.numAmbs = eltContentVal(simElt, "numAmbs")
@@ -337,7 +337,7 @@ function makeCalls(genConfig::GenConfig; rasterSampler::Union{RasterSampler,Noth
 		call.onSceneDuration = rand(genConfig.onSceneDurationDistrRng)
 		call.transfer = (rand(genConfig.transferDistrRng) == 1)
 		call.hospitalIndex = nullIndex
-		call.transferDuration = rand(genConfig.transferDurationDistrRng)
+		call.handoverDuration = rand(genConfig.handoverDurationDistrRng)
 		if rasterSampler == nothing
 			call.location = randLocation(genConfig.map; trim = genConfig.mapTrim, rng = genConfig.callLocRng)
 		else

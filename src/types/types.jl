@@ -272,7 +272,7 @@ mutable struct Call
 	arrivalTime::Float # time at which call arrives
 	dispatchDelay::Float # delay between call arrival and considering dispatching an ambulance
 	onSceneDuration::Float # time spent at call location
-	transferDuration::Float # for hospital transfer
+	handoverDuration::Float # for hospital transfer
 	
 	# node nearest to call location:
 	nearestNodeIndex::Int
@@ -634,7 +634,7 @@ mutable struct ZhangIpData <: MoveUpDataType
 	travelTimeCost::Float # travel time cost multiplier
 	onRoadMoveUpDiscountFactor::Float # discount of travel cost of move up of ambulance on-road and with "regret" travel time <= regretTravelTimeThreshold
 	regretTravelTimeThreshold::Float
-	expectedHospitalTransferDuration::Float
+	expectedHospitalHandoverDuration::Float
 	
 	stationSlots::Vector{Int}
 	benefitSlots::Vector{Float}
