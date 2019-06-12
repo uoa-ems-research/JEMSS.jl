@@ -210,7 +210,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		push!(sim.currentCalls, sim.calls[event.callIndex])
 		call.status = callScreening
 		
-		addEvent!(sim.eventList; parentEvent = event, form = considerDispatch, time = sim.time + call.dispatchDelay, call = call)
+		addEvent!(sim.eventList; parentEvent = event, form = considerDispatch, time = sim.time + call.dispatchDuration, call = call)
 		
 		# add next call arrival to event queue
 		if call.index < sim.numCalls
