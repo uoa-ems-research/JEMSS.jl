@@ -782,12 +782,12 @@ mutable struct CallStats
 	numTransports::Int
 	
 	totalResponseDuration::Float
-	totalOnSceneTime::Float
-	totalTransportTime::Float # to hospital
-	totalAtHospitalTime::Float
+	totalOnSceneDuration::Float
+	totalTransportDuration::Float # to hospital
+	totalAtHospitalDuration::Float
 	
 	# totalDispatchDelay::Float # delay between call arrival and dispatch of ambulance that responded
-	# totalQueuedTime::Float # time between taking call and dispatch of ambulance that responded ()
+	# totalQueuedDuration::Float # time between taking call and dispatch of ambulance that responded ()
 	
 	CallStats() = new(nullIndex, 0,
 		0, 0, 0, 0,
