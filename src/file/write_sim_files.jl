@@ -119,9 +119,13 @@ function writeSimPeriodStatsListFile(filename::String, periods::Vector{SimPeriod
 	periodTimesTable = Table("times", ["periodIndex", "startTime", "endTime", "duration"];
 		rows = [[i, p.startTime, p.endTime, p.duration] for (i,p) in enumerate(periods)])
 	
-	fnames = fieldnames(AmbulanceStats)
+	fnames = collect(setdiff(fieldnames(AmbulanceStats), [:statusDurations]))
 	ambulanceTable = Table("ambulance", vcat("periodIndex", collect(string.(fnames)));
 		rows = [vcat(i, [getfield(p.ambulance, fname) for fname in fnames]) for (i,p) in enumerate(periods)])
+	
+	statuses = collect(setdiff(instances(AmbStatus), [ambNullStatus]))
+	ambulanceStatusDurationsTable = Table("ambulanceStatusDurations", vcat("periodIndex", string.(statuses));
+		rows = [vcat(i, [p.ambulance.statusDurations[s] for s in statuses]) for (i,p) in enumerate(periods)])
 	
 	fnames = fieldnames(CallStats)
 	callTable = Table("call", vcat("periodIndex", collect(string.(fnames)));
@@ -135,7 +139,7 @@ function writeSimPeriodStatsListFile(filename::String, periods::Vector{SimPeriod
 	# stationTable = Table("station", vcat("periodIndex", collect(string.(fnames)));
 		# rows = [vcat(i, [getfield(p.station, fname) for fname in fnames]) for (i,p) in enumerate(periods)])
 	
-	writeTablesToFile(filename, [miscTable, periodTimesTable, ambulanceTable, callTable])
+	writeTablesToFile(filename, [miscTable, periodTimesTable, ambulanceTable, ambulanceStatusDurationsTable, callTable])
 end
 
 function writeStationsFile(filename::String, stations::Vector{Station})

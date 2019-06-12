@@ -421,31 +421,3 @@ function initSim(configFilename::String;
 	
 	return sim
 end
-
-# initialise given ambulance
-# sets ambulance as sleeping, creates wake up event
-function initAmbulance!(sim::Simulation, ambulance::Ambulance;
-	wakeUpTime::Float = nullTime)
-	wakeUpTime = (wakeUpTime == nullTime ? sim.startTime : wakeUpTime)
-	
-	@assert(ambulance.index != nullIndex)
-	@assert(ambulance.stationIndex != nullIndex)
-	@assert(sim.startTime <= wakeUpTime)
-	
-	ambulance.status = ambSleeping
-	# ambulance.stationIndex
-	# ambulance.callIndex
-	
-	# create route that mimics ambulance driving from nowhere,
-	# to a node (nearest to station), then to station, before simulation began
-	ambulance.route = Route()
-	ambulance.route.startLoc = Location()
-	# ambulance.route.startTime = nullTime
-	ambStation = sim.stations[ambulance.stationIndex]
-	ambulance.route.endLoc = ambStation.location
-	ambulance.route.endTime = sim.startTime
-	ambulance.route.endFNode = ambStation.nearestNodeIndex
-	
-	# add wake up event
-	addEvent!(sim.eventList; form = ambWakesUp, time = wakeUpTime, ambulance = ambulance)
-end

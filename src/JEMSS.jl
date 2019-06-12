@@ -123,6 +123,7 @@ include("misc/stream.jl")
 include("misc/rand.jl")
 
 include("types/types.jl")
+include("types/ambulance.jl")
 include("types/call.jl")
 include("types/demand.jl")
 include("types/event.jl")

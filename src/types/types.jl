@@ -257,13 +257,16 @@ mutable struct Ambulance
 	numMoveUpsFromStation::Int
 	numMoveUpsOnRoad::Int
 	numMoveUpsOnFree::Int
+	statusDurations::Dict{AmbStatus,Float} # duration spent in each status
 	
 	# for calculating statistics:
+	prevStatusSetTime::Float # time at which previous status was last set, even if set to same status value
 	# recentStationArrivalTime::Float # for totalAtStationDuration
 	
 	Ambulance() = new(nullIndex, ambNullStatus, nullIndex, nullIndex, Route(), Event(), nullAmbClass,
 		Location(), false,
-		0.0, 0.0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+		0.0, 0.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Dict([s => 0.0 for s in instances(AmbStatus)]),
+		nullTime)
 end
 
 mutable struct Call
@@ -761,6 +764,8 @@ mutable struct AmbulanceStats
 	numMoveUpsOnRoad::Int
 	numMoveUpsOnFree::Int
 	
+	statusDurations::Dict{AmbStatus,Float} # duration spent in each status
+	
 	# calculated:
 	numDispatches::Int # all dispatches, including redispatches
 	numMoveUps::Int
@@ -773,6 +778,7 @@ mutable struct AmbulanceStats
 		0, 0,
 		0, 0, 0, 0,
 		0, 0, 0,
+		Dict([s => 0.0 for s in instances(AmbStatus)]),
 		0, 0)
 end
 

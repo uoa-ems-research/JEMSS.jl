@@ -89,10 +89,15 @@ function AmbulanceStats(ambulance::Ambulance)::AmbulanceStats
 	stats.numMoveUpsFromStation = ambulance.numMoveUpsFromStation
 	stats.numMoveUpsOnRoad = ambulance.numMoveUpsOnRoad
 	stats.numMoveUpsOnFree = ambulance.numMoveUpsOnFree
+	stats.statusDurations = deepcopy(ambulance.statusDurations)
 	
 	# calculate
 	stats.numDispatches = stats.numDispatchesFromStation + stats.numDispatchesOnRoad + stats.numDispatchesOnFree
 	# stats.numMoveUps = stats.numMoveUpsOnRoad + stats.numMoveUpsFromStation
+	
+	# if checkMode
+		# @assert(isapprox(sum(values(stats.statusDurations)), sum([a.prevStatusSetTime - sim.startTime for a in sim.ambulances])))
+	# end
 	
 	return stats
 end
@@ -121,6 +126,10 @@ end
 		# elseif ambulance.status == ambAtHospital
 			# stats.totalBusyDuration += sim.time - call.hospitalArrivalTime
 		# end
+	# end
+	
+	# if ambulance.prevStatusSetTime < sim.time
+		# stats.statusDurations[ambulance.status] += sim.time - ambulance.prevStatusSetTime
 	# end
 	
 	# return stats
@@ -166,6 +175,10 @@ function StationStats(station::Station)::StationStats
 	# todo
 	return stats
 end
+
+# for ambulance statusDurations:
+Base.:+(a::Dict{AmbStatus,Float}, b::Dict{AmbStatus,Float}) = merge(+, a, b)
+Base.:-(a::Dict{AmbStatus,Float}, b::Dict{AmbStatus,Float}) = merge(-, a, b)
 
 function Base.:+(a::AmbulanceStats, b::AmbulanceStats)::AmbulanceStats
 	stats = AmbulanceStats()

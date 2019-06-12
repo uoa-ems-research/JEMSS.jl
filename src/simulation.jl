@@ -182,8 +182,8 @@ function simulateEvent!(sim::Simulation, event::Event)
 		ambulance = sim.ambulances[event.ambIndex]
 		@assert(ambulance.status == ambIdleAtStation) # ambulance should be at station before sleeping
 		@assert(event.callIndex == nullIndex)
-	
-		ambulance.status = ambSleeping
+		
+		setAmbStatus!(ambulance, ambSleeping, sim.time)
 		# ambulance.stationIndex
 		# ambulance.callIndex
 		
@@ -196,7 +196,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		@assert(ambulance.status == ambSleeping) # ambulance should have been sleeping
 		@assert(event.callIndex == nullIndex)
 		
-		ambulance.status = ambIdleAtStation
+		setAmbStatus!(ambulance, ambIdleAtStation, sim.time)
 		# ambulance.stationIndex
 		# ambulance.callIndex
 		
@@ -289,7 +289,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 			ambulance.numDispatchesOnFree += 1
 		end
 		
-		ambulance.status = ambGoingToCall
+		setAmbStatus!(ambulance, ambGoingToCall, sim.time)
 		# ambulance.stationIndex
 		ambulance.callIndex = call.index
 		changeRoute!(sim, ambulance.route, sim.responseTravelPriorities[call.priority], sim.time, call.location, call.nearestNodeIndex)
@@ -316,7 +316,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		call = sim.calls[event.callIndex]
 		@assert(call.status == callWaitingForAmb)
 		
-		ambulance.status = ambAtCall
+		setAmbStatus!(ambulance, ambAtCall, sim.time)
 		# ambulance.stationIndex
 		# ambulance.callIndex
 		ambulance.totalTravelDuration += sim.time - ambulance.route.startTime # stats
@@ -355,7 +355,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		@assert(hospitalIndex != nullIndex)
 		hospital = sim.hospitals[hospitalIndex]
 		
-		ambulance.status = ambGoingToHospital
+		setAmbStatus!(ambulance, ambGoingToHospital, sim.time)
 		# ambulance.stationIndex
 		# ambulance.callIndex
 		changeRoute!(sim, ambulance.route, lowPriority, sim.time, hospital.location, hospital.nearestNodeIndex)
@@ -374,7 +374,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		@assert(call.status == callGoingToHospital)
 		@assert(call.transport)
 		
-		ambulance.status = ambAtHospital
+		setAmbStatus!(ambulance, ambAtHospital, sim.time)
 		# ambulance.stationIndex
 		# ambulance.callIndex
 		ambulance.totalTravelDuration += sim.time - ambulance.route.startTime # stats
@@ -413,7 +413,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		else
 			station = sim.stations[ambulance.stationIndex]
 			
-			ambulance.status = ambGoingToStation
+			setAmbStatus!(ambulance, ambGoingToStation, sim.time)
 			# ambulance.stationIndex
 			ambulance.callIndex = nullIndex
 			changeRoute!(sim, ambulance.route, lowPriority, sim.time, station.location, station.nearestNodeIndex)
@@ -435,7 +435,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		@assert(ambulance.status == ambGoingToStation)
 		@assert(event.callIndex == nullIndex)
 		
-		ambulance.status = ambIdleAtStation
+		setAmbStatus!(ambulance, ambIdleAtStation, sim.time)
 		# ambulance.stationIndex
 		# ambulance.callIndex
 		ambulance.totalTravelDuration += sim.time - ambulance.route.startTime # stats
@@ -508,7 +508,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		
 		station = sim.stations[ambulance.stationIndex] # station to move up to
 		
-		ambulance.status = ambGoingToStation
+		setAmbStatus!(ambulance, ambGoingToStation, sim.time)
 		ambulance.stationIndex = station.index
 		ambulance.callIndex = nullIndex
 		changeRoute!(sim, ambulance.route, lowPriority, sim.time, station.location, station.nearestNodeIndex)
