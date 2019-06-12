@@ -295,12 +295,13 @@ mutable struct Call
 	hospitalArrivalTime::Float # time at which ambulance arrives at hospital
 	numBumps::Int # total number of times that call gets bumped due to redispatch
 	wasQueued::Bool # whether call was queued or not
+	ambDispatchLoc::Location # location of responding ambulance at moment of dispatch
 	
 	Call() = new(nullIndex, callNullStatus, nullIndex, nullPriority, true, nullIndex, Location(),
 		nullTime, nullTime, nullTime, nullTime,
 		nullIndex, nullDist,
 		Location(), false,
-		nullTime, nullTime, nullTime, nullTime, 0, false)
+		nullTime, nullTime, nullTime, nullTime, 0, false, Location())
 end
 
 mutable struct Hospital

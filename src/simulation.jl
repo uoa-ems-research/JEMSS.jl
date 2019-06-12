@@ -297,6 +297,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		call.status = callWaitingForAmb
 		call.ambIndex = event.ambIndex
 		call.dispatchTime = sim.time # stats
+		call.ambDispatchLoc = ambulance.route.startLoc # same result as getRouteCurrentLocation!(sim.net, ambulance.route, sim.time)
 		
 		addEvent!(sim.eventList; parentEvent = event, form = ambReachesCall, time = ambulance.route.endTime, ambulance = ambulance, call = call)
 		
