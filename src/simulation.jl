@@ -329,6 +329,9 @@ function simulateEvent!(sim::Simulation, event::Event)
 		@assert(ambulance.status == ambAtCall)
 		call = sim.calls[event.callIndex]
 		@assert(call.status == callOnSceneCare)
+		@assert(call.transport)
+		
+		ambulance.totalBusyTime += call.onSceneDuration # stats
 		
 		# if hospital not specified for call, find closest hospital
 		hospitalIndex = call.hospitalIndex
@@ -355,6 +358,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		@assert(ambulance.status == ambGoingToHospital)
 		call = sim.calls[event.callIndex]
 		@assert(call.status == callGoingToHospital)
+		@assert(call.transport)
 		
 		ambulance.status = ambAtHospital
 		# ambulance.stationIndex
@@ -381,7 +385,8 @@ function simulateEvent!(sim::Simulation, event::Event)
 		delete!(sim.currentCalls, call)
 		call.status = callProcessed
 		
-		ambulance.totalBusyTime += call.onSceneDuration + call.transport * call.handoverDuration # stats
+		ambulance.totalBusyTime += call.transport ? call.handoverDuration : call.onSceneDuration # stats
+		# if call.transport == true, already added call.onSceneDuration to totalBusyTime in ambGoesToHospital event
 		
 		# if queued call exists, respond
 		# otherwise return to station
