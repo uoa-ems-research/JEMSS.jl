@@ -312,6 +312,9 @@ mutable struct Hospital
 	# for statistics:
 	numCalls::Int # total number of calls taken to hospital
 	
+	# for statistics:
+	# numCallsTotalDuration::Dict{Int,Float} # numCallsTotalDuration[k] gives total duration that hospital had k calls for handover
+	
 	Hospital() = new(nullIndex, Location(), nullIndex, nullDist,
 		0)
 end
@@ -324,7 +327,8 @@ mutable struct Station
 	nearestNodeDist::Float
 	
 	# for statistics:
-	# totalAmbIdleTime::Float # total time that ambulances are idle at station
+	# numAmbsTotalDuration::Dict{Int,Float} # numAmbsTotalDuration[k] gives total duration that station had k ambulances
+	# totalAmbIdleDuration::Float # total duration that ambulances are idle at station
 	
 	Station() = new(nullIndex, Location(), 0, nullIndex, nullDist)
 end
@@ -817,8 +821,8 @@ mutable struct StationStats
 	# also count how many move-ups were actually completed, and how many were cut short?
 	
 	# todo, maybe:
-	# numAmbsTotalTime::Dict{Int,Float} # numAmbsTotalTime[k] gives total time that station had k ambulances
-	# totalAmbIdleTime::Float # total time that ambulances are idle at station
+	# numAmbsTotalDuration::Dict{Int,Float} # numAmbsTotalDuration[k] gives total duration that station had k ambulances
+	# totalAmbIdleDuration::Float # total duration that ambulances are idle at station
 	
 	StationStats() = new(nullIndex,
 		0, 0, [], [], [])
@@ -842,7 +846,7 @@ mutable struct SimPeriodStats
 	hospital::HospitalStats # for all hospitals
 	station::StationStats # for all stations
 	
-	# numAmbsFreeTotalTime::Dict{Int,Float} # numAmbsFreeTotalTime[k] gives total time that k ambulances were free (not busy)
+	# numAmbsFreeTotalDuration::Dict{Int,Float} # numAmbsFreeTotalDuration[k] gives total duration that k ambulances were free (not busy)
 	# maxCallQueueLength::Int
 	
 	SimPeriodStats() = new(nullTime, nullTime, nullTime,
