@@ -65,7 +65,7 @@ export
 	readDlmFileNextLine!, readDlmFile, openNewFile, writeDlmLine!, arrayDict, writeTablesToFile!, writeTablesToFile, readTablesFromFile, readTablesFromData, tableRowsFieldDicts, fileChecksum, serializeToFile, deserializeFile, joinPathIfNotAbs, interpolateString, xmlFileRoot, findElt, eltContent, eltContentVal, eltContentInterpVal, childrenNodeNames, selectXmlFile, # file_io
 	runGenConfig, # gen_sim_files
 	readAmbsFile, readArcsFile, readCallsFile, readCompTableFile, readDemandFile, readDemandCoverageFile, readEventsFile, readGeoFile, readHospitalsFile, readMapFile, readNodesFile, readPrioritiesFile, readPriorityListFile, readRasterFile, readRedispatchFile, readRNetTravelsFile, readStationsFile, readTravelFile, readDeploymentsFile, readZhangIpParamsFile, # read_sim_files
-	writeAmbsFile, writeArcsFile, writeCallsFile, writeDemandFile, writeDemandCoverageFile, writeHospitalsFile, writeMapFile, writeNodesFile, writePrioritiesFile, writeRedispatchFile, writeRNetTravelsFile, writeStationsFile, writeTravelFile, openOutputFiles!, closeOutputFiles!, writeEventToFile!, writeStatsFiles!, writeDeploymentsFile, writeBatchMeanResponseTimesFile # write_sim_files
+	writeAmbsFile, writeArcsFile, writeCallsFile, writeDemandFile, writeDemandCoverageFile, writeHospitalsFile, writeMapFile, writeNodesFile, writePrioritiesFile, writeRedispatchFile, writeRNetTravelsFile, writeSimPeriodStatsListFile, writeStationsFile, writeTravelFile, openOutputFiles!, closeOutputFiles!, writeEventToFile!, writeStatsFiles!, writeDeploymentsFile, writeBatchMeanResponseTimesFile # write_sim_files
 
 # move up initialisation functions
 export
@@ -93,6 +93,7 @@ export
 	Event, Ambulance, Call, Hospital, Station, Redispatch,
 	Map, GridSearchRect, GridRect, Grid, Raster, RasterSampler, DemandMode, Demand, PointsCoverageMode, DemandCoverage,
 	CompTableData, DdsmData, DmexclpData, PriorityListData, ZhangIpData, Temp0Data, Temp1Data, Temp2Data, MoveUpData,
+	AmbulanceStats, CallStats, HospitalStats, StationStats, SimPeriodStats, SimStats,
 	File, Table, Resimulation, Simulation,
 	DistrRng
 
@@ -131,6 +132,7 @@ include("types/location.jl")
 include("types/network.jl")
 include("types/raster.jl")
 include("types/route.jl")
+include("types/statistics.jl")
 include("types/travel.jl")
 
 include("file/file_io.jl")

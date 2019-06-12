@@ -48,10 +48,16 @@ function simulate!(sim::Simulation;
 	printProgress() = doPrint && print(@sprintf("\rsim time: %-9.2f sim duration: %-9.2f events simulated: %-9d real duration: %.2f seconds", sim.time, sim.time - sim.startTime, eventCount, Base.time() - startTime))
 	
 	# simulate
+	stats = sim.stats # shorthand
 	while !sim.complete && sim.eventList[end].time <= time && eventCount < numEvents
+		if stats.doCapture && stats.nextCaptureTime <= sim.eventList[end].time
+			captureSimStats!(sim, stats.nextCaptureTime)
+		end
+		
 		simulateNextEvent!(sim)
 		eventCount += 1
-		if Base.time() >= nextPrintTime
+		
+		if doPrint && Base.time() >= nextPrintTime
 			printProgress()
 			nextPrintTime += printingInterval
 		end
@@ -60,18 +66,25 @@ function simulate!(sim::Simulation;
 	printProgress()
 	doPrint && println()
 	
+	if stats.doCapture && sim.complete
+		captureSimStats!(sim, sim.endTime)
+		populateSimStats!(sim)
+	end
+	
 	return sim.complete
 end
 
 # simulate up to last event with time <= given time
-# equivalent to calling simulate!(sim, time = time), but may be faster so have kept for animation
+# similar to calling simulate!(sim, time = time), but does not record statistics
+# kept this for animation, to avoid problems with animating as an asynchronous task
 function simulateToTime!(sim::Simulation, time::Float)
 	while !sim.complete && sim.eventList[end].time <= time # eventList must remain sorted by non-increasing time
 		simulateNextEvent!(sim)
 	end
 end
 
-# run simulation to end; equivalent to simulate!(sim)
+# run simulation to end
+# similar to calling simulate!(sim), but does not record statistics
 function simulateToEnd!(sim::Simulation)
 	while !sim.complete
 		simulateNextEvent!(sim)
@@ -269,11 +282,11 @@ function simulateEvent!(sim::Simulation, event::Event)
 		
 		# stats:
 		if status == ambIdleAtStation
-			ambulance.numDispatchesAtStation += 1
+			ambulance.numDispatchesFromStation += 1
 		elseif status == ambGoingToCall || status == ambGoingToStation
 			ambulance.numDispatchesOnRoad += 1
 		elseif status == ambAtCall || status == ambAtHospital
-			ambulance.numDispatchesAfterService += 1
+			ambulance.numDispatchesOnFree += 1
 		end
 		
 		ambulance.status = ambGoingToCall

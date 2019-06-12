@@ -391,6 +391,21 @@ function initSim(configFilename::String;
 	end
 	
 	##################
+	# statistics
+	
+	initMessage(t, "initialising statistics")
+	
+	# temp
+	@info("Todo: make sim stats capturing configurable.")
+	stats = sim.stats # shorthand
+	stats.doCapture = true
+	stats.captureTimes = sim.startTime + 1 : 1 : sim.calls[end].arrivalTime + 1 # daily
+	stats.nextCaptureTime = stats.captureTimes[1]
+	
+	initTime(t)
+	doPrint && stats.doCapture && println("will capture statistics")
+	
+	##################
 	# misc
 	
 	sim.initialised = true # at this point, the simulation could be run

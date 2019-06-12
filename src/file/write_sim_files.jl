@@ -112,6 +112,32 @@ function writePrioritiesFile(filename::String, targetResponseTimes::Vector{Float
 	writeTablesToFile(filename, table)
 end
 
+function writeSimPeriodStatsListFile(filename::String, periods::Vector{SimPeriodStats})
+	miscTable = Table("miscData", ["numPeriods"];
+		rows = [[length(periods)]])
+	
+	periodTimesTable = Table("times", ["periodIndex", "startTime", "endTime", "duration"];
+		rows = [[i, p.startTime, p.endTime, p.duration] for (i,p) in enumerate(periods)])
+	
+	fnames = fieldnames(AmbulanceStats)
+	ambulanceTable = Table("ambulance", vcat("periodIndex", collect(string.(fnames)));
+		rows = [vcat(i, [getfield(p.ambulance, fname) for fname in fnames]) for (i,p) in enumerate(periods)])
+	
+	fnames = fieldnames(CallStats)
+	callTable = Table("call", vcat("periodIndex", collect(string.(fnames)));
+		rows = [vcat(i, [getfield(p.call, fname) for fname in fnames]) for (i,p) in enumerate(periods)])
+	
+	# fnames = fieldnames(HospitalStats)
+	# hospitalTable = Table("hospital", vcat("periodIndex", collect(string.(fnames)));
+		# rows = [vcat(i, [getfield(p.hospital, fname) for fname in fnames]) for (i,p) in enumerate(periods)])
+	
+	# fnames = fieldnames(StationStats)
+	# stationTable = Table("station", vcat("periodIndex", collect(string.(fnames)));
+		# rows = [vcat(i, [getfield(p.station, fname) for fname in fnames]) for (i,p) in enumerate(periods)])
+	
+	writeTablesToFile(filename, [miscTable, periodTimesTable, ambulanceTable, callTable])
+end
+
 function writeStationsFile(filename::String, stations::Vector{Station})
 	table = Table("stations", ["index", "x", "y", "capacity"];
 		rows = [[s.index, s.location.x, s.location.y, s.capacity] for s in stations])
@@ -208,8 +234,8 @@ function writeStatsFiles!(sim::Simulation)
 	
 	# save ambulance stats
 	writeTablesToFile(outputFilePath("ambulances"), Table("ambStats",
-		["index", "stationIndex", "totalTravelTime", "totalBusyTime", "numCallsTreated", "numCallsTransported", "numDispatchesAtStation", "numDispatchesOnRoad", "numDispatchesAfterService", "numRedispatches"];
-		rows = [vcat(a.index, a.stationIndex, round.([a.totalTravelTime, a.totalBusyTime], digits = timeRounding)..., a.numCallsTreated, a.numCallsTransported, a.numDispatchesAtStation, a.numDispatchesOnRoad, a.numDispatchesAfterService, a.numRedispatches) for a in sim.ambulances]))
+		["index", "stationIndex", "totalTravelTime", "totalBusyTime", "numCallsTreated", "numCallsTransported", "numDispatchesFromStation", "numDispatchesOnRoad", "numDispatchesOnFree", "numRedispatches"];
+		rows = [vcat(a.index, a.stationIndex, round.([a.totalTravelTime, a.totalBusyTime], digits = timeRounding)..., a.numCallsTreated, a.numCallsTransported, a.numDispatchesFromStation, a.numDispatchesOnRoad, a.numDispatchesOnFree, a.numRedispatches) for a in sim.ambulances]))
 	
 	# save call stats
 	writeTablesToFile(outputFilePath("calls"), Table("callStats",
