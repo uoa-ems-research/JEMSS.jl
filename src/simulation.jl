@@ -259,9 +259,9 @@ function simulateEvent!(sim::Simulation, event::Event)
 			
 			# stats:
 			if ambWasOnRoute
-				ambulance.totalTravelTime += sim.time - ambulance.route.startTime
+				ambulance.totalTravelDuration += sim.time - ambulance.route.startTime
 				if ambulance.status == ambGoingToCall
-					ambulance.totalBusyTime += sim.time - ambulance.route.startTime
+					ambulance.totalBusyDuration += sim.time - ambulance.route.startTime
 					ambulance.numRedispatches += 1
 				end
 			end
@@ -318,8 +318,8 @@ function simulateEvent!(sim::Simulation, event::Event)
 		ambulance.status = ambAtCall
 		# ambulance.stationIndex
 		# ambulance.callIndex
-		ambulance.totalTravelTime += sim.time - ambulance.route.startTime # stats
-		ambulance.totalBusyTime += sim.time - ambulance.route.startTime # stats
+		ambulance.totalTravelDuration += sim.time - ambulance.route.startTime # stats
+		ambulance.totalBusyDuration += sim.time - ambulance.route.startTime # stats
 		ambulance.numCallsTreated += 1 # stats
 		
 		call.status = callOnSceneCare
@@ -344,7 +344,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		@assert(call.status == callOnSceneCare)
 		@assert(call.transport)
 		
-		ambulance.totalBusyTime += call.onSceneDuration # stats
+		ambulance.totalBusyDuration += call.onSceneDuration # stats
 		
 		# if hospital not specified for call, find closest hospital
 		hospitalIndex = call.hospitalIndex
@@ -376,8 +376,8 @@ function simulateEvent!(sim::Simulation, event::Event)
 		ambulance.status = ambAtHospital
 		# ambulance.stationIndex
 		# ambulance.callIndex
-		ambulance.totalTravelTime += sim.time - ambulance.route.startTime # stats
-		ambulance.totalBusyTime += sim.time - ambulance.route.startTime # stats
+		ambulance.totalTravelDuration += sim.time - ambulance.route.startTime # stats
+		ambulance.totalBusyDuration += sim.time - ambulance.route.startTime # stats
 		ambulance.numCallsTransported += 1 # stats
 		
 		call.status = callAtHospital
@@ -398,8 +398,8 @@ function simulateEvent!(sim::Simulation, event::Event)
 		delete!(sim.currentCalls, call)
 		call.status = callProcessed
 		
-		ambulance.totalBusyTime += call.transport ? call.handoverDuration : call.onSceneDuration # stats
-		# if call.transport == true, already added call.onSceneDuration to totalBusyTime in ambGoesToHospital event
+		ambulance.totalBusyDuration += call.transport ? call.handoverDuration : call.onSceneDuration # stats
+		# if call.transport == true, already added call.onSceneDuration to totalBusyDuration in ambGoesToHospital event
 		
 		# if queued call exists, respond
 		# otherwise return to station
@@ -437,7 +437,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		ambulance.status = ambIdleAtStation
 		# ambulance.stationIndex
 		# ambulance.callIndex
-		ambulance.totalTravelTime += sim.time - ambulance.route.startTime # stats
+		ambulance.totalTravelDuration += sim.time - ambulance.route.startTime # stats
 		
 		ambulance.event = Event() # no event currently
 		
@@ -488,7 +488,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 					# delete station arrival event for this ambulance
 					deleteEvent!(sim.eventList, ambulance.event)
 					
-					ambulance.totalTravelTime += sim.time - ambulance.route.startTime # stats
+					ambulance.totalTravelDuration += sim.time - ambulance.route.startTime # stats
 				end
 				
 				# ambulance.status

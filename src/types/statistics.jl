@@ -78,8 +78,8 @@ function AmbulanceStats(ambulance::Ambulance)::AmbulanceStats
 	
 	# copy some fields
 	stats.ambIndex = ambulance.index
-	stats.totalTravelTime = ambulance.totalTravelTime
-	stats.totalBusyTime = ambulance.totalBusyTime
+	stats.totalTravelDuration = ambulance.totalTravelDuration
+	stats.totalBusyDuration = ambulance.totalBusyDuration
 	stats.numCallsTreated = ambulance.numCallsTreated
 	stats.numCallsTransported = ambulance.numCallsTransported
 	stats.numDispatchesFromStation = ambulance.numDispatchesFromStation
@@ -105,21 +105,21 @@ end
 	# if sim.time < ambulance.route.endTime
 		# # ambulance route not yet finished, add on capture travel time
 		# partialTravelTime = sim.time - ambulance.route.startTime
-		# stats.totalTravelTime += partialTravelTime
+		# stats.totalTravelDuration += partialTravelTime
 		# if ambulance.status == ambGoingToCall || ambulance.status == ambGoesToHospital
 			# # ambulance was travelling due to call
-			# stats.totalBusyTime += partialTravelTime
+			# stats.totalBusyDuration += partialTravelTime
 		# end
 	# end
 	
-	# # if responding to call, may need to add to totalBusyTime
+	# # if responding to call, may need to add to totalBusyDuration
 	# if ambulance.callIndex != nullIndex
 		# call = sim.calls[ambulance.callIndex]
 		# status = ambulance.status
 		# if ambulance.status == ambAtCall
-			# stats.totalBusyTime += sim.time - call.ambArrivalTime
+			# stats.totalBusyDuration += sim.time - call.ambArrivalTime
 		# elseif ambulance.status == ambAtHospital
-			# stats.totalBusyTime += sim.time - call.hospitalArrivalTime
+			# stats.totalBusyDuration += sim.time - call.hospitalArrivalTime
 		# end
 	# end
 	

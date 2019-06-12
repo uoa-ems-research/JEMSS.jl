@@ -245,9 +245,9 @@ mutable struct Ambulance
 	movedLoc::Bool
 	
 	# for statistics:
-	totalTravelTime::Float # this should only be updated after finishing each route / sim end
-	totalBusyTime::Float # total time that ambulance has been busy
-	# totalStationTime::Float # total time spent at station
+	totalTravelDuration::Float # this should only be updated after finishing each route / sim end
+	totalBusyDuration::Float # total duration that ambulance has been busy
+	# totalAtStationDuration::Float # total duration spent at station
 	numCallsTreated::Int # total number of calls that ambulance provided treatment on scene
 	numCallsTransported::Int # total number of calls transported to hospital
 	numRedispatches::Int # number of times that ambulance is redispatched from one call to another
@@ -259,7 +259,7 @@ mutable struct Ambulance
 	numMoveUpsOnFree::Int
 	
 	# for calculating statistics:
-	# recentStationArrivalTime::Float # for totalStationTime
+	# recentStationArrivalTime::Float # for totalAtStationDuration
 	
 	Ambulance() = new(nullIndex, ambNullStatus, nullIndex, nullIndex, Route(), Event(), nullAmbClass,
 		Location(), false,
@@ -740,9 +740,9 @@ end
 mutable struct AmbulanceStats
 	ambIndex::Int # for single ambulance
 	
-	totalTravelTime::Float # this should only be updated after finishing each route / sim end
-	totalBusyTime::Float # total time that ambulance has been busy
-	# totalStationTime::Float # total time spent at station
+	totalTravelDuration::Float # this should only be updated after finishing each route / sim end
+	totalBusyDuration::Float # total duration that ambulance has been busy
+	# totalAtStationDuration::Float # total duration spent at station
 	
 	numCallsTreated::Int # total number of calls that ambulance provided treatment on scene
 	numCallsTransported::Int # total number of calls transported to hospital
@@ -761,7 +761,7 @@ mutable struct AmbulanceStats
 	numMoveUps::Int
 	
 	# to add:
-	# totalWorkingTime::Float # time spent working, busy or free
+	# totalWorkingDuration::Float # duration spent working (on shift), busy or free
 	
 	AmbulanceStats() = new(nullIndex,
 		0.0, 0.0,

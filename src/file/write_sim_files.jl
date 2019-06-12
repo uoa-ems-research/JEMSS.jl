@@ -234,8 +234,8 @@ function writeStatsFiles!(sim::Simulation)
 	
 	# save ambulance stats
 	writeTablesToFile(outputFilePath("ambulances"), Table("ambStats",
-		["index", "stationIndex", "totalTravelTime", "totalBusyTime", "numCallsTreated", "numCallsTransported", "numDispatchesFromStation", "numDispatchesOnRoad", "numDispatchesOnFree", "numRedispatches"];
-		rows = [vcat(a.index, a.stationIndex, round.([a.totalTravelTime, a.totalBusyTime], digits = timeRounding)..., a.numCallsTreated, a.numCallsTransported, a.numDispatchesFromStation, a.numDispatchesOnRoad, a.numDispatchesOnFree, a.numRedispatches) for a in sim.ambulances]))
+		["index", "stationIndex", "totalTravelDuration", "totalBusyDuration", "numCallsTreated", "numCallsTransported", "numDispatchesFromStation", "numDispatchesOnRoad", "numDispatchesOnFree", "numRedispatches"];
+		rows = [vcat(a.index, a.stationIndex, round.([a.totalTravelDuration, a.totalBusyDuration], digits = timeRounding)..., a.numCallsTreated, a.numCallsTransported, a.numDispatchesFromStation, a.numDispatchesOnRoad, a.numDispatchesOnFree, a.numRedispatches) for a in sim.ambulances]))
 	
 	# save call stats
 	writeTablesToFile(outputFilePath("calls"), Table("callStats",
