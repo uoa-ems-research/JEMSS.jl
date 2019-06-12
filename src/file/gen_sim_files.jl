@@ -63,7 +63,7 @@ mutable struct GenConfig
 	# call related distributions and random number generators
 	interarrivalTimeDistrRng::DistrRng
 	priorityDistrRng::DistrRng
-	dispatchDurationDistrRng::DistrRng
+	dispatchDelayDistrRng::DistrRng
 	onSceneDurationDistrRng::DistrRng
 	transportDistrRng::DistrRng
 	handoverDurationDistrRng::DistrRng
@@ -142,8 +142,7 @@ function readGenConfig(genConfigFilename::String)
 	end
 	genConfig.interarrivalTimeDistrRng = callDistrsEltContent("interarrivalTime")
 	genConfig.priorityDistrRng = callDistrsEltContent("priority")
-	dispatchDurationString = containsElt(callDistrsElt, "dispatchDuration") ? "dispatchDuration" : "dispatchDelay" # compat for "dispatchDelay"
-	genConfig.dispatchDurationDistrRng = callDistrsEltContent(dispatchDurationString)
+	genConfig.dispatchDelayDistrRng = callDistrsEltContent("dispatchDelay")
 	genConfig.onSceneDurationDistrRng = callDistrsEltContent("onSceneDuration")
 	if containsElt(callDistrsElt, "transport") && containsElt(callDistrsElt, "handoverDuration")
 		genConfig.transportDistrRng = callDistrsEltContent("transport")
@@ -342,7 +341,7 @@ function makeCalls(genConfig::GenConfig; rasterSampler::Union{RasterSampler,Noth
 		call.index = length(calls) + 1
 		call.priority = Priority(rand(genConfig.priorityDistrRng))
 		call.arrivalTime = currentTime
-		call.dispatchDuration = rand(genConfig.dispatchDurationDistrRng)
+		call.dispatchDelay = rand(genConfig.dispatchDelayDistrRng)
 		call.onSceneDuration = rand(genConfig.onSceneDurationDistrRng)
 		call.transport = (rand(genConfig.transportDistrRng) == 1)
 		call.hospitalIndex = nullIndex

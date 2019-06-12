@@ -35,8 +35,8 @@ end
 function writeCallsFile(filename::String, startTime::Float, calls::Vector{Call})
 	@assert(length(calls) >= 1)
 	miscTable = Table("miscData", ["startTime"]; rows = [[startTime]])
-	callsTable = Table("calls", ["index", "priority", "x", "y", "arrivalTime", "dispatchDuration", "onSceneDuration", "transport", "hospitalIndex", "handoverDuration"];
-		rows = [[c.index, Int(c.priority), c.location.x, c.location.y, c.arrivalTime, c.dispatchDuration, c.onSceneDuration, Int(c.transport), c.hospitalIndex, c.handoverDuration] for c in calls])
+	callsTable = Table("calls", ["index", "priority", "x", "y", "arrivalTime", "dispatchDelay", "onSceneDuration", "transport", "hospitalIndex", "handoverDuration"];
+		rows = [[c.index, Int(c.priority), c.location.x, c.location.y, c.arrivalTime, c.dispatchDelay, c.onSceneDuration, Int(c.transport), c.hospitalIndex, c.handoverDuration] for c in calls])
 	writeTablesToFile(filename, [miscTable, callsTable])
 end
 
@@ -239,8 +239,8 @@ function writeStatsFiles!(sim::Simulation)
 	
 	# save call stats
 	writeTablesToFile(outputFilePath("calls"), Table("callStats",
-		["index", "priority", "ambIndex", "transport", "arrivalTime", "dispatchDuration", "onSceneDuration", "hospitalArrivalTime", "handoverDuration", "dispatchTime", "ambArrivalTime", "hospitalIndex", "numBumps", "wasQueued"];
-		rows = [vcat(c.index, Int(c.priority), c.ambIndex, Int(c.transport), round.([c.arrivalTime, c.dispatchDuration, c.onSceneDuration, c.hospitalArrivalTime, c.handoverDuration * c.transport, c.dispatchTime, c.ambArrivalTime], digits = timeRounding)..., c.hospitalIndex, c.numBumps, Int(c.wasQueued)) for c in sim.calls]))
+		["index", "priority", "ambIndex", "transport", "arrivalTime", "dispatchDelay", "onSceneDuration", "hospitalArrivalTime", "handoverDuration", "dispatchTime", "ambArrivalTime", "hospitalIndex", "numBumps", "wasQueued"];
+		rows = [vcat(c.index, Int(c.priority), c.ambIndex, Int(c.transport), round.([c.arrivalTime, c.dispatchDelay, c.onSceneDuration, c.hospitalArrivalTime, c.handoverDuration * c.transport, c.dispatchTime, c.ambArrivalTime], digits = timeRounding)..., c.hospitalIndex, c.numBumps, Int(c.wasQueued)) for c in sim.calls]))
 	
 	# save hospital stats file
 	writeTablesToFile(outputFilePath("hospitals"), Table("hospitalStats", ["index", "numCalls"];

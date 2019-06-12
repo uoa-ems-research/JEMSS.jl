@@ -132,7 +132,7 @@ function CallStats(calls::Vector{Call})::CallStats
 	stats = CallStats()
 	stats.numCalls = length(calls)
 	if stats.numCalls == 1 stats.callIndex = calls[1].index end
-	stats.numQueued = count(c -> c.arrivalTime + c.dispatchDuration < c.dispatchTime, calls) # assuming no mobilisation delay
+	stats.numQueued = count(c -> c.arrivalTime + c.dispatchDelay < c.dispatchTime, calls) # assuming no mobilisation delay
 	stats.numBumped = count(c -> c.numBumps > 0, calls)
 	stats.numBumps = sum(c -> c.numBumps, calls)
 	stats.numTransports = count(c -> c.transport, calls)
@@ -140,8 +140,8 @@ function CallStats(calls::Vector{Call})::CallStats
 	stats.totalOnSceneTime = sum(c -> c.onSceneDuration, calls)
 	stats.totalTransportTime = sum(c -> c.transport ? c.hospitalArrivalTime - (c.ambArrivalTime + c.onSceneDuration) : 0, calls)
 	stats.totalAtHospitalTime = sum(c -> c.transport ? c.handoverDuration : 0, calls)
-	# stats.totalDispatchDuration = sum(c -> c.dispatchTime - c.arrivalTime, calls) # can be different from call.dispatchDuration due to queueing and ambulance redispatching
-	# stats.totalQueuedTime = sum(c -> c.dispatchTime - (c.arrivalTime + c.dispatchDuration), calls)
+	# stats.totalDispatchDelay = sum(c -> c.dispatchTime - c.arrivalTime, calls) # can be different from dispatchDelay due to queueing and ambulance redispatching
+	# stats.totalQueuedTime = sum(c -> c.dispatchTime - (c.arrivalTime + c.dispatchDelay), calls)
 	return stats
 end
 

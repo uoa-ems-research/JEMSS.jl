@@ -276,7 +276,7 @@ mutable struct Call
 	location::Location # where call occurs
 	
 	arrivalTime::Float # time at which call arrives
-	dispatchDuration::Float # delay between call arrival and considering dispatching an ambulance
+	dispatchDelay::Float # delay between call arrival and considering dispatching an ambulance
 	onSceneDuration::Float # time spent at call location
 	handoverDuration::Float # for hospital handover
 	
@@ -289,7 +289,7 @@ mutable struct Call
 	movedLoc::Bool
 	
 	# for statistics:
-	dispatchTime::Float # time at which final ambulance was dispatched (= arrivalTime + dispatchDuration, unless call queued/bumped)
+	dispatchTime::Float # time at which final ambulance was dispatched (= arrivalTime + dispatchDelay, unless call queued/bumped)
 	ambArrivalTime::Float # time at which ambulance arrives on-site
 	responseDuration::Float # duration between call arrival and ambulance arrival at call location
 	hospitalArrivalTime::Float # time at which ambulance arrives at hospital
@@ -786,7 +786,7 @@ mutable struct CallStats
 	totalTransportTime::Float # to hospital
 	totalAtHospitalTime::Float
 	
-	# totalDispatchDuration::Float # duration between call arrival and dispatch of ambulance that responded
+	# totalDispatchDelay::Float # delay between call arrival and dispatch of ambulance that responded
 	# totalQueuedTime::Float # time between taking call and dispatch of ambulance that responded ()
 	
 	CallStats() = new(nullIndex, 0,
@@ -887,7 +887,7 @@ mutable struct Simulation
 	
 	eventList::Vector{Event} # events to occur now or in future
 	eventIndex::Int # index of event in events that have occurred
-	queuedCallList::Vector{Call} # keep track of queued calls. Calls can be queued after call arrivalTime + dispatchDuration
+	queuedCallList::Vector{Call} # keep track of queued calls. Calls can be queued after call arrivalTime + dispatchDelay
 	
 	resim::Resimulation
 	

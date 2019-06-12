@@ -26,7 +26,7 @@
 		<callDistributions>
 			<interarrivalTime seed="0">Exponential(1/200)</interarrivalTime>
 			<priority seed="1">Categorical([0.57, 0.245, 0.185])</priority>
-			<dispatchDuration seed="2">Truncated(Normal(2/60/24, 1/60/24), 20/60/60/24, 5/60/24)</dispatchDuration>
+			<dispatchDelay seed="2">Truncated(Normal(2/60/24, 1/60/24), 20/60/60/24, 5/60/24)</dispatchDelay>
 			<onSceneDuration seed="3">Truncated(Exponential(12/60/24), 2/60/24, 30/60/24)</onSceneDuration>
 			<transport seed="4">Bernoulli(0.8)</transport>
 			<handoverDuration seed="5">Truncated(Exponential(12/60/24), 2/60/24, 30/60/24)</handoverDuration>

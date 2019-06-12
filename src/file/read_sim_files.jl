@@ -122,8 +122,7 @@ function readCallsFile(filename::String)
 	n = size(data,1) # number of calls
 	@assert(n >= 1)
 	c = table.columns # shorthand
-	(indexCol = c["index"]); (priorityCol = c["priority"]); (xCol = c["x"]); (yCol = c["y"]); (arrivalTimeCol = c["arrivalTime"]); (onSceneDurationCol = c["onSceneDuration"]); (hospitalIndexCol = c["hospitalIndex"]) # shorthand, to avoid repeated dict lookups
-	dispatchDurationCol = haskey(c, "dispatchDuration") ? c["dispatchDuration"] : c["dispatchDelay"] # compat for "dispatchDelay"
+	(indexCol = c["index"]); (priorityCol = c["priority"]); (xCol = c["x"]); (yCol = c["y"]); (arrivalTimeCol = c["arrivalTime"]); (dispatchDelayCol = c["dispatchDelay"]); (onSceneDurationCol = c["onSceneDuration"]); (hospitalIndexCol = c["hospitalIndex"]) # shorthand, to avoid repeated dict lookups
 	if haskey(c, "transport") && haskey(c, "handoverDuration")
 		(transportCol = c["transport"]); (handoverDurationCol = c["handoverDuration"]);
 	else # compat
@@ -140,7 +139,7 @@ function readCallsFile(filename::String)
 		calls[i].location.x = xCol[i]
 		calls[i].location.y = yCol[i]
 		calls[i].arrivalTime = arrivalTimeCol[i]
-		calls[i].dispatchDuration = dispatchDurationCol[i]
+		calls[i].dispatchDelay = dispatchDelayCol[i]
 		calls[i].onSceneDuration = onSceneDurationCol[i]
 		calls[i].handoverDuration = handoverDurationCol[i]
 		calls[i].transport = transportCol[i]
@@ -149,7 +148,7 @@ function readCallsFile(filename::String)
 		@assert(calls[i].index == i)
 		@assert(calls[i].priority != nullPriority)
 		@assert(calls[i].arrivalTime >= 0)
-		@assert(calls[i].dispatchDuration >= 0)
+		@assert(calls[i].dispatchDelay >= 0)
 		@assert(calls[i].onSceneDuration >= 0)
 		if calls[i].transport
 			@assert(calls[i].handoverDuration >= 0)
@@ -168,7 +167,7 @@ function readCallsFile(filename::String)
 	# This is to avoid potential bug where two calls arrive at same time with dispatch delay 0,
 	# leading to calls being responded to in order of occurence in calls file, rather than by priority.
 	@assert(all(calls[i].arrivalTime < calls[i+1].arrivalTime for i = 1:n-1)
-		|| all(calls[i].dispatchDuration > 0 for i = 1:n))
+		|| all(calls[i].dispatchDelay > 0 for i = 1:n))
 	
 	return calls, startTime
 end
