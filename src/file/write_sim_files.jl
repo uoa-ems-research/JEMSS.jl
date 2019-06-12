@@ -106,9 +106,9 @@ function writeRNetTravelsFile(filename::String, rNetTravels::Vector{NetTravel})
 	serializeToFile(filename, rNetTravels)
 end
 
-function writePrioritiesFile(filename::String, targetResponseTimes::Vector{Float})
-	table = Table("priorities", ["priority", "name", "targetResponseTime"];
-		rows = [[i, string(Priority(i)), targetResponseTimes[i]] for i = 1:length(targetResponseTimes)])
+function writePrioritiesFile(filename::String, targetResponseDurations::Vector{Float})
+	table = Table("priorities", ["priority", "name", "targetResponseDuration"];
+		rows = [[i, string(Priority(i)), targetResponseDurations[i]] for i = 1:length(targetResponseDurations)])
 	writeTablesToFile(filename, table)
 end
 
@@ -260,19 +260,19 @@ function writeDeploymentsFile(filename::String, deployments::Vector{Deployment},
 	writeTablesToFile(filename, [miscTable, deploymentsTable])
 end
 
-# save batch mean response times to file
-function writeBatchMeanResponseTimesFile(filename::String, batchMeanResponseTimes::Array{Float,2};
-	batchTime = nullTime, startTime = nullTime, endTime = nullTime, responseTimeUnits::String = "minutes")
+# save batch mean response durations to file
+function writeBatchMeanResponseDurationsFile(filename::String, batchMeanResponseDurations::Array{Float,2};
+	batchTime = nullTime, startTime = nullTime, endTime = nullTime, responseDurationUnits::String = "minutes")
 	@assert(batchTime != nullTime && startTime != nullTime && endTime != nullTime)
-	x = batchMeanResponseTimes # shorthand
+	x = batchMeanResponseDurations # shorthand
 	(numRows, numCols) = size(x) # numRows = numSims, numCols = numBatches
 	miscTable = Table("misc_data",
-		["numSims", "numBatches", "batchTime", "startTime", "endTime", "response_time_units"];
-		rows=[[numRows, numCols, batchTime, startTime, endTime, responseTimeUnits]])
-	avgBatchMeansTable = Table("avg_batch_mean_response_times",
-		["sim_index", "avg_batch_mean_response_time", "standard_error"];
+		["numSims", "numBatches", "batchTime", "startTime", "endTime", "response_duration_units"];
+		rows=[[numRows, numCols, batchTime, startTime, endTime, responseDurationUnits]])
+	avgBatchMeansTable = Table("avg_batch_mean_response_durations",
+		["sim_index", "avg_batch_mean_response_duration", "standard_error"];
 		rows = [[i, mean(x[i,:]), sem(x[i,:])] for i = 1:numRows])
-	batchMeansTable = Table("batch_mean_response_times",
+	batchMeansTable = Table("batch_mean_response_durations",
 		["batch_index", ["sim_$i" for i = 1:numRows]...];
 		rows = [[i, x[:,i]...] for i = 1:numCols])
 	writeTablesToFile(filename, [miscTable, avgBatchMeansTable, batchMeansTable])

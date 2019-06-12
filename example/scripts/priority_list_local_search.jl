@@ -87,19 +87,19 @@ function simStats(sim::Simulation)
 	stats = Dict{String,Any}()
 	stats["totalAmbTravelTime"] = ""
 	stats["totalAmbBusyTime"] = ""
-	stats["avgResponseTimeMinutes"] = ""
+	stats["avgResponseDurationMinutes"] = ""
 	stats["callsReachedInTime"] = ""
 	if sim.complete
 		stats["totalAmbTravelTime"] = sum(amb -> amb.totalTravelTime, sim.ambulances)
 		stats["totalAmbBusyTime"] = sum(amb -> amb.totalBusyTime, sim.ambulances)
-		@assert(all(call -> call.responseTime != nullTime, sim.calls))
-		stats["avgResponseTimeMinutes"] = mean(call -> call.responseTime, sim.calls) * 24 * 60
-		stats["callsReachedInTime"] = sum(call -> call.responseTime <= sim.targetResponseTimes[Int(call.priority)], sim.calls)
+		@assert(all(call -> call.responseDuration != nullTime, sim.calls))
+		stats["avgResponseDurationMinutes"] = mean(call -> call.responseDuration, sim.calls) * 24 * 60
+		stats["callsReachedInTime"] = sum(call -> call.responseDuration <= sim.targetResponseDurations[Int(call.priority)], sim.calls)
 	end
 	return stats
 end
 
-logFileHeader = ["search", "iter", "move", "i", "j", "usedLookup", "usedMove", "objVal", "bestObjVal", "totalAmbTravelTime", "totalAmbBusyTime", "avgResponseTimeMinutes", "callsReachedInTime", "iterTimeSeconds"] # ... and priority list
+logFileHeader = ["search", "iter", "move", "i", "j", "usedLookup", "usedMove", "objVal", "bestObjVal", "totalAmbTravelTime", "totalAmbBusyTime", "avgResponseDurationMinutes", "callsReachedInTime", "iterTimeSeconds"] # ... and priority list
 logFileDict = Dict{String,Any}([s => "" for s in logFileHeader])
 
 function logFileWriteDlmLine!(logFile::IOStream, data::Dict{String,Any}, priorityList::PriorityList)

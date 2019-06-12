@@ -13,30 +13,30 @@
 # limitations under the License.
 ##########################################################################
 
-function getCallResponseTimes(sim::Simulation)
+function getCallResponseDurations(sim::Simulation)
 	@assert(sim.complete)
-	@assert(all(call -> call.responseTime >= 0, sim.calls))
-	return map(call -> call.responseTime, sim.calls)
+	@assert(all(call -> call.responseDuration >= 0, sim.calls))
+	return map(call -> call.responseDuration, sim.calls)
 end
 
-function getAvgCallResponseTime(sim::Simulation; useMinutes::Bool = false)
+function getAvgCallResponseDuration(sim::Simulation; useMinutes::Bool = false)
 	@assert(sim.complete)
-	@assert(all(call -> call.responseTime >= 0, sim.calls))
-	return mean(call -> call.responseTime, sim.calls) * (useMinutes ? 60*24 : 1) # if useMinutes, convert days to minutes
+	@assert(all(call -> call.responseDuration >= 0, sim.calls))
+	return mean(call -> call.responseDuration, sim.calls) * (useMinutes ? 60*24 : 1) # if useMinutes, convert days to minutes
 end
 
 function getCallsReachedInTime(sim::Simulation;
-	targetResponseTimes::Vector{Float} = sim.targetResponseTimes)
+	targetResponseDurations::Vector{Float} = sim.targetResponseDurations)
 	@assert(sim.complete)
-	@assert(all(call -> call.responseTime >= 0, sim.calls))
-	return map(call -> call.responseTime <= targetResponseTimes[Int(call.priority)], sim.calls)
+	@assert(all(call -> call.responseDuration >= 0, sim.calls))
+	return map(call -> call.responseDuration <= targetResponseDurations[Int(call.priority)], sim.calls)
 end
 
 function countCallsReachedInTime(sim::Simulation;
-	targetResponseTimes::Vector{Float} = sim.targetResponseTimes)
+	targetResponseDurations::Vector{Float} = sim.targetResponseDurations)
 	@assert(sim.complete)
-	@assert(all(call -> call.responseTime >= 0, sim.calls))
-	return count(call -> call.responseTime <= targetResponseTimes[Int(call.priority)], sim.calls)
+	@assert(all(call -> call.responseDuration >= 0, sim.calls))
+	return count(call -> call.responseDuration <= targetResponseDurations[Int(call.priority)], sim.calls)
 end
 
 printDays(t::Float) = string(round(t, digits = 2), " days")
@@ -80,27 +80,27 @@ end
 function printCallsStats(sim::Simulation)
 	@assert(sim.complete)
 	
-	responseTimes = getCallResponseTimes(sim)
+	responseDurations = getCallResponseDurations(sim)
 	callsReachedInTime = getCallsReachedInTime(sim)
 	
 	println("Call statistics:")
 	
 	# # print, then remove, unanswered calls
-	# callAnswered = [call.responseTime != nullTime for call in sim.calls] # may be false if sim not finished, or call cancelled
+	# callAnswered = [call.responseDuration != nullTime for call in sim.calls] # may be false if sim not finished, or call cancelled
 	# println("Unanswered calls: ", sim.numCalls - sum(callAnswered))
-	# responseTimes = responseTimes[callAnswered] # no longer consider unanswered calls
+	# responseDurations = responseDurations[callAnswered] # no longer consider unanswered calls
 	
-	# Gadfly.plot(ecdf(responseTimes*24*60), x="Call response time (minutes)", y="Cdf")
+	# Gadfly.plot(ecdf(responseDurations*24*60), x="Call response duration (minutes)", y="Cdf")
 	
 	println("Number of calls = ", sim.numCalls)
 	
-	println("Response time: ")
-	println(" mean = ", printMinutes(mean(responseTimes)))
-	println(" std = ", printMinutes(std(responseTimes)))
-	println(" min = ", printMinutes(minimum(responseTimes)))
-	println(" max = ", printMinutes(maximum(responseTimes)))
+	println("Response duration: ")
+	println(" mean = ", printMinutes(mean(responseDurations)))
+	println(" std = ", printMinutes(std(responseDurations)))
+	println(" min = ", printMinutes(minimum(responseDurations)))
+	println(" max = ", printMinutes(maximum(responseDurations)))
 	
-	println("Reached in target response time: ")
+	println("Reached in target response duration: ")
 	println(" mean = ", printPercent(mean(callsReachedInTime)))
 	println(" sem = ", printPercent(sem(callsReachedInTime)))
 end
@@ -211,8 +211,8 @@ function calcBatchMeans(values::Vector{Float}, times::Vector{Float}, batchTime::
 	return returnBatchSizes ? (batchMeans, batchSizes) : batchMeans
 end
 
-# calculate statistics on average response time based on batch means
-function calcBatchMeanResponseTimes(sim::Simulation;
+# calculate statistics on average response duration based on batch means
+function calcBatchMeanResponseDurations(sim::Simulation;
 	batchTime::Float = nullTime, warmUpTime::Float = nullTime, coolDownTime::Float = nullTime,
 	rmPartialBatch::Bool = true, returnBatchSizes::Bool = true)
 	
@@ -221,7 +221,7 @@ function calcBatchMeanResponseTimes(sim::Simulation;
 	# collate data for use by calcBatchMeans function
 	n = sim.numCalls
 	times = [sim.calls[i].arrivalTime for i = 1:n]
-	values = [sim.calls[i].responseTime for i = 1:n]
+	values = [sim.calls[i].responseDuration for i = 1:n]
 	
 	return calcBatchMeans(values, times, batchTime;
 		startTime = sim.startTime + warmUpTime, endTime = sim.endTime - coolDownTime,

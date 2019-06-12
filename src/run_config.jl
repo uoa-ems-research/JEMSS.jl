@@ -130,7 +130,7 @@ function initSim(configFilename::String;
 	# read misc
 	sim.map = readMapFile(simFilePath("map"))
 	map = sim.map # shorthand
-	(sim.targetResponseTimes, sim.responseTravelPriorities) = readPrioritiesFile(simFilePath("priorities"))
+	(sim.targetResponseDurations, sim.responseTravelPriorities) = readPrioritiesFile(simFilePath("priorities"))
 	sim.travel = readTravelFile(simFilePath("travel"))
 	# "demand" file can be slow to read, will not read here but read elsewhere when needed
 	if haskey(sim.inputFiles, "demandCoverage")

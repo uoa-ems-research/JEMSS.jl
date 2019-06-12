@@ -291,7 +291,7 @@ mutable struct Call
 	# for statistics:
 	dispatchTime::Float # time at which final ambulance was dispatched (= arrivalTime + dispatchDelay, unless call queued/bumped)
 	ambArrivalTime::Float # time at which ambulance arrives on-site
-	responseTime::Float # time (duration) between call arrival and ambulance arrival at call location
+	responseDuration::Float # duration between call arrival and ambulance arrival at call location
 	hospitalArrivalTime::Float # time at which ambulance arrives at hospital
 	numBumps::Int # total number of times that call gets bumped due to redispatch
 	wasQueued::Bool # whether call was queued or not
@@ -596,7 +596,7 @@ mutable struct DdsmData <: MoveUpDataType
 	slackWeight::Float
 	coverTimeDemandPriorities::Vector{Priority} # coverTimeDemandPriorities[i] is demand priority for coverTimes[i]
 	
-	coverTimes::Vector{Float} # target coverage response times; coverTimes[1] <= coverTimes[2]
+	coverTimes::Vector{Float} # target coverage response durations; coverTimes[1] <= coverTimes[2]
 	options::Dict{Symbol,Any}
 	
 	DdsmData() = new(0.0, 0.0, 0.0, [],
@@ -781,7 +781,7 @@ mutable struct CallStats
 	numBumps::Int # number of bumps from all calls
 	numTransports::Int
 	
-	totalResponseTime::Float
+	totalResponseDuration::Float
 	totalOnSceneTime::Float
 	totalTransportTime::Float # to hospital
 	totalAtHospitalTime::Float
@@ -902,7 +902,7 @@ mutable struct Simulation
 	demandCoverage::DemandCoverage
 	
 	responseTravelPriorities::Dict{Priority,Priority} # responseTravelPriorities[p] gives the travel priority for responding to call of priority p
-	targetResponseTimes::Vector{Float} # targetResponseTimes[Int(priority)] gives maximum desired response time for call of given priority
+	targetResponseDurations::Vector{Float} # targetResponseDurations[Int(priority)] gives maximum desired response duration for call of given priority
 	
 	# for animation:
 	currentCalls::Set{Call} # all calls between arrival and service finish at current time

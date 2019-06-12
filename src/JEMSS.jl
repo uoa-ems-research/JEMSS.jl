@@ -65,7 +65,7 @@ export
 	readDlmFileNextLine!, readDlmFile, openNewFile, writeDlmLine!, arrayDict, writeTablesToFile!, writeTablesToFile, readTablesFromFile, readTablesFromData, tableRowsFieldDicts, fileChecksum, serializeToFile, deserializeFile, joinPathIfNotAbs, interpolateString, xmlFileRoot, findElt, eltContent, eltContentVal, eltContentInterpVal, childrenNodeNames, selectXmlFile, # file_io
 	runGenConfig, # gen_sim_files
 	readAmbsFile, readArcsFile, readCallsFile, readCompTableFile, readDemandFile, readDemandCoverageFile, readEventsFile, readGeoFile, readHospitalsFile, readMapFile, readNodesFile, readPrioritiesFile, readPriorityListFile, readRasterFile, readRedispatchFile, readRNetTravelsFile, readStationsFile, readTravelFile, readDeploymentsFile, readZhangIpParamsFile, # read_sim_files
-	writeAmbsFile, writeArcsFile, writeCallsFile, writeDemandFile, writeDemandCoverageFile, writeHospitalsFile, writeMapFile, writeNodesFile, writePrioritiesFile, writeRedispatchFile, writeRNetTravelsFile, writeSimPeriodStatsListFile, writeStationsFile, writeTravelFile, openOutputFiles!, closeOutputFiles!, writeEventToFile!, writeStatsFiles!, writeDeploymentsFile, writeBatchMeanResponseTimesFile # write_sim_files
+	writeAmbsFile, writeArcsFile, writeCallsFile, writeDemandFile, writeDemandCoverageFile, writeHospitalsFile, writeMapFile, writeNodesFile, writePrioritiesFile, writeRedispatchFile, writeRNetTravelsFile, writeSimPeriodStatsListFile, writeStationsFile, writeTravelFile, openOutputFiles!, closeOutputFiles!, writeEventToFile!, writeStatsFiles!, writeDeploymentsFile, writeBatchMeanResponseDurationsFile # write_sim_files
 
 # move up initialisation functions
 export
@@ -81,7 +81,7 @@ export
 	isFNodeInRGraph, shortestPathNextRNode, shortestPathNextRArc, shortestPathData, shortestPathTravelTime, shortestPath, findRArcFromFNodeToFNode, # network
 	rasterRandLocations, printRasterSize, # raster
 	shortestRouteTravelTime!, # route
-	getCallResponseTimes, getAvgCallResponseTime, getCallsReachedInTime, countCallsReachedInTime, printSimStats, printAmbsStats, printCallsStats, printHospitalsStats, calcBatchMeans, calcBatchMeanResponseTimes, meanErrorPlot, calcAR0DurbinWatsonTestPValue, # statistics
+	getCallResponseDurations, getAvgCallResponseDuration, getCallsReachedInTime, countCallsReachedInTime, printSimStats, printAmbsStats, printCallsStats, printHospitalsStats, calcBatchMeans, calcBatchMeanResponseDurations, meanErrorPlot, calcAR0DurbinWatsonTestPValue, # statistics
 	checkCompTable, checkCompTableIsNested, nestCompTable, unnestCompTable, makeRandNestedCompTable, # compliance table
 	makeRandDeployment, makeRandDeployments, deploymentToStationsNumAmbs, stationsNumAmbsToDeployment, getDeployment, getStationsNumAmbs, setAmbStation!, applyDeployment!, applyStationsNumAmbs!, simulateDeployment!, simulateDeployments!, # deployment
 	checkPriorityList, makeRandPriorityList, # priority list

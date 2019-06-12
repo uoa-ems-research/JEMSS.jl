@@ -324,7 +324,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		
 		call.status = callOnSceneCare
 		call.ambArrivalTime = sim.time # stats
-		call.responseTime = sim.time - call.arrivalTime # stats
+		call.responseDuration = sim.time - call.arrivalTime # stats
 		
 		# transport call to hospital if needed, otherwise amb becomes idle
 		if call.transport

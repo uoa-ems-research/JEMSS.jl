@@ -54,7 +54,7 @@
 		</map>
 		
 		<!-- misc: -->
-		<targetResponseTime>20/60/24</targetResponseTime>
+		<targetResponseDuration>20/60/24</targetResponseDuration>
 		<startTime>0.0</startTime>
 		<stationCapacity>2</stationCapacity>
 		<offRoadSpeed>1200</offRoadSpeed>

@@ -465,22 +465,23 @@ function readPrioritiesFile(filename::String)
 	
 	# read data from table
 	columns = table.columns # shorthand
-	targetResponseTimes = Vector{Float}(undef, n)
+	targetResponseDurationString = haskey(columns, "targetResponseDuration") ? "targetResponseDuration" : "targetResponseTime" # compat for "targetResponseTime"
+	targetResponseDurations = Vector{Float}(undef, n)
 	responseTravelPriorities = Dict([p => p for p in priorities]) # default is to have response travel priority equal to call priority
 	for i = 1:n
 		@assert(columns["priority"][i] == i)
 		@assert(eval(Meta.parse(columns["name"][i])) == Priority(i))
-		targetResponseTimes[i] = columns["targetResponseTime"][i]
+		targetResponseDurations[i] = columns[targetResponseDurationString][i]
 		
 		if haskey(columns, "responseTravelPriority")
 			responseTravelPriorities[Priority(i)] = eval(Meta.parse(columns["responseTravelPriority"][i]))
 		end
 	end
 	
-	# target response times should be positive
-	@assert(all(targetResponseTimes .> 0))
+	# target response durations should be positive
+	@assert(all(targetResponseDurations .> 0))
 	
-	return targetResponseTimes, responseTravelPriorities
+	return targetResponseDurations, responseTravelPriorities
 end
 
 function readPriorityListFile(filename::String)
