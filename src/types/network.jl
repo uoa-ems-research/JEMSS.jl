@@ -755,15 +755,13 @@ end
 # where the rArc contains fromFNode before toFNode
 # return nullIndex if no such arc found
 function findRArcFromFNodeToFNode(net::Network, fromFNode::Int, toFNode::Int)
-	
 	@assert(fromFNode != toFNode)
 	@assert(isFNodeInRGraph(net, fromFNode) + isFNodeInRGraph(net, toFNode) < 2) # otherwise result may not be unique, as multiple rArcs can connect two rNodes
 	
-	rArcIndices = intersect(net.fNodeRArcs[fromFNode], net.fNodeRArcs[toFNode])
 	rArc = nullIndex
 	numRArcsFound = 0
-	for rArcIndex in rArcIndices
-		if net.rArcFNodeIndex[rArcIndex][fromFNode] < net.rArcFNodeIndex[rArcIndex][toFNode]
+	for rArcIndex in net.fNodeRArcs[fromFNode], rArcIndex2 in net.fNodeRArcs[toFNode]
+		if rArcIndex == rArcIndex2 && net.rArcFNodeIndex[rArcIndex][fromFNode] < net.rArcFNodeIndex[rArcIndex][toFNode]
 			rArc = rArcIndex
 			numRArcsFound += 1
 		end
