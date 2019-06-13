@@ -96,14 +96,14 @@ mutable struct NetTravel
 	# useful object to/from node data, for full graph (see commonFNodes in Network):
 	commonFNodeToFNodeTime::Array{Float,2} # commonFNodeToFNodeTime[i,j] gives shortest path time from commonFNodes[i] to fNode j
 	fNodeToCommonFNodeTime::Array{Float,2} # fNodeToCommonFNodeTime[i,j] gives shortest path time from fNode i to commonFNodes[j]
-	commonFNodeToFNodeRNodes::Array{Vector{Int},2} # commonFNodeToFNodeRNodes[i,j] gives start and end rNode for shortest path from commonFNodes[i] to fNode j
-	fNodeToCommonFNodeRNodes::Array{Vector{Int},2} # fNodeToCommonFNodeRNodes[i,j] gives start and end rNode for shortest path from fNode i to commonFNodes[j]
+	commonFNodeToFNodeRNodes::Array{Tuple{Int,Int},2} # commonFNodeToFNodeRNodes[i,j] gives start and end rNode for shortest path from commonFNodes[i] to fNode j
+	fNodeToCommonFNodeRNodes::Array{Tuple{Int,Int},2} # fNodeToCommonFNodeRNodes[i,j] gives start and end rNode for shortest path from fNode i to commonFNodes[j]
 	fNodeNearestHospitalIndex::Vector{Int} # fNodeNearestHospitalIndex[i] gives index of nearest hospital from fNode[i]
 	
 	NetTravel(isReduced::Bool) = new(isReduced, nullIndex, [],
 		Array{FloatSpTime,2}(undef,0,0), Array{IntFadj,2}(undef,0,0), spzeros(Int, 0, 0), [],
 		[], [], [],
-		Array{Float,2}(undef,0,0), Array{Float,2}(undef,0,0), Array{Vector{Int},2}(undef,0,0), Array{Vector{Int},2}(undef,0,0), [])
+		Array{Float,2}(undef,0,0), Array{Float,2}(undef,0,0), Array{Tuple{Int,Int},2}(undef,0,0), Array{Tuple{Int,Int},2}(undef,0,0), [])
 end
 
 mutable struct Network

@@ -518,11 +518,11 @@ function shortestPathData(net::Network, travelModeIndex::Int, startFNode::Int, e
 	
 	# return values:
 	shortestTravelTime = Inf
-	rNodes = [nullIndex, nullIndex] # first and last rNodes in path
+	rNodes = (nullIndex, nullIndex) # first and last rNodes in path
 	
 	if startFNode == endFNode
 		shortestTravelTime = 0.0
-		rNodes = [nullIndex, nullIndex]
+		rNodes = (nullIndex, nullIndex)
 		return shortestTravelTime, rNodes
 	end
 	
@@ -551,7 +551,7 @@ function shortestPathData(net::Network, travelModeIndex::Int, startFNode::Int, e
 			@assert(isapprox(travelTime + fNodeToRNodeTime[endFNode][toRNode], fNodeToRNodeTime[startFNode][toRNode]; rtol = eps(Float)))
 			
 			shortestTravelTime = travelTime # not necessarily shortest travel time, still need to check paths that use rNodes
-			rNodes = [nullIndex, nullIndex]
+			rNodes = (nullIndex, nullIndex)
 		end
 	end
 	
@@ -562,8 +562,7 @@ function shortestPathData(net::Network, travelModeIndex::Int, startFNode::Int, e
 		travelTime += fNodeFromRNodeTime[endFNode][endRNode]
 		if travelTime < shortestTravelTime
 			shortestTravelTime = travelTime
-			rNodes[1] = startRNode
-			rNodes[2] = endRNode
+			rNodes = (startRNode, endRNode)
 		end
 	end
 	
@@ -723,10 +722,10 @@ function setCommonFNodes!(net::Network, commonFNodes::Vector{Int})
 	# calculate and store shortest path travel data between all fNodes and commonFNodes
 	for fNetTravel in net.fNetTravels
 		fNetTravel.commonFNodeToFNodeTime = Array{Float,2}(undef, numCommonFNodes, numFNodes)
-		fNetTravel.commonFNodeToFNodeRNodes = Array{Vector{Int},2}(undef, numCommonFNodes, numFNodes)
+		fNetTravel.commonFNodeToFNodeRNodes = Array{Tuple{Int,Int},2}(undef, numCommonFNodes, numFNodes)
 		
 		fNetTravel.fNodeToCommonFNodeTime = Array{Float,2}(undef, numFNodes, numCommonFNodes)
-		fNetTravel.fNodeToCommonFNodeRNodes = Array{Vector{Int},2}(undef, numFNodes, numCommonFNodes)
+		fNetTravel.fNodeToCommonFNodeRNodes = Array{Tuple{Int,Int},2}(undef, numFNodes, numCommonFNodes)
 		
 		for commonFNode in commonFNodes, fNode = 1:numFNodes
 			i = fNodeCommonFNodeIndex[commonFNode]
