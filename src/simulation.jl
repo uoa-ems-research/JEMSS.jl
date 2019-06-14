@@ -323,7 +323,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		ambulance.totalBusyDuration += sim.time - ambulance.route.startTime # stats
 		ambulance.numCallsTreated += 1 # stats
 		
-		call.status = callOnSceneCare
+		call.status = callOnSceneTreatment
 		call.ambArrivalTime = sim.time # stats
 		call.responseDuration = sim.time - call.arrivalTime # stats
 		
@@ -342,7 +342,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		ambulance = sim.ambulances[event.ambIndex]
 		@assert(ambulance.status == ambAtCall)
 		call = sim.calls[event.callIndex]
-		@assert(call.status == callOnSceneCare)
+		@assert(call.status == callOnSceneTreatment)
 		@assert(call.transport)
 		
 		ambulance.totalBusyDuration += call.onSceneDuration # stats
@@ -393,7 +393,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		ambulance = sim.ambulances[event.ambIndex]
 		@assert(ambulance.status == ambAtCall || ambulance.status == ambAtHospital)
 		call = sim.calls[event.callIndex]
-		@assert(call.status == callOnSceneCare || call.status == callAtHospital)
+		@assert(call.status == callOnSceneTreatment || call.status == callAtHospital)
 		
 		# remove call, processing is finished
 		delete!(sim.currentCalls, call)

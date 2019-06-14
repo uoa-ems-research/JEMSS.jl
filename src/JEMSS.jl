@@ -110,7 +110,7 @@ export
 	AmbClass, nullAmbClass, als, bls, # ambulance classes
 	EventForm, nullEvent, ambGoesToSleep, ambWakesUp, callArrives, considerDispatch, ambDispatched, ambReachesCall, ambGoesToHospital, ambReachesHospital, ambBecomesIdle, ambReachesStation, ambRedirected, considerMoveUp, ambMoveUp,
 	AmbStatus, ambNullStatus, ambSleeping, ambIdleAtStation, ambGoingToCall, ambAtCall, ambGoingToHospital, ambAtHospital, ambGoingToStation,
-	CallStatus, callNullStatus, callScreening, callQueued, callWaitingForAmb, callOnSceneCare, callGoingToHospital, callAtHospital, callProcessed,
+	CallStatus, callNullStatus, callScreening, callQueued, callWaitingForAmb, callOnSceneTreatment, callGoingToHospital, callAtHospital, callProcessed,
 	MoveUpModule, nullMoveUpModule, compTableModule, dmexclpModule, priorityListModule, zhangIpModule, temp0Module, temp1Module, temp2Module
 
 # deprecated
