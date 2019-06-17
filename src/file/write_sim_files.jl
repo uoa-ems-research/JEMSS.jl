@@ -25,10 +25,10 @@ function writeArcsFile(filename::String, arcs::Vector{Arc}, travelTimes::Array{F
 	@assert(arcForm == "directed" || arcForm == "undirected")
 	numModes = size(travelTimes,1)
 	miscTable = Table("miscData", ["arcForm", "numModes"]; rows = [[arcForm, numModes]])
-	mainHeaders = ["index", "fromNode", "toNode", ["mode_$i" for i = 1:numModes]...]
+	mainHeaders = ["index", "fromNode", "toNode", "distance", ["mode_$i" for i = 1:numModes]...]
 	fieldNames = setdiff(collect(keys(arcs[1].fields)), mainHeaders) # assume fields are same for all arcs
 	arcsTable = Table("arcs", [mainHeaders..., fieldNames...];
-		rows = [vcat(a.index, a.fromNodeIndex, a.toNodeIndex, travelTimes[:,a.index]..., [a.fields[f] for f in fieldNames]...) for a in arcs])
+		rows = [vcat(a.index, a.fromNodeIndex, a.toNodeIndex, a.distance, travelTimes[:,a.index]..., [a.fields[f] for f in fieldNames]...) for a in arcs])
 	writeTablesToFile(filename, [miscTable, arcsTable])
 end
 

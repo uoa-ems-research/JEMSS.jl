@@ -321,8 +321,8 @@ function makeArcs(genConfig::GenConfig, graph::LightGraphs.Graph, nodes::Vector{
 	end
 	
 	for i = 1:numTravelModes, arc in arcs
-		dist = normDist(genConfig.map, nodes[arc.fromNodeIndex].location, nodes[arc.toNodeIndex].location)
-		travelTimes[i,arc.index] = dist / genConfig.travelModeSpeeds[i] * rand(genConfig.travelTimeFactorDistrRng)
+		arc.distance = normDist(genConfig.map, nodes[arc.fromNodeIndex].location, nodes[arc.toNodeIndex].location)
+		travelTimes[i,arc.index] = arc.distance / genConfig.travelModeSpeeds[i] * rand(genConfig.travelTimeFactorDistrRng)
 	end
 	
 	return arcs, travelTimes

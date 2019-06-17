@@ -49,10 +49,11 @@ mutable struct Arc
 	index::Int
 	fromNodeIndex::Int
 	toNodeIndex::Int
+	distance::Float # NaN if not set
 	
 	fields::Dict{String,Any} # additional data, not used by simulation
 	
-	Arc() = new(nullIndex, nullIndex, nullIndex,
+	Arc() = new(nullIndex, nullIndex, nullIndex, NaN,
 		Dict{String,Any}())
 end
 
