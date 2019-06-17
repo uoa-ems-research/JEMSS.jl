@@ -246,6 +246,7 @@ function mergeDuplicateArcs!(arc1::Arc, arc2::Arc)
 		modeString = travelModeString(i)
 		arc1.fields[modeString] = min(arc1.fields[modeString], arc2.fields[modeString])
 	end
+	# assume that arc.distance is same for both arcs
 end
 mergeDuplicateArcs!(arcs::Vector{Arc}, i::Int, j::Int) = mergeDuplicateArcs!(arcs[i], arcs[j])
 
@@ -298,6 +299,7 @@ function graphDivideArc!(nodes::Vector{Node}, arcs::Vector{Arc}; arcIndex::Int =
 	if haskey(arc.fields, "osm_weight")
 		arc.fields["osm_weight"] /= numDivides + 1
 	end
+	arc.distance /= numDivides + 1
 	arc.fields[divArcHeader] = arc.index
 	
 	tempNode = deepcopy(fromNode) # could copy any node
