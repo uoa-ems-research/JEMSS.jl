@@ -85,6 +85,11 @@ function checkGraph(graph::Graph, map::Map)
 		@assert(arcs[i].index == i)
 	end
 	
+	# check arc distances
+	for i = 1:numArcs
+		@assert(isnan(arcs[i].distance) || arcs[i].distance >= 0)
+	end
+	
 	# check that nodes are inside map borders
 	for i = 1:numNodes
 		@assert(map.xMin <= nodes[i].location.x, "node $i outside border")
