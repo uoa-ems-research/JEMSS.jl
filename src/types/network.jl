@@ -44,6 +44,7 @@ function createRGraphFromFGraph!(net::Network)
 	# shorthand names:
 	fGraph = net.fGraph
 	fNodes = fGraph.nodes
+	fArcs = fGraph.arcs
 	numFNodes = length(fNodes)
 	rGraph = net.rGraph
 	
@@ -245,6 +246,31 @@ function createRGraphFromFGraph!(net::Network)
 	for i = 1:numFNodes
 		@assert(!isempty(fNodeFromRNodes[i]))
 		@assert(!isempty(fNodeToRNodes[i]))
+	end
+	
+	##############################################################################
+	
+	# arc distances
+	
+	# set rArcFArcs
+	rArcFArcs = net.rArcFArcs = [Vector{Int}() for i = 1:numRArcs]
+	for rArc in rArcs
+		fNodesOnRArc = rArcFNodes[rArc.index]
+		for i = 1:length(fNodesOnRArc)-1
+			fNode = fNodesOnRArc[i]
+			nextFNode = fNodesOnRArc[i+1]
+			push!(rArcFArcs[rArc.index], fGraph.nodePairArcIndex[fNode, nextFNode])
+		end
+		@assert(length(rArcFArcs[rArc.index]) >= 1) # at least one fArc per rArc
+	end
+	# @assert(sort(vcat(rArcFArcs...)) == 1:length(fArcs)) # rArcFArcs contains each fArc exactly once
+	
+	# set arc distances
+	for rArc in rArcs
+		rArc.distance = 0.0
+		for fArcIndex in rArcFArcs[rArc.index]
+			rArc.distance += fArcs[fArcIndex].distance
+		end
 	end
 	
 	##############################################################################

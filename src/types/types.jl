@@ -124,6 +124,7 @@ mutable struct Network
 	fNodeToRNodes::Vector{Vector{Int}} # fNodeToRNodes[i] gives indices of rNodes that fNode[i] can travel to, and is "near" ("near" meaning that the fNode is on an rArc incident to rNode, or fNode is rNode in rGraph; it is similar to adjacency)
 	fNodeFromRNodes::Vector{Vector{Int}} # fNodeFromRNodes[i] gives indices of rNodes that can travel to fNode[i], and is "near"
 	fNodeToRNodeNextFNode::Vector{Dict{Int,Int}} # fNodeToRNodeNextFNode[i][j] gives index of fNode after fNode[i] on path to rNode[j], where j is in fNodeToRNodes[i]. Needed to find path from an fNode to an rNode
+	rArcFArcs::Vector{Vector{Int}} # rArcFArcs[i][j] gives the index of the jth fArc on rArcs[i]
 	
 	# fNodes that are common start/end points for travel (e.g, fNodes nearest to stations, hospitals):
 	commonFNodes::Vector{Int} # list of common fNodes; = findall(isFNodeCommon)
@@ -132,7 +133,7 @@ mutable struct Network
 	
 	Network() = new(Graph(false), Graph(true),
 		[], [],
-		[], [], [], [], [], [], [], [],
+		[], [], [], [], [], [], [], [], [],
 		[], [], [])
 end
 
