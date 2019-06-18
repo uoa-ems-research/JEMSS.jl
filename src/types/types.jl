@@ -126,6 +126,10 @@ mutable struct Network
 	fNodeToRNodeNextFNode::Vector{Dict{Int,Int}} # fNodeToRNodeNextFNode[i][j] gives index of fNode after fNode[i] on path to rNode[j], where j is in fNodeToRNodes[i]. Needed to find path from an fNode to an rNode
 	rArcFArcs::Vector{Vector{Int}} # rArcFArcs[i][j] gives the index of the jth fArc on rArcs[i]
 	
+	# distance
+	fNodeToRNodeDist::Vector{Dict{Int,Float}} # fNodeToRNodeDist[i][j] gives distance from fNode[i] to rNode[j], as long as rNode[j] is in fNodeToRNodes[i]
+	fNodeFromRNodeDist::Vector{Dict{Int,Float}} # fNodeFromRNodeDist[i][j] gives distance to fNode[i] from rNode[j], as long as rNode[j] is in fNodeFromRNodes[i]
+	
 	# fNodes that are common start/end points for travel (e.g, fNodes nearest to stations, hospitals):
 	commonFNodes::Vector{Int} # list of common fNodes; = findall(isFNodeCommon)
 	isFNodeCommon::Vector{Bool} # isFNodeCommon[i] = true if fNode i is common, false otherwise
@@ -134,6 +138,7 @@ mutable struct Network
 	Network() = new(Graph(false), Graph(true),
 		[], [],
 		[], [], [], [], [], [], [], [], [],
+		[], [],
 		[], [], [])
 end
 

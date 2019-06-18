@@ -78,7 +78,7 @@ export
 	findNearestNode, # graph
 	findNearestNodeInGrid, # grid
 	isSameLocation, squareDist, normDist, offRoadTravelTime, linearInterpLocation, randLocation, # location
-	isFNodeInRGraph, shortestPathNextRNode, shortestPathNextRArc, shortestPathData, shortestPathTravelTime, shortestPath, findRArcFromFNodeToFNode, # network
+	isFNodeInRGraph, shortestPathNextRNode, shortestPathNextRArc, shortestPathData, shortestPathTravelTime, shortestPathDistance, shortestPath, findRArcFromFNodeToFNode, # network
 	rasterRandLocations, printRasterSize, # raster
 	shortestRouteTravelTime!, # route
 	getCallResponseTimes, getAvgCallResponseTime, getCallsReachedInTime, countCallsReachedInTime, printSimStats, printAmbsStats, printCallsStats, printHospitalsStats, calcBatchMeans, calcBatchMeanResponseTimes, meanErrorPlot, calcAR0DurbinWatsonTestPValue, # statistics

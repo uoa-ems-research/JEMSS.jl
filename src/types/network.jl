@@ -275,6 +275,43 @@ function createRGraphFromFGraph!(net::Network)
 	
 	##############################################################################
 	
+	# set fNodeToRNodeDist, fNodeFromRNodeDist
+	fNodeToRNodeDist = net.fNodeToRNodeDist = [Dict{Int, Float}() for i = 1:numFNodes]
+	fNodeFromRNodeDist = net.fNodeFromRNodeDist = [Dict{Int, Float}() for i = 1:numFNodes]
+	
+	for rArc in rArcs
+		# traverse arc, calculate fNodeFromRNodeDist and fNodeToRNodeDist
+		startRNode = rArc.fromNodeIndex
+		endRNode = rArc.toNodeIndex
+		dist = 0.0
+		for fArcIndex in rArcFArcs[rArc.index]
+			fArc = fArcs[fArcIndex]
+			fNodeFromRNodeDist[fArc.fromNodeIndex][startRNode] = dist
+			dist += fArc.distance
+			fNodeToRNodeDist[fArc.toNodeIndex][endRNode] = rArc.distance - dist
+		end
+	end
+	
+	# for rNodes, check that corresponding fNode has fNodeFromRNodeDist and fNodeToRNodeDist return 0
+	for ri = 1:numRNodes
+		fi = rNodeFNode[ri]
+		@assert(fNodeFromRNodeDist[fi][ri] == 0.0)
+		@assert(fNodeToRNodeDist[fi][ri] == 0.0)
+	end
+	
+	# for fNodes along each rArc, fNodeFromRNodeDist and fNodeToRNodeDist should add to rArc distance
+	for rArc in rArcs
+		fNodesOnRArc = rArcFNodes[rArc.index]
+		startRNode = fNodeRNode[fNodesOnRArc[1]]
+		endRNode = fNodeRNode[fNodesOnRArc[end]]
+		for i = 2:length(fNodesOnRArc)-1
+			fNode = fNodesOnRArc[i]
+			@assert(isapprox(fNodeFromRNodeDist[fNode][startRNode] + fNodeToRNodeDist[fNode][endRNode], rArc.distance; rtol = eps(Float)))
+		end
+	end
+	
+	##############################################################################
+	
 	# calculate fields for rGraph: light
 	initGraph!(rGraph)
 end
@@ -598,6 +635,60 @@ end
 # Returns the travel time of the shortest path between two nodes; see shortestPathData function.
 function shortestPathTravelTime(net::Network, travelModeIndex::Int, startFNode::Int, endFNode::Int)
 	return shortestPathData(net, travelModeIndex, startFNode, endFNode)[1]
+end
+
+# Returns distance of shortest path (shortest by time) between two nodes.
+# The startRNode and endRNode of shortest path can be given as kwargs if known.
+function shortestPathDistance(net::Network, travelModeIndex::Int, startFNode::Int, endFNode::Int;
+	startRNode::Int = nullIndex - 1, endRNode::Int = nullIndex - 1)
+	# note that the default value of startRNode and endRNode are nullIndex - 1 and not just nullIndex;
+	# this is to allow them to be set to nullIndex which indicates that the shortest path has no rNodes.
+	
+	# shorthand:
+	rArcs = net.rGraph.arcs
+	fNodeToRNodeDist = net.fNodeToRNodeDist
+	fNodeFromRNodeDist = net.fNodeFromRNodeDist
+	
+	dist = 0.0
+	if startFNode == endFNode return dist end
+	
+	if startRNode == nullIndex - 1 || endRNode == nullIndex - 1
+		@assert(startRNode == nullIndex - 1 && endRNode == nullIndex - 1)
+		# get start and end rNodes
+		(shortestTravelTime, rNodes) = shortestPathData(net, travelModeIndex, startFNode, endFNode)
+		(startRNode, endRNode) = rNodes
+	elseif startRNode == nullIndex || endRNode == nullIndex
+		@assert(startRNode == nullIndex && endRNode == nullIndex)
+	else
+		@assert(in(startRNode, net.fNodeToRNodes[startFNode]))
+		@assert(in(endRNode, net.fNodeFromRNodes[endFNode]))
+	end
+	
+	if startRNode == nullIndex
+		# shortest path does not use any rNodes
+		@assert(endRNode == nullIndex)
+		rArcIndex = findRArcFromFNodeToFNode(net, startFNode, endFNode)
+		@assert(rArcIndex != nullIndex) # otherwise would need to use an rNode
+		rArc = rArcs[rArcIndex]
+		fromRNode = rArc.fromNodeIndex
+		toRNode = rArc.toNodeIndex
+		dist = fNodeFromRNodeDist[endFNode][fromRNode] - fNodeFromRNodeDist[startFNode][fromRNode]
+		@assert(dist >= 0)
+		@assert(isapprox(dist + fNodeToRNodeDist[endFNode][toRNode], fNodeToRNodeDist[startFNode][toRNode]; rtol = eps(Float)))
+	else
+		# shortest path uses at least one rNode
+		@assert(startRNode != nullIndex && endRNode != nullIndex)
+		dist += net.fNodeToRNodeDist[startFNode][startRNode]
+		dist += net.fNodeFromRNodeDist[endFNode][endRNode]
+		rNode = startRNode
+		while rNode != endRNode
+			rArc = rArcs[shortestPathNextRArc(net, travelModeIndex, rNode, endRNode)]
+			dist += rArc.distance
+			rNode = rArc.toNodeIndex
+		end
+	end
+	
+	return dist
 end
 
 # Find and return shortest path (as represented by list of nodes) from startFNode to endFNode,
