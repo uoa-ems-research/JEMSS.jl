@@ -289,13 +289,7 @@ function createRGraphFromFGraph!(net::Network)
 			fArc = fArcs[fArcIndex]
 			fNodeFromRNodeDist[fArc.fromNodeIndex][startRNode] = dist
 			dist += fArc.distance
-			# fNodeToRNodeDist[fArc.toNodeIndex][endRNode] = rArc.distance - dist # not as accurate as it could be, should calc in separate for-loop
-		end
-		dist = 0.0
-		for fArcIndex in Iterators.reverse(rArcFArcs[rArc.index])
-			fArc = fArcs[fArcIndex]
-			fNodeToRNodeDist[fArc.toNodeIndex][endRNode] = dist
-			dist += fArc.distance
+			fNodeToRNodeDist[fArc.toNodeIndex][endRNode] = rArc.distance - dist
 		end
 	end
 	
