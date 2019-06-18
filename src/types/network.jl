@@ -266,6 +266,7 @@ function createRGraphFromFGraph!(net::Network)
 	# @assert(sort(vcat(rArcFArcs...)) == 1:length(fArcs)) # rArcFArcs contains each fArc exactly once
 	
 	# set arc distances
+	@assert(all(arc -> !isnan(arc.distance) && arc.distance >= 0, fArcs))
 	for rArc in rArcs
 		rArc.distance = 0.0
 		for fArcIndex in rArcFArcs[rArc.index]
@@ -288,7 +289,13 @@ function createRGraphFromFGraph!(net::Network)
 			fArc = fArcs[fArcIndex]
 			fNodeFromRNodeDist[fArc.fromNodeIndex][startRNode] = dist
 			dist += fArc.distance
-			fNodeToRNodeDist[fArc.toNodeIndex][endRNode] = rArc.distance - dist
+			# fNodeToRNodeDist[fArc.toNodeIndex][endRNode] = rArc.distance - dist # not as accurate as it could be, should calc in separate for-loop
+		end
+		dist = 0.0
+		for fArcIndex in Iterators.reverse(rArcFArcs[rArc.index])
+			fArc = fArcs[fArcIndex]
+			fNodeToRNodeDist[fArc.toNodeIndex][endRNode] = dist
+			dist += fArc.distance
 		end
 	end
 	

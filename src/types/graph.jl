@@ -62,6 +62,16 @@ function findNearestNode(map::Map, nodes::Vector{Node}, location::Location;
 	return chosenNode, dist
 end
 
+# Set arc distance with normDist function,
+# for arcs that pass arcFilter.
+function setArcDistances!(graph::Graph, map::Map;
+	arcFilter::Function = (arc->isnan(arc.distance)))
+	@assert(!graph.isReduced)
+	for arc in filter(arcFilter, graph.arcs)
+		arc.distance = normDist(map, graph.nodes[arc.fromNodeIndex].location, graph.nodes[arc.toNodeIndex].location)
+	end
+end
+
 # for graph (set of nodes, arcs), check that:
 # nodes are inside map borders,
 # nodes are attached to at least one arc each,
@@ -87,7 +97,8 @@ function checkGraph(graph::Graph, map::Map)
 	
 	# check arc distances
 	for i = 1:numArcs
-		@assert(isnan(arcs[i].distance) || arcs[i].distance >= 0)
+		@assert(!isnan(arcs[i].distance), "arc $i has distance NaN")
+		@assert(arcs[i].distance >= 0, "arc $i has negative distance")
 	end
 	
 	# check that nodes are inside map borders

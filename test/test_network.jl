@@ -30,6 +30,7 @@ function readNetworkFiles(nodesFilename::String, arcsFilename::String)
 	mp.yMax = maximum(node -> node.location.y, fGraph.nodes) + 1
 	
 	JEMSS.initGraph!(fGraph)
+	JEMSS.setArcDistances!(fGraph, mp)
 	JEMSS.checkGraph(fGraph, mp)
 	JEMSS.initFNetTravels!(net, arcTravelTimes)
 	JEMSS.createRGraphFromFGraph!(net)
