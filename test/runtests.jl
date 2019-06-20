@@ -18,6 +18,7 @@ using Test
 
 cd(@__DIR__) do
 	isdir("temp") || mkpath("temp")
+	runGenConfig("data/regions/small/1/gen_config.xml", overwriteOutputPath = true, doPrint = false)
 	include("test_network.jl")
 	include("test_route.jl")
 	include("test_demand.jl")

@@ -13,13 +13,9 @@
 # limitations under the License.
 ##########################################################################
 
-# create test data
-@info("Creating test data")
-testRegionDataFolder = "data/regions/small/1"
-runGenConfig(joinpath(testRegionDataFolder, "gen_config.xml"), overwriteOutputPath = true, doPrint = false)
-
 # initialise sim
 @info("Initialising sim")
+testRegionDataFolder = "data/regions/small/1"
 sim = initSim(joinpath(testRegionDataFolder, "sim_config.xml"), doPrint = false);
 
 # initialise demand and demand coverage
