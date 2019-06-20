@@ -202,6 +202,9 @@ mutable struct Route
 	## fields that vary throughout the route are below here
 	## most of the route code assumes that these fields only change to move "forward" through the route
 	
+	status::RouteStatus
+	recentUpdateTime::Float # time at which route was most recently updated
+	
 	# recent rArc visited ("recent" means it is from the most recent route update/query)
 	recentRArc::Int # index of rArc recently visited
 	recentRArcStartTime::Float # time that travel on rArc started / would have started if had travelled from first node of recentRArc (can start part way along the arc)
@@ -222,6 +225,7 @@ mutable struct Route
 		Location(), nullTime, Location(), nullTime,
 		nullIndex, nullTime, nullDist, nullIndex, nullTime, nullIndex, nullTime, nullIndex, nullTime,
 		nullIndex,
+		routeNullStatus, nullTime,
 		nullIndex, nullTime, nullTime,
 		nullIndex, nullIndex, nullTime,
 		nullIndex, nullIndex, nullTime, nullDist)

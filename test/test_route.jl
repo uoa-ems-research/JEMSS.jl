@@ -14,7 +14,7 @@
 ##########################################################################
 
 @testset "route distance" begin
-	# Test calcRouteDistance function.
+	# Test calcRouteDistance! function.
 	# Compare against a calculation that relies on each arc distance being equal to the calculated distance between the arc's nodes.
 	# Assumes that shortestPathDistance function is correct (this is tested in test_network.jl).
 	
@@ -56,9 +56,7 @@
 		for amb in sim.ambulances
 			route = amb.route # shorthand
 			if route.travelModeIndex != nullIndex
-				JEMSS.updateRouteToTime!(net, route, t) # calcRouteDistance requires route to be up to date
-				@assert(route.nextFNodeDist == nullDist) # otherwise calcRouteDistance may return wrong value
-				dist1 = JEMSS.calcRouteDistance(sim, route, t)
+				dist1 = JEMSS.calcRouteDistance!(sim, route, t)
 				dist2 = calcRouteDistance2(net, sim.map, route, t)
 				allPass &= isapprox(dist1, dist2, atol = atol) # compare distances
 			end
