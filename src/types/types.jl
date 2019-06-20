@@ -189,6 +189,7 @@ mutable struct Route
 	# start and end nodes and times
 	startFNode::Int # index of first fNode in route
 	startFNodeTime::Float # time at which startFNode is reached
+	startFNodeDist::Float # distance from startLoc to startFNode; can be different from result from normDist() if starting part way along an arc
 	startRNode::Int # index of first rNode in route
 	startRNodeTime::Float # time at which startRNode is reached
 	endRNode::Int # index of last rNode in route
@@ -215,14 +216,15 @@ mutable struct Route
 	recentRArcNextFNode::Int # recentRArcRecentFNode + 1
 	nextFNode::Int # = rArcFNodes[recentRArc][recentRArcNextFNode]
 	nextFNodeTime::Float # time that nextFNode will be reached
+	nextFNodeDist::Float # distance to reach nextFNode; only set temporarily when changing route
 	
 	Route() = new(nullPriority, nullIndex,
 		Location(), nullTime, Location(), nullTime,
-		nullIndex, nullTime, nullIndex, nullTime, nullIndex, nullTime, nullIndex, nullTime,
+		nullIndex, nullTime, nullDist, nullIndex, nullTime, nullIndex, nullTime, nullIndex, nullTime,
 		nullIndex,
 		nullIndex, nullTime, nullTime,
 		nullIndex, nullIndex, nullTime,
-		nullIndex, nullIndex, nullTime)
+		nullIndex, nullIndex, nullTime, nullDist)
 end
 
 mutable struct Event

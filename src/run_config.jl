@@ -434,6 +434,7 @@ function initAmbulance!(sim::Simulation, ambulance::Ambulance;
 	ambulance.route.startLoc = Location()
 	# ambulance.route.startTime = nullTime
 	ambStation = sim.stations[ambulance.stationIndex]
+	ambulance.route.startFNodeDist = ambStation.nearestNodeDist
 	ambulance.route.endLoc = ambStation.location
 	ambulance.route.endTime = sim.startTime
 	ambulance.route.endFNode = ambStation.nearestNodeIndex
