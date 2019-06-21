@@ -13,6 +13,47 @@
 # limitations under the License.
 ##########################################################################
 
+@testset "route update" begin
+	# Test updating of route with updateRouteToTime! function.
+	# In particular, tests updating a route to a time at which it will be very close to a node.
+	# Passes if assertions in routing code all pass.
+	
+	sim = initSim("data/regions/small/1/sim_config.xml", doPrint = false)
+	
+	# shorthand
+	net = sim.net
+	fNodes = net.fGraph.nodes
+	numFNodes = length(fNodes)
+	
+	@assert(numFNodes > length(net.rGraph.nodes)) # check that some nodes are only in fGraph
+	
+	updateRoute!(route::Route, time::Float) = if (route.recentUpdateTime <= time && route.startTime <= time) JEMSS.updateRouteToTime!(net, route, time) end
+	
+	# test route between each pair of nodes, with and without off-road travel
+	startTime = 0.0
+	minArcTime = minimum(fNetTravel -> minimum(fNetTravel.arcTimes), net.fNetTravels)
+	offRoadSpeed = 60*24 # 60 km/hr, though any positive value will do here
+	offRoadDists = [0.0, offRoadSpeed * minArcTime]
+	for i = 1:numFNodes, j = 1:numFNodes, offRoadDist in offRoadDists
+		route = Route()
+		offRoadTime = offRoadDist / offRoadSpeed
+		JEMSS.initRoute!(route, currentLoc = fNodes[i].location, nextFNode = i, nextFNodeDist = offRoadDist)
+		JEMSS.changeRoute!(sim, route, highPriority, startTime + offRoadTime, fNodes[j].location, j)
+		updateRoute!(route, startTime)
+		updateRoute!(route, (startTime + route.startFNodeTime) / 2)
+		while route.status != routeAfterEndNode
+			time = route.nextFNodeTime
+			dt = (time + 1) * eps(Float)
+			updateRoute!(route, time - dt) # just before next node
+			updateRoute!(route, time) # just at next node
+			updateRoute!(route, time + dt) # just after next node
+			updateRoute!(route, time + minArcTime / 2) # at least halfway between next node future next node
+		end
+		updateRoute!(route, route.endTime)
+	end
+	@test(true)
+end
+
 @testset "route distance" begin
 	# Test calcRouteDistance! function.
 	# Compare against a calculation that relies on each arc distance being equal to the calculated distance between the arc's nodes.

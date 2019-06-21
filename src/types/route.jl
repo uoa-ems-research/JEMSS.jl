@@ -228,7 +228,7 @@ function isRouteUpToDate(route::Route, time::Float)
 	if time >= route.endFNodeTime
 		result &= (route.status == routeAfterEndNode)
 		result &= (route.recentFNode == route.endFNode && route.nextFNode == nullIndex)
-	elseif time < route.startFNodeTime
+	elseif time <= route.startFNodeTime
 		result &= (route.status == routeBeforeStartNode)
 		result &= (route.recentFNode == nullIndex && route.nextFNode == route.startFNode)
 	else # route.startFNodeTime <= time < route.endFNodeTime
@@ -246,7 +246,7 @@ function updateRouteToTime!(net::Network, route::Route, time::Float)
 	if isRouteUpToDate(route, time) return end # already up to date
 	route.recentUpdateTime = time
 	
-	if time < route.startFNodeTime # used to be: if time <= route.startFNodeTime
+	if time <= route.startFNodeTime # time < route.startFNodeTime does not always work; see setRouteStateBeforeStartFNode!()
 		@assert(route.status == routeBeforeStartNode && route.nextFNode == route.startFNode) # see setRouteStateBeforeStartFNode!()
 	elseif time >= route.endFNodeTime
 		setRouteStateAfterEndFNode!(route, time)
@@ -288,10 +288,11 @@ function updateRouteRecentRArc!(net::Network, route::Route, time::Float)
 	
 	@assert(route.startRNode != nullIndex != route.endRNode)
 	
-	if route.endRNodeTime <= time
+	if route.endRNodeTime <= time || isapprox(route.endRNodeTime, time) # allow for imprecision in route.endRNodeTime
 		# on last rArc
 		route.recentRArc = findRArcFromFNodeToFNode(net, rNodeFNode[route.endRNode], route.endFNode)
 		route.recentRArcRecentFNode = 1 # remaining fNode data will be set in updateRouteRecentRArcFNode!()
+		route.endRNodeTime = min(route.endRNodeTime, time) # ensure that route.endRNodeTime <= time
 		route.recentRArcStartTime = route.endRNodeTime
 		route.recentRArcEndTime = route.endRNodeTime + rNetTravel.arcTimes[route.recentRArc]
 		@assert(route.endFNodeTime < route.recentRArcEndTime) # should leave network before rArc ends
@@ -437,7 +438,7 @@ end
 
 # set temporally varying fields of route to represent state before reaching startFNode
 function setRouteStateBeforeStartFNode!(route::Route, time::Float)
-	@assert(time < route.startFNodeTime)
+	@assert(time <= route.startFNodeTime) # @assert(time < route.startFNodeTime) does not work if starting directly at route.startFNode
 	
 	route.status = routeBeforeStartNode
 	
