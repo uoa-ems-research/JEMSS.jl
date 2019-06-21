@@ -147,8 +147,7 @@ function initSim(configFilename::String;
 	initTime(t)
 	
 	if any(arc -> isnan(arc.distance), fGraph.arcs)
-		@info("fGraph contains one or more arcs with distance = NaN; will calculate distance for these arcs.")
-		initMessage(t, "calculating arc distances")
+		initMessage(t, "calculating arc distances for arcs with NaN distace")
 		setArcDistances!(fGraph, map)
 		initTime(t)
 	end

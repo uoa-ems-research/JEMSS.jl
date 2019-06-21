@@ -13,12 +13,14 @@
 # limitations under the License.
 ##########################################################################
 
+runGenConfig("data/regions/small/4/gen_config.xml", overwriteOutputPath = true, doPrint = false)
+
 @testset "route update" begin
 	# Test updating of route with updateRouteToTime! function.
 	# In particular, tests updating a route to a time at which it will be very close to a node.
 	# Passes if assertions in routing code all pass.
 	
-	sim = initSim("data/regions/small/1/sim_config.xml", doPrint = false)
+	sim = initSim("data/regions/small/4/sim_config.xml", doPrint = false)
 	
 	# shorthand
 	net = sim.net
@@ -51,7 +53,7 @@
 		end
 		updateRoute!(route, route.endTime)
 	end
-	@test(true)
+	@test true
 end
 
 @testset "route distance" begin
@@ -67,7 +69,7 @@ end
 	
 	# check that arc distance is equal to distance between two nodes, measured by normDist function
 	JEMSS.normDist(arc::Arc) = normDist(sim.map, fNodes[arc.fromNodeIndex].location, fNodes[arc.toNodeIndex].location)
-	@assert(all(arc -> isapprox(normDist(arc), arc.distance, rtol = eps(Float)), net.fGraph.arcs))
+	@assert(all(arc -> isapprox(normDist(arc), arc.distance, rtol = eps()), net.fGraph.arcs))
 	
 	# set absolute error tolerance between the two distance calculations
 	atol = eps() * (sim.map.xRange * sim.map.xScale + sim.map.yRange * sim.map.yScale) # eps * upper bound on route distance
@@ -89,9 +91,8 @@ end
 	end
 	
 	dt = 0.0001 # time step
-	endTime = 1.0
+	endTime = min(1.0, sim.calls[end].arrivalTime)
 	allPass = true
-	@assert(endTime <= sim.calls[end].arrivalTime)
 	for t = sim.startTime : dt : endTime
 		simulate!(sim, time = t)
 		for amb in sim.ambulances
@@ -103,5 +104,5 @@ end
 			end
 		end
 	end
-	@test(allPass)
+	@test allPass
 end
