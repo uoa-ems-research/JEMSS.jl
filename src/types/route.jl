@@ -84,6 +84,21 @@ function changeRoute!(sim::Simulation, route::Route, priority::Priority, startTi
 	setRouteFirstRArc!(net, route)
 end
 
+# Initialise an empty route to be at a given location,
+# along with the next node to travel to and distance to that node.
+function initRoute!(route::Route; currentLoc::Location = Location(), nextFNode::Int = nullIndex, nextFNodeDist::Float = nullDist)
+	@assert(route.status == routeNullStatus)
+	@assert(!isSameLocation(currentLoc, Location()))
+	@assert(nextFNode != nullIndex)
+	@assert(nextFNodeDist >= 0.0)
+	
+	# make route appear to have ended at current location
+	route.endLoc = currentLoc
+	route.endFNode = nextFNode
+	route.startFNodeDist = nextFNodeDist
+	# route.endTime = nullTime # or any time <= sim.startTime
+end
+
 # given a route and time, get current location
 function getRouteCurrentLocation!(net::Network, route::Route, time::Float)
 	updateRouteToTime!(net, route, time)
