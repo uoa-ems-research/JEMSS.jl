@@ -49,7 +49,7 @@ runGenConfig("data/regions/small/4/gen_config.xml", overwriteOutputPath = true, 
 			updateRoute!(route, time - dt) # just before next node
 			updateRoute!(route, time) # just at next node
 			updateRoute!(route, time + dt) # just after next node
-			updateRoute!(route, time + minArcTime / 2) # at least halfway between next node future next node
+			updateRoute!(route, time + minArcTime / 2) # part way between next node and future next node
 		end
 		updateRoute!(route, route.endTime)
 	end

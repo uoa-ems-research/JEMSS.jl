@@ -622,7 +622,6 @@ end
 # Return the distance travelled along a route,
 # from the route start time to the given time.
 function calcRouteDistance!(sim::Simulation, route::Route, time::Float)::Float
-	@assert(route.travelModeIndex != nullIndex)
 	@assert(route.status != routeNullStatus)
 	
 	# shorthand

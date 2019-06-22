@@ -14,7 +14,6 @@
 ##########################################################################
 
 # initialise sim
-@info("Initialising sim")
 testRegionDataFolder = "data/regions/small/1"
 sim = initSim(joinpath(testRegionDataFolder, "sim_config.xml"), doPrint = false);
 
