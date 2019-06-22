@@ -430,7 +430,7 @@ function initAmbulance!(sim::Simulation, ambulance::Ambulance;
 	# initialise route to start at station
 	ambulance.route = Route()
 	station = sim.stations[ambulance.stationIndex]
-	initRoute!(ambulance.route; currentLoc = station.location, nextFNode = station.nearestNodeIndex, nextFNodeDist = station.nearestNodeDist)
+	initRoute!(sim, ambulance.route; startLoc = station.location, startFNode = station.nearestNodeIndex, startFNodeDist = station.nearestNodeDist)
 	
 	# add wake up event
 	addEvent!(sim.eventList; form = ambWakesUp, time = wakeUpTime, ambulance = ambulance)

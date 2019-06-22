@@ -39,7 +39,7 @@ runGenConfig("data/regions/small/4/gen_config.xml", overwriteOutputPath = true, 
 	for i = 1:numFNodes, j = 1:numFNodes, offRoadDist in offRoadDists
 		route = Route()
 		offRoadTime = offRoadDist / offRoadSpeed
-		JEMSS.initRoute!(route, currentLoc = fNodes[i].location, nextFNode = i, nextFNodeDist = offRoadDist)
+		JEMSS.initRoute!(sim, route; startLoc = fNodes[i].location, startFNode = i, startFNodeDist = offRoadDist)
 		JEMSS.changeRoute!(sim, route, highPriority, startTime + offRoadTime, fNodes[j].location, j)
 		updateRoute!(route, startTime)
 		updateRoute!(route, (startTime + route.startFNodeTime) / 2)

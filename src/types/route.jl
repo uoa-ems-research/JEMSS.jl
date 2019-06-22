@@ -84,18 +84,40 @@ function changeRoute!(sim::Simulation, route::Route, priority::Priority, startTi
 end
 
 # Initialise an empty route to be at a given location,
-# along with the next node to travel to and distance to that node.
-function initRoute!(route::Route; currentLoc::Location = Location(), nextFNode::Int = nullIndex, nextFNodeDist::Float = nullDist)
-	@assert(route.status == routeNullStatus)
-	@assert(!isSameLocation(currentLoc, Location()))
-	@assert(nextFNode != nullIndex)
-	@assert(nextFNodeDist >= 0.0)
+# along with the start node to travel to and distance to that node.
+function initRoute!(sim::Simulation, route::Route;
+	startLoc::Location = Location(), startFNode::Int = nullIndex, startFNodeDist::Float = nullDist)
 	
-	# make route appear to have ended at current location
-	route.endLoc = currentLoc
-	route.endFNode = nextFNode
-	route.startFNodeDist = nextFNodeDist
-	# route.endTime = nullTime # or any time <= sim.startTime
+	@assert(route.status == routeNullStatus)
+	@assert(!isSameLocation(startLoc, Location()))
+	@assert(startFNode != nullIndex)
+	@assert(startFNodeDist >= 0.0)
+	
+	# make route that starts at time = Inf
+	route.startTime = Inf
+	route.startLoc = startLoc
+	route.startFNode = startFNode
+	route.startFNodeDist = startFNodeDist
+	route.startFNodeTime = Inf
+	# route.endTime = Inf # leave as nullTime, for getRouteNextNode!
+	route.endLoc = startLoc # needed for animation
+	route.endFNode = startFNode
+	route.endFNodeTime = Inf
+	route.nextFNode = startFNode
+	setRouteStateBeforeStartFNode!(route, Inf)
+	@assert(route.status == routeBeforeStartNode)
+	
+	# check that route functions return expected values
+	if checkMode
+		t = route.recentUpdateTime = 0.0
+		travelModeIndex = 1
+		@assert(isRouteUpToDate(route, t))
+		@assert(isSameLocation(getRouteCurrentLocation!(sim.net, route, t), route.startLoc))
+		@assert(getRouteNextNode!(sim, route, travelModeIndex, t)[1] == startFNode)
+		@assert(getRouteNextNodeDist!(sim, route, t) == startFNodeDist)
+		@assert(calcRouteDistance!(sim, route, t) == 0)
+		route.recentUpdateTime = nullTime # reset
+	end
 end
 
 # given a route and time, get current location
@@ -601,6 +623,7 @@ end
 # from the route start time to the given time.
 function calcRouteDistance!(sim::Simulation, route::Route, time::Float)::Float
 	@assert(route.travelModeIndex != nullIndex)
+	@assert(route.status != routeNullStatus)
 	
 	# shorthand
 	net = sim.net
