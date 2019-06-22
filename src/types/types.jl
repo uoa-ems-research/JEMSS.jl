@@ -259,6 +259,7 @@ mutable struct Ambulance
 	
 	# for statistics:
 	totalTravelTime::Float # this should only be updated after finishing each route / sim end
+	totalTravelDist::Float # this should only be updated after finishing each route / sim end
 	totalBusyTime::Float # total time that ambulance has been busy
 	# totalStationTime::Float # total time spent at station
 	numCallsTreated::Int # total number of calls that ambulance provided treatment for
@@ -270,7 +271,7 @@ mutable struct Ambulance
 	
 	Ambulance() = new(nullIndex, ambNullStatus, nullIndex, nullIndex, Route(), Event(), nullAmbClass,
 		Location(), false,
-		0.0, 0.0, 0, 0, 0, 0, 0, 0)
+		0.0, 0.0, 0.0, 0, 0, 0, 0, 0, 0)
 end
 
 mutable struct Call

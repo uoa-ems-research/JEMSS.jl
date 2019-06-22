@@ -13,8 +13,6 @@
 # limitations under the License.
 ##########################################################################
 
-@info("Todo: use distance calculated in changeRoute! function.")
-@info("Todo: account for distance of last route at end of sim (currently not calculated).")
 
 # given a route, a priority for travel, a start time, and an end location,
 # (and an end node which should be the node nearest to end location),

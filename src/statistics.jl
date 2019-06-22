@@ -45,6 +45,8 @@ printMinutes(t::Float) = string(round(t*24*60, digits = 2), " minutes") # conver
 printSeconds(t::Float) = string(round(t*24*60*60, digits = 2), " seconds") # convert days to seconds, round
 printPercent(p::Float) = string(round(p*100, digits = 2), "%")
 
+printKilometres(d::Float) = string(round(d, digits = 2), " km")
+
 function printSimStats(sim::Simulation)
 	println("=== Simulation statistics ===")
 	println()
@@ -61,6 +63,7 @@ function printAmbsStats(sim::Simulation)
 	@assert(sim.complete)
 	
 	ambsAvgDailyTravelTimes = [amb.totalTravelTime for amb in sim.ambulances] ./ (sim.time - sim.startTime)
+	ambsAvgDailyTravelDists = [amb.totalTravelDist for amb in sim.ambulances] ./ (sim.time - sim.startTime)
 	
 	# Gadfly.plot(ecdf(ambsAvgDailyTravelTimes*24*60),
 		# x="Average daily travel time (minutes)",
@@ -75,6 +78,12 @@ function printAmbsStats(sim::Simulation)
 	println(" std = ", printHours(std(ambsAvgDailyTravelTimes)))
 	println(" min = ", printHours(minimum(ambsAvgDailyTravelTimes)))
 	println(" max = ", printHours(maximum(ambsAvgDailyTravelTimes)))
+	
+	println("Average daily travel distance: ")
+	println(" mean = ", printKilometres(mean(ambsAvgDailyTravelDists)))
+	println(" std = ", printKilometres(std(ambsAvgDailyTravelDists)))
+	println(" min = ", printKilometres(minimum(ambsAvgDailyTravelDists)))
+	println(" max = ", printKilometres(maximum(ambsAvgDailyTravelDists)))
 end
 
 function printCallsStats(sim::Simulation)
