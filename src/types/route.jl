@@ -15,7 +15,6 @@
 
 @info("Todo: use distance calculated in changeRoute! function.")
 @info("Todo: account for distance of last route at end of sim (currently not calculated).")
-@info("Todo: change calcRouteDistance! function to work before ambulance route is first changed with changeRoute! function.")
 
 # given a route, a priority for travel, a start time, and an end location,
 # (and an end node which should be the node nearest to end location),
@@ -34,11 +33,11 @@ function changeRoute!(sim::Simulation, route::Route, priority::Priority, startTi
 	
 	(startFNode, startFNodeTravelTime) = getRouteNextNode!(sim, route, travelMode.index, startTime)
 	startFNodeTime = startTime + startFNodeTravelTime
-	startFNodeDist = route.nextFNodeDist = getRouteNextNodeDist!(sim, route, startTime)
+	startFNodeDist = getRouteNextNodeDist!(sim, route, startTime)
 	
 	(pathTravelTime, rNodes) = shortestPathData(net, travelMode.index, startFNode, endFNode)
 	
-	dist = route.travelModeIndex == nullIndex ? 0.0 : calcRouteDistance!(sim, route, startTime) # calcRouteDistance! should be called before resetting route.nextFNodeDist to nullDist and before setting route.startFNodeDist for new route
+	dist = calcRouteDistance!(sim, route, startTime) # testing, delete
 	
 	# shorthand:
 	fNetTravel = travelMode.fNetTravel
@@ -77,7 +76,6 @@ function changeRoute!(sim::Simulation, route::Route, priority::Priority, startTi
 	
 	# recent rArc, recent fNode, next fNode, status
 	setRouteStateBeforeStartFNode!(route, startTime)
-	route.nextFNodeDist = nullDist
 	
 	# first rArc
 	setRouteFirstRArc!(net, route)
@@ -212,6 +210,8 @@ function getRouteNextNodeDist!(sim::Simulation, route::Route, time::Float)
 	# first need to update route
 	updateRouteToTime!(net, route, time)
 	
+	if route.nextFNodeDist != nullDist return route.nextFNodeDist end
+	
 	dist = nullDist # init
 	if route.status == routeAfterEndNode
 		# off-road, after last node
@@ -233,6 +233,8 @@ function getRouteNextNodeDist!(sim::Simulation, route::Route, time::Float)
 		dist = arc.distance * (route.nextFNodeTime - time) / (route.nextFNodeTime - route.recentFNodeTime)
 	end
 	@assert(dist >= 0)
+	
+	route.nextFNodeDist = dist
 	
 	return dist
 end
@@ -266,6 +268,7 @@ function updateRouteToTime!(net::Network, route::Route, time::Float)
 	
 	if isRouteUpToDate(route, time) return end # already up to date
 	route.recentUpdateTime = time
+	route.nextFNodeDist = nullDist # route is not up to date, so value should have changed
 	
 	if time <= route.startFNodeTime # time < route.startFNodeTime does not always work; see setRouteStateBeforeStartFNode!()
 		@assert(route.status == routeBeforeStartNode && route.nextFNode == route.startFNode) # see setRouteStateBeforeStartFNode!()
@@ -632,7 +635,7 @@ function calcRouteDistance!(sim::Simulation, route::Route, time::Float)::Float
 	updateRouteToTime!(net, route, time)
 	
 	dist = 0.0
-	nextFNodeDist = route.nextFNodeDist != nullDist ? route.nextFNodeDist : getRouteNextNodeDist!(sim, route, time)
+	nextFNodeDist = getRouteNextNodeDist!(sim, route, time)
 	if route.status == routeBeforeStartNode
 		dist = route.startFNodeDist - nextFNodeDist
 	elseif route.status == routeAfterEndNode

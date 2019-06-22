@@ -219,7 +219,7 @@ mutable struct Route
 	recentRArcNextFNode::Int # recentRArcRecentFNode + 1
 	nextFNode::Int # = rArcFNodes[recentRArc][recentRArcNextFNode]
 	nextFNodeTime::Float # time that nextFNode will be reached
-	nextFNodeDist::Float # distance to reach nextFNode; only set temporarily when changing route
+	nextFNodeDist::Float # distance to reach nextFNode; this is only set after calling getRouteNextNodeDist!()
 	
 	Route() = new(nullPriority, nullIndex,
 		Location(), nullTime, Location(), nullTime,
