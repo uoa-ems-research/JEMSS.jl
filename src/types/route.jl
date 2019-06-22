@@ -35,8 +35,6 @@ function changeRoute!(sim::Simulation, route::Route, priority::Priority, startTi
 	
 	(pathTravelTime, rNodes) = shortestPathData(net, travelMode.index, startFNode, endFNode)
 	
-	dist = calcRouteDistance!(sim, route, startTime) # testing, delete
-	
 	# shorthand:
 	fNetTravel = travelMode.fNetTravel
 	fNodeFromRNodeTime = fNetTravel.fNodeFromRNodeTime
