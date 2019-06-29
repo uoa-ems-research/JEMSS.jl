@@ -13,7 +13,6 @@
 # limitations under the License.
 ##########################################################################
 
-
 # given a route, a priority for travel, a start time, and an end location,
 # (and an end node which should be the node nearest to end location),
 # modify current route

@@ -193,6 +193,12 @@ function initSim(configFilename::String;
 		end
 	end
 	
+	initMessage(t, "calculating shortest path distances")
+	for rNetTravel in net.rNetTravels
+		calcRNetTravelShortestPathDists!(net, rNetTravel)
+	end
+	initTime(t)
+	
 	##################
 	# travel
 	

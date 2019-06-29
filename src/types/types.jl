@@ -66,13 +66,14 @@ mutable struct Graph
 	
 	light::LightGraphs.DiGraph
 	fadjList::Vector{Vector{Int}} # shorthand for light.fadjlist; fadjList[i] gives nodes that are connected to node i by an outgoing arc from node i
+	badjList::Vector{Vector{Int}} # shorthand for light.badjList; badjList[i] gives nodes that are connected to node i by an outgoing arc to node i
 	
 	# for full graph:
 	nodePairArcIndex::SparseMatrixCSC{Int,Int} # for node indices i,j, nodePairArcIndex[i,j] should return arc index for node pair
 	# cannot always use nodePairArcIndex for reduced graph, there may be more than one arc from node i to j, use spNodePairArcIndex instead
 	
 	Graph(isReduced::Bool) = new(isReduced, [], [],
-		LightGraphs.DiGraph(), [],
+		LightGraphs.DiGraph(), [], [],
 		spzeros(Int, 0, 0))
 end
 
@@ -85,6 +86,7 @@ mutable struct NetTravel
 	
 	# for use in reduced graph:
 	spTimes::Array{FloatSpTime,2} # spTimes[i,j] = shortest path time between node i and j
+	spDists::Array{FloatSpDist,2} # spDists[i,j] = shortest path distance between node i and j
 	spFadjIndex::Array{IntFadj,2} # for shortest path from rNode i to j, spFadjIndex[i,j] gives the index (in fadjList[i], see Graph) of the successor rNode of i for this path
 	spNodePairArcIndex::SparseMatrixCSC{Int,Int} # spNodePairArcIndex[i,j] = index of arc incident to nodes i,j, if it provides shortest travel time
 	spFadjArcList::Vector{Vector{Int}} # spFadjArcList[i][j] gives index of rArc from rNode[i] to jth outgoing rNode of rNode[i] (i.e. rGraph.fadjList[i][j])
@@ -102,7 +104,7 @@ mutable struct NetTravel
 	fNodeNearestHospitalIndex::Vector{Int} # fNodeNearestHospitalIndex[i] gives index of nearest hospital from fNode[i]
 	
 	NetTravel(isReduced::Bool) = new(isReduced, nullIndex, [],
-		Array{FloatSpTime,2}(undef,0,0), Array{IntFadj,2}(undef,0,0), spzeros(Int, 0, 0), [],
+		Array{FloatSpTime,2}(undef,0,0), Array{FloatSpDist,2}(undef,0,0), Array{IntFadj,2}(undef,0,0), spzeros(Int, 0, 0), [],
 		[], [], [],
 		Array{Float,2}(undef,0,0), Array{Float,2}(undef,0,0), Array{Tuple{Int,Int},2}(undef,0,0), Array{Tuple{Int,Int},2}(undef,0,0), [])
 end

@@ -24,6 +24,7 @@ function initGraph!(graph::Graph)
 		LightGraphs.add_edge!(graph.light, arc.fromNodeIndex, arc.toNodeIndex) # add edges to light graph
 	end
 	graph.fadjList = graph.light.fadjlist
+	graph.badjList = graph.light.badjlist
 	
 	if !graph.isReduced
 		graph.nodePairArcIndex = spzeros(Int, numNodes, numNodes) # sparse, to save on memory
