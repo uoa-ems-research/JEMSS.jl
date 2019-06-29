@@ -37,6 +37,9 @@ function readNetworkFiles(nodesFilename::String, arcsFilename::String)
 	JEMSS.checkGraph(net.rGraph, mp)
 	JEMSS.createRNetTravelsFromFNetTravels!(net)
 	JEMSS.setCommonFNodes!(net, Int[])
+	for rNetTravel in net.rNetTravels
+		JEMSS.calcRNetTravelShortestPathDists!(net, rNetTravel)
+	end
 	
 	return net
 end
