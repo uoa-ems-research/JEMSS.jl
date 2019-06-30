@@ -704,10 +704,22 @@ function shortestPathDistance(net::Network, travelModeIndex::Int, startFNode::In
 	rArcs = net.rGraph.arcs
 	fNodeToRNodeDist = net.fNodeToRNodeDist
 	fNodeFromRNodeDist = net.fNodeFromRNodeDist
+	isFNodeCommon = net.isFNodeCommon
+	fNodeCommonFNodeIndex = net.fNodeCommonFNodeIndex
+	fNetTravel = net.fNetTravels[travelModeIndex]
 	rNetTravel = net.rNetTravels[travelModeIndex]
 	
 	dist = 0.0
 	if startFNode == endFNode return dist end
+	
+	# if startFNode or endFNode are common, can look up stored shortest path distance
+	if isFNodeCommon[startFNode]
+		i = fNodeCommonFNodeIndex[startFNode]
+		return fNetTravel.commonFNodeToFNodeDist[i, endFNode]
+	elseif isFNodeCommon[endFNode]
+		i = fNodeCommonFNodeIndex[endFNode]
+		return fNetTravel.fNodeToCommonFNodeDist[startFNode, i]
+	end
 	
 	if startRNode == nullIndex - 1 || endRNode == nullIndex - 1
 		@assert(startRNode == nullIndex - 1 && endRNode == nullIndex - 1)
@@ -891,9 +903,11 @@ function setCommonFNodes!(net::Network, commonFNodes::Vector{Int})
 	# calculate and store shortest path travel data between all fNodes and commonFNodes
 	for fNetTravel in net.fNetTravels
 		fNetTravel.commonFNodeToFNodeTime = Array{Float,2}(undef, numCommonFNodes, numFNodes)
+		fNetTravel.commonFNodeToFNodeDist = Array{Float,2}(undef, numCommonFNodes, numFNodes)
 		fNetTravel.commonFNodeToFNodeRNodes = Array{Tuple{Int,Int},2}(undef, numCommonFNodes, numFNodes)
 		
 		fNetTravel.fNodeToCommonFNodeTime = Array{Float,2}(undef, numFNodes, numCommonFNodes)
+		fNetTravel.fNodeToCommonFNodeDist = Array{Float,2}(undef, numFNodes, numCommonFNodes)
 		fNetTravel.fNodeToCommonFNodeRNodes = Array{Tuple{Int,Int},2}(undef, numFNodes, numCommonFNodes)
 		
 		for commonFNode in commonFNodes, fNode = 1:numFNodes
@@ -902,10 +916,12 @@ function setCommonFNodes!(net::Network, commonFNodes::Vector{Int})
 			(travelTime, rNodes) = shortestPathData(net, fNetTravel.modeIndex, commonFNode, fNode)
 			fNetTravel.commonFNodeToFNodeTime[i,fNode] = travelTime
 			fNetTravel.commonFNodeToFNodeRNodes[i,fNode] = rNodes
+			fNetTravel.commonFNodeToFNodeDist[i,fNode] = shortestPathDistance(net, fNetTravel.modeIndex, commonFNode, fNode; startRNode = rNodes[1], endRNode = rNodes[2])
 			
 			(travelTime, rNodes) = shortestPathData(net, fNetTravel.modeIndex, fNode, commonFNode)
 			fNetTravel.fNodeToCommonFNodeTime[fNode,i] = travelTime
 			fNetTravel.fNodeToCommonFNodeRNodes[fNode,i] = rNodes
+			fNetTravel.fNodeToCommonFNodeDist[fNode,i] = shortestPathDistance(net, fNetTravel.modeIndex, fNode, commonFNode; startRNode = rNodes[1], endRNode = rNodes[2])
 		end
 	end
 	
