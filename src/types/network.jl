@@ -558,6 +558,7 @@ function calcRNetTravelShortestPathDists!(net::Network, rNetTravel::NetTravel)
 	spNodePairArcIndex = rNetTravel.spNodePairArcIndex
 	
 	spDists = rNetTravel.spDists = fill(FloatSpDist(Inf), n, n) # spDists[i,j] = shortest path distance from node i to j
+	for i = 1:n spDists[i,i] = 0 end
 	for arc in rGraph.arcs
 		i = arc.fromNodeIndex
 		j = arc.toNodeIndex
@@ -565,37 +566,39 @@ function calcRNetTravelShortestPathDists!(net::Network, rNetTravel::NetTravel)
 			spDists[i,j] = arc.distance
 		end
 	end
+	
 	spNextNode = zeros(Int, n)
 	visited = fill(false, n) # visited[i] = true if node i has been visited and so had distance populated
 	queue = Int[] # node indices to search next
 	sizehint!(queue, n)
-	for i = 1:n # root node of shortest path tree, find distance from each node to this node
-		# get data for paths towards node i
-		spNextNode[i] = 0
+	for k = 1:n # root node of shortest path tree, find distance from each node to this node
+		# get data for paths towards node k
+		spNextNode[k] = 0
 		for j = 1:n
-			if i == j continue end
-			fadjIndex = rNetTravel.spFadjIndex[j,i]
+			if j == k continue end
+			fadjIndex = rNetTravel.spFadjIndex[j,k]
 			spNextNode[j] = fadjList[j][fadjIndex]
 		end
 		
-		spDists[i,i] = 0
 		fill!(visited, false)
-		visited[i] = true
+		visited[k] = true
 		empty!(queue)
-		push!(queue, i)
+		push!(queue, k)
 		while !isempty(queue)
 			j = pop!(queue)
-			d = spDists[j,i] # shorthand
-			for k in badjList[j] # all nodes with arcs incoming to node j
-				if !visited[k] && spNextNode[k] == j # successor of node k on shortest path from node k to i is j
-					spDists[k,i] = spDists[k,j] + d # d[k,i] = d[k,j] + d[j,i]
-					visited[k] = true
-					push!(queue, k)
+			d = spDists[j,k] # shorthand
+			for i in badjList[j] # all nodes with arcs incoming to node j
+				if !visited[i] && spNextNode[i] == j # successor of node i on shortest path from node i to k is j
+					spDists[i,k] = spDists[i,j] + d # d[i,k] = d[i,j] + d[j,k]
+					visited[i] = true
+					push!(queue, i)
 				end
 			end
 		end
 	end
-	@assert(!any(d -> d == Inf, spDists))
+	
+	@assert(!any(d -> d == FloatSpDist(Inf), spDists))
+	@assert(all(d -> d >= 0, spDists))
 end
 
 # for the shortest path from startRNode to endRNode,
