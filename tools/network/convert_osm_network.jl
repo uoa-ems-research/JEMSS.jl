@@ -77,6 +77,7 @@ function readOsmNetworkFile(osmFilename::String;
 		arcs[i].toNodeIndex = vertices[v2]
 		arcs[i].fields["osm_class"] = class[i]
 		arcs[i].fields["osm_weight"] = weights[i] # edge weight = length
+		arcs[i].distance = weights[i] / 1000 # convert metres to km
 	end
 	
 	return nodes, arcs

@@ -74,7 +74,8 @@ function readTntpNetworkFile(tntpNetworkFilename::String; delim::Char = '\t')
 	header = data[row,:]
 	cols = findall(.!isempty.(header))[2:end] # need to ignore any empty headers, and "~"
 	table = Table("tntpNetwork", data[row, cols], data[row+1:end, cols])
-	rowsFields = tableRowsFieldDicts(table, setdiff(table.header, ["from", "to"]))
+	lengthColString = first(filter(s -> occursin("length", s), table.header)) # to match "length", "length (km)", etc
+	rowsFields = tableRowsFieldDicts(table, setdiff(table.header, ["from", "to"])) # will keep "length" field
 	numArcs = size(table.data,1)
 	arcs = Vector{Arc}(undef, numArcs)
 	travelTimes = Vector{Float}(undef, numArcs)
@@ -83,6 +84,7 @@ function readTntpNetworkFile(tntpNetworkFilename::String; delim::Char = '\t')
 		arcs[i].index = i
 		arcs[i].fromNodeIndex = table.columns["from"][i]
 		arcs[i].toNodeIndex = table.columns["to"][i]
+		arcs[i].distance = table.columns[lengthColString][i]
 		arcs[i].fields = rowsFields[i]
 	end
 	

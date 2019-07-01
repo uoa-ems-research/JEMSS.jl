@@ -30,6 +30,7 @@ function changeRoute!(sim::Simulation, route::Route, priority::Priority, startTi
 	
 	(startFNode, startFNodeTravelTime) = getRouteNextNode!(sim, route, travelMode.index, startTime)
 	startFNodeTime = startTime + startFNodeTravelTime
+	startFNodeDist = getRouteNextNodeDist!(sim, route, startTime)
 	
 	(pathTravelTime, rNodes) = shortestPathData(net, travelMode.index, startFNode, endFNode)
 	
@@ -43,9 +44,10 @@ function changeRoute!(sim::Simulation, route::Route, priority::Priority, startTi
 	route.priority = priority
 	route.travelModeIndex = travelMode.index
 	
-	# start and end fNodes and times
+	# start and end fNodes, times, and distances
 	route.startFNode = startFNode
 	route.startFNodeTime = startFNodeTime
+	route.startFNodeDist = startFNodeDist
 	route.endFNode = endFNode
 	route.endFNodeTime = startFNodeTime + pathTravelTime
 	
@@ -55,7 +57,7 @@ function changeRoute!(sim::Simulation, route::Route, priority::Priority, startTi
 	if route.startRNode != nullIndex
 		@assert(route.endRNode != nullIndex)
 		route.startRNodeTime = startFNodeTime + fNodeToRNodeTime[startFNode][route.startRNode]
-		route.endRNodeTime = route.endFNodeTime - fNodeFromRNodeTime[endFNode][route.endRNode]
+		route.endRNodeTime = route.startRNode == route.endRNode ? route.startRNodeTime : route.endFNodeTime - fNodeFromRNodeTime[endFNode][route.endRNode]
 	else
 		route.startRNodeTime = nullTime
 		route.endRNodeTime = nullTime
@@ -67,16 +69,52 @@ function changeRoute!(sim::Simulation, route::Route, priority::Priority, startTi
 	route.endLoc = endLoc
 	route.endTime = route.endFNodeTime + offRoadTravelTime(travelMode, map, net.fGraph.nodes[endFNode].location, endLoc)
 	
-	# recent rArc, recent fNode, next fNode
+	# recent rArc, recent fNode, next fNode, status
 	setRouteStateBeforeStartFNode!(route, startTime)
 	
 	# first rArc
 	setRouteFirstRArc!(net, route)
 end
 
+# Initialise an empty route to be at a given location,
+# along with the start node to travel to and distance to that node.
+function initRoute!(sim::Simulation, route::Route;
+	startLoc::Location = Location(), startFNode::Int = nullIndex, startFNodeDist::Float = nullDist)
+	
+	@assert(route.status == routeNullStatus)
+	@assert(!isSameLocation(startLoc, Location()))
+	@assert(startFNode != nullIndex)
+	@assert(startFNodeDist >= 0.0)
+	
+	# make route that starts at time = Inf
+	route.startTime = Inf
+	route.startLoc = startLoc
+	route.startFNode = startFNode
+	route.startFNodeDist = startFNodeDist
+	route.startFNodeTime = Inf
+	# route.endTime = Inf # leave as nullTime, for getRouteNextNode!
+	route.endLoc = startLoc # needed for animation
+	route.endFNode = startFNode
+	route.endFNodeTime = Inf
+	route.nextFNode = startFNode
+	setRouteStateBeforeStartFNode!(route, Inf)
+	@assert(route.status == routeBeforeStartNode)
+	
+	# check that route functions return expected values
+	if checkMode
+		t = route.recentUpdateTime = 0.0
+		travelModeIndex = 1
+		@assert(isRouteUpToDate(route, t))
+		@assert(isSameLocation(getRouteCurrentLocation!(sim.net, route, t), route.startLoc))
+		@assert(getRouteNextNode!(sim, route, travelModeIndex, t)[1] == startFNode)
+		@assert(getRouteNextNodeDist!(sim, route, t) == startFNodeDist)
+		@assert(calcRouteDistance!(sim, route, t) == 0)
+		route.recentUpdateTime = nullTime # reset
+	end
+end
+
 # given a route and time, get current location
 function getRouteCurrentLocation!(net::Network, route::Route, time::Float)
-	
 	updateRouteToTime!(net, route, time)
 	
 	fNodes = net.fGraph.nodes # shorthand
@@ -155,23 +193,89 @@ function getRouteNextNode!(sim::Simulation, route::Route, travelModeIndex::Int, 
 	return nextFNode, travelTime
 end
 
+# Get the distance of the route to the next node at the given time.
+# If already past last node in route, return the distance to return to it.
+# See also: getRouteNextNode!
+function getRouteNextNodeDist!(sim::Simulation, route::Route, time::Float)
+	# shorthand:
+	map = sim.map
+	net = sim.net
+	fGraph = net.fGraph
+	
+	# first need to update route
+	updateRouteToTime!(net, route, time)
+	
+	if route.nextFNodeDist != nullDist return route.nextFNodeDist end
+	
+	dist = nullDist # init
+	if route.status == routeAfterEndNode
+		# off-road, after last node
+		dist = normDist(map, route.endLoc, fGraph.nodes[route.endFNode].location)
+		if time < route.endTime
+			dist *= (time - route.endFNodeTime) / (route.endTime - route.endFNodeTime)
+		end
+	elseif route.status == routeBeforeStartNode
+		# before first node, but may be off-road or partway along first arc
+		dist = route.startFNodeDist # can be different from normDist between startLoc and startFNode if starting along arc
+		if time > route.startTime
+			dist *= (route.startFNodeTime - time) / (route.startFNodeTime - route.startTime)
+		end
+	else
+		@assert(route.status == routeOnPath)
+		arcIndex = fGraph.nodePairArcIndex[route.recentFNode, route.nextFNode]
+		@assert(arcIndex != 0)
+		arc = fGraph.arcs[arcIndex]
+		dist = arc.distance * (route.nextFNodeTime - time) / (route.nextFNodeTime - route.recentFNodeTime)
+	end
+	@assert(dist >= 0)
+	
+	route.nextFNodeDist = dist
+	
+	return dist
+end
+
+function isRouteUpToDate(route::Route, time::Float)
+	@assert(time != nullTime)
+	@assert(route.recentUpdateTime <= time) # route should not be ahead of time
+	
+	# return time == route.recentUpdateTime # basic check, assuming that other fields of route are correct
+	if time != route.recentUpdateTime return false end
+	
+	# further checks
+	result = true
+	if time >= route.endFNodeTime
+		result &= (route.status == routeAfterEndNode)
+		result &= (route.recentFNode == route.endFNode && route.nextFNode == nullIndex)
+	elseif time <= route.startFNodeTime
+		result &= (route.status == routeBeforeStartNode)
+		result &= (route.recentFNode == nullIndex && route.nextFNode == route.startFNode)
+	else # route.startFNodeTime <= time < route.endFNodeTime
+		result &= (route.status == routeOnPath)
+		result &= (route.recentFNode != nullIndex && route.nextFNode != nullIndex)
+	end
+	return result
+end
+
 # updates route fields for given time
 function updateRouteToTime!(net::Network, route::Route, time::Float)
-	@assert(route.recentFNodeTime == nullTime || route.recentFNodeTime <= time)
+	@assert(time != nullTime)
+	@assert(route.recentUpdateTime <= time)
 	
-	if time <= route.startFNodeTime
-		@assert(route.nextFNode == route.startFNode) # see setRouteStateBeforeStartFNode!()
-		return
+	if isRouteUpToDate(route, time) return end # already up to date
+	route.recentUpdateTime = time
+	route.nextFNodeDist = nullDist # route is not up to date, so value should have changed
+	
+	if time <= route.startFNodeTime # time < route.startFNodeTime does not always work; see setRouteStateBeforeStartFNode!()
+		@assert(route.status == routeBeforeStartNode && route.nextFNode == route.startFNode) # see setRouteStateBeforeStartFNode!()
 	elseif time >= route.endFNodeTime
 		setRouteStateAfterEndFNode!(route, time)
-		@assert(route.recentFNode == route.endFNode) # see setRouteStateAfterEndFNode!()
-		return
+		# @assert(route.status == routeAfterEndNode && route.recentFNode == route.endFNode) # see setRouteStateAfterEndFNode!()
 	else
 		# currently somewhere on network
 		updateRouteRecentRArc!(net, route, time)
 		updateRouteRecentRArcFNode!(net, route, time)
+		@assert(route.status == routeOnPath)
 	end
-	
 end
 
 # update route.recentRArc and similar fields for given time
@@ -185,8 +289,8 @@ function updateRouteRecentRArc!(net::Network, route::Route, time::Float)
 	# should be on network
 	@assert(route.startFNodeTime <= time < route.endFNodeTime)
 	
-	if route.recentFNode == nullIndex
-		# previously not on route, set to be at startFNode
+	if route.status != routeOnPath
+		# previously not on path, set to be at startFNode
 		setRouteStateAfterStartFNode!(net, route, time)
 	end
 	
@@ -232,6 +336,9 @@ function updateRouteRecentRArc!(net::Network, route::Route, time::Float)
 		if rNodeFNode[nextRNode] == route.endFNode
 			@assert(isapprox(route.recentRArcEndTime, route.endFNodeTime))
 			route.recentRArcEndTime = route.endFNodeTime # adjust value, to compensate for problems with numerical precision
+		elseif nextRNode == route.endRNode
+			@assert(isapprox(route.recentRArcEndTime, route.endRNodeTime))
+			route.recentRArcEndTime = route.endRNodeTime # adjust value, to compensate for problems with numerical precision
 		end
 		route.recentRArcRecentFNode = 1 # remaining fNode data will be set in updateRouteRecentRArcFNode!()
 	end
@@ -260,8 +367,8 @@ function updateRouteRecentRArcFNode!(net::Network, route::Route, time::Float)
 	rArcFNodes = net.rArcFNodes[route.recentRArc]
 	recentRArcFNodesTimes = fNetTravel.rArcFNodesTimes[route.recentRArc]
 	
-	route.recentRArcRecentFNode = findMaxIndexLeqTime(recentRArcFNodesTimes, time - route.recentRArcStartTime, route.recentRArcRecentFNode)
-	@assert(route.recentRArcRecentFNode < length(rArcFNodes))
+	i = findMaxIndexLeqTime(recentRArcFNodesTimes, time - route.recentRArcStartTime, route.recentRArcRecentFNode)
+	route.recentRArcRecentFNode = min(i, length(rArcFNodes) - 1) # adjust value, to compensate for problems with numerical precision in time values
 	route.recentFNode = rArcFNodes[route.recentRArcRecentFNode]
 	route.recentFNodeTime = route.recentRArcStartTime + recentRArcFNodesTimes[route.recentRArcRecentFNode]
 	
@@ -352,7 +459,9 @@ end
 
 # set temporally varying fields of route to represent state before reaching startFNode
 function setRouteStateBeforeStartFNode!(route::Route, time::Float)
-	@assert(time <= route.startFNodeTime) # @assert(time < route.startFNodeTime) does not always work
+	@assert(time <= route.startFNodeTime) # @assert(time < route.startFNodeTime) does not work if starting directly at route.startFNode
+	
+	route.status = routeBeforeStartNode
 	
 	# recent rArc
 	route.recentRArc = nullIndex
@@ -379,17 +488,15 @@ function setRouteStateAfterStartFNode!(net::Network, route::Route, time::Float)
 	# shorthand:
 	rNetTravel = net.rNetTravels[route.travelModeIndex]
 	fNetTravel = net.fNetTravels[route.travelModeIndex]
-	fNodeFromRNodeTime = fNetTravel.fNodeFromRNodeTime
-	fNodeToRNodeTime = fNetTravel.fNodeToRNodeTime
-	rArcFNodesTimes = fNetTravel.rArcFNodesTimes
-	rArcFNodes = 	net.rArcFNodes
 	rArc = net.rGraph.arcs[route.firstRArc]
-	firstRArcFNodesTimes = rArcFNodesTimes[route.firstRArc]
-	firstRArcFNodes = rArcFNodes[route.firstRArc]
+	firstRArcFNodesTimes = fNetTravel.rArcFNodesTimes[route.firstRArc]
+	firstRArcFNodes = net.rArcFNodes[route.firstRArc]
+	
+	route.status = routeOnPath
 	
 	# recent rArc
 	route.recentRArc = route.firstRArc
-	route.recentRArcStartTime = route.startFNodeTime - fNodeFromRNodeTime[route.startFNode][rArc.fromNodeIndex]
+	route.recentRArcStartTime = route.startFNodeTime - fNetTravel.fNodeFromRNodeTime[route.startFNode][rArc.fromNodeIndex]
 	route.recentRArcEndTime = route.recentRArcStartTime + rNetTravel.arcTimes[route.firstRArc]
 	if firstRArcFNodes[end] == route.endFNode
 		@assert(isapprox(route.recentRArcEndTime, route.endFNodeTime))
@@ -417,6 +524,8 @@ end
 # set temporally varying fields of route to represent state after leaving endFNode
 function setRouteStateAfterEndFNode!(route::Route, time::Float)
 	@assert(route.endFNodeTime <= time)
+	
+	route.status = routeAfterEndNode
 	
 	# recent rArc
 	route.recentRArc = nullIndex
@@ -508,4 +617,37 @@ function shortestRouteTravelTime!(sim::Simulation;
 	travelTime = time1 + pathTravelTime + time2
 	
 	return travelTime
+end
+
+# Return the distance travelled along a route,
+# from the route start time to the given time.
+function calcRouteDistance!(sim::Simulation, route::Route, time::Float)::Float
+	@assert(route.status != routeNullStatus)
+	
+	# shorthand
+	net = sim.net
+	fGraph = net.fGraph
+	
+	# first need to update route
+	updateRouteToTime!(net, route, time)
+	
+	dist = 0.0
+	nextFNodeDist = getRouteNextNodeDist!(sim, route, time)
+	if route.status == routeBeforeStartNode
+		dist = route.startFNodeDist - nextFNodeDist
+	elseif route.status == routeAfterEndNode
+		dist += route.startFNodeDist
+		dist += shortestPathDistance(net, route.travelModeIndex, route.startFNode, route.endFNode, startRNode = route.startRNode, endRNode = route.endRNode)
+		dist += nextFNodeDist # distance to return back to route.endFNode
+	else
+		@assert(route.status == routeOnPath)
+		dist += route.startFNodeDist
+		dist += shortestPathDistance(net, route.travelModeIndex, route.startFNode, route.recentFNode)
+		fArcIndex = fGraph.nodePairArcIndex[route.recentFNode, route.nextFNode]
+		fArc = fGraph.arcs[fArcIndex]
+		dist += fArc.distance - nextFNodeDist
+	end
+	@assert(dist >= 0)
+	
+	return dist
 end

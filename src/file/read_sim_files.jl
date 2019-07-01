@@ -71,8 +71,9 @@ function readArcsFile(filename::String;
 	# fill arc fields with data in table
 	c = table.columns # shorthand
 	(indexCol = c["index"]); (fromNodeCol = c["fromNode"]); (toNodeCol = c["toNode"]) # shorthand, to avoid repeated dict lookups
+	(hasDistCol, distCol) = haskey(c, "distance") ? (true, c["distance"]) : (false, fill(NaN, numArcs)) # shorthand
 	modeCols = [c[string("mode_", i)] for i = 1:numModes] # shorthand
-	fieldNames = setdiff(table.header, keepAllFields ? [] : ["index", "fromNode", "toNode", [string("mode_", i) for i = 1:numModes]...])
+	fieldNames = setdiff(table.header, keepAllFields ? [] : ["index", "fromNode", "toNode", "distance", [string("mode_", i) for i = 1:numModes]...])
 	rowsFields = tableRowsFieldDicts(table, fieldNames)
 	# get arc data from table
 	for i = 1:numArcs
@@ -80,12 +81,14 @@ function readArcsFile(filename::String;
 		arcs[i].index = indexCol[i]
 		arcs[i].fromNodeIndex = fromNodeCol[i]
 		arcs[i].toNodeIndex = toNodeCol[i]
+		arcs[i].distance = distCol[i]
 		arcs[i].fields = rowsFields[i]
 		# read travel times
 		for j = 1:numModes
 			travelTimes[j,i] = modeCols[j][i]
 		end
 		@assert(arcs[i].index == i)
+		if hasDistCol @assert(arcs[i].distance >= 0) end
 	end
 	
 	# if arcs are undirected, make them directed
@@ -97,6 +100,7 @@ function readArcsFile(filename::String;
 			arcs[j].index = j
 			arcs[j].fromNodeIndex = arcs[i].toNodeIndex
 			arcs[j].toNodeIndex = arcs[i].fromNodeIndex
+			arcs[j].distance = arcs[i].distance
 			arcs[j].fields = deepcopy(arcs[i].fields)
 		end
 		# copy travel times
@@ -568,11 +572,10 @@ end
 
 function readRNetTravelsFile(filename::String)
 	rNetTravels = deserializeFile(filename)
-	for rNetTravel in rNetTravels
+	for (i, rNetTravel) in enumerate(rNetTravels)
 		@assert(isa(rNetTravel, NetTravel))
 		@assert(rNetTravel.isReduced)
-		@assert(isa(rNetTravel.spTimes, Array{FloatSpTime,2}))
-		@assert(isa(rNetTravel.spFadjIndex, Array{IntFadj,2}))
+		@assert(rNetTravel.modeIndex == i)
 	end
 	return rNetTravels
 end

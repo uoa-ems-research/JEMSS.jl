@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<simConfig>
+	<!-- paths: -->
+	<inputPath>generated</inputPath>
+	<outputPath></outputPath>
+	
+	<simFiles>
+		<!-- <path>inputPath</path> -->
+		<ambulances>ambulances.csv</ambulances>
+		<arcs>../misc/arcs.csv</arcs>
+		<calls>calls.csv</calls>
+		<hospitals>hospitals.csv</hospitals>
+		<map>map.csv</map>
+		<nodes>../misc/nodes.csv</nodes>
+		<priorities>priorities.csv</priorities>
+		<stations>stations.csv</stations>
+		<travel>travel.csv</travel>
+	</simFiles>
+	
+	<writeOutput>false</writeOutput>
+	<outputFiles>
+		<!-- <path>outputPath</path> -->
+		<ambulances>ambulances.csv</ambulances>
+		<calls>calls.csv</calls>
+		<events>events.csv</events>
+		<hospitals>hospitals.csv</hospitals>
+	</outputFiles>
+	
+	<!-- resim = true will resimulate events from outputPath/events file, if possible -->
+	<resim>false</resim>
+	
+	<decision>
+		<callQueueing>addCallToQueueSortPriorityThenTime!</callQueueing>
+		<dispatch>findNearestFreeAmbToCall!</dispatch>
+		<moveUp>
+			<module>none</module>
+			<!-- module: none / comp_table / dmexclp / priority_list / zhang_ip / temp0 / temp1 / temp2 -->
+		</moveUp>
+	</decision>
+	
+</simConfig>

@@ -19,11 +19,14 @@ function initGraph!(graph::Graph)
 	numNodes = length(graph.nodes)
 	@assert(numNodes > 0 && length(graph.arcs) > 0)
 	
+	graph.arcDists = [arc.distance for arc in graph.arcs]
+	
 	graph.light = LightGraphs.DiGraph(numNodes) # create LightGraph version of graph
 	for arc in graph.arcs
 		LightGraphs.add_edge!(graph.light, arc.fromNodeIndex, arc.toNodeIndex) # add edges to light graph
 	end
 	graph.fadjList = graph.light.fadjlist
+	graph.badjList = graph.light.badjlist
 	
 	if !graph.isReduced
 		graph.nodePairArcIndex = spzeros(Int, numNodes, numNodes) # sparse, to save on memory
@@ -62,6 +65,16 @@ function findNearestNode(map::Map, nodes::Vector{Node}, location::Location;
 	return chosenNode, dist
 end
 
+# Set arc distance with normDist function,
+# for arcs that pass arcFilter.
+function setArcDistances!(graph::Graph, map::Map;
+	arcFilter::Function = (arc->isnan(arc.distance)))
+	@assert(!graph.isReduced)
+	for arc in filter(arcFilter, graph.arcs)
+		arc.distance = normDist(map, graph.nodes[arc.fromNodeIndex].location, graph.nodes[arc.toNodeIndex].location)
+	end
+end
+
 # for graph (set of nodes, arcs), check that:
 # nodes are inside map borders,
 # nodes are attached to at least one arc each,
@@ -83,6 +96,12 @@ function checkGraph(graph::Graph, map::Map)
 	end
 	for i = 1:numArcs
 		@assert(arcs[i].index == i)
+	end
+	
+	# check arc distances
+	for i = 1:numArcs
+		@assert(!isnan(arcs[i].distance), "arc $i has distance NaN")
+		@assert(arcs[i].distance >= 0, "arc $i has negative distance")
 	end
 	
 	# check that nodes are inside map borders
