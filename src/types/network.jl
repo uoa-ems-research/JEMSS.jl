@@ -418,7 +418,7 @@ function createRNetTravelsFromFNetTravels!(net::Network;
 			@assert(all(rNetTravel.arcTimes .== rNetTravelLoaded.arcTimes))
 			
 			# set rNetTravel values by rNetTravelLoaded
-			for fname in [:spTimes, :spFadjIndex, :spNodePairArcIndex, :spFadjArcList]
+			for fname in [:spTimes, :spDists, :spFadjIndex, :spNodePairArcIndex, :spFadjArcList]
 				setfield!(rNetTravel, fname, getfield(rNetTravelLoaded, fname))
 			end
 		end
@@ -508,6 +508,8 @@ function calcRNetTravelShortestPaths!(net::Network, rNetTravel::NetTravel)
 	for i = 1:numRNodes, j = [1:i-1;i+1:numRNodes]
 		@assert(0 < spTimes[i,j] < Inf)
 	end
+	
+	calcRNetTravelShortestPathDists!(net, rNetTravel)
 end
 
 # For a given travel mode, check that the stored shortest paths data

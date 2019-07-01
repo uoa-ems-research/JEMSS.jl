@@ -102,8 +102,15 @@ function writeRedispatchFile(filename::String, redispatch::Redispatch)
 end
 
 function writeRNetTravelsFile(filename::String, rNetTravels::Vector{NetTravel})
-	@assert(all([rNetTravel.isReduced for rNetTravel in rNetTravels]))
-	serializeToFile(filename, rNetTravels)
+	n = length(rNetTravels)
+	@assert(all(i -> rNetTravels[i].isReduced, 1:n))
+	@assert(all(i -> rNetTravels[i].modeIndex == i, 1:n))
+	# save only some field values to file
+	rNetTravelsSave = [NetTravel(true) for i = 1:n]
+	for i = 1:n, fname in (:modeIndex, :arcTimes, :spTimes, :spDists, :spFadjIndex, :spNodePairArcIndex, :spFadjArcList)
+		setfield!(rNetTravelsSave[i], fname, getfield(rNetTravels[i], fname))
+	end
+	serializeToFile(filename, rNetTravelsSave)
 end
 
 function writePrioritiesFile(filename::String, targetResponseTimes::Vector{Float})

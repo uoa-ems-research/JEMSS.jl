@@ -572,11 +572,10 @@ end
 
 function readRNetTravelsFile(filename::String)
 	rNetTravels = deserializeFile(filename)
-	for rNetTravel in rNetTravels
+	for (i, rNetTravel) in enumerate(rNetTravels)
 		@assert(isa(rNetTravel, NetTravel))
 		@assert(rNetTravel.isReduced)
-		@assert(isa(rNetTravel.spTimes, Array{FloatSpTime,2}))
-		@assert(isa(rNetTravel.spFadjIndex, Array{IntFadj,2}))
+		@assert(rNetTravel.modeIndex == i)
 	end
 	return rNetTravels
 end

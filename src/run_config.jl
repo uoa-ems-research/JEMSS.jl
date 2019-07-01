@@ -118,7 +118,7 @@ function initSim(configFilename::String;
 	if haskey(sim.inputFiles, "rNetTravels")
 		rNetTravelsFilename = simFilePath("rNetTravels")
 		if isfile(rNetTravelsFilename)
-			rNetTravelsLoaded = readRNetTravelsFile(rNetTravelsFilename)
+			try rNetTravelsLoaded = readRNetTravelsFile(rNetTravelsFilename) catch end
 		elseif !isdir(dirname(rNetTravelsFilename)) || splitdir(rNetTravelsFilename)[2] == ""
 			# rNetTravelsFilename is invalid
 			rNetTravelsFilename = ""
@@ -147,7 +147,7 @@ function initSim(configFilename::String;
 	initTime(t)
 	
 	if any(arc -> isnan(arc.distance), fGraph.arcs)
-		initMessage(t, "calculating arc distances for arcs with NaN distace")
+		initMessage(t, "calculating arc distances for arcs with NaN distance")
 		setArcDistances!(fGraph, map)
 		initTime(t)
 	end
@@ -179,7 +179,6 @@ function initSim(configFilename::String;
 			doPrint && println()
 			@warn("failed to use data from rNetTravels file")
 			rNetTravelsLoaded = []
-			rNetTravelsFilename = ""
 		end
 	end
 	if rNetTravelsLoaded == []
@@ -192,12 +191,6 @@ function initSim(configFilename::String;
 			initTime(t)
 		end
 	end
-	
-	initMessage(t, "calculating shortest path distances")
-	for rNetTravel in net.rNetTravels
-		calcRNetTravelShortestPathDists!(net, rNetTravel)
-	end
-	initTime(t)
 	
 	##################
 	# travel
