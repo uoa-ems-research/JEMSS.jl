@@ -22,6 +22,7 @@ const Float = Float64
 # float and int types for storing all-pairs shortest paths data
 # can reduce precision in order to reduce memory used
 const FloatSpTime = Float64 # precision for storing shortest path travel times
+const FloatSpDist = Float64 # precision for storing shortest path travel distances
 const IntRNode = Int16 # precision for storing number of nodes in rGraph
 const IntFadj = Int8 # precision for storing maximum number of nodes adjacent to any node in rGraph (= length of longest vector in network.rGraph.fadjList)
 
@@ -68,5 +69,8 @@ const numPriorities = length(priorities)
 
 # call statuses
 @enum CallStatus callNullStatus callScreening callQueued callWaitingForAmb callOnSceneTreatment callGoingToHospital callAtHospital callProcessed
+
+# route statuses
+@enum RouteStatus routeNullStatus routeBeforeStartNode routeOnPath routeAfterEndNode
 
 @enum MoveUpModule nullMoveUpModule compTableModule ddsmModule dmexclpModule priorityListModule zhangIpModule temp0Module temp1Module temp2Module

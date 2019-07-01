@@ -49,10 +49,11 @@ mutable struct Arc
 	index::Int
 	fromNodeIndex::Int
 	toNodeIndex::Int
+	distance::Float # NaN if not set
 	
 	fields::Dict{String,Any} # additional data, not used by simulation
 	
-	Arc() = new(nullIndex, nullIndex, nullIndex,
+	Arc() = new(nullIndex, nullIndex, nullIndex, NaN,
 		Dict{String,Any}())
 end
 
@@ -63,15 +64,19 @@ mutable struct Graph
 	nodes::Vector{Node}
 	arcs::Vector{Arc}
 	
+	arcDists::Vector{Float} # arcDists[i] = arcs[i].distance
+	
 	light::LightGraphs.DiGraph
 	fadjList::Vector{Vector{Int}} # shorthand for light.fadjlist; fadjList[i] gives nodes that are connected to node i by an outgoing arc from node i
+	badjList::Vector{Vector{Int}} # shorthand for light.badjList; badjList[i] gives nodes that are connected to node i by an outgoing arc to node i
 	
 	# for full graph:
 	nodePairArcIndex::SparseMatrixCSC{Int,Int} # for node indices i,j, nodePairArcIndex[i,j] should return arc index for node pair
 	# cannot always use nodePairArcIndex for reduced graph, there may be more than one arc from node i to j, use spNodePairArcIndex instead
 	
 	Graph(isReduced::Bool) = new(isReduced, [], [],
-		LightGraphs.DiGraph(), [],
+		[],
+		LightGraphs.DiGraph(), [], [],
 		spzeros(Int, 0, 0))
 end
 
@@ -83,7 +88,9 @@ mutable struct NetTravel
 	arcTimes::Vector{Float} # arcTimes[i] gives travel time along arc i
 	
 	# for use in reduced graph:
+	arcDists::Vector{Float} # arcDists[i] = distance of arc i; reference to Graph.arcDists, useful for checking that loaded rNetTravel is correct
 	spTimes::Array{FloatSpTime,2} # spTimes[i,j] = shortest path time between node i and j
+	spDists::Array{FloatSpDist,2} # spDists[i,j] = shortest path distance between node i and j
 	spFadjIndex::Array{IntFadj,2} # for shortest path from rNode i to j, spFadjIndex[i,j] gives the index (in fadjList[i], see Graph) of the successor rNode of i for this path
 	spNodePairArcIndex::SparseMatrixCSC{Int,Int} # spNodePairArcIndex[i,j] = index of arc incident to nodes i,j, if it provides shortest travel time
 	spFadjArcList::Vector{Vector{Int}} # spFadjArcList[i][j] gives index of rArc from rNode[i] to jth outgoing rNode of rNode[i] (i.e. rGraph.fadjList[i][j])
@@ -96,14 +103,16 @@ mutable struct NetTravel
 	# useful object to/from node data, for full graph (see commonFNodes in Network):
 	commonFNodeToFNodeTime::Array{Float,2} # commonFNodeToFNodeTime[i,j] gives shortest path time from commonFNodes[i] to fNode j
 	fNodeToCommonFNodeTime::Array{Float,2} # fNodeToCommonFNodeTime[i,j] gives shortest path time from fNode i to commonFNodes[j]
+	commonFNodeToFNodeDist::Array{Float,2} # commonFNodeToFNodeDist[i,j] gives shortest path distance from commonFNodes[i] to fNode j
+	fNodeToCommonFNodeDist::Array{Float,2} # fNodeToCommonFNodeDist[i,j] gives shortest path distance from fNode i to commonFNodes[j]
 	commonFNodeToFNodeRNodes::Array{Tuple{Int,Int},2} # commonFNodeToFNodeRNodes[i,j] gives start and end rNode for shortest path from commonFNodes[i] to fNode j
 	fNodeToCommonFNodeRNodes::Array{Tuple{Int,Int},2} # fNodeToCommonFNodeRNodes[i,j] gives start and end rNode for shortest path from fNode i to commonFNodes[j]
 	fNodeNearestHospitalIndex::Vector{Int} # fNodeNearestHospitalIndex[i] gives index of nearest hospital from fNode[i]
 	
 	NetTravel(isReduced::Bool) = new(isReduced, nullIndex, [],
-		Array{FloatSpTime,2}(undef,0,0), Array{IntFadj,2}(undef,0,0), spzeros(Int, 0, 0), [],
+		[], Array{FloatSpTime,2}(undef,0,0), Array{FloatSpDist,2}(undef,0,0), Array{IntFadj,2}(undef,0,0), spzeros(Int, 0, 0), [],
 		[], [], [],
-		Array{Float,2}(undef,0,0), Array{Float,2}(undef,0,0), Array{Tuple{Int,Int},2}(undef,0,0), Array{Tuple{Int,Int},2}(undef,0,0), [])
+		Array{Float,2}(undef,0,0), Array{Float,2}(undef,0,0), Array{Float,2}(undef,0,0), Array{Float,2}(undef,0,0), Array{Tuple{Int,Int},2}(undef,0,0), Array{Tuple{Int,Int},2}(undef,0,0), [])
 end
 
 mutable struct Network
@@ -123,6 +132,11 @@ mutable struct Network
 	fNodeToRNodes::Vector{Vector{Int}} # fNodeToRNodes[i] gives indices of rNodes that fNode[i] can travel to, and is "near" ("near" meaning that the fNode is on an rArc incident to rNode, or fNode is rNode in rGraph; it is similar to adjacency)
 	fNodeFromRNodes::Vector{Vector{Int}} # fNodeFromRNodes[i] gives indices of rNodes that can travel to fNode[i], and is "near"
 	fNodeToRNodeNextFNode::Vector{Dict{Int,Int}} # fNodeToRNodeNextFNode[i][j] gives index of fNode after fNode[i] on path to rNode[j], where j is in fNodeToRNodes[i]. Needed to find path from an fNode to an rNode
+	rArcFArcs::Vector{Vector{Int}} # rArcFArcs[i][j] gives the index of the jth fArc on rArcs[i]
+	
+	# distance
+	fNodeToRNodeDist::Vector{Dict{Int,Float}} # fNodeToRNodeDist[i][j] gives distance from fNode[i] to rNode[j], as long as rNode[j] is in fNodeToRNodes[i]
+	fNodeFromRNodeDist::Vector{Dict{Int,Float}} # fNodeFromRNodeDist[i][j] gives distance to fNode[i] from rNode[j], as long as rNode[j] is in fNodeFromRNodes[i]
 	
 	# fNodes that are common start/end points for travel (e.g, fNodes nearest to stations, hospitals):
 	commonFNodes::Vector{Int} # list of common fNodes; = findall(isFNodeCommon)
@@ -131,7 +145,8 @@ mutable struct Network
 	
 	Network() = new(Graph(false), Graph(true),
 		[], [],
-		[], [], [], [], [], [], [], [],
+		[], [], [], [], [], [], [], [], [],
+		[], [],
 		[], [], [])
 end
 
@@ -182,6 +197,7 @@ mutable struct Route
 	# start and end nodes and times
 	startFNode::Int # index of first fNode in route
 	startFNodeTime::Float # time at which startFNode is reached
+	startFNodeDist::Float # distance from startLoc to startFNode; can be different from result from normDist() if starting part way along an arc
 	startRNode::Int # index of first rNode in route
 	startRNodeTime::Float # time at which startRNode is reached
 	endRNode::Int # index of last rNode in route
@@ -193,6 +209,9 @@ mutable struct Route
 	
 	## fields that vary throughout the route are below here
 	## most of the route code assumes that these fields only change to move "forward" through the route
+	
+	status::RouteStatus
+	recentUpdateTime::Float # time at which route was most recently updated
 	
 	# recent rArc visited ("recent" means it is from the most recent route update/query)
 	recentRArc::Int # index of rArc recently visited
@@ -208,14 +227,16 @@ mutable struct Route
 	recentRArcNextFNode::Int # recentRArcRecentFNode + 1
 	nextFNode::Int # = rArcFNodes[recentRArc][recentRArcNextFNode]
 	nextFNodeTime::Float # time that nextFNode will be reached
+	nextFNodeDist::Float # distance to reach nextFNode; this is only set after calling getRouteNextNodeDist!()
 	
 	Route() = new(nullPriority, nullIndex,
 		Location(), nullTime, Location(), nullTime,
-		nullIndex, nullTime, nullIndex, nullTime, nullIndex, nullTime, nullIndex, nullTime,
+		nullIndex, nullTime, nullDist, nullIndex, nullTime, nullIndex, nullTime, nullIndex, nullTime,
 		nullIndex,
+		routeNullStatus, nullTime,
 		nullIndex, nullTime, nullTime,
 		nullIndex, nullIndex, nullTime,
-		nullIndex, nullIndex, nullTime)
+		nullIndex, nullIndex, nullTime, nullDist)
 end
 
 mutable struct Event
@@ -246,6 +267,7 @@ mutable struct Ambulance
 	
 	# for statistics:
 	totalTravelDuration::Float # this should only be updated after finishing each route / sim end
+	totalTravelDist::Float # this should only be updated after finishing each route / sim end
 	totalBusyDuration::Float # total duration that ambulance has been busy
 	# totalAtStationDuration::Float # total duration spent at station
 	numCallsTreated::Int # total number of calls that ambulance provided treatment on scene
@@ -265,7 +287,7 @@ mutable struct Ambulance
 	
 	Ambulance() = new(nullIndex, ambNullStatus, nullIndex, nullIndex, Route(), Event(), nullAmbClass,
 		Location(), false,
-		0.0, 0.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Dict([s => 0.0 for s in instances(AmbStatus)]),
+		0.0, 0.0, 0.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Dict([s => 0.0 for s in instances(AmbStatus)]),
 		nullTime)
 end
 

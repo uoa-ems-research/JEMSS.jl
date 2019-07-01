@@ -260,6 +260,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 			# stats:
 			if ambWasOnRoute
 				ambulance.totalTravelDuration += sim.time - ambulance.route.startTime
+				ambulance.totalTravelDist += calcRouteDistance!(sim, ambulance.route, sim.time)
 				if ambulance.status == ambGoingToCall
 					ambulance.totalBusyDuration += sim.time - ambulance.route.startTime
 					ambulance.numRedispatches += 1
@@ -320,6 +321,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		# ambulance.stationIndex
 		# ambulance.callIndex
 		ambulance.totalTravelDuration += sim.time - ambulance.route.startTime # stats
+		ambulance.totalTravelDist += calcRouteDistance!(sim, ambulance.route, sim.time) # stats
 		ambulance.totalBusyDuration += sim.time - ambulance.route.startTime # stats
 		ambulance.numCallsTreated += 1 # stats
 		
@@ -378,6 +380,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		# ambulance.stationIndex
 		# ambulance.callIndex
 		ambulance.totalTravelDuration += sim.time - ambulance.route.startTime # stats
+		ambulance.totalTravelDist += calcRouteDistance!(sim, ambulance.route, sim.time) # stats
 		ambulance.totalBusyDuration += sim.time - ambulance.route.startTime # stats
 		ambulance.numCallsTransported += 1 # stats
 		
@@ -439,6 +442,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		# ambulance.stationIndex
 		# ambulance.callIndex
 		ambulance.totalTravelDuration += sim.time - ambulance.route.startTime # stats
+		ambulance.totalTravelDist += calcRouteDistance!(sim, ambulance.route, sim.time) # stats
 		
 		ambulance.event = Event() # no event currently
 		
@@ -490,6 +494,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 					deleteEvent!(sim.eventList, ambulance.event)
 					
 					ambulance.totalTravelDuration += sim.time - ambulance.route.startTime # stats
+					ambulance.totalTravelDist += calcRouteDistance!(sim, ambulance.route, sim.time) # stats
 				end
 				
 				# ambulance.status
