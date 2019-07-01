@@ -57,7 +57,7 @@ function changeRoute!(sim::Simulation, route::Route, priority::Priority, startTi
 	if route.startRNode != nullIndex
 		@assert(route.endRNode != nullIndex)
 		route.startRNodeTime = startFNodeTime + fNodeToRNodeTime[startFNode][route.startRNode]
-		route.endRNodeTime = route.endFNodeTime - fNodeFromRNodeTime[endFNode][route.endRNode]
+		route.endRNodeTime = route.startRNode == route.endRNode ? route.startRNodeTime : route.endFNodeTime - fNodeFromRNodeTime[endFNode][route.endRNode]
 	else
 		route.startRNodeTime = nullTime
 		route.endRNodeTime = nullTime
@@ -307,11 +307,10 @@ function updateRouteRecentRArc!(net::Network, route::Route, time::Float)
 	
 	@assert(route.startRNode != nullIndex != route.endRNode)
 	
-	if route.endRNodeTime <= time || isapprox(route.endRNodeTime, time) # allow for imprecision in route.endRNodeTime
+	if route.endRNodeTime <= time
 		# on last rArc
 		route.recentRArc = findRArcFromFNodeToFNode(net, rNodeFNode[route.endRNode], route.endFNode)
 		route.recentRArcRecentFNode = 1 # remaining fNode data will be set in updateRouteRecentRArcFNode!()
-		route.endRNodeTime = min(route.endRNodeTime, time) # ensure that route.endRNodeTime <= time
 		route.recentRArcStartTime = route.endRNodeTime
 		route.recentRArcEndTime = route.endRNodeTime + rNetTravel.arcTimes[route.recentRArc]
 		@assert(route.endFNodeTime < route.recentRArcEndTime) # should leave network before rArc ends
@@ -337,6 +336,9 @@ function updateRouteRecentRArc!(net::Network, route::Route, time::Float)
 		if rNodeFNode[nextRNode] == route.endFNode
 			@assert(isapprox(route.recentRArcEndTime, route.endFNodeTime))
 			route.recentRArcEndTime = route.endFNodeTime # adjust value, to compensate for problems with numerical precision
+		elseif nextRNode == route.endRNode
+			@assert(isapprox(route.recentRArcEndTime, route.endRNodeTime))
+			route.recentRArcEndTime = route.endRNodeTime # adjust value, to compensate for problems with numerical precision
 		end
 		route.recentRArcRecentFNode = 1 # remaining fNode data will be set in updateRouteRecentRArcFNode!()
 	end
@@ -365,8 +367,8 @@ function updateRouteRecentRArcFNode!(net::Network, route::Route, time::Float)
 	rArcFNodes = net.rArcFNodes[route.recentRArc]
 	recentRArcFNodesTimes = fNetTravel.rArcFNodesTimes[route.recentRArc]
 	
-	route.recentRArcRecentFNode = findMaxIndexLeqTime(recentRArcFNodesTimes, time - route.recentRArcStartTime, route.recentRArcRecentFNode)
-	@assert(route.recentRArcRecentFNode < length(rArcFNodes))
+	i = findMaxIndexLeqTime(recentRArcFNodesTimes, time - route.recentRArcStartTime, route.recentRArcRecentFNode)
+	route.recentRArcRecentFNode = min(i, length(rArcFNodes) - 1) # adjust value, to compensate for problems with numerical precision in time values
 	route.recentFNode = rArcFNodes[route.recentRArcRecentFNode]
 	route.recentFNodeTime = route.recentRArcStartTime + recentRArcFNodesTimes[route.recentRArcRecentFNode]
 	

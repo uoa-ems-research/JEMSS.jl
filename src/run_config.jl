@@ -121,7 +121,7 @@ function initSim(configFilename::String;
 			try
 				rNetTravelsLoaded = readRNetTravelsFile(rNetTravelsFilename)
 			catch
-				warn("failed to read rNetTravels file")
+				@warn("failed to read rNetTravels file")
 			end
 		elseif !isdir(dirname(rNetTravelsFilename)) || splitdir(rNetTravelsFilename)[2] == ""
 			# rNetTravelsFilename is invalid
