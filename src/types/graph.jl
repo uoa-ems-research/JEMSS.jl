@@ -19,6 +19,8 @@ function initGraph!(graph::Graph)
 	numNodes = length(graph.nodes)
 	@assert(numNodes > 0 && length(graph.arcs) > 0)
 	
+	graph.arcDists = [arc.distance for arc in graph.arcs]
+	
 	graph.light = LightGraphs.DiGraph(numNodes) # create LightGraph version of graph
 	for arc in graph.arcs
 		LightGraphs.add_edge!(graph.light, arc.fromNodeIndex, arc.toNodeIndex) # add edges to light graph

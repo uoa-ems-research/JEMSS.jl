@@ -118,7 +118,11 @@ function initSim(configFilename::String;
 	if haskey(sim.inputFiles, "rNetTravels")
 		rNetTravelsFilename = simFilePath("rNetTravels")
 		if isfile(rNetTravelsFilename)
-			try rNetTravelsLoaded = readRNetTravelsFile(rNetTravelsFilename) catch end
+			try
+				rNetTravelsLoaded = readRNetTravelsFile(rNetTravelsFilename)
+			catch
+				warn("failed to read rNetTravels file")
+			end
 		elseif !isdir(dirname(rNetTravelsFilename)) || splitdir(rNetTravelsFilename)[2] == ""
 			# rNetTravelsFilename is invalid
 			rNetTravelsFilename = ""

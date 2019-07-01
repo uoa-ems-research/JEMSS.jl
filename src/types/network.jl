@@ -313,7 +313,7 @@ function createRGraphFromFGraph!(net::Network)
 	
 	##############################################################################
 	
-	# calculate fields for rGraph: light
+	# calculate fields for rGraph: arcDists, light
 	initGraph!(rGraph)
 end
 
@@ -354,6 +354,7 @@ function createRNetTravelsFromFNetTravels!(net::Network;
 		rArcFNodesTimes = fNetTravel.rArcFNodesTimes
 		
 		rNetTravel.modeIndex = fNetTravel.modeIndex
+		rNetTravel.arcDists = rGraph.arcDists
 		
 		for rArcIndex = 1:numRArcs
 			fNodesOnRArc = rArcFNodes[rArcIndex]
@@ -415,7 +416,8 @@ function createRNetTravelsFromFNetTravels!(net::Network;
 			calcRNetTravelShortestPaths!(net, rNetTravel)
 		else
 			rNetTravelLoaded = rNetTravelsLoaded[travelModeIndex]
-			@assert(all(rNetTravel.arcTimes .== rNetTravelLoaded.arcTimes))
+			@assert(rNetTravel.arcTimes == rNetTravelLoaded.arcTimes)
+			@assert(rNetTravel.arcDists == rNetTravelLoaded.arcDists)
 			
 			# set rNetTravel values by rNetTravelLoaded
 			for fname in [:spTimes, :spDists, :spFadjIndex, :spNodePairArcIndex, :spFadjArcList]
