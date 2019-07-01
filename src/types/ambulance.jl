@@ -28,15 +28,10 @@ function initAmbulance!(sim::Simulation, ambulance::Ambulance;
 	# ambulance.stationIndex
 	# ambulance.callIndex
 	
-	# create route that mimics ambulance driving from nowhere,
-	# to a node (nearest to station), then to station, before simulation began
+	# initialise route to start at station
 	ambulance.route = Route()
-	ambulance.route.startLoc = Location()
-	# ambulance.route.startTime = nullTime
-	ambStation = sim.stations[ambulance.stationIndex]
-	ambulance.route.endLoc = ambStation.location
-	ambulance.route.endTime = sim.startTime
-	ambulance.route.endFNode = ambStation.nearestNodeIndex
+	station = sim.stations[ambulance.stationIndex]
+	initRoute!(sim, ambulance.route; startLoc = station.location, startFNode = station.nearestNodeIndex, startFNodeDist = station.nearestNodeDist)
 	
 	# add wake up event
 	addEvent!(sim.eventList; form = ambWakesUp, time = wakeUpTime, ambulance = ambulance)
