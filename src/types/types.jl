@@ -269,7 +269,6 @@ mutable struct Ambulance
 	totalTravelDuration::Float # this should only be updated after finishing each route / sim end
 	totalTravelDist::Float # this should only be updated after finishing each route / sim end
 	totalBusyDuration::Float # total duration that ambulance has been busy
-	# totalAtStationDuration::Float # total duration spent at station
 	numCallsTreated::Int # total number of calls that ambulance provided treatment on scene
 	numCallsTransported::Int # total number of calls transported to hospital
 	numRedispatches::Int # number of times that ambulance is redispatched from one call to another
@@ -283,7 +282,6 @@ mutable struct Ambulance
 	
 	# for calculating statistics:
 	prevStatusSetTime::Float # time at which previous status was last set, even if set to same status value
-	# recentStationArrivalTime::Float # for totalAtStationDuration
 	
 	Ambulance() = new(nullIndex, ambNullStatus, nullIndex, nullIndex, Route(), Event(), nullAmbClass,
 		Location(), false,
@@ -772,7 +770,9 @@ mutable struct AmbulanceStats
 	
 	totalTravelDuration::Float # this should only be updated after finishing each route / sim end
 	totalBusyDuration::Float # total duration that ambulance has been busy
-	# totalAtStationDuration::Float # total duration spent at station
+	# check these with statusDurations:
+	# totalBusyDuration == statusDurations[ambGoingToCall] + statusDurations[ambAtCall] + statusDurations[ambGoingToHospital] + statusDurations[ambAtHospital]
+	# totalTravelDuration == statusDurations[ambGoingToCall] + statusDurations[ambGoingToHospital] + statusDurations[ambGoingToStation]
 	
 	numCallsTreated::Int # total number of calls that ambulance provided treatment on scene
 	numCallsTransported::Int # total number of calls transported to hospital

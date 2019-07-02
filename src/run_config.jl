@@ -13,6 +13,8 @@
 # limitations under the License.
 ##########################################################################
 
+@info("Todo: change `runConfig` function to write sim.stats.periods to file.")
+
 # run configuration xml file
 function runConfig(configFilename::String)
 	# read input files, initialise simulation
