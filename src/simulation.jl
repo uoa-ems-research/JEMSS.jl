@@ -513,13 +513,6 @@ function simulateEvent!(sim::Simulation, event::Event)
 		
 		station = sim.stations[ambulance.stationIndex] # station to move up to
 		
-		if ambulance.route.startTime < sim.time < ambulance.route.endTime
-			ambulance.numMoveUpsOnRoad += 1
-		else
-			# ambulance.numMoveUpsFromStation += 1
-			# ambulance.numMoveUpsOnFree += 1
-		end
-		
 		setAmbStatus!(ambulance, ambGoingToStation, sim.time)
 		ambulance.stationIndex = station.index
 		ambulance.callIndex = nullIndex

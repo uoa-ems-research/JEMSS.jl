@@ -69,8 +69,6 @@ function populateSimStats!(sim::Simulation)
 		captures[i].call = i == 1 ? period.call : period.call + captures[i-1].call
 		captures[i].callPriorities = i == 1 ? period.callPriorities : period.callPriorities + captures[i-1].callPriorities
 	end
-	
-	push!(stats.periods, stats.captures[end])
 end
 
 # Return ambulance stats for given ambulance.

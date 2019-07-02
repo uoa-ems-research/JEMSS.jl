@@ -4,9 +4,3 @@
 /example/output
 /example/input
 /test/data/regions/small/*/generated
-
-/data/cities/local
-/example/scripts/deployment search adaptive
-/example/scripts/priority list search adaptive
-/example/scripts/output
-/example/scripts/sim_config.xml
