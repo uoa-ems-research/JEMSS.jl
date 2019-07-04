@@ -25,6 +25,10 @@ function captureSimStats!(sim::Simulation, currentTime::Float)
 	@assert(sim.time <= currentTime)
 	@assert(isempty(sim.eventList) || currentTime <= sim.eventList[end].time) # currentTime should be before next event
 	
+	if sim.complete
+		for ambulance in sim.ambulances setAmbStatus!(ambulance, ambNullStatus, sim.time) end
+	end
+	
 	capture = SimPeriodStats()
 	capture.startTime = sim.startTime
 	capture.endTime = currentTime
