@@ -513,6 +513,20 @@ function simulateEvent!(sim::Simulation, event::Event)
 		
 		station = sim.stations[ambulance.stationIndex] # station to move up to
 		
+		# stats
+		status = ambulance.status # shorthand
+		prevStatus = ambulance.prevStatus # shorthand
+		if status == ambGoingToStation
+			if (prevStatus == ambAtHospital || prevStatus == ambAtCall) && ambulance.statusSetTime == sim.time # assumes no delay between changing state and starting move up
+				ambulance.numMoveUpsOnFree += 1
+			else
+				ambulance.numMoveUpsOnRoad += 1
+			end
+		else
+			@assert(status == ambIdleAtStation)
+			ambulance.numMoveUpsFromStation += 1
+		end
+		
 		setAmbStatus!(ambulance, ambGoingToStation, sim.time)
 		ambulance.stationIndex = station.index
 		ambulance.callIndex = nullIndex

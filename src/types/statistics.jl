@@ -97,11 +97,11 @@ function AmbulanceStats(ambulance::Ambulance)::AmbulanceStats
 	stats.statusDurations = deepcopy(ambulance.statusDurations)
 	
 	# calculate
-	# stats.numMoveUps = stats.numMoveUpsOnRoad + stats.numMoveUpsFromStation
 	stats.numDispatches = stats.numDispatchesFromStation + stats.numDispatchesOnRoad + stats.numDispatchesOnFree + stats.numRedispatches
+	stats.numMoveUps = stats.numMoveUpsFromStation + stats.numMoveUpsOnRoad + stats.numMoveUpsOnFree
 	
 	# if checkMode
-		# @assert(isapprox(sum(values(stats.statusDurations)), sum([a.prevStatusSetTime - sim.startTime for a in sim.ambulances])))
+		# @assert(isapprox(sum(values(stats.statusDurations)), sum([a.statusSetTime - sim.startTime for a in sim.ambulances])))
 	# end
 	
 	return stats
@@ -133,8 +133,8 @@ end
 		# end
 	# end
 	
-	# if ambulance.prevStatusSetTime < sim.time
-		# stats.statusDurations[ambulance.status] += sim.time - ambulance.prevStatusSetTime
+	# if ambulance.statusSetTime < sim.time
+		# stats.statusDurations[ambulance.status] += sim.time - ambulance.statusSetTime
 	# end
 	
 	# return stats

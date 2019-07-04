@@ -24,7 +24,7 @@ function initAmbulance!(sim::Simulation, ambulance::Ambulance;
 	@assert(sim.startTime <= wakeUpTime)
 	
 	ambulance.status = ambSleeping
-	ambulance.prevStatusSetTime = sim.startTime
+	ambulance.statusSetTime = sim.startTime
 	# ambulance.stationIndex
 	# ambulance.callIndex
 	
@@ -41,9 +41,10 @@ end
 # Mutates: ambulance
 function setAmbStatus!(ambulance::Ambulance, status::AmbStatus, time::Float)
 	# record duration of previous status
-	@assert(ambulance.prevStatusSetTime <= time)
-	ambulance.statusDurations[ambulance.status] += time - ambulance.prevStatusSetTime
-	ambulance.prevStatusSetTime = time
+	@assert(ambulance.statusSetTime <= time)
+	ambulance.statusDurations[ambulance.status] += time - ambulance.statusSetTime
+	ambulance.statusSetTime = time
 	
+	ambulance.prevStatus = ambulance.status
 	ambulance.status = status
 end

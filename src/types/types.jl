@@ -282,13 +282,14 @@ mutable struct Ambulance
 	statusDurations::Dict{AmbStatus,Float} # duration spent in each status
 	
 	# for calculating statistics:
-	prevStatusSetTime::Float # time at which previous status was last set, even if set to same status value
 	# recentStationArrivalTime::Float # for totalAtStationDuration
+	statusSetTime::Float # time at which status was last set, even if set to same status value
+	prevStatus::AmbStatus
 	
 	Ambulance() = new(nullIndex, ambNullStatus, nullIndex, nullIndex, Route(), Event(), nullAmbClass,
 		Location(), false,
 		0.0, 0.0, 0.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Dict([s => 0.0 for s in instances(AmbStatus)]),
-		nullTime)
+		nullTime, ambNullStatus)
 end
 
 mutable struct Call
