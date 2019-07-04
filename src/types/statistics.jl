@@ -40,6 +40,12 @@ function captureSimStats!(sim::Simulation, currentTime::Float)
 	capture.hospital = sum(capture.hospitals)
 	# capture.station = sum(capture.stations)
 	
+	if checkMode
+		for (amb, ambStats) in zip(sim.ambulances, capture.ambulances)
+			@assert(isapprox(sum(values(ambStats.statusDurations)), amb.statusSetTime - sim.startTime))
+		end
+	end
+	
 	push!(sim.stats.captures, capture)
 	
 	# determine next capture time
@@ -100,9 +106,12 @@ function AmbulanceStats(ambulance::Ambulance)::AmbulanceStats
 	stats.numDispatches = stats.numDispatchesFromStation + stats.numDispatchesOnRoad + stats.numDispatchesOnFree + stats.numRedispatches
 	stats.numMoveUps = stats.numMoveUpsFromStation + stats.numMoveUpsOnRoad + stats.numMoveUpsOnFree
 	
-	# if checkMode
-		# @assert(isapprox(sum(values(stats.statusDurations)), sum([a.statusSetTime - sim.startTime for a in sim.ambulances])))
-	# end
+	if checkMode
+		busyStatuses = (ambGoingToCall, ambAtCall, ambGoingToHospital, ambAtHospital)
+		@assert(isapprox(stats.totalBusyDuration, sum(status -> stats.statusDurations[status], busyStatuses)))
+		travelStatuses = (ambGoingToCall, ambGoingToHospital, ambGoingToStation)
+		@assert(isapprox(stats.totalTravelDuration, sum(status -> stats.statusDurations[status], travelStatuses)))
+	end
 	
 	return stats
 end
