@@ -267,7 +267,7 @@ mutable struct Ambulance
 	
 	# for statistics:
 	totalTravelDuration::Float # this should only be updated after finishing each route / sim end
-	totalTravelDist::Float # this should only be updated after finishing each route / sim end
+	totalTravelDistance::Float # this should only be updated after finishing each route / sim end
 	totalBusyDuration::Float # total duration that ambulance has been busy
 	# totalAtStationDuration::Float # total duration spent at station
 	numCallsTreated::Int # total number of calls that ambulance provided treatment on scene
@@ -771,6 +771,7 @@ mutable struct AmbulanceStats
 	ambIndex::Int # for single ambulance
 	
 	totalTravelDuration::Float # this should only be updated after finishing each route / sim end
+	totalTravelDistance::Float # this should only be updated after finishing each route / sim end
 	totalBusyDuration::Float # total duration that ambulance has been busy
 	# totalAtStationDuration::Float # total duration spent at station
 	
@@ -796,7 +797,7 @@ mutable struct AmbulanceStats
 	# totalWorkingDuration::Float # duration spent working (on shift), busy or free
 	
 	AmbulanceStats() = new(nullIndex,
-		0.0, 0.0,
+		0.0, 0.0, 0.0,
 		0, 0,
 		0, 0, 0, 0,
 		0, 0, 0,

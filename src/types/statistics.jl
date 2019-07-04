@@ -79,6 +79,7 @@ function AmbulanceStats(ambulance::Ambulance)::AmbulanceStats
 	# copy some fields
 	stats.ambIndex = ambulance.index
 	stats.totalTravelDuration = ambulance.totalTravelDuration
+	stats.totalTravelDistance = ambulance.totalTravelDistance
 	stats.totalBusyDuration = ambulance.totalBusyDuration
 	stats.numCallsTreated = ambulance.numCallsTreated
 	stats.numCallsTransported = ambulance.numCallsTransported
