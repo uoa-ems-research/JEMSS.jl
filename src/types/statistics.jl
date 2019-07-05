@@ -25,26 +25,16 @@ function captureSimStats!(sim::Simulation, currentTime::Float)
 	@assert(sim.time <= currentTime)
 	@assert(isempty(sim.eventList) || currentTime <= sim.eventList[end].time) # currentTime should be before next event
 	
-	if sim.complete
-		for ambulance in sim.ambulances setAmbStatus!(ambulance, ambNullStatus, sim.time) end
-	end
-	
 	capture = SimPeriodStats()
 	capture.startTime = sim.startTime
 	capture.endTime = currentTime
 	capture.duration = capture.endTime - capture.startTime
-	capture.ambulances = [AmbulanceStats(a) for a in sim.ambulances]
+	capture.ambulances = [AmbulanceStats(sim, a) for a in sim.ambulances]
 	capture.hospitals = [HospitalStats(h) for h in sim.hospitals]
 	# capture.stations = [StationStats(s) for s in sim.stations]
 	capture.ambulance = sum(capture.ambulances)
 	capture.hospital = sum(capture.hospitals)
 	# capture.station = sum(capture.stations)
-	
-	if checkMode
-		for (amb, ambStats) in zip(sim.ambulances, capture.ambulances)
-			@assert(isapprox(sum(values(ambStats.statusDurations)), amb.statusSetTime - sim.startTime))
-		end
-	end
 	
 	push!(sim.stats.captures, capture)
 	
@@ -82,15 +72,12 @@ function populateSimStats!(sim::Simulation)
 end
 
 # Return ambulance stats for given ambulance.
-# Does not account for partially completed routes or processes.
-function AmbulanceStats(ambulance::Ambulance)::AmbulanceStats
+# Accounts for durations and distances of partially completed travelling and processes.
+function AmbulanceStats(sim::Simulation, ambulance::Ambulance)::AmbulanceStats
 	stats = AmbulanceStats()
 	
 	# copy some fields
 	stats.ambIndex = ambulance.index
-	stats.totalTravelDuration = ambulance.totalTravelDuration
-	stats.totalTravelDistance = ambulance.totalTravelDistance
-	stats.totalBusyDuration = ambulance.totalBusyDuration
 	stats.numCallsTreated = ambulance.numCallsTreated
 	stats.numCallsTransported = ambulance.numCallsTransported
 	stats.numDispatchesFromStation = ambulance.numDispatchesFromStation
@@ -100,54 +87,33 @@ function AmbulanceStats(ambulance::Ambulance)::AmbulanceStats
 	stats.numMoveUpsFromStation = ambulance.numMoveUpsFromStation
 	stats.numMoveUpsOnRoad = ambulance.numMoveUpsOnRoad
 	stats.numMoveUpsOnFree = ambulance.numMoveUpsOnFree
+	
 	stats.statusDurations = deepcopy(ambulance.statusDurations)
+	stats.statusDurations[ambulance.status] += sim.time - ambulance.statusSetTime # to make sure that sum of statusDurations equals the sim duration
 	
 	# calculate
 	stats.numDispatches = stats.numDispatchesFromStation + stats.numDispatchesOnRoad + stats.numDispatchesOnFree + stats.numRedispatches
 	stats.numMoveUps = stats.numMoveUpsFromStation + stats.numMoveUpsOnRoad + stats.numMoveUpsOnFree
 	
+	# calculate travel distance, accounting for any partially completed route
+	stats.totalTravelDistance = ambulance.totalTravelDistance # ambulance.totalTravelDistance is for routes completed before sim.time
+	if sim.time < ambulance.route.endTime # have not finished route
+		stats.totalTravelDistance += calcRouteDistance!(sim, ambulance.route, sim.time)
+	end
+	
+	busyStatuses = (ambGoingToCall, ambAtCall, ambGoingToHospital, ambAtHospital)
+	travelStatuses = (ambGoingToCall, ambGoingToHospital, ambGoingToStation)
+	stats.totalBusyDuration = sum(status -> stats.statusDurations[status], busyStatuses) # >= ambulance.totalBusyDuration
+	stats.totalTravelDuration = sum(status -> stats.statusDurations[status], travelStatuses) # >= ambulance.totalTravelDuration
+	
 	if checkMode
-		busyStatuses = (ambGoingToCall, ambAtCall, ambGoingToHospital, ambAtHospital)
-		@assert(isapprox(stats.totalBusyDuration, sum(status -> stats.statusDurations[status], busyStatuses)))
-		travelStatuses = (ambGoingToCall, ambGoingToHospital, ambGoingToStation)
-		@assert(isapprox(stats.totalTravelDuration, sum(status -> stats.statusDurations[status], travelStatuses)))
+		@assert(isapprox(sum(values(stats.statusDurations)), sim.time - sim.startTime))
+		@assert(stats.totalBusyDuration >= ambulance.totalBusyDuration || isapprox(stats.totalBusyDuration, ambulance.totalBusyDuration))
+		@assert(stats.totalTravelDuration >= ambulance.totalTravelDuration || isapprox(stats.totalTravelDuration, ambulance.totalTravelDuration))
 	end
 	
 	return stats
 end
-
-# # Return ambulance stats for given ambulance.
-# # Accounts for partially completed routes and processes.
-# function AmbulanceStats(sim::Simulation, ambulance::Ambulance)::AmbulanceStats
-	# stats = AmbulanceStats(ambulance)
-	
-	# if sim.time < ambulance.route.endTime
-		# # ambulance route not yet finished, add on capture travel time
-		# partialTravelTime = sim.time - ambulance.route.startTime
-		# stats.totalTravelDuration += partialTravelTime
-		# if ambulance.status == ambGoingToCall || ambulance.status == ambGoesToHospital
-			# # ambulance was travelling due to call
-			# stats.totalBusyDuration += partialTravelTime
-		# end
-	# end
-	
-	# # if responding to call, may need to add to totalBusyDuration
-	# if ambulance.callIndex != nullIndex
-		# call = sim.calls[ambulance.callIndex]
-		# status = ambulance.status
-		# if ambulance.status == ambAtCall
-			# stats.totalBusyDuration += sim.time - call.ambArrivalTime
-		# elseif ambulance.status == ambAtHospital
-			# stats.totalBusyDuration += sim.time - call.hospitalArrivalTime
-		# end
-	# end
-	
-	# if ambulance.statusSetTime < sim.time
-		# stats.statusDurations[ambulance.status] += sim.time - ambulance.statusSetTime
-	# end
-	
-	# return stats
-# end
 
 function CallStats(calls::Vector{Call})::CallStats
 	if isempty(calls) return CallStats() end

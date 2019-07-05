@@ -26,6 +26,7 @@ function addEvent!(eventList::Vector{Event};
 	
 	# set next event of ambulance
 	if addEventToAmb
+		ambulance.prevEvent = ambulance.event
 		ambulance.event = event
 	end
 	

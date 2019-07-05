@@ -517,7 +517,10 @@ function simulateEvent!(sim::Simulation, event::Event)
 		status = ambulance.status # shorthand
 		prevStatus = ambulance.prevStatus # shorthand
 		if status == ambGoingToStation
-			if (prevStatus == ambAtHospital || prevStatus == ambAtCall) && ambulance.statusSetTime == sim.time # assumes no delay between changing state and starting move up
+			prevEventTime = ambulance.prevEvent.time # shorthand
+			@assert(prevEventTime != nullTime)
+			if (prevStatus == ambAtHospital || prevStatus == ambAtCall) && prevEventTime == sim.time # assumes no delay between changing state and starting move up
+				@assert(ambulance.statusSetTime == sim.time)
 				ambulance.numMoveUpsOnFree += 1
 			else
 				ambulance.numMoveUpsOnRoad += 1

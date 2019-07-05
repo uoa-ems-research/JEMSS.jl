@@ -266,10 +266,10 @@ mutable struct Ambulance
 	movedLoc::Bool
 	
 	# for statistics:
-	totalTravelDuration::Float # this should only be updated after finishing each route / sim end
-	totalTravelDistance::Float # this should only be updated after finishing each route / sim end
-	totalBusyDuration::Float # total duration that ambulance has been busy
 	# totalAtStationDuration::Float # total duration spent at station
+	totalTravelDuration::Float # total duration of completed routes; only updated after finishing each route
+	totalTravelDistance::Float # total distance of completed routes; only updated after finishing each route
+	totalBusyDuration::Float # total duration that ambulance has been busy; only updated after each activity
 	numCallsTreated::Int # total number of calls that ambulance provided treatment on scene
 	numCallsTransported::Int # total number of calls transported to hospital
 	numRedispatches::Int # number of times that ambulance is redispatched from one call to another
@@ -279,17 +279,18 @@ mutable struct Ambulance
 	numMoveUpsFromStation::Int
 	numMoveUpsOnRoad::Int
 	numMoveUpsOnFree::Int
-	statusDurations::Dict{AmbStatus,Float} # duration spent in each status
+	statusDurations::Dict{AmbStatus,Float} # duration spent in each status; only updated after setting status
 	
 	# for calculating statistics:
 	# recentStationArrivalTime::Float # for totalAtStationDuration
 	statusSetTime::Float # time at which status was last set, even if set to same status value
 	prevStatus::AmbStatus
+	prevEvent::Event
 	
 	Ambulance() = new(nullIndex, ambNullStatus, nullIndex, nullIndex, Route(), Event(), nullAmbClass,
 		Location(), false,
 		0.0, 0.0, 0.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Dict([s => 0.0 for s in instances(AmbStatus)]),
-		nullTime, ambNullStatus)
+		nullTime, ambNullStatus, Event())
 end
 
 mutable struct Call
@@ -771,10 +772,10 @@ end
 mutable struct AmbulanceStats
 	ambIndex::Int # for single ambulance
 	
-	totalTravelDuration::Float # this should only be updated after finishing each route / sim end
-	totalTravelDistance::Float # this should only be updated after finishing each route / sim end
-	totalBusyDuration::Float # total duration that ambulance has been busy
 	# totalAtStationDuration::Float # total duration spent at station
+	totalTravelDuration::Float # total duration of completed routes, completed or not; >= ambulance.totalTravelDuration
+	totalTravelDistance::Float # total distance of completed routes, completed or not; >= ambulance.totalTravelDistance
+	totalBusyDuration::Float # total duration that ambulance has been busy; >= ambulance.totalBusyDuration
 	
 	numCallsTreated::Int # total number of calls that ambulance provided treatment on scene
 	numCallsTransported::Int # total number of calls transported to hospital
