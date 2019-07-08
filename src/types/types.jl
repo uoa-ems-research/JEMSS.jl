@@ -266,7 +266,6 @@ mutable struct Ambulance
 	movedLoc::Bool
 	
 	# for statistics:
-	# totalAtStationDuration::Float # total duration spent at station
 	totalTravelDuration::Float # total duration of completed routes; only updated after finishing each route
 	totalTravelDistance::Float # total distance of completed routes; only updated after finishing each route
 	totalBusyDuration::Float # total duration that ambulance has been busy; only updated after each activity
@@ -282,7 +281,6 @@ mutable struct Ambulance
 	statusDurations::Dict{AmbStatus,Float} # duration spent in each status; only updated after setting status
 	
 	# for calculating statistics:
-	# recentStationArrivalTime::Float # for totalAtStationDuration
 	statusSetTime::Float # time at which status was last set, even if set to same status value
 	prevStatus::AmbStatus
 	prevEvent::Event
@@ -772,7 +770,6 @@ end
 mutable struct AmbulanceStats
 	ambIndex::Int # for single ambulance
 	
-	# totalAtStationDuration::Float # total duration spent at station
 	totalTravelDuration::Float # total duration of completed routes, completed or not; >= ambulance.totalTravelDuration
 	totalTravelDistance::Float # total distance of completed routes, completed or not; >= ambulance.totalTravelDistance
 	totalBusyDuration::Float # total duration that ambulance has been busy; >= ambulance.totalBusyDuration
@@ -823,7 +820,7 @@ mutable struct CallStats
 	totalAtHospitalDuration::Float
 	
 	# totalDispatchDelay::Float # delay between call arrival and dispatch of ambulance that responded
-	# totalQueuedDuration::Float # time between taking call and dispatch of ambulance that responded ()
+	# totalQueuedDuration::Float # duration between finishing taking call and dispatch of ambulance that responded
 	
 	CallStats() = new(nullIndex, 0,
 		0, 0, 0, 0,
@@ -879,7 +876,6 @@ mutable struct SimPeriodStats
 	station::StationStats # for all stations
 	
 	# numAmbsFreeTotalDuration::Dict{Int,Float} # numAmbsFreeTotalDuration[k] gives total duration that k ambulances were free (not busy)
-	# maxCallQueueLength::Int
 	
 	SimPeriodStats() = new(nullTime, nullTime, nullTime,
 		[], [], [],

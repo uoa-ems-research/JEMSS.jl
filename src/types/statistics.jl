@@ -14,7 +14,6 @@
 ##########################################################################
 
 @info("Todo: check correctness of statistics.")
-# @info("Consider changing 'total...Time' to '...duration' or just '...durn' for statistics, where relevant.")
 
 # Capture statistics at current time.
 # Mutates: sim.stats
