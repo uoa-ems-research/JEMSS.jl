@@ -103,7 +103,7 @@ function ddsmMoveUp(sim::Simulation)
 	options = ddsmd.options
 	
 	# get movable ambulances (movableAmbs)
-	ambMovable = [isAmbAvailableForMoveUp(amb) for amb in ambulances]
+	ambMovable = [isAmbMovable(amb) for amb in ambulances]
 	movableAmbs = ambulances[ambMovable]
 	numMovableAmbs = length(movableAmbs)
 	
@@ -111,7 +111,7 @@ function ddsmMoveUp(sim::Simulation)
 		return moveUpNull()
 	end
 	
-	# calculate travel time for each available ambulance
+	# calculate travel time for each movable ambulance
 	ambToStationTimes = zeros(Float, numMovableAmbs, numStations) # ambToStationTimes[i,j] = time for movable ambulance i to travel to station j
 	for i = 1:numMovableAmbs
 		ambToStationTimes[i,:] = ambMoveUpTravelTimes!(sim, movableAmbs[i])

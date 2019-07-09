@@ -61,7 +61,7 @@ function priorityListMoveUp(sim::Simulation, newlyFreedAmb::Ambulance)
 	stationNumFreeAmbs[:] .= 0
 	for i = 1:numAmbs
 		# do not count newly freed ambulance, it has not been assigned a station
-		if isAmbAvailableForMoveUp(ambulances[i]) && i != newlyFreedAmb.index
+		if isAmbMovable(ambulances[i]) && i != newlyFreedAmb.index
 			stationNumFreeAmbs[ambulances[i].stationIndex] += 1
 		end
 	end

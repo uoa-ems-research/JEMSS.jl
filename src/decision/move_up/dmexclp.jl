@@ -68,7 +68,7 @@ function dmexclpMoveUp(sim::Simulation, newlyFreedAmb::Ambulance)
 	dcd.stationNumFreeAmbs[:] .= 0
 	for (i,ambulance) in enumerate(ambulances)
 		# do not count newly freed ambulance, it has not been assigned a station
-		if isAmbAvailableForMoveUp(ambulance) && i != newlyFreedAmb.index
+		if isAmbMovable(ambulance) && i != newlyFreedAmb.index
 			dcd.stationNumFreeAmbs[ambulance.stationIndex] += 1
 		end
 	end

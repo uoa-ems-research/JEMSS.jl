@@ -381,7 +381,7 @@ function initDemandCoverage!(sim::Simulation;
 	dc.initialised = true
 end
 
-# Calculate, for a given points coverage mode, and number of available ambulances assigned to each
+# Calculate, for a given points coverage mode, and number of ambulances assigned to each
 # station, how many ambulances cover each point set.
 function calcPointSetsCoverCounts(pointsCoverageMode::PointsCoverageMode, stationsNumAmbs::Vector{Int})
 	# stationsNumAmbs[i] gives the number of ambulances that can provide coverage and are assigned to station i

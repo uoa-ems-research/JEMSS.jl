@@ -63,7 +63,7 @@ function zhangIpMoveUp(sim::Simulation)::Tuple{Vector{Ambulance}, Vector{Station
 	numStations = sim.numStations
 	
 	# get currently movable ambulances, and at-hospital ambulances
-	movableAmbs = filter(a -> isAmbAvailableForMoveUp(a), ambulances)
+	movableAmbs = filter(a -> isAmbMovable(a), ambulances)
 	atHospitalAmbs = filter(a -> a.status == ambAtHospital, ambulances)
 	@assert(intersect(movableAmbs, atHospitalAmbs) == [])
 	if isempty(movableAmbs) return moveUpNull() end

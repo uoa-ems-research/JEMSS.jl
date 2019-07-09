@@ -96,12 +96,12 @@ function temp2MoveUp(sim::Simulation)
 	# get movable ambulances (movableAmbs)
 	ambMovable = Vector{Bool}(undef, numAmbs) # ambMovable[i] = true if ambulances[i] can move-up
 	for i = 1:numAmbs
-		ambMovable[i] = isAmbAvailableForMoveUp(ambulances[i])
+		ambMovable[i] = isAmbMovable(ambulances[i])
 	end
 	movableAmbs = ambulances[ambMovable]
 	numMovableAmbs = length(movableAmbs)
 	
-	# calculate travel time for each available ambulance to reach every station
+	# calculate travel time for each movable ambulance to reach every station
 	ambToStationTimes = Array{Float,2}(undef, numMovableAmbs, numStations)
 	for i = 1:numMovableAmbs
 		ambToStationTimes[i,:] = ambMoveUpTravelTimes!(sim, movableAmbs[i])

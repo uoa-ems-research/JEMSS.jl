@@ -617,7 +617,7 @@ mutable struct CompTableData <: MoveUpDataType
 	compTableStationSlots::Vector{Vector{Int}} # sum(compTableStationSlots[i] .== j) == compTable[i,j]
 	
 	# arrays for recycling:
-	ambMovable::Vector{Bool} # ambMovable[i] = true if ambulance i is available for move up, false otherwise
+	ambMovable::Vector{Bool} # ambMovable[i] = true if ambulance i can be moved up, false otherwise
 	
 	CompTableData() = new(CompTable(undef,0,0),
 		[],

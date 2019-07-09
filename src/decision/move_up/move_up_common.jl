@@ -15,7 +15,7 @@
 
 # common move-up functions
 
-function isAmbAvailableForMoveUp(ambulance::Ambulance)
+function isAmbMovable(ambulance::Ambulance)
 	return isFree(ambulance.status)
 end
 
