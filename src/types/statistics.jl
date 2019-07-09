@@ -127,11 +127,11 @@ function CallStats(sim::Simulation, calls::Vector{Call})::CallStats
 	stats.numTransports = count(c -> c.transport, calls)
 	stats.numResponsesInTime = count(c -> c.responseDuration <= sim.targetResponseDurations[Int(c.priority)], calls)
 	stats.totalResponseDuration = sum(c -> c.responseDuration, calls)
+	stats.totalQueuedDuration = sum(c -> c.queuedDuration, calls)
 	stats.totalOnSceneDuration = sum(c -> c.onSceneDuration, calls)
 	stats.totalTransportDuration = sum(c -> c.transport ? c.hospitalArrivalTime - (c.ambArrivalTime + c.onSceneDuration) : 0, calls)
 	stats.totalAtHospitalDuration = sum(c -> c.transport ? c.handoverDuration : 0, calls)
 	# stats.totalDispatchDelay = sum(c -> c.dispatchTime - c.arrivalTime, calls) # can be different from dispatchDelay due to queueing and ambulance redispatching
-	# stats.totalQueuedDuration = sum(c -> c.dispatchTime - (c.arrivalTime + c.dispatchDelay), calls)
 	return stats
 end
 

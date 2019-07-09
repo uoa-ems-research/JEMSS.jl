@@ -298,6 +298,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		call.status = callWaitingForAmb
 		call.ambIndex = event.ambIndex
 		call.dispatchTime = sim.time # stats
+		call.queuedDuration = call.wasQueued ? sim.time - (call.arrivalTime + call.dispatchDelay) : 0.0
 		call.ambDispatchLoc = ambulance.route.startLoc # same result as getRouteCurrentLocation!(sim.net, ambulance.route, sim.time)
 		call.ambStatusBeforeDispatch = ambulance.prevStatus
 		

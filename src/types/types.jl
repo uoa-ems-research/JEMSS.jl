@@ -319,6 +319,7 @@ mutable struct Call
 	
 	# for statistics:
 	dispatchTime::Float # time at which final ambulance was dispatched (= arrivalTime + dispatchDelay, unless call queued/bumped)
+	queuedDuration::Float # duration between finishing taking call and dispatch of ambulance that responded
 	ambArrivalTime::Float # time at which ambulance arrives on-site
 	responseDuration::Float # duration between call arrival and ambulance arrival at call location
 	hospitalArrivalTime::Float # time at which ambulance arrives at hospital
@@ -331,7 +332,7 @@ mutable struct Call
 		nullTime, nullTime, nullTime, nullTime,
 		nullIndex, nullDist,
 		Location(), false,
-		nullTime, nullTime, nullTime, nullTime, 0, false, Location(), ambNullStatus)
+		nullTime, nullTime, nullTime, nullTime, nullTime, 0, false, Location(), ambNullStatus)
 end
 
 mutable struct Hospital
@@ -822,16 +823,16 @@ mutable struct CallStats
 	numResponsesInTime::Int # number of in time ambulance responses
 	
 	totalResponseDuration::Float
+	totalQueuedDuration::Float # duration between finishing taking call and dispatch of ambulance that responded
 	totalOnSceneDuration::Float
 	totalTransportDuration::Float # to hospital
 	totalAtHospitalDuration::Float
 	
 	# totalDispatchDelay::Float # delay between call arrival and dispatch of ambulance that responded
-	# totalQueuedDuration::Float # duration between finishing taking call and dispatch of ambulance that responded
 	
 	CallStats() = new(nullIndex, 0,
 		0, 0, 0, 0, 0,
-		0.0, 0.0, 0.0, 0.0)
+		0.0, 0.0, 0.0, 0.0, 0.0)
 end
 
 # statistics for a single hospital, or multiple hospitals
