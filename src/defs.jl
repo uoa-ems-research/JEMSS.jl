@@ -65,7 +65,7 @@ const numPriorities = length(priorities)
 @enum EventForm nullEvent ambGoesToSleep ambWakesUp callArrives considerDispatch ambDispatched ambReachesCall ambGoesToHospital ambReachesHospital ambBecomesIdle ambReachesStation ambRedirected considerMoveUp ambMoveUp
 
 # ambulance statuses
-@enum AmbStatus ambNullStatus ambSleeping ambIdleAtStation ambGoingToCall ambAtCall ambGoingToHospital ambAtHospital ambGoingToStation ambMovingUpToStation
+@enum AmbStatus ambNullStatus ambSleeping ambIdleAtStation ambGoingToCall ambAtCall ambGoingToHospital ambAtHospital ambReturningToStation ambMovingUpToStation
 
 # call statuses
 @enum CallStatus callNullStatus callScreening callQueued callWaitingForAmb callOnSceneTreatment callGoingToHospital callAtHospital callProcessed

@@ -102,7 +102,7 @@ function AmbulanceStats(sim::Simulation, ambulance::Ambulance)::AmbulanceStats
 	end
 	
 	busyStatuses = (ambGoingToCall, ambAtCall, ambGoingToHospital, ambAtHospital)
-	travelStatuses = (ambGoingToCall, ambGoingToHospital, ambGoingToStation, ambMovingUpToStation)
+	travelStatuses = (ambGoingToCall, ambGoingToHospital, ambReturningToStation, ambMovingUpToStation)
 	stats.totalBusyDuration = sum(status -> stats.statusDurations[status], busyStatuses) # >= ambulance.totalBusyDuration
 	stats.totalTravelDuration = sum(status -> stats.statusDurations[status], travelStatuses) # >= ambulance.totalTravelDuration
 	

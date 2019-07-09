@@ -83,13 +83,13 @@ function zhangIpMoveUp(sim::Simulation)::Tuple{Vector{Ambulance}, Vector{Station
 	# for on-road ambulances: adjusted time = original time * ( time spent on route + time to drive to station - time from route origin to station <= regret-travel-time threshold ? discount factor : 1 )
 	# for at-hospital ambulances: adjusted time = original time + expected remaining handover duration
 	adjustedAmbToStationTimes = deepcopy(ambToStationTimes)
-	ambIsNewlyIdle(a::Ambulance) = (a.status == ambGoingToStation && a.route.startTime == sim.time)
+	ambIsNewlyIdle(a::Ambulance) = (a.status == ambReturningToStation && a.route.startTime == sim.time)
 	travelMode = getTravelMode!(sim.travel, lowPriority, sim.time)
 	for i = 1:numMoveUpAmbs
 		ambulance = moveUpAmbs[i]
 		if ambulance.status == ambIdleAtStation || ambIsNewlyIdle(ambulance)
 			# no change, adjustedAmbToStationTimes[i,:] = ambToStationTimes[i,:]
-		elseif ambulance.status == ambGoingToStation || ambulance.status == ambMovingUpToStation
+		elseif ambulance.status == ambReturningToStation || ambulance.status == ambMovingUpToStation
 			for j = 1:numStations
 				# calculate "regret" travel time
 				if ambulance.stationIndex == j
