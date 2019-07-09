@@ -126,7 +126,7 @@ function writeSimPeriodStatsListFile(filename::String, periods::Vector{SimPeriod
 	periodTimesTable = Table("times", ["periodIndex", "startTime", "endTime", "duration"];
 		rows = [[i, p.startTime, p.endTime, p.duration] for (i,p) in enumerate(periods)])
 	
-	fnames = collect(setdiff(fieldnames(AmbulanceStats), [:statusDurations]))
+	fnames = collect(setdiff(fieldnames(AmbulanceStats), [:statusDurations, :statusTransitionCounts]))
 	ambulanceTable = Table("ambulance", vcat("periodIndex", collect(string.(fnames)));
 		rows = [vcat(i, [getfield(p.ambulance, fname) for fname in fnames]) for (i,p) in enumerate(periods)])
 	
