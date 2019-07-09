@@ -612,7 +612,7 @@ mutable struct EmptyMoveUpData <: MoveUpDataType end
 # compliance table data
 mutable struct CompTableData <: MoveUpDataType
 	# parameters:
-	compTable::CompTable # compTable[i,j] = number of ambulances to place at station j, with i total idle ambs
+	compTable::CompTable # compTable[i,j] = number of ambulances to place at station j, with i total free ambs
 	
 	compTableStationSlots::Vector{Vector{Int}} # sum(compTableStationSlots[i] .== j) == compTable[i,j]
 	
@@ -649,9 +649,9 @@ mutable struct DmexclpData <: MoveUpDataType
 	marginalBenefit::Vector{Float} # marginalBenefit[i] = benefit of adding an ith ambulance to cover single demand, calculated from busyFraction
 	
 	# arrays for recycling:
-	stationNumIdleAmbs::Vector{Int} # stationNumIdleAmbs[i] = number of idle ambulances assigned to station i
-	stationMarginalCoverages::Vector{Float} # stationMarginalCoverages[i] gives extra coverage provided from placing newly idle ambulance at station i
-	# pointSetsCoverCounts::Vector{Vector{Int}} # pointSetsCoverCounts[i][j] = number of idle ambulances covering node set j, for demand.pointsCoverageModes i
+	stationNumFreeAmbs::Vector{Int} # stationNumFreeAmbs[i] = number of free ambulances assigned to station i
+	stationMarginalCoverages::Vector{Float} # stationMarginalCoverages[i] gives extra coverage provided from placing newly freed ambulance at station i
+	# pointSetsCoverCounts::Vector{Vector{Int}} # pointSetsCoverCounts[i][j] = number of free ambulances covering node set j, for demand.pointsCoverageModes i
 	
 	DmexclpData() = new(0.0, Dict(),
 		[],
@@ -663,7 +663,7 @@ mutable struct PriorityListData <: MoveUpDataType
 	priorityList::Vector{Int} # priorityList[i] gives station index that the ith free ambulance should be moved to
 	
 	# arrays for recycling:
-	stationNumIdleAmbs::Vector{Int} # number of idle ambulances assigned to each station
+	stationNumFreeAmbs::Vector{Int} # number of free ambulances assigned to each station
 	
 	PriorityListData() = new([],
 		[])
