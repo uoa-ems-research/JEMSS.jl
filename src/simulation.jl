@@ -231,7 +231,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 			ambIndex = sim.findAmbToDispatch!(sim, call)
 		end
 		# if no ambulance found, add call to queue,
-		# will respond when an ambulance becomes idle
+		# will respond when an ambulance becomes free
 		if ambIndex == nullIndex
 			sim.addCallToQueue!(sim.queuedCallList, call)
 			call.status = callQueued
@@ -331,13 +331,13 @@ function simulateEvent!(sim::Simulation, event::Event)
 		call.ambArrivalTime = sim.time # stats
 		call.responseDuration = sim.time - call.arrivalTime # stats
 		
-		# transport call to hospital if needed, otherwise amb becomes idle
+		# transport call to hospital if needed, otherwise amb becomes free
 		if call.transport
 			# transport to hospital
 			addEvent!(sim.eventList; parentEvent = event, form = ambGoesToHospital, time = sim.time + call.onSceneDuration, ambulance = ambulance, call = call)
 		else
-			# amb becomes idle
-			addEvent!(sim.eventList; parentEvent = event, form = ambBecomesIdle, time = sim.time + call.onSceneDuration, ambulance = ambulance, call = call)
+			# amb becomes free
+			addEvent!(sim.eventList; parentEvent = event, form = ambBecomesFree, time = sim.time + call.onSceneDuration, ambulance = ambulance, call = call)
 		end
 		
 ################
@@ -390,11 +390,11 @@ function simulateEvent!(sim::Simulation, event::Event)
 		call.hospitalArrivalTime = sim.time # stats
 		sim.hospitals[call.hospitalIndex].numCalls += 1 # stats
 		
-		addEvent!(sim.eventList; parentEvent = event, form = ambBecomesIdle, time = sim.time + call.handoverDuration, ambulance = ambulance, call = call)
+		addEvent!(sim.eventList; parentEvent = event, form = ambBecomesFree, time = sim.time + call.handoverDuration, ambulance = ambulance, call = call)
 		
 ################
 	
-	elseif eventForm == ambBecomesIdle
+	elseif eventForm == ambBecomesFree
 		ambulance = sim.ambulances[event.ambIndex]
 		@assert(ambulance.status == ambAtCall || ambulance.status == ambAtHospital)
 		call = sim.calls[event.callIndex]

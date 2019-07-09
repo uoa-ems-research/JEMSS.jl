@@ -62,7 +62,7 @@ const numPriorities = length(priorities)
 @enum AmbClass nullAmbClass=0 als=1 bls=2 # als = advanced life support, bls = basic life support
 
 # event types/forms
-@enum EventForm nullEvent ambGoesToSleep ambWakesUp callArrives considerDispatch ambDispatched ambReachesCall ambGoesToHospital ambReachesHospital ambBecomesIdle ambReachesStation ambRedirected considerMoveUp ambMoveUp
+@enum EventForm nullEvent ambGoesToSleep ambWakesUp callArrives considerDispatch ambDispatched ambReachesCall ambGoesToHospital ambReachesHospital ambBecomesFree ambReachesStation ambRedirected considerMoveUp ambMoveUp
 
 # ambulance statuses
 @enum AmbStatus ambNullStatus ambSleeping ambIdleAtStation ambGoingToCall ambAtCall ambGoingToHospital ambAtHospital ambReturningToStation ambMovingUpToStation

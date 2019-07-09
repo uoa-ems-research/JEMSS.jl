@@ -108,7 +108,7 @@ export
 export
 	Priority, nullPriority, highPriority, medPriority, lowPriority, # priorities
 	AmbClass, nullAmbClass, als, bls, # ambulance classes
-	EventForm, nullEvent, ambGoesToSleep, ambWakesUp, callArrives, considerDispatch, ambDispatched, ambReachesCall, ambGoesToHospital, ambReachesHospital, ambBecomesIdle, ambReachesStation, ambRedirected, considerMoveUp, ambMoveUp,
+	EventForm, nullEvent, ambGoesToSleep, ambWakesUp, callArrives, considerDispatch, ambDispatched, ambReachesCall, ambGoesToHospital, ambReachesHospital, ambBecomesFree, ambReachesStation, ambRedirected, considerMoveUp, ambMoveUp,
 	AmbStatus, ambNullStatus, ambSleeping, ambIdleAtStation, ambGoingToCall, ambAtCall, ambGoingToHospital, ambAtHospital, ambReturningToStation, ambMovingUpToStation,
 	CallStatus, callNullStatus, callScreening, callQueued, callWaitingForAmb, callOnSceneTreatment, callGoingToHospital, callAtHospital, callProcessed,
 	RouteStatus, routeNullStatus, routeBeforeStartNode, routeOnPath, routeAfterEndNode,
