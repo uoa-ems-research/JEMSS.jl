@@ -59,9 +59,9 @@ function populateSimStats!(sim::Simulation)
 	callsByPriority = Dict([p => filter(c -> c.priority == p, sim.calls) for p in priorities])
 	for i = 1:length(captures)
 		period = i == 1 ? captures[i] : captures[i] - captures[i-1]
-		period.call = CallStats(sim.calls, period.startTime, period.endTime)
+		period.call = CallStats(sim, sim.calls, period.startTime, period.endTime)
 		for priority in priorities
-			period.callPriorities[priority] = CallStats(callsByPriority[priority], period.startTime, period.endTime)
+			period.callPriorities[priority] = CallStats(sim, callsByPriority[priority], period.startTime, period.endTime)
 		end
 		push!(stats.periods, period)
 		
@@ -114,7 +114,7 @@ function AmbulanceStats(sim::Simulation, ambulance::Ambulance)::AmbulanceStats
 	return stats
 end
 
-function CallStats(calls::Vector{Call})::CallStats
+function CallStats(sim::Simulation, calls::Vector{Call})::CallStats
 	if isempty(calls) return CallStats() end
 	@assert(calls[end].status == callProcessed) # should be true for preceeding calls also
 	stats = CallStats()
@@ -134,12 +134,12 @@ function CallStats(calls::Vector{Call})::CallStats
 	return stats
 end
 
-function CallStats(calls::Vector{Call}, startTime::Float, endTime::Float)::CallStats
+function CallStats(sim::Simulation, calls::Vector{Call}, startTime::Float, endTime::Float)::CallStats
 	# filter calls by arrivalTime within [startTime, endTime)
 	i = findfirst(c -> c.arrivalTime >= startTime, calls)
 	if i == nothing return CallStats() end # no calls in time period
 	j = something(findnext(c -> c.arrivalTime >= endTime, calls, i), length(calls) + 1) - 1
-	return CallStats(calls[i:j])
+	return CallStats(sim, calls[i:j])
 end
 
 function HospitalStats(hospital::Hospital)::HospitalStats
