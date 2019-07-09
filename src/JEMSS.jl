@@ -73,6 +73,7 @@ export
 
 # misc functions
 export
+	isBusy, isFree, isWorking, isGoingToStation, # ambulance
 	initDemand!, initDemandCoverage!, # demand
 	printEvent, # event
 	findNearestNode, # graph

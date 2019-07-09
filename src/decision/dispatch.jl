@@ -16,7 +16,7 @@
 # return true if ambulance is available for dispatch to a call
 function isAmbAvailableForDispatch(sim::Simulation, ambulance::Ambulance, call::Call)
 	status = ambulance.status
-	if status == ambIdleAtStation || status == ambReturningToStation || status == ambMovingUpToStation
+	if isFree(status)
 		return true
 	elseif status == ambGoingToCall
 		return isAmbRedispatchAllowed(sim, ambulance, sim.calls[ambulance.callIndex], call)

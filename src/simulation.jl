@@ -241,7 +241,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 			
 			# remove any previously scheduled events
 			ambWasOnRoute = true
-			if ambulance.status == ambReturningToStation || ambulance.status == ambMovingUpToStation
+			if isGoingToStation(ambulance.status)
 				deleteEvent!(sim.eventList, ambulance.event)
 			elseif ambulance.status == ambGoingToCall
 				# if ambulance was going to call, redirect ambulance
@@ -437,7 +437,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 	
 	elseif eventForm == ambReachesStation
 		ambulance = sim.ambulances[event.ambIndex]
-		@assert(ambulance.status == ambReturningToStation || ambulance.status == ambMovingUpToStation)
+		@assert(isGoingToStation(ambulance.status))
 		@assert(event.callIndex == nullIndex)
 		
 		setAmbStatus!(ambulance, ambIdleAtStation, sim.time)
@@ -491,7 +491,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 			# move up ambulance if ambulance station has changed
 			if ambulance.stationIndex != station.index
 				
-				if ambulance.status == ambReturningToStation || ambulance.status == ambMovingUpToStation # ambulance.event.form == ambReachesStation
+				if isGoingToStation(ambulance.status) # ambulance.event.form == ambReachesStation
 					# delete station arrival event for this ambulance
 					deleteEvent!(sim.eventList, ambulance.event)
 					
@@ -518,7 +518,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		# stats
 		status = ambulance.status # shorthand
 		prevStatus = ambulance.prevStatus # shorthand
-		if status == ambReturningToStation || status == ambMovingUpToStation
+		if isGoingToStation(status)
 			prevEventTime = ambulance.prevEvent.time # shorthand
 			@assert(prevEventTime != nullTime)
 			if (prevStatus == ambAtHospital || prevStatus == ambAtCall) && prevEventTime == sim.time # assumes no delay between changing state and starting move up

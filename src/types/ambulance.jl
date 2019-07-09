@@ -57,3 +57,8 @@ function setAmbStatus!(ambulance::Ambulance, status::AmbStatus, time::Float)
 	ambulance.prevStatus = ambulance.status
 	ambulance.status = status
 end
+
+isBusy(s::AmbStatus)::Bool = in(s, (ambGoingToCall, ambAtCall, ambGoingToHospital, ambAtHospital))
+isFree(s::AmbStatus)::Bool = in(s, (ambIdleAtStation, ambReturningToStation, ambMovingUpToStation))
+isWorking(s::AmbStatus)::Bool = !in(s, (ambNullStatus, ambSleeping)) # should return same value as isBusy(s) || isFree(s)
+isGoingToStation(s::AmbStatus)::Bool = in(s, (ambReturningToStation, ambMovingUpToStation))
