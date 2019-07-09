@@ -124,6 +124,7 @@ function CallStats(calls::Vector{Call})::CallStats
 	stats.numBumped = count(c -> c.numBumps > 0, calls)
 	stats.numBumps = sum(c -> c.numBumps, calls)
 	stats.numTransports = count(c -> c.transport, calls)
+	stats.numResponsesInTime = count(c -> c.responseDuration <= sim.targetResponseDurations[Int(c.priority)], calls)
 	stats.totalResponseDuration = sum(c -> c.responseDuration, calls)
 	stats.totalOnSceneDuration = sum(c -> c.onSceneDuration, calls)
 	stats.totalTransportDuration = sum(c -> c.transport ? c.hospitalArrivalTime - (c.ambArrivalTime + c.onSceneDuration) : 0, calls)

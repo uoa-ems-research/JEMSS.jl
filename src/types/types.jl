@@ -813,6 +813,7 @@ mutable struct CallStats
 	numBumped::Int # number of calls bumped once or more
 	numBumps::Int # number of bumps from all calls
 	numTransports::Int
+	numResponsesInTime::Int # number of in time ambulance responses
 	
 	totalResponseDuration::Float
 	totalOnSceneDuration::Float
@@ -823,7 +824,7 @@ mutable struct CallStats
 	# totalQueuedDuration::Float # duration between finishing taking call and dispatch of ambulance that responded
 	
 	CallStats() = new(nullIndex, 0,
-		0, 0, 0, 0,
+		0, 0, 0, 0, 0,
 		0.0, 0.0, 0.0, 0.0)
 end
 
