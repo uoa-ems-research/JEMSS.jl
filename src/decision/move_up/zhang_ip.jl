@@ -89,7 +89,7 @@ function zhangIpMoveUp(sim::Simulation)::Tuple{Vector{Ambulance}, Vector{Station
 		ambulance = moveUpAmbs[i]
 		if ambulance.status == ambIdleAtStation || ambIsNewlyIdle(ambulance)
 			# no change, adjustedAmbToStationTimes[i,:] = ambToStationTimes[i,:]
-		elseif ambulance.status == ambGoingToStation
+		elseif ambulance.status == ambGoingToStation || ambulance.status == ambMovingUpToStation
 			for j = 1:numStations
 				# calculate "regret" travel time
 				if ambulance.stationIndex == j
