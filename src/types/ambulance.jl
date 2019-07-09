@@ -33,6 +33,13 @@ function initAmbulance!(sim::Simulation, ambulance::Ambulance;
 	station = sim.stations[ambulance.stationIndex]
 	initRoute!(sim, ambulance.route; startLoc = station.location, startFNode = station.nearestNodeIndex, startFNodeDist = station.nearestNodeDist)
 	
+	# statistics
+	ambStatuses = setdiff(instances(AmbStatus), (ambNullStatus,))
+	n = maximum(s -> Int(s), ambStatuses)
+	@assert(all(s -> in(Int(s), 1:n), ambStatuses)) # statuses should be numbered 1:n
+	ambulance.statusDurations = Dict([s => 0.0 for s in ambStatuses])
+	ambulance.statusTransitionCounts = zeros(Int, n, n)
+	
 	# add wake up event
 	addEvent!(sim.eventList; form = ambWakesUp, time = wakeUpTime, ambulance = ambulance)
 end
@@ -40,11 +47,13 @@ end
 # Set the ambulance status and time at which status started
 # Mutates: ambulance
 function setAmbStatus!(ambulance::Ambulance, status::AmbStatus, time::Float)
-	# record duration of previous status
 	@assert(ambulance.statusSetTime <= time)
-	ambulance.statusDurations[ambulance.status] += time - ambulance.statusSetTime
-	ambulance.statusSetTime = time
 	
+	# stats
+	ambulance.statusDurations[ambulance.status] += time - ambulance.statusSetTime
+	ambulance.statusTransitionCounts[Int(ambulance.status), Int(status)] += 1
+	
+	ambulance.statusSetTime = time
 	ambulance.prevStatus = ambulance.status
 	ambulance.status = status
 end

@@ -86,6 +86,7 @@ function AmbulanceStats(sim::Simulation, ambulance::Ambulance)::AmbulanceStats
 	stats.numMoveUpsFromStation = ambulance.numMoveUpsFromStation
 	stats.numMoveUpsOnRoad = ambulance.numMoveUpsOnRoad
 	stats.numMoveUpsOnFree = ambulance.numMoveUpsOnFree
+	stats.statusTransitionCounts = deepcopy(ambulance.statusTransitionCounts)
 	
 	stats.statusDurations = deepcopy(ambulance.statusDurations)
 	stats.statusDurations[ambulance.status] += sim.time - ambulance.statusSetTime # to make sure that sum of statusDurations equals the sim duration

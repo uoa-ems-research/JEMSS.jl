@@ -278,7 +278,10 @@ mutable struct Ambulance
 	numMoveUpsFromStation::Int
 	numMoveUpsOnRoad::Int
 	numMoveUpsOnFree::Int
+	
+	# status statistics
 	statusDurations::Dict{AmbStatus,Float} # duration spent in each status; only updated after setting status
+	statusTransitionCounts::Array{Int,2} # statusTransitionCounts[Int(status1), Int(status2)] gives number of times that amb transitioned from status1 to status2
 	
 	# for calculating statistics:
 	statusSetTime::Float # time at which status was last set, even if set to same status value
@@ -287,7 +290,8 @@ mutable struct Ambulance
 	
 	Ambulance() = new(nullIndex, ambNullStatus, nullIndex, nullIndex, Route(), Event(), nullAmbClass,
 		Location(), false,
-		0.0, 0.0, 0.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Dict([s => 0.0 for s in instances(AmbStatus)]),
+		0.0, 0.0, 0.0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+		Dict(), Array{Int,2}(undef,0,0),
 		nullTime, ambNullStatus, Event())
 end
 
@@ -787,6 +791,7 @@ mutable struct AmbulanceStats
 	numMoveUpsOnFree::Int
 	
 	statusDurations::Dict{AmbStatus,Float} # duration spent in each status
+	statusTransitionCounts::Array{Int,2} # statusTransitionCounts[Int(status1), Int(status2)] gives number of times that amb transitioned from status1 to status2
 	
 	# calculated:
 	numDispatches::Int # all dispatches, including redispatches
@@ -800,7 +805,7 @@ mutable struct AmbulanceStats
 		0, 0,
 		0, 0, 0, 0,
 		0, 0, 0,
-		Dict([s => 0.0 for s in instances(AmbStatus)]),
+		Dict(), Array{Int,2}(undef,0,0),
 		0, 0)
 end
 
