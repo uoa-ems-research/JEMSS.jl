@@ -73,7 +73,7 @@ export
 
 # misc functions
 export
-	isBusy, isFree, isWorking, isGoingToStation, # ambulance
+	isBusy, isFree, isWorking, isGoingToStation, isTravelling, # ambulance
 	initDemand!, initDemandCoverage!, # demand
 	printEvent, # event
 	findNearestNode, # graph
@@ -109,8 +109,8 @@ export
 export
 	Priority, nullPriority, highPriority, medPriority, lowPriority, # priorities
 	AmbClass, nullAmbClass, als, bls, # ambulance classes
-	EventForm, nullEvent, ambGoesToSleep, ambWakesUp, callArrives, considerDispatch, ambDispatched, ambReachesCall, ambGoesToHospital, ambReachesHospital, ambBecomesFree, ambReachesStation, ambRedirected, considerMoveUp, ambMoveUp,
-	AmbStatus, ambNullStatus, ambSleeping, ambIdleAtStation, ambGoingToCall, ambAtCall, ambGoingToHospital, ambAtHospital, ambReturningToStation, ambMovingUpToStation,
+	EventForm, nullEvent, ambGoesToSleep, ambWakesUp, callArrives, considerDispatch, ambDispatched, ambReachesCall, ambGoesToHospital, ambReachesHospital, ambBecomesFree, ambReturnsToStation, ambReachesStation, ambRedirected, considerMoveUp, ambMoveUpToStation,
+	AmbStatus, ambNullStatus, ambSleeping, ambIdleAtStation, ambGoingToCall, ambAtCall, ambGoingToHospital, ambAtHospital, ambFreeAfterCall, ambReturningToStation, ambMovingUpToStation,
 	CallStatus, callNullStatus, callScreening, callQueued, callWaitingForAmb, callOnSceneTreatment, callGoingToHospital, callAtHospital, callProcessed,
 	RouteStatus, routeNullStatus, routeBeforeStartNode, routeOnPath, routeAfterEndNode,
 	MoveUpModule, nullMoveUpModule, compTableModule, dmexclpModule, priorityListModule, zhangIpModule, temp0Module, temp1Module, temp2Module

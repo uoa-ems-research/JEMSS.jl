@@ -126,7 +126,7 @@ function resimMoveUp(sim::Simulation)
 	ambStations = Vector{Station}()
 	eventChildren = resim.eventsChildren[resimEvent.index]
 	for event in reverse(eventChildren)
-		@assert(event.form == ambMoveUp)
+		@assert(event.form == ambMoveUpToStation)
 		push!(movableAmbs, sim.ambulances[event.ambIndex])
 		push!(ambStations, sim.stations[event.stationIndex])
 	end

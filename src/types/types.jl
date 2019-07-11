@@ -286,13 +286,12 @@ mutable struct Ambulance
 	# for calculating statistics:
 	statusSetTime::Float # time at which status was last set, even if set to same status value
 	prevStatus::AmbStatus
-	prevEvent::Event
 	
 	Ambulance() = new(nullIndex, ambNullStatus, nullIndex, nullIndex, Route(), Event(), nullAmbClass,
 		Location(), false,
 		0.0, 0.0, 0.0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 		Dict(), Array{Int,2}(undef,0,0),
-		nullTime, ambNullStatus, Event())
+		nullTime, ambNullStatus)
 end
 
 mutable struct Call

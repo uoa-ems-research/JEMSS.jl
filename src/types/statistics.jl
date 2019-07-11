@@ -92,7 +92,7 @@ function AmbulanceStats(sim::Simulation, ambulance::Ambulance)::AmbulanceStats
 	stats.statusDurations[ambulance.status] += sim.time - ambulance.statusSetTime # to make sure that sum of statusDurations equals the sim duration
 	
 	# calculate
-	stats.numDispatches = stats.numDispatchesFromStation + stats.numDispatchesOnRoad + stats.numDispatchesOnFree + stats.numRedispatches
+	stats.numDispatches = stats.numDispatchesFromStation + stats.numDispatchesOnRoad + stats.numDispatchesOnFree # numRedispatches already included in numDispatchesOnRoad
 	stats.numMoveUps = stats.numMoveUpsFromStation + stats.numMoveUpsOnRoad + stats.numMoveUpsOnFree
 	
 	# calculate travel distance, accounting for any partially completed route
@@ -101,8 +101,9 @@ function AmbulanceStats(sim::Simulation, ambulance::Ambulance)::AmbulanceStats
 		stats.totalTravelDistance += calcRouteDistance!(sim, ambulance.route, sim.time)
 	end
 	
-	busyStatuses = (ambGoingToCall, ambAtCall, ambGoingToHospital, ambAtHospital)
-	travelStatuses = (ambGoingToCall, ambGoingToHospital, ambReturningToStation, ambMovingUpToStation)
+	ambStatuses = collect(instances(AmbStatus))
+	busyStatuses = filter(s -> isBusy(s), ambStatuses)
+	travelStatuses = filter(s -> isTravelling(s), ambStatuses)
 	stats.totalBusyDuration = sum(status -> stats.statusDurations[status], busyStatuses) # >= ambulance.totalBusyDuration
 	stats.totalTravelDuration = sum(status -> stats.statusDurations[status], travelStatuses) # >= ambulance.totalTravelDuration
 	
@@ -110,6 +111,19 @@ function AmbulanceStats(sim::Simulation, ambulance::Ambulance)::AmbulanceStats
 		@assert(isapprox(sum(values(stats.statusDurations)), sim.time - sim.startTime))
 		@assert(stats.totalBusyDuration >= ambulance.totalBusyDuration || isapprox(stats.totalBusyDuration, ambulance.totalBusyDuration))
 		@assert(stats.totalTravelDuration >= ambulance.totalTravelDuration || isapprox(stats.totalTravelDuration, ambulance.totalTravelDuration))
+		
+		# statusTransitionCounts
+		@assert(stats.numCallsTreated == sum(stats.statusTransitionCounts[:, Int(ambAtCall)]))
+		@assert(stats.numCallsTransported == stats.statusTransitionCounts[Int(ambGoingToHospital), Int(ambAtHospital)])
+		@assert(stats.numDispatches == sum(stats.statusTransitionCounts[:, Int(ambGoingToCall)]))
+		@assert(stats.numDispatchesFromStation == stats.statusTransitionCounts[Int(ambIdleAtStation), Int(ambGoingToCall)])
+		@assert(stats.numDispatchesOnRoad == sum(s -> stats.statusTransitionCounts[Int(s), Int(ambGoingToCall)], travelStatuses))
+		@assert(stats.numDispatchesOnFree == stats.statusTransitionCounts[Int(ambFreeAfterCall), Int(ambGoingToCall)])
+		@assert(stats.numRedispatches == stats.statusTransitionCounts[Int(ambGoingToCall), Int(ambGoingToCall)])
+		@assert(stats.numMoveUps == sum(stats.statusTransitionCounts[:, Int(ambMovingUpToStation)]))
+		@assert(stats.numMoveUpsFromStation == stats.statusTransitionCounts[Int(ambIdleAtStation), Int(ambMovingUpToStation)])
+		@assert(stats.numMoveUpsOnRoad == sum(s -> stats.statusTransitionCounts[Int(s), Int(ambMovingUpToStation)], travelStatuses))
+		@assert(stats.numMoveUpsOnFree == stats.statusTransitionCounts[Int(ambFreeAfterCall), Int(ambMovingUpToStation)])
 	end
 	
 	return stats
