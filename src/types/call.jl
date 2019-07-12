@@ -57,7 +57,7 @@ function resetCalls!(sim::Simulation)
 	end
 end
 
-function setStatus!(call::Call, status::CallStatus, time::Float)
+function setCallStatus!(call::Call, status::CallStatus, time::Float)
 	@assert(call.statusSetTime <= time)
 	
 	# stats for previous status
