@@ -50,8 +50,40 @@ function setAmbStatus!(ambulance::Ambulance, status::AmbStatus, time::Float)
 	@assert(ambulance.statusSetTime <= time)
 	
 	# stats
-	ambulance.statusDurations[ambulance.status] += time - ambulance.statusSetTime
+	statusDuration = time - ambulance.statusSetTime
+	ambulance.statusDurations[ambulance.status] += statusDuration
 	ambulance.statusTransitionCounts[Int(ambulance.status), Int(status)] += 1
+	
+	prevStatus = ambulance.status
+	if isBusy(prevStatus)
+		ambulance.totalBusyDuration += statusDuration
+	end
+	
+	# stats
+	if status == ambGoingToCall
+		# dispatch stats
+		if prevStatus == ambIdleAtStation
+			ambulance.numDispatchesFromStation += 1
+		elseif isGoingToStation(prevStatus)
+			ambulance.numDispatchesOnRoad += 1
+		elseif prevStatus == ambGoingToCall
+			ambulance.numDispatchesOnRoad += 1
+			ambulance.numRedispatches += 1
+		elseif prevStatus == ambFreeAfterCall
+			ambulance.numDispatchesOnFree += 1
+		else error()
+		end
+	elseif status == ambMovingUpToStation
+		# move up stats
+		if prevStatus == ambIdleAtStation
+			ambulance.numMoveUpsFromStation += 1
+		elseif isGoingToStation(prevStatus)
+			ambulance.numMoveUpsOnRoad += 1
+		elseif prevStatus == ambFreeAfterCall
+			ambulance.numMoveUpsOnFree += 1
+		else error()
+		end
+	end
 	
 	ambulance.statusSetTime = time
 	ambulance.prevStatus = ambulance.status
