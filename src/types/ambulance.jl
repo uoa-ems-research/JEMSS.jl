@@ -62,6 +62,7 @@ function setAmbStatus!(ambulance::Ambulance, status::AmbStatus, time::Float)
 	# stats
 	if status == ambGoingToCall
 		# dispatch stats
+		ambulance.numDispatches += 1
 		if prevStatus == ambIdleAtStation
 			ambulance.numDispatchesFromStation += 1
 		elseif isGoingToStation(prevStatus)
@@ -75,6 +76,7 @@ function setAmbStatus!(ambulance::Ambulance, status::AmbStatus, time::Float)
 		end
 	elseif status == ambMovingUpToStation
 		# move up stats
+		ambulance.numMoveUps += 1
 		if prevStatus == ambIdleAtStation
 			ambulance.numMoveUpsFromStation += 1
 		elseif isGoingToStation(prevStatus)

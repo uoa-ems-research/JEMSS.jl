@@ -79,10 +79,12 @@ function AmbulanceStats(sim::Simulation, ambulance::Ambulance)::AmbulanceStats
 	stats.ambIndex = ambulance.index
 	stats.numCallsTreated = ambulance.numCallsTreated
 	stats.numCallsTransported = ambulance.numCallsTransported
+	stats.numDispatches = ambulance.numDispatches
 	stats.numDispatchesFromStation = ambulance.numDispatchesFromStation
 	stats.numDispatchesOnRoad = ambulance.numDispatchesOnRoad
 	stats.numDispatchesOnFree = ambulance.numDispatchesOnFree
 	stats.numRedispatches = ambulance.numRedispatches
+	stats.numMoveUps = ambulance.numMoveUps
 	stats.numMoveUpsFromStation = ambulance.numMoveUpsFromStation
 	stats.numMoveUpsOnRoad = ambulance.numMoveUpsOnRoad
 	stats.numMoveUpsOnFree = ambulance.numMoveUpsOnFree
@@ -90,10 +92,6 @@ function AmbulanceStats(sim::Simulation, ambulance::Ambulance)::AmbulanceStats
 	
 	stats.statusDurations = deepcopy(ambulance.statusDurations)
 	stats.statusDurations[ambulance.status] += sim.time - ambulance.statusSetTime # to make sure that sum of statusDurations equals the sim duration
-	
-	# calculate
-	stats.numDispatches = stats.numDispatchesFromStation + stats.numDispatchesOnRoad + stats.numDispatchesOnFree # numRedispatches already included in numDispatchesOnRoad
-	stats.numMoveUps = stats.numMoveUpsFromStation + stats.numMoveUpsOnRoad + stats.numMoveUpsOnFree
 	
 	# calculate travel distance, accounting for any partially completed route
 	stats.totalTravelDistance = ambulance.totalTravelDistance # ambulance.totalTravelDistance is for routes completed before sim.time
@@ -108,6 +106,9 @@ function AmbulanceStats(sim::Simulation, ambulance::Ambulance)::AmbulanceStats
 	stats.totalTravelDuration = sum(status -> stats.statusDurations[status], travelStatuses) # >= ambulance.totalTravelDuration
 	
 	if checkMode
+		@assert(stats.numDispatches == stats.numDispatchesFromStation + stats.numDispatchesOnRoad + stats.numDispatchesOnFree) # numRedispatches already included in numDispatchesOnRoad
+		@assert(stats.numMoveUps == stats.numMoveUpsFromStation + stats.numMoveUpsOnRoad + stats.numMoveUpsOnFree)
+		
 		@assert(isapprox(sum(values(stats.statusDurations)), sim.time - sim.startTime))
 		@assert(stats.totalBusyDuration >= ambulance.totalBusyDuration || isapprox(stats.totalBusyDuration, ambulance.totalBusyDuration))
 		@assert(stats.totalTravelDuration >= ambulance.totalTravelDuration || isapprox(stats.totalTravelDuration, ambulance.totalTravelDuration))

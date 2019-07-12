@@ -265,16 +265,20 @@ mutable struct Ambulance
 	currentLoc::Location
 	movedLoc::Bool
 	
-	# for statistics:
-	totalTravelDuration::Float # total duration of completed routes; only updated after finishing each route
-	totalTravelDistance::Float # total distance of completed routes; only updated after finishing each route
+	# duration statistics:
+	totalTravelDuration::Float # total duration of completed routes; only updated after route ends or changes
+	totalTravelDistance::Float # total distance of completed routes; only updated after route ends or changes
 	totalBusyDuration::Float # total duration that ambulance has been busy; only updated after each activity
+	
+	# count statistics:
 	numCallsTreated::Int # total number of calls that ambulance provided treatment on scene
 	numCallsTransported::Int # total number of calls transported to hospital
-	numRedispatches::Int # number of times that ambulance is redispatched from one call to another
+	numDispatches::Int
 	numDispatchesFromStation::Int # total number of dispatches while at station
 	numDispatchesOnRoad::Int # total number of dispatches while on road
 	numDispatchesOnFree::Int # total number of dispatches after ambulance becomes free
+	numRedispatches::Int # number of times that ambulance is redispatched from one call to another
+	numMoveUps::Int
 	numMoveUpsFromStation::Int
 	numMoveUpsOnRoad::Int
 	numMoveUpsOnFree::Int
@@ -289,7 +293,8 @@ mutable struct Ambulance
 	
 	Ambulance() = new(nullIndex, ambNullStatus, nullIndex, nullIndex, Route(), Event(), nullAmbClass,
 		Location(), false,
-		0.0, 0.0, 0.0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0.0, 0.0, 0.0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 		Dict(), Array{Int,2}(undef,0,0),
 		nullTime, ambNullStatus)
 end
