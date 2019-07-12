@@ -131,21 +131,39 @@ end
 
 function CallStats(sim::Simulation, calls::Vector{Call})::CallStats
 	if isempty(calls) return CallStats() end
-	@assert(calls[end].status == callProcessed) # should be true for preceeding calls also
+	@assert(all(c -> c.status == callProcessed, calls))
 	stats = CallStats()
 	stats.numCalls = length(calls)
 	if stats.numCalls == 1 stats.callIndex = calls[1].index end
-	stats.numQueued = count(c -> c.arrivalTime + c.dispatchDelay < c.dispatchTime, calls) # assuming no mobilisation delay
+	
+	# counts
+	stats.numQueued = count(c -> c.wasQueued, calls)
 	stats.numBumped = count(c -> c.numBumps > 0, calls)
 	stats.numBumps = sum(c -> c.numBumps, calls)
 	stats.numTransports = count(c -> c.transport, calls)
 	stats.numResponsesInTime = count(c -> c.responseDuration <= sim.targetResponseDurations[Int(c.priority)], calls)
-	stats.totalResponseDuration = sum(c -> c.responseDuration, calls)
-	stats.totalQueuedDuration = sum(c -> c.queuedDuration, calls)
+	
+	# durations
+	stats.totalDispatchDelay = sum(c -> c.dispatchDelay, calls)
 	stats.totalOnSceneDuration = sum(c -> c.onSceneDuration, calls)
-	stats.totalTransportDuration = sum(c -> c.transport ? c.hospitalArrivalTime - (c.ambArrivalTime + c.onSceneDuration) : 0, calls)
-	stats.totalAtHospitalDuration = sum(c -> c.transport ? c.handoverDuration : 0, calls)
-	# stats.totalDispatchDelay = sum(c -> c.dispatchTime - c.arrivalTime, calls) # can be different from dispatchDelay due to queueing and ambulance redispatching
+	stats.totalHandoverDuration = sum(c -> c.handoverDuration, calls)
+	stats.totalQueuedDuration = sum(c -> c.queuedDuration, calls)
+	stats.totalBumpedDuration = sum(c -> c.bumpedDuration, calls)
+	stats.totalWaitingForAmbDuration = sum(c -> c.waitingForAmbDuration, calls)
+	stats.totalResponseDuration = sum(c -> c.responseDuration, calls)
+	stats.totalAmbGoingToCallDuration = sum(c -> c.ambGoingToCallDuration, calls)
+	stats.totalTransportDuration = sum(c -> c.transportDuration, calls)
+	
+	if checkMode
+		@assert(all(c -> c.wasQueued || c.queuedDuration == 0, calls))
+		@assert(all(c -> c.numBumps > 0 || c.bumpedDuration == 0, calls))
+		@assert(all(c -> c.dispatchDelay >= 0, calls))
+		@assert(all(c -> c.transport || c.transportDuration == 0, calls)) # calls not taken to hospital should have transportDuration == 0
+		@assert(all(c -> c.transport || c.handoverDuration == 0, calls)) # calls not taken to hospital should have handoverDuration == 0
+		@assert(isapprox(stats.totalWaitingForAmbDuration, stats.totalAmbGoingToCallDuration + stats.totalBumpedDuration))
+		@assert(isapprox(stats.totalResponseDuration, stats.totalDispatchDelay + stats.totalQueuedDuration + stats.totalBumpedDuration + stats.totalAmbGoingToCallDuration))
+	end
+	
 	return stats
 end
 

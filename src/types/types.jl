@@ -303,8 +303,9 @@ mutable struct Call
 	hospitalIndex::Int # hospital (if any) that call is transported to. If hospitalIndex == nullIndex, will transport to nearest hospital
 	location::Location # where call occurs
 	
+	# time/duration params:
 	arrivalTime::Float # time at which call arrives
-	dispatchDelay::Float # delay between call arrival and considering dispatching an ambulance
+	dispatchDelay::Float # delay between call arrival and being ready to dispatch an ambulance
 	onSceneDuration::Float # time spent at call location
 	handoverDuration::Float # for hospital handover
 	
@@ -316,22 +317,33 @@ mutable struct Call
 	currentLoc::Location
 	movedLoc::Bool
 	
-	# for statistics:
+	# statistics:
 	dispatchTime::Float # time at which final ambulance was dispatched (= arrivalTime + dispatchDelay, unless call queued/bumped)
-	queuedDuration::Float # duration between finishing taking call and dispatch of ambulance that responded
 	ambArrivalTime::Float # time at which ambulance arrives on-site
-	responseDuration::Float # duration between call arrival and ambulance arrival at call location
 	hospitalArrivalTime::Float # time at which ambulance arrives at hospital
 	numBumps::Int # total number of times that call gets bumped due to redispatch
 	wasQueued::Bool # whether call was queued or not
 	ambDispatchLoc::Location # location of responding ambulance at moment of dispatch
 	ambStatusBeforeDispatch::AmbStatus # status of ambulance just before dispatch
 	
+	# duration statistics:
+	queuedDuration::Float # duration between being ready to dispatch (but no ambulances are free) and dispatching an ambulance
+	bumpedDuration::Float # total duration spent waiting for ambulances that were later redirected away from call due to bumping
+	waitingForAmbDuration::Float # total duration spent waiting for ambulances that have been dispatched, even if call bumped and ambulance did not reach call
+	responseDuration::Float # duration between call arrival and ambulance arrival at call location
+	ambGoingToCallDuration::Float # duration between dispatch of ambulance that responded and ambulance reaching call
+	transportDuration::Float # duration for transporting call to hospital
+	
+	# for calculating statistics:
+	statusSetTime::Float # time at which status was last set, even if set to same status value
+	
 	Call() = new(nullIndex, callNullStatus, nullIndex, nullPriority, true, nullIndex, Location(),
 		nullTime, nullTime, nullTime, nullTime,
 		nullIndex, nullDist,
 		Location(), false,
-		nullTime, nullTime, nullTime, nullTime, nullTime, 0, false, Location(), ambNullStatus)
+		nullTime, nullTime, nullTime, 0, false, Location(), ambNullStatus,
+		0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+		nullTime)
 end
 
 mutable struct Hospital
@@ -821,17 +833,21 @@ mutable struct CallStats
 	numTransports::Int
 	numResponsesInTime::Int # number of in time ambulance responses
 	
-	totalResponseDuration::Float
-	totalQueuedDuration::Float # duration between finishing taking call and dispatch of ambulance that responded
-	totalOnSceneDuration::Float
-	totalTransportDuration::Float # to hospital
-	totalAtHospitalDuration::Float
+	# durations
+	totalDispatchDelay::Float # delay between call arrival and being ready to dispatch an ambulance
+	totalOnSceneDuration::Float # duration spent at call location
+	totalHandoverDuration::Float # for hospital handover
+	totalQueuedDuration::Float # duration between being ready to dispatch (but no ambulances are free) and dispatching an ambulance
+	totalBumpedDuration::Float # total duration spent waiting for ambulances that were later redirected away from call due to bumping
+	totalWaitingForAmbDuration::Float # total duration spent waiting for ambulances that have been dispatched, even if call bumped and ambulance did not reach call
+	totalResponseDuration::Float # duration between call arrival and ambulance arrival at call location
+	totalAmbGoingToCallDuration::Float # duration of ambulance that responded to reach call
+	totalTransportDuration::Float # duration for transporting call to hospital
 	
-	# totalDispatchDelay::Float # delay between call arrival and dispatch of ambulance that responded
 	
 	CallStats() = new(nullIndex, 0,
 		0, 0, 0, 0, 0,
-		0.0, 0.0, 0.0, 0.0, 0.0)
+		0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
 end
 
 # statistics for a single hospital, or multiple hospitals

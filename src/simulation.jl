@@ -208,7 +208,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		@assert(call.status == callNullStatus)
 		
 		push!(sim.currentCalls, sim.calls[event.callIndex])
-		call.status = callScreening
+		setStatus!(call, callScreening, sim.time)
 		
 		addEvent!(sim.eventList; parentEvent = event, form = considerDispatch, time = sim.time + call.dispatchDelay, call = call)
 		
@@ -234,8 +234,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		# will respond when an ambulance becomes free
 		if ambIndex == nullIndex
 			sim.addCallToQueue!(sim.queuedCallList, call)
-			call.status = callQueued
-			call.wasQueued = true # stats
+			setStatus!(call, callQueued, sim.time)
 		else
 			ambulance = sim.ambulances[ambIndex]
 			
@@ -248,11 +247,12 @@ function simulateEvent!(sim::Simulation, event::Event)
 				deleteEvent!(sim.eventList, ambulance.event)
 				
 				# bumped call has no ambulance assigned yet
-				sim.calls[ambulance.callIndex].ambIndex = nullIndex
-				sim.calls[ambulance.callIndex].numBumps += 1 # stats
+				bumpedCall = sim.calls[ambulance.callIndex]
+				bumpedCall.ambIndex = nullIndex
+				bumpedCall.numBumps += 1 # stats
 				
 				# consider new dispatch for bumped call
-				addEvent!(sim.eventList; parentEvent = event, form = considerDispatch, time = sim.time, call = sim.calls[ambulance.callIndex])
+				addEvent!(sim.eventList; parentEvent = event, form = considerDispatch, time = sim.time, call = bumpedCall)
 			else
 				ambWasOnRoute = false
 			end
@@ -297,10 +297,8 @@ function simulateEvent!(sim::Simulation, event::Event)
 		ambulance.callIndex = call.index
 		changeRoute!(sim, ambulance.route, sim.responseTravelPriorities[call.priority], sim.time, call.location, call.nearestNodeIndex)
 		
-		call.status = callWaitingForAmb
+		setStatus!(call, callWaitingForAmb, sim.time)
 		call.ambIndex = event.ambIndex
-		call.dispatchTime = sim.time # stats
-		call.queuedDuration = call.wasQueued ? sim.time - (call.arrivalTime + call.dispatchDelay) : 0.0
 		call.ambDispatchLoc = ambulance.route.startLoc # same result as getRouteCurrentLocation!(sim.net, ambulance.route, sim.time)
 		call.ambStatusBeforeDispatch = ambulance.prevStatus
 		
@@ -329,9 +327,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		ambulance.totalBusyDuration += sim.time - ambulance.route.startTime # stats
 		ambulance.numCallsTreated += 1 # stats
 		
-		call.status = callOnSceneTreatment
-		call.ambArrivalTime = sim.time # stats
-		call.responseDuration = sim.time - call.arrivalTime # stats
+		setStatus!(call, callOnSceneTreatment, sim.time)
 		
 		# transport call to hospital if needed, otherwise amb becomes free
 		if call.transport
@@ -366,7 +362,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		# ambulance.callIndex
 		changeRoute!(sim, ambulance.route, lowPriority, sim.time, hospital.location, hospital.nearestNodeIndex)
 		
-		call.status = callGoingToHospital
+		setStatus!(call, callGoingToHospital, sim.time)
 		call.hospitalIndex = hospitalIndex
 		
 		addEvent!(sim.eventList; parentEvent = event, form = ambReachesHospital, time = ambulance.route.endTime, ambulance = ambulance, call = call)
@@ -388,8 +384,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		ambulance.totalBusyDuration += sim.time - ambulance.route.startTime # stats
 		ambulance.numCallsTransported += 1 # stats
 		
-		call.status = callAtHospital
-		call.hospitalArrivalTime = sim.time # stats
+		setStatus!(call, callAtHospital, sim.time)
 		sim.hospitals[call.hospitalIndex].numCalls += 1 # stats
 		
 		addEvent!(sim.eventList; parentEvent = event, form = ambBecomesFree, time = sim.time + call.handoverDuration, ambulance = ambulance, call = call)
@@ -404,7 +399,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		
 		# remove call, processing is finished
 		delete!(sim.currentCalls, call)
-		call.status = callProcessed
+		setStatus!(call, callProcessed, sim.time)
 		
 		setAmbStatus!(ambulance, ambFreeAfterCall, sim.time)
 		ambulance.callIndex = nullIndex

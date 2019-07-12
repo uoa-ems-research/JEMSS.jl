@@ -56,3 +56,40 @@ function resetCalls!(sim::Simulation)
 		end
 	end
 end
+
+function setStatus!(call::Call, status::CallStatus, time::Float)
+	@assert(call.statusSetTime <= time)
+	
+	# stats for previous status
+	statusDuration = time - call.statusSetTime
+	prevStatus = call.status # shorthand
+	if prevStatus == callQueued
+		call.queuedDuration += statusDuration
+	elseif prevStatus == callWaitingForAmb
+		call.waitingForAmbDuration += statusDuration
+		call.ambGoingToCallDuration = statusDuration # overwrite previous value if have attempted dispatch to call multiple times
+	elseif prevStatus == callGoingToHospital
+		@assert(call.transportDuration == 0.0) # should not have been calculated yet
+		call.transportDuration = statusDuration
+	end
+	
+	# stats for new status
+	if status == callQueued
+		call.wasQueued = true
+	elseif status == callWaitingForAmb
+		if prevStatus == callScreening
+			@assert(isapprox(time, call.arrivalTime + call.dispatchDelay)) # if dispatching after call screening, only delay should be dispatch delay
+		end
+		call.dispatchTime = time
+	elseif status == callOnSceneTreatment
+		@assert(call.ambArrivalTime == nullTime) # value should not have been set yet
+		call.ambArrivalTime = time
+		call.responseDuration = time - call.arrivalTime
+		call.bumpedDuration = call.waitingForAmbDuration - call.ambGoingToCallDuration
+	elseif status == callAtHospital
+		call.hospitalArrivalTime = time
+	end
+	
+	call.status = status
+	call.statusSetTime = time
+end
