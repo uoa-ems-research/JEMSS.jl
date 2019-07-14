@@ -59,8 +59,9 @@ function setAmbStatus!(sim::Simulation, ambulance::Ambulance, status::AmbStatus,
 		ambulance.totalBusyDuration += statusDuration
 	end
 	if isTravelling(prevStatus)
-		@assert(time <= ambulance.route.endTime)
-		ambulance.totalTravelDuration += time - ambulance.route.startTime
+		@assert(ambulance.statusSetTime == ambulance.route.startTime)
+		@assert(time <= ambulance.route.endTime) # status should change when route ends, not after
+		ambulance.totalTravelDuration += statusDuration
 		ambulance.totalTravelDistance += calcRouteDistance!(sim, ambulance.route, time)
 	end
 	
