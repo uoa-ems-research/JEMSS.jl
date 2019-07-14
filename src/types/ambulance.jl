@@ -46,7 +46,7 @@ end
 
 # Set the ambulance status and time at which status started
 # Mutates: ambulance
-function setAmbStatus!(ambulance::Ambulance, status::AmbStatus, time::Float)
+function setAmbStatus!(sim::Simulation, ambulance::Ambulance, status::AmbStatus, time::Float)
 	@assert(ambulance.statusSetTime <= time)
 	
 	# stats
@@ -57,6 +57,11 @@ function setAmbStatus!(ambulance::Ambulance, status::AmbStatus, time::Float)
 	prevStatus = ambulance.status
 	if isBusy(prevStatus)
 		ambulance.totalBusyDuration += statusDuration
+	end
+	if isTravelling(prevStatus)
+		@assert(time <= ambulance.route.endTime)
+		ambulance.totalTravelDuration += time - ambulance.route.startTime
+		ambulance.totalTravelDistance += calcRouteDistance!(sim, ambulance.route, time)
 	end
 	
 	# stats
@@ -74,6 +79,10 @@ function setAmbStatus!(ambulance::Ambulance, status::AmbStatus, time::Float)
 			ambulance.numDispatchesOnFree += 1
 		else error()
 		end
+	elseif status == ambAtCall
+		ambulance.numCallsTreated += 1
+	elseif status == ambAtHospital
+		ambulance.numCallsTransported += 1
 	elseif status == ambMovingUpToStation
 		# move up stats
 		ambulance.numMoveUps += 1

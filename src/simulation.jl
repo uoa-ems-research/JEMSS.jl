@@ -183,7 +183,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		@assert(ambulance.status == ambIdleAtStation) # ambulance should be at station before sleeping
 		@assert(event.callIndex == nullIndex)
 		
-		setAmbStatus!(ambulance, ambSleeping, sim.time)
+		setAmbStatus!(sim, ambulance, ambSleeping, sim.time)
 		
 		addEvent!(sim.eventList; parentEvent = event, form = ambWakesUp, time = sim.time + sleepDuration, ambulance = ambulance)
 		
@@ -194,7 +194,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		@assert(ambulance.status == ambSleeping) # ambulance should have been sleeping
 		@assert(event.callIndex == nullIndex)
 		
-		setAmbStatus!(ambulance, ambIdleAtStation, sim.time)
+		setAmbStatus!(sim, ambulance, ambIdleAtStation, sim.time)
 		
 ################
 	
@@ -235,7 +235,6 @@ function simulateEvent!(sim::Simulation, event::Event)
 			ambulance = sim.ambulances[ambIndex]
 			
 			# remove any previously scheduled events
-			ambWasOnRoute = true
 			if isGoingToStation(ambulance.status)
 				deleteEvent!(sim.eventList, ambulance.event)
 			elseif ambulance.status == ambGoingToCall
@@ -249,14 +248,6 @@ function simulateEvent!(sim::Simulation, event::Event)
 				
 				# consider new dispatch for bumped call
 				addEvent!(sim.eventList; parentEvent = event, form = considerDispatch, time = sim.time, call = bumpedCall)
-			else
-				ambWasOnRoute = false
-			end
-			
-			# stats:
-			if ambWasOnRoute
-				ambulance.totalTravelDuration += sim.time - ambulance.route.startTime
-				ambulance.totalTravelDistance += calcRouteDistance!(sim, ambulance.route, sim.time)
 			end
 			
 			# dispatch chosen ambulance
@@ -272,7 +263,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		call = sim.calls[event.callIndex]
 		@assert(call.status == callScreening || call.status == callQueued || call.status == callWaitingForAmb) # callWaitingForAmb if call bumped
 		
-		setAmbStatus!(ambulance, ambGoingToCall, sim.time)
+		setAmbStatus!(sim, ambulance, ambGoingToCall, sim.time)
 		ambulance.callIndex = call.index
 		changeRoute!(sim, ambulance.route, sim.responseTravelPriorities[call.priority], sim.time, call.location, call.nearestNodeIndex)
 		
@@ -298,10 +289,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		call = sim.calls[event.callIndex]
 		@assert(call.status == callWaitingForAmb)
 		
-		setAmbStatus!(ambulance, ambAtCall, sim.time)
-		ambulance.totalTravelDuration += sim.time - ambulance.route.startTime # stats
-		ambulance.totalTravelDistance += calcRouteDistance!(sim, ambulance.route, sim.time) # stats
-		ambulance.numCallsTreated += 1 # stats
+		setAmbStatus!(sim, ambulance, ambAtCall, sim.time)
 		
 		setCallStatus!(call, callOnSceneTreatment, sim.time)
 		
@@ -331,7 +319,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		@assert(hospitalIndex != nullIndex)
 		hospital = sim.hospitals[hospitalIndex]
 		
-		setAmbStatus!(ambulance, ambGoingToHospital, sim.time)
+		setAmbStatus!(sim, ambulance, ambGoingToHospital, sim.time)
 		changeRoute!(sim, ambulance.route, lowPriority, sim.time, hospital.location, hospital.nearestNodeIndex)
 		
 		setCallStatus!(call, callGoingToHospital, sim.time)
@@ -348,12 +336,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		@assert(call.status == callGoingToHospital)
 		@assert(call.transport)
 		
-		setAmbStatus!(ambulance, ambAtHospital, sim.time)
-		
-		# stats
-		ambulance.totalTravelDuration += sim.time - ambulance.route.startTime
-		ambulance.totalTravelDistance += calcRouteDistance!(sim, ambulance.route, sim.time)
-		ambulance.numCallsTransported += 1
+		setAmbStatus!(sim, ambulance, ambAtHospital, sim.time)
 		
 		setCallStatus!(call, callAtHospital, sim.time)
 		sim.hospitals[call.hospitalIndex].numCalls += 1 # stats
@@ -372,7 +355,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		delete!(sim.currentCalls, call)
 		setCallStatus!(call, callProcessed, sim.time)
 		
-		setAmbStatus!(ambulance, ambFreeAfterCall, sim.time)
+		setAmbStatus!(sim, ambulance, ambFreeAfterCall, sim.time)
 		ambulance.callIndex = nullIndex
 		
 		# if queued call exists, respond
@@ -404,9 +387,8 @@ function simulateEvent!(sim::Simulation, event::Event)
 		@assert(ambulance.status == ambFreeAfterCall)
 		@assert(event.callIndex == nullIndex)
 		
+		setAmbStatus!(sim, ambulance, ambReturningToStation, sim.time)
 		station = sim.stations[ambulance.stationIndex]
-		
-		setAmbStatus!(ambulance, ambReturningToStation, sim.time)
 		changeRoute!(sim, ambulance.route, lowPriority, sim.time, station.location, station.nearestNodeIndex)
 		
 		addEvent!(sim.eventList; parentEvent = event, form = ambReachesStation, time = ambulance.route.endTime, ambulance = ambulance)
@@ -418,9 +400,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		@assert(isGoingToStation(ambulance.status))
 		@assert(event.callIndex == nullIndex)
 		
-		setAmbStatus!(ambulance, ambIdleAtStation, sim.time)
-		ambulance.totalTravelDuration += sim.time - ambulance.route.startTime # stats
-		ambulance.totalTravelDistance += calcRouteDistance!(sim, ambulance.route, sim.time) # stats
+		setAmbStatus!(sim, ambulance, ambIdleAtStation, sim.time)
 		
 		ambulance.event = Event() # no event currently
 		
@@ -470,11 +450,6 @@ function simulateEvent!(sim::Simulation, event::Event)
 				if isGoingToStation(ambulance.status) # ambulance.event.form == ambReachesStation
 					# delete station arrival event for this ambulance
 					deleteEvent!(sim.eventList, ambulance.event)
-					
-					# stats
-					ambulance.totalTravelDuration += sim.time - ambulance.route.startTime
-					ambulance.totalTravelDistance += calcRouteDistance!(sim, ambulance.route, sim.time)
-					
 				elseif ambulance.status == ambFreeAfterCall && ambulance.event.form == ambReturnsToStation
 					deleteEvent!(sim.eventList, ambulance.event)
 				end
@@ -491,9 +466,8 @@ function simulateEvent!(sim::Simulation, event::Event)
 		ambulance = sim.ambulances[event.ambIndex]
 		@assert(event.callIndex == nullIndex)
 		
+		setAmbStatus!(sim, ambulance, ambMovingUpToStation, sim.time)
 		station = sim.stations[ambulance.stationIndex] # station to move up to
-		
-		setAmbStatus!(ambulance, ambMovingUpToStation, sim.time)
 		changeRoute!(sim, ambulance.route, lowPriority, sim.time, station.location, station.nearestNodeIndex)
 		
 		addEvent!(sim.eventList; parentEvent = event, form = ambReachesStation, time = ambulance.route.endTime, ambulance = ambulance)
