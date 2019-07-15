@@ -24,6 +24,8 @@ function captureSimStats!(sim::Simulation, currentTime::Float)
 	@assert(sim.time <= currentTime)
 	@assert(isempty(sim.eventList) || currentTime <= sim.eventList[end].time) # currentTime should be before next event
 	
+	sim.time = currentTime
+	
 	capture = SimPeriodStats()
 	capture.startTime = sim.startTime
 	capture.endTime = currentTime
