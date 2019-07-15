@@ -104,8 +104,10 @@ function AmbulanceStats(sim::Simulation, ambulance::Ambulance)::AmbulanceStats
 	ambStatuses = collect(instances(AmbStatus))
 	busyStatuses = filter(s -> isBusy(s), ambStatuses)
 	travelStatuses = filter(s -> isTravelling(s), ambStatuses)
+	workingStatuses = filter(s -> isWorking(s), ambStatuses)
 	stats.totalBusyDuration = sum(status -> stats.statusDurations[status], busyStatuses) # >= ambulance.totalBusyDuration
 	stats.totalTravelDuration = sum(status -> stats.statusDurations[status], travelStatuses) # >= ambulance.totalTravelDuration
+	stats.totalWorkingDuration = sum(status -> stats.statusDurations[status], workingStatuses) # >= ambulance.totalWorkingDuration
 	
 	if checkMode
 		@assert(stats.numDispatches == stats.numDispatchesFromStation + stats.numDispatchesOnRoad + stats.numDispatchesOnFree) # numRedispatches already included in numDispatchesOnRoad
@@ -114,6 +116,7 @@ function AmbulanceStats(sim::Simulation, ambulance::Ambulance)::AmbulanceStats
 		@assert(isapprox(sum(values(stats.statusDurations)), sim.time - sim.startTime))
 		@assert(stats.totalBusyDuration >= ambulance.totalBusyDuration || isapprox(stats.totalBusyDuration, ambulance.totalBusyDuration))
 		@assert(stats.totalTravelDuration >= ambulance.totalTravelDuration || isapprox(stats.totalTravelDuration, ambulance.totalTravelDuration))
+		@assert(stats.totalWorkingDuration >= ambulance.totalWorkingDuration || isapprox(stats.totalWorkingDuration, ambulance.totalWorkingDuration))
 		
 		# statusTransitionCounts
 		@assert(stats.numCallsTreated == sum(stats.statusTransitionCounts[:, Int(ambAtCall)]))

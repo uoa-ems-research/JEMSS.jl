@@ -265,10 +265,11 @@ mutable struct Ambulance
 	currentLoc::Location
 	movedLoc::Bool
 	
-	# duration statistics:
+	# duration/distance statistics:
 	totalTravelDuration::Float # total duration of completed routes; only updated after route ends or changes
 	totalTravelDistance::Float # total distance of completed routes; only updated after route ends or changes
 	totalBusyDuration::Float # total duration that ambulance has been busy; only updated after each activity
+	totalWorkingDuration::Float # total time that ambulance was working (busy or free); only updated after each activity
 	
 	# count statistics:
 	numCallsTreated::Int # total number of calls that ambulance provided treatment on scene
@@ -293,7 +294,7 @@ mutable struct Ambulance
 	
 	Ambulance() = new(nullIndex, ambNullStatus, nullIndex, nullIndex, Route(), Event(), nullAmbClass,
 		Location(), false,
-		0.0, 0.0, 0.0,
+		0.0, 0.0, 0.0, 0.0,
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 		Dict(), Array{Int,2}(undef,0,0),
 		nullTime, ambNullStatus)
@@ -795,6 +796,7 @@ mutable struct AmbulanceStats
 	totalTravelDuration::Float # total duration of completed routes, completed or not; >= ambulance.totalTravelDuration
 	totalTravelDistance::Float # total distance of completed routes, completed or not; >= ambulance.totalTravelDistance
 	totalBusyDuration::Float # total duration that ambulance has been busy; >= ambulance.totalBusyDuration
+	totalWorkingDuration::Float # total time that ambulance was working (busy or free); >= ambulance.totalWorkingDuration
 	
 	numCallsTreated::Int # total number of calls that ambulance provided treatment on scene
 	numCallsTransported::Int # total number of calls transported to hospital
@@ -819,7 +821,7 @@ mutable struct AmbulanceStats
 	# totalWorkingDuration::Float # duration spent working (on shift), busy or free
 	
 	AmbulanceStats() = new(nullIndex,
-		0.0, 0.0, 0.0,
+		0.0, 0.0, 0.0, 0.0,
 		0, 0,
 		0, 0, 0, 0,
 		0, 0, 0,
