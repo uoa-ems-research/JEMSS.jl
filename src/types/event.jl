@@ -15,17 +15,20 @@
 
 # add new event to list, maintain sorting by time
 function addEvent!(eventList::Vector{Event};
-	parentEvent::Event = Event(), form::EventForm = nullEvent, time::Float = nullTime, ambulance::Ambulance = Ambulance(), call::Call = Call(), addEventToAmb::Bool = true)
+	parentEvent::Union{Event,Nothing} = nothing, form::EventForm = nullEvent, time::Float = nullTime,
+	ambulance::Union{Ambulance,Nothing} = nothing, call::Union{Call,Nothing} = nothing, station::Union{Station,Nothing} = nothing,
+	addEventToAmb::Bool = true)
 	
 	event = Event()
-	event.parentIndex = parentEvent.index
+	event.parentIndex = parentEvent == nothing ? nullIndex : parentEvent.index
 	event.form = form
 	event.time = time
-	event.ambIndex = ambulance.index
-	event.callIndex = call.index
+	event.ambIndex = ambulance == nothing ? nullIndex : ambulance.index
+	event.callIndex = call == nothing ? nullIndex : call.index
+	event.stationIndex = station == nothing ? nullIndex : station.index
 	
 	# set next event of ambulance
-	if addEventToAmb
+	if addEventToAmb && ambulance != nothing
 		ambulance.event = event
 	end
 	

@@ -41,7 +41,7 @@ function initAmbulance!(sim::Simulation, ambulance::Ambulance;
 	ambulance.statusTransitionCounts = zeros(Int, n, n)
 	
 	# add wake up event
-	addEvent!(sim.eventList; form = ambWakesUp, time = wakeUpTime, ambulance = ambulance)
+	addEvent!(sim.eventList; form = ambWakesUp, time = wakeUpTime, ambulance = ambulance, station = station)
 end
 
 # Set the ambulance status and time at which status started

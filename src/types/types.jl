@@ -246,7 +246,7 @@ mutable struct Event
 	time::Float
 	ambIndex::Int
 	callIndex::Int
-	stationIndex::Int # for now, only use this for resimulation, otherwise use ambulances[ambIndex].stationIndex
+	stationIndex::Int
 	
 	Event() = new(nullIndex, nullIndex, nullEvent, nullTime, nullIndex, nullIndex, nullIndex)
 end

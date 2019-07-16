@@ -223,13 +223,7 @@ end
 function writeEventToFile!(sim::Simulation, event::Event)
 	if !sim.writeOutput || sim.resim.use; return; end
 	
-	# find station index of ambulance (if any)
-	stationIndex = nullIndex
-	if event.ambIndex != nullIndex
-		stationIndex = sim.ambulances[event.ambIndex].stationIndex
-	end
-	
-	writeDlmLine!(sim.eventsFileIO, event.index, event.parentIndex, @sprintf("%0.5f", event.time), Int(event.form), event.ambIndex, event.callIndex, stationIndex)
+	writeDlmLine!(sim.eventsFileIO, event.index, event.parentIndex, @sprintf("%0.5f", event.time), Int(event.form), event.ambIndex, event.callIndex, event.stationIndex)
 	
 	# flush(sim.eventsFileIO)
 end

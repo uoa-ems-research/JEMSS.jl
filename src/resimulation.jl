@@ -77,7 +77,7 @@ function resimCheckCurrentEvent!(sim::Simulation, event::Event)
 	elseif event.callIndex != resimEvent.callIndex
 		println("mismatching event call index")
 		eventsMatch = false
-	elseif !(event.ambIndex == nullIndex && resimEvent.stationIndex == nullIndex || sim.ambulances[event.ambIndex].stationIndex == resimEvent.stationIndex)
+	elseif event.stationIndex != resimEvent.stationIndex
 		println("mismatching event station index")
 		eventsMatch = false
 	end
