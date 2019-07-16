@@ -39,6 +39,7 @@ using SparseArrays
 using LightGraphs
 using ArchGDAL
 using Hungarian
+using OffsetArrays
 
 # optimisation
 using JuMP
@@ -136,6 +137,7 @@ include("types/network.jl")
 include("types/raster.jl")
 include("types/route.jl")
 include("types/statistics.jl")
+include("types/station.jl")
 include("types/travel.jl")
 
 include("file/file_io.jl")

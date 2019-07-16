@@ -25,8 +25,8 @@ function initAmbulance!(sim::Simulation, ambulance::Ambulance;
 	
 	ambulance.status = ambSleeping
 	ambulance.statusSetTime = sim.startTime
-	# ambulance.stationIndex
-	# ambulance.callIndex
+	
+	ambulance.prevStationIndex = ambulance.stationIndex
 	
 	# initialise route to start at station
 	ambulance.route = Route()

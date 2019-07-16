@@ -260,6 +260,12 @@ function initSim(configFilename::String;
 		# currently, this sets ambulances to wake up at start of sim, since wake up and sleep events are not in ambulances file yet
 	end
 	
+	# init station stats
+	for station in sim.stations
+		station.numIdleAmbsTotalDuration = OffsetVector(zeros(Float,sim.numAmbs+1), 0:sim.numAmbs)
+		station.currentNumIdleAmbsSetTime = sim.startTime
+	end
+	
 	initTime(t)
 	
 	initMessage(t, "storing times between fNodes and common locations")

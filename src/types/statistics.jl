@@ -32,10 +32,10 @@ function captureSimStats!(sim::Simulation, currentTime::Float)
 	capture.duration = capture.endTime - capture.startTime
 	capture.ambulances = [AmbulanceStats(sim, a) for a in sim.ambulances]
 	capture.hospitals = [HospitalStats(h) for h in sim.hospitals]
-	# capture.stations = [StationStats(s) for s in sim.stations]
+	capture.stations = [StationStats(sim, s) for s in sim.stations]
 	capture.ambulance = sum(capture.ambulances)
 	capture.hospital = sum(capture.hospitals)
-	# capture.station = sum(capture.stations)
+	capture.station = sum(capture.stations)
 	
 	push!(sim.stats.captures, capture)
 	
@@ -188,10 +188,19 @@ function HospitalStats(hospital::Hospital)::HospitalStats
 	return stats
 end
 
-function StationStats(station::Station)::StationStats
+function StationStats(sim::Simulation, station::Station)::StationStats
 	stats = StationStats()
 	stats.stationIndex = station.index
-	# todo
+	stats.numStations = 1
+	
+	stats.numIdleAmbsTotalDuration = deepcopy(station.numIdleAmbsTotalDuration)
+	@assert(sim.time >= station.currentNumIdleAmbsSetTime)
+	stats.numIdleAmbsTotalDuration[station.currentNumIdleAmbs] += sim.time - station.currentNumIdleAmbsSetTime
+	
+	if checkMode
+		@assert(isapprox(sum(stats.numIdleAmbsTotalDuration), sim.time - sim.startTime))
+	end
+	
 	return stats
 end
 

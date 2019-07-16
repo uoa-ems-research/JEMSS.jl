@@ -185,7 +185,10 @@ function simulateEvent!(sim::Simulation, event::Event)
 		
 		setAmbStatus!(sim, ambulance, ambSleeping, sim.time)
 		
-		addEvent!(sim.eventList; parentEvent = event, form = ambWakesUp, time = sim.time + sleepDuration, ambulance = ambulance, station = sim.stations[ambulance.stationIndex])
+		station = sim.stations[ambulance.stationIndex]
+		updateStationStats!(station; numIdleAmbsChange = -1, time = sim.time)
+		
+		addEvent!(sim.eventList; parentEvent = event, form = ambWakesUp, time = sim.time + sleepDuration, ambulance = ambulance, station = station)
 		
 ################
 	
@@ -196,6 +199,8 @@ function simulateEvent!(sim::Simulation, event::Event)
 		
 		setAmbStatus!(sim, ambulance, ambIdleAtStation, sim.time)
 		ambulance.event = Event() # no event currently
+		
+		updateStationStats!(sim.stations[ambulance.stationIndex]; numIdleAmbsChange = +1, time = sim.time)
 		
 ################
 	
@@ -272,6 +277,10 @@ function simulateEvent!(sim::Simulation, event::Event)
 		call.ambIndex = event.ambIndex
 		call.ambDispatchLoc = ambulance.route.startLoc # same result as getRouteCurrentLocation!(sim.net, ambulance.route, sim.time)
 		call.ambStatusBeforeDispatch = ambulance.prevStatus
+		
+		if ambulance.prevStatus == ambIdleAtStation
+			updateStationStats!(sim.stations[ambulance.stationIndex]; numIdleAmbsChange = -1, time = sim.time)
+		end
 		
 		addEvent!(sim.eventList; parentEvent = event, form = ambReachesCall, time = ambulance.route.endTime, ambulance = ambulance, call = call)
 		
@@ -404,6 +413,8 @@ function simulateEvent!(sim::Simulation, event::Event)
 		setAmbStatus!(sim, ambulance, ambIdleAtStation, sim.time)
 		ambulance.event = Event() # no event currently
 		
+		updateStationStats!(sim.stations[ambulance.stationIndex]; numIdleAmbsChange = +1, time = sim.time)
+		
 ################
 	
 	elseif eventForm == considerMoveUp
@@ -468,7 +479,12 @@ function simulateEvent!(sim::Simulation, event::Event)
 		
 		setAmbStatus!(sim, ambulance, ambMovingUpToStation, sim.time)
 		changeRoute!(sim, ambulance.route, lowPriority, sim.time, station.location, station.nearestNodeIndex)
+		ambulance.prevStationIndex = ambulance.stationIndex
 		ambulance.stationIndex = station.index
+		
+		if ambulance.prevStatus == ambIdleAtStation
+			updateStationStats!(sim.stations[ambulance.prevStationIndex]; numIdleAmbsChange = -1, time = sim.time)
+		end
 		
 		addEvent!(sim.eventList; parentEvent = event, form = ambReachesStation, time = ambulance.route.endTime, ambulance = ambulance, station = station)
 		

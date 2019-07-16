@@ -12,6 +12,7 @@ JSON
 JuMP
 LightGraphs
 LightXML
+OffsetArrays
 StatsBase
 StatsFuns
 WebSockets

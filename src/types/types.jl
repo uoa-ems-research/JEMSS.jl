@@ -291,13 +291,14 @@ mutable struct Ambulance
 	# for calculating statistics:
 	statusSetTime::Float # time at which status was last set, even if set to same status value
 	prevStatus::AmbStatus
+	prevStationIndex::Int
 	
 	Ambulance() = new(nullIndex, ambNullStatus, nullIndex, nullIndex, Route(), Event(), nullAmbClass,
 		Location(), false,
 		0.0, 0.0, 0.0, 0.0,
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 		Dict(), Array{Int,2}(undef,0,0),
-		nullTime, ambNullStatus)
+		nullTime, ambNullStatus, nullIndex)
 end
 
 mutable struct Call
@@ -375,11 +376,13 @@ mutable struct Station
 	nearestNodeIndex::Int
 	nearestNodeDist::Float
 	
-	# for statistics:
-	# numAmbsTotalDuration::Dict{Int,Float} # numAmbsTotalDuration[k] gives total duration that station had k ambulances
-	# totalAmbIdleDuration::Float # total duration that ambulances are idle at station
+	# statistics:
+	numIdleAmbsTotalDuration::OffsetArray{Float,1,Vector{Float}} # numIdleAmbsTotalDuration[k] gives total duration that station had k idle ambulances
+	currentNumIdleAmbs::Int # current number of idle ambulances at station
+	currentNumIdleAmbsSetTime::Float # time at currentNumIdleAmbs was last set (even if set to same value)
 	
-	Station() = new(nullIndex, Location(), 0, nullIndex, nullDist)
+	Station() = new(nullIndex, Location(), 0, nullIndex, nullDist,
+		OffsetVector(Float[],0), 0, nullTime)
 end
 
 # conditions that determine ambulance redispatch behaviour
@@ -870,6 +873,9 @@ end
 # statistics for single station, or multiple stations
 mutable struct StationStats
 	stationIndex::Int
+	numStations::Int
+	
+	numIdleAmbsTotalDuration::OffsetArray{Float,1,Vector{Float}} # numIdleAmbsTotalDuration[k] gives total duration that station had k idle ambulances
 	
 	# todo:
 	numMoveUpsOnFree::Int # number of move-ups to this station of ambulances that have just become free
@@ -879,11 +885,8 @@ mutable struct StationStats
 	numMoveUpsToStations::Vector{Int} # numMoveUpsToStations[i] is the number of move-ups of ambulances from this station to stations[i]
 	# also count how many move-ups were actually completed, and how many were cut short?
 	
-	# todo, maybe:
-	# numAmbsTotalDuration::Dict{Int,Float} # numAmbsTotalDuration[k] gives total duration that station had k ambulances
-	# totalAmbIdleDuration::Float # total duration that ambulances are idle at station
-	
-	StationStats() = new(nullIndex,
+	StationStats() = new(nullIndex, 0,
+		OffsetVector(Float[],0),
 		0, 0, [], [], [])
 end
 
