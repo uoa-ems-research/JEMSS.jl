@@ -381,8 +381,12 @@ mutable struct Station
 	currentNumIdleAmbs::Int # current number of idle ambulances at station
 	currentNumIdleAmbsSetTime::Float # time at currentNumIdleAmbs was last set (even if set to same value)
 	
+	# move up statistics:
+	moveUpStartLocCounts::Dict{Location,Int} # locations (and counts) from which ambulances have started move up towards this station
+	
 	Station() = new(nullIndex, Location(), 0, nullIndex, nullDist,
-		OffsetVector(Float[],0), 0, nullTime)
+		OffsetVector(Float[],0), 0, nullTime,
+		Dict())
 end
 
 # conditions that determine ambulance redispatch behaviour
@@ -924,8 +928,12 @@ mutable struct SimStats
 	nextCaptureTimeIndex::Int # index of next time in captureTimes to save statistics for
 	nextCaptureTime::Float # will often be = captureTimes[nextCaptureTimeIndex]
 	
+	# misc
+	recordMoveUpStartLocCounts::Bool # if true, will save starting location of ambulance move up in station.moveUpStartLocCounts
+	
 	SimStats() = new([], [],
-		true, [], 1, Inf)
+		true, [], 1, Inf,
+		false)
 end
 
 mutable struct Simulation

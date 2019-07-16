@@ -486,6 +486,12 @@ function simulateEvent!(sim::Simulation, event::Event)
 			updateStationStats!(sim.stations[ambulance.prevStationIndex]; numIdleAmbsChange = -1, time = sim.time)
 		end
 		
+		# stats
+		if sim.stats.recordMoveUpStartLocCounts
+			startLoc = getRouteCurrentLocation!(sim.net, route, sim.time) # startLoc should be same as ambulance.route.startLoc
+			station.moveUpStartLocCounts[startLoc] = get(station.moveUpStartLocCounts, startLoc, 0) + 1
+		end
+		
 		addEvent!(sim.eventList; parentEvent = event, form = ambReachesStation, time = ambulance.route.endTime, ambulance = ambulance, station = station)
 		
 ################
