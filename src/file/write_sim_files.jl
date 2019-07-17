@@ -146,6 +146,10 @@ function writeSimPeriodStatsListFile(filename::String, periods::Vector{SimPeriod
 	# stationTable = Table("station", vcat("periodIndex", collect(string.(fnames)));
 		# rows = [vcat(i, [getfield(p.station, fname) for fname in fnames]) for (i,p) in enumerate(periods)])
 	
+	numStations = periods[1].station.numStations
+	stationsNumIdleAmbsTotalDurationTable = Table("stationsNumIdleAmbsTotalDuration", vcat("periodIndex", ["station_$i" for i = 1:numStations]);
+		rows = [vcat(i, [string(s.numIdleAmbsTotalDuration) for s in p.stations]) for (i,p) in enumerate(periods)])
+	
 	writeTablesToFile(filename, [miscTable, periodTimesTable, ambulanceTable, ambulanceStatusDurationsTable, callTable, stationsNumIdleAmbsTotalDurationTable])
 end
 
