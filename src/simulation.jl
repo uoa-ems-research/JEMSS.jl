@@ -278,8 +278,13 @@ function simulateEvent!(sim::Simulation, event::Event)
 		call.ambDispatchLoc = ambulance.route.startLoc # same result as getRouteCurrentLocation!(sim.net, ambulance.route, sim.time)
 		call.ambStatusBeforeDispatch = ambulance.prevStatus
 		
+		# stats
 		if ambulance.prevStatus == ambIdleAtStation
 			updateStationStats!(sim.stations[ambulance.stationIndex]; numIdleAmbsChange = -1, time = sim.time)
+		end
+		if sim.stats.recordDispatchStartLocCounts
+			startLoc = getRouteCurrentLocation!(sim.net, ambulance.route, sim.time) # startLoc should be same as ambulance.route.startLoc
+			ambulance.dispatchStartLocCounts[startLoc] = get(ambulance.dispatchStartLocCounts, startLoc, 0) + 1
 		end
 		
 		addEvent!(sim.eventList; parentEvent = event, form = ambReachesCall, time = ambulance.route.endTime, ambulance = ambulance, call = call)
@@ -492,7 +497,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 			ambulance.moveUpFromStationIndex = prevStationIndex
 		end
 		if sim.stats.recordMoveUpStartLocCounts
-			startLoc = getRouteCurrentLocation!(sim.net, route, sim.time) # startLoc should be same as ambulance.route.startLoc
+			startLoc = getRouteCurrentLocation!(sim.net, ambulance.route, sim.time) # startLoc should be same as ambulance.route.startLoc
 			station.moveUpStartLocCounts[startLoc] = get(station.moveUpStartLocCounts, startLoc, 0) + 1
 		end
 		

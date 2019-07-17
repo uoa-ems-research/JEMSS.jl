@@ -294,12 +294,16 @@ mutable struct Ambulance
 	prevStatus::AmbStatus
 	moveUpFromStationIndex::Int # index from which ambulance started move up; = nullIndex if not moving up from station
 	
+	# dispatch statistics:
+	dispatchStartLocCounts::Dict{Location,Int} # dispatchStartLocCounts[loc] gives number of times that ambulance was dispatched from location 'loc'
+	
 	Ambulance() = new(nullIndex, ambNullStatus, nullIndex, nullIndex, Route(), Event(), nullAmbClass,
 		Location(), false,
 		0.0, 0.0, 0.0, 0.0,
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 		Dict(), Array{Int,2}(undef,0,0),
-		nullTime, ambNullStatus, nullIndex)
+		nullTime, ambNullStatus, nullIndex,
+		Dict())
 end
 
 mutable struct Call
@@ -928,11 +932,12 @@ mutable struct SimStats
 	nextCaptureTime::Float # will often be = captureTimes[nextCaptureTimeIndex]
 	
 	# misc
+	recordDispatchStartLocCounts::Bool # if true, will save starting location of ambulance dispatches in ambulance.dispatchStartLocCounts
 	recordMoveUpStartLocCounts::Bool # if true, will save starting location of ambulance move up in station.moveUpStartLocCounts
 	
 	SimStats() = new([], [],
 		true, [], 1, Inf,
-		false)
+		false, false)
 end
 
 mutable struct Simulation
