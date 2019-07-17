@@ -76,6 +76,7 @@ end
 # Accounts for durations and distances of partially completed travelling and processes.
 function AmbulanceStats(sim::Simulation, ambulance::Ambulance)::AmbulanceStats
 	stats = AmbulanceStats()
+	stats.numAmbs = 1
 	
 	# copy some fields
 	stats.ambIndex = ambulance.index

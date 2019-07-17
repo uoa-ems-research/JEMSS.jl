@@ -800,6 +800,7 @@ end
 # statistics for a single ambulance, or multiple ambulances
 mutable struct AmbulanceStats
 	ambIndex::Int # for single ambulance
+	numAmbs::Int # for multiple ambulances
 	
 	totalTravelDuration::Float # total duration of completed routes, completed or not; >= ambulance.totalTravelDuration
 	totalTravelDistance::Float # total distance of completed routes, completed or not; >= ambulance.totalTravelDistance
@@ -829,7 +830,7 @@ mutable struct AmbulanceStats
 	# to add:
 	# totalWorkingDuration::Float # duration spent working (on shift), busy or free
 	
-	AmbulanceStats() = new(nullIndex,
+	AmbulanceStats() = new(nullIndex, 0,
 		0.0, 0.0, 0.0, 0.0,
 		0, 0,
 		0, 0, 0, 0,
