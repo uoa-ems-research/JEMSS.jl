@@ -14,8 +14,8 @@
 ##########################################################################
 
 mutable struct Location
-	x::Float # latitude, or other
-	y::Float # longitude, or other
+	x::Float # longitude, or other
+	y::Float # latitude, or other
 	
 	Location() = new(nullX, nullY)
 	Location(x,y) = new(x,y)
@@ -269,7 +269,7 @@ mutable struct Ambulance
 	totalTravelDuration::Float # total duration of completed routes; only updated after route ends or changes
 	totalTravelDistance::Float # total distance of completed routes; only updated after route ends or changes
 	totalBusyDuration::Float # total duration that ambulance has been busy; only updated after each activity
-	totalWorkingDuration::Float # total time that ambulance was working (busy or free); only updated after each activity
+	totalWorkingDuration::Float # total duration that ambulance was working (busy or free); only updated after each activity
 	
 	# count statistics:
 	numCallsTreated::Int # total number of calls that ambulance provided treatment on scene
@@ -362,9 +362,7 @@ mutable struct Hospital
 	
 	# for statistics:
 	numCalls::Int # total number of calls taken to hospital
-	
-	# for statistics:
-	# numCallsTotalDuration::Dict{Int,Float} # numCallsTotalDuration[k] gives total duration that hospital had k calls for handover
+	# numCallsTotalDuration::OffsetArray{Float,1,Vector{Float}} # numCallsTotalDuration[k] gives total duration that hospital had k calls for handover
 	
 	Hospital() = new(nullIndex, Location(), nullIndex, nullDist,
 		0)
@@ -827,9 +825,6 @@ mutable struct AmbulanceStats
 	numDispatches::Int # all dispatches, including redispatches
 	numMoveUps::Int
 	
-	# to add:
-	# totalWorkingDuration::Float # duration spent working (on shift), busy or free
-	
 	AmbulanceStats() = new(nullIndex, 0,
 		0.0, 0.0, 0.0, 0.0,
 		0, 0,
@@ -861,6 +856,7 @@ mutable struct CallStats
 	totalAmbGoingToCallDuration::Float # duration of ambulance that responded to reach call
 	totalTransportDuration::Float # duration for transporting call to hospital
 	
+	# totalQueueLengthDuration::OffsetArray{Float,1,Vector{Float}} # totalQueueLengthDuration[k] = total duration spent with k queued calls
 	
 	CallStats() = new(nullIndex, 0,
 		0, 0, 0, 0, 0,
@@ -915,7 +911,7 @@ mutable struct SimPeriodStats
 	hospital::HospitalStats # for all hospitals
 	station::StationStats # for all stations
 	
-	# numAmbsFreeTotalDuration::Dict{Int,Float} # numAmbsFreeTotalDuration[k] gives total duration that k ambulances were free (not busy)
+	# numAmbsFreeTotalDuration::OffsetArray{Float,1,Vector{Float}} # numAmbsFreeTotalDuration[k] gives total duration that k ambulances were free (working but not busy)
 	
 	SimPeriodStats() = new(nullTime, nullTime, nullTime,
 		[], [], [],

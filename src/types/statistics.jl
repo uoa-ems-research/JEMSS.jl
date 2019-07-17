@@ -16,7 +16,7 @@
 @info("Todo: check correctness of statistics.")
 
 # Capture statistics at current time.
-# Mutates: sim.stats
+# Mutates: sim.stats, sim.time
 function captureSimStats!(sim::Simulation, currentTime::Float)
 	if sim.complete currentTime = min(currentTime, sim.endTime) end
 	
