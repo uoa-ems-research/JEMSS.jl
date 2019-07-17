@@ -479,14 +479,18 @@ function simulateEvent!(sim::Simulation, event::Event)
 		
 		setAmbStatus!(sim, ambulance, ambMovingUpToStation, sim.time)
 		changeRoute!(sim, ambulance.route, lowPriority, sim.time, station.location, station.nearestNodeIndex)
-		ambulance.prevStationIndex = ambulance.stationIndex
+		prevStationIndex = ambulance.stationIndex
 		ambulance.stationIndex = station.index
 		
-		if ambulance.prevStatus == ambIdleAtStation
-			updateStationStats!(sim.stations[ambulance.prevStationIndex]; numIdleAmbsChange = -1, time = sim.time)
-		end
-		
 		# stats
+		if ambulance.moveUpFromStationIndex == station.index
+			@assert(ambulance.prevStatus == ambMovingUpToStation)
+			ambulance.numMoveUpsReturnToPrevStation += 1
+		end
+		if ambulance.prevStatus == ambIdleAtStation
+			updateStationStats!(sim.stations[prevStationIndex]; numIdleAmbsChange = -1, time = sim.time)
+			ambulance.moveUpFromStationIndex = prevStationIndex
+		end
 		if sim.stats.recordMoveUpStartLocCounts
 			startLoc = getRouteCurrentLocation!(sim.net, route, sim.time) # startLoc should be same as ambulance.route.startLoc
 			station.moveUpStartLocCounts[startLoc] = get(station.moveUpStartLocCounts, startLoc, 0) + 1

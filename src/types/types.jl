@@ -283,6 +283,7 @@ mutable struct Ambulance
 	numMoveUpsFromStation::Int
 	numMoveUpsOnRoad::Int
 	numMoveUpsOnFree::Int
+	numMoveUpsReturnToPrevStation::Int # number of times that ambulance is told to return to the station from which it started move up (see moveUpFromStationIndex)
 	
 	# status statistics
 	statusDurations::Dict{AmbStatus,Float} # duration spent in each status; only updated after setting status
@@ -291,12 +292,12 @@ mutable struct Ambulance
 	# for calculating statistics:
 	statusSetTime::Float # time at which status was last set, even if set to same status value
 	prevStatus::AmbStatus
-	prevStationIndex::Int
+	moveUpFromStationIndex::Int # index from which ambulance started move up; = nullIndex if not moving up from station
 	
 	Ambulance() = new(nullIndex, ambNullStatus, nullIndex, nullIndex, Route(), Event(), nullAmbClass,
 		Location(), false,
 		0.0, 0.0, 0.0, 0.0,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 		Dict(), Array{Int,2}(undef,0,0),
 		nullTime, ambNullStatus, nullIndex)
 end
@@ -816,6 +817,7 @@ mutable struct AmbulanceStats
 	numMoveUpsFromStation::Int
 	numMoveUpsOnRoad::Int
 	numMoveUpsOnFree::Int
+	numMoveUpsReturnToPrevStation::Int
 	
 	statusDurations::Dict{AmbStatus,Float} # duration spent in each status
 	statusTransitionCounts::Array{Int,2} # statusTransitionCounts[Int(status1), Int(status2)] gives number of times that amb transitioned from status1 to status2
@@ -831,7 +833,7 @@ mutable struct AmbulanceStats
 		0.0, 0.0, 0.0, 0.0,
 		0, 0,
 		0, 0, 0, 0,
-		0, 0, 0,
+		0, 0, 0, 0,
 		Dict(), Array{Int,2}(undef,0,0),
 		0, 0)
 end
