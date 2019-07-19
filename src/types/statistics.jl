@@ -40,8 +40,9 @@ function captureSimStats!(sim::Simulation, currentTime::Float)
 	push!(sim.stats.captures, capture)
 	
 	# determine next capture time
-	i = sim.stats.nextCaptureTimeIndex += 1
-	sim.stats.nextCaptureTime = i <= length(sim.stats.captureTimes) ? sim.stats.captureTimes[i] : Inf
+	nextPeriodDuration = isempty(sim.stats.periodDurationsIter) ? Inf : first(sim.stats.periodDurationsIter)
+	@assert(nextPeriodDuration > 0)
+	sim.stats.nextCaptureTime += nextPeriodDuration
 end
 
 # For statistics that should be calculated at sim end.

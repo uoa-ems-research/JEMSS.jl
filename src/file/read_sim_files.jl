@@ -603,6 +603,27 @@ function readStationsFile(filename::String)
 	return stations
 end
 
+function readStatsControlFile(filename::String)
+	tables = readTablesFromFile(filename)
+	
+	table = tables["params"]
+	param(s::String) = table.columns[s][1]
+	warmUpDuration = param("warmUpDuration")
+	periodDurationsString = param("periodDurations")
+	doCyclePeriodDurations = Bool(param("doCyclePeriodDurations"))
+	
+	@assert(warmUpDuration >= 0.0)
+	
+	# create period durations iterator
+	@assert(isa(periodDurationsString, String) || isa(periodDurationsString, SubString)) # should be string representation of a vector
+	periodDurations = periodDurationsString |> Meta.parse |> eval
+	@assert(all(x -> x > 0, periodDurations))
+	if doCyclePeriodDurations periodDurations = Iterators.cycle(periodDurations) end
+	periodDurationsIter = Stateful(periodDurations)
+	
+	return periodDurationsIter, warmUpDuration
+end
+
 function readTravelFile(filename::String)
 	tables = readTablesFromFile(filename)
 	

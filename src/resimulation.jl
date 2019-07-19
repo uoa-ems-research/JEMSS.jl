@@ -39,6 +39,7 @@ function initResim!(sim::Simulation)
 	# check that checksum values of input files are same as in events file
 	allMatch = true
 	for i = 1:length(inputFiles)
+		if inputFiles[i] == "statsControl" continue end # allow this file to change, should not affect sim events
 		if fileChecksums[i] != sim.inputFiles[inputFiles[i]].checksum
 			println(" checksum mismatch for file: ", inputFiles[i])
 			allMatch = false

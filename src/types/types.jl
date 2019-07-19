@@ -926,17 +926,18 @@ mutable struct SimStats
 	captures::Vector{SimPeriodStats} # from sim start to some time
 	periods::Vector{SimPeriodStats} # arbitrary start and end times; calculated from captures, periods[i] = captures[i] - captures[i-1]
 	
+	# params
 	doCapture::Bool # true if capturing statistics during simulation
-	captureTimes::Vector{Float} # times at which statistics should be "captured"; time values should be sorted
-	nextCaptureTimeIndex::Int # index of next time in captureTimes to save statistics for
-	nextCaptureTime::Float # will often be = captureTimes[nextCaptureTimeIndex]
+	warmUpDuration::Float # first capture will be at sim.startTime + warmUpDuration (unless warmUpDuration = 0)
+	periodDurationsIter::Stateful # iterator that returns duration between successive stats periods
+	nextCaptureTime::Float # time at which statistics will next be captured; updated according to periodDurationsIter
 	
 	# misc
 	recordDispatchStartLocCounts::Bool # if true, will save starting location of ambulance dispatches in ambulance.dispatchStartLocCounts
 	recordMoveUpStartLocCounts::Bool # if true, will save starting location of ambulance move up in station.moveUpStartLocCounts
 	
 	SimStats() = new([], [],
-		true, [], 1, Inf,
+		true, 0.0, Stateful([]), Inf,
 		false, false)
 end
 

@@ -408,17 +408,14 @@ function initSim(configFilename::String;
 	##################
 	# statistics
 	
-	initMessage(t, "initialising statistics")
-	
-	# temp
-	@info("Todo: make sim stats capturing configurable.")
-	stats = sim.stats # shorthand
-	stats.doCapture = true
-	stats.captureTimes = sim.startTime + 1 : 1 : sim.calls[end].arrivalTime + 1 # daily
-	stats.nextCaptureTime = stats.captureTimes[1]
-	
-	initTime(t)
-	doPrint && stats.doCapture && println("will capture statistics")
+	if haskey(sim.inputFiles, "statsControl")
+		initMessage(t, "initialising statistics")
+		stats = sim.stats # shorthand
+		stats.doCapture = true
+		(stats.periodDurationsIter, stats.warmUpDuration) = readStatsControlFile(simFilePath("statsControl"))
+		stats.nextCaptureTime = sim.startTime + (stats.warmUpDuration > 0 ? stats.warmUpDuration : first(stats.periodDurationsIter))
+		initTime(t)
+	end
 	
 	##################
 	# misc
