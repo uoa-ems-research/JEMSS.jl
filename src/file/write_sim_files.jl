@@ -293,7 +293,7 @@ function writeAmbsStatsFile(filename::String, stats::SimStats)
 	
 	ambulanceTables = Table[]
 	ambulanceStatusDurationsTables = Table[]
-	fnames = collect(setdiff(fieldnames(AmbulanceStats), [:statusDurations, :statusTransitionCounts])) # for ambulanceTables
+	fnames = collect(setdiff(fieldnames(AmbulanceStats), (:ambIndex, :statusDurations, :statusTransitionCounts))) # for ambulanceTables
 	statuses = collect(setdiff(instances(AmbStatus), [ambNullStatus])) # for ambulanceStatusDurationsTables
 	for i = 1:numAmbs
 		ambulanceTable = Table("ambulances[$i]", vcat("periodIndex", collect(string.(fnames)));
@@ -315,7 +315,7 @@ function writeCallsStatsFile(filename::String, stats::SimStats)
 	
 	periodsTable = simStatsPeriodsTable(periods)
 	
-	fnames = fieldnames(CallStats)
+	fnames = setdiff(fieldnames(CallStats), (:callIndex,))
 	callTable = Table("call", vcat("periodIndex", collect(string.(fnames)));
 		rows = [vcat(i, [getfield(p.call, fname) for fname in fnames]) for (i,p) in enumerate(periods)])
 	
@@ -330,7 +330,7 @@ function writeHospitalsStatsFile(filename::String, stats::SimStats)
 	periodsTable = simStatsPeriodsTable(periods)
 	
 	hospitalTables = Table[]
-	fnames = fieldnames(HospitalStats)
+	fnames = setdiff(fieldnames(HospitalStats), (:hospitalIndex,))
 	for i = 1:numHospitals
 		hospitalTable = Table("hospitals[$i]", vcat("periodIndex", collect(string.(fnames)));
 			rows = [vcat(j, [getfield(p.hospitals[i], fname) for fname in fnames]) for (j,p) in enumerate(periods)])
