@@ -931,12 +931,19 @@ mutable struct SimStats
 	periodDurationsIter::Stateful # iterator that returns duration between successive stats periods
 	nextCaptureTime::Float # time at which statistics will next be captured; updated according to periodDurationsIter
 	
+	# sim timestamps
+	simStartTime::Float
+	simEndTime::Float
+	warmUpEndTime::Float # = simStartTime + warmUpDuration
+	lastCallArrivalTime::Float # useful for ignoring cool-down period
+	
 	# misc
 	recordDispatchStartLocCounts::Bool # if true, will save starting location of ambulance dispatches in ambulance.dispatchStartLocCounts
 	recordMoveUpStartLocCounts::Bool # if true, will save starting location of ambulance move up in station.moveUpStartLocCounts
 	
 	SimStats() = new([], [],
 		true, 0.0, Stateful([]), Inf,
+		nullTime, nullTime, nullTime, nullTime,
 		false, false)
 end
 

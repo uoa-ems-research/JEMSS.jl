@@ -278,6 +278,11 @@ function writeStatsFiles(sim::Simulation)
 	if in("stationsStats", outputFileKeys) writeStationsStatsFile(outputFilePath("stationsStats"), stats) end
 end
 
+function simStatsTimestampsTable(stats::SimStats)::Table
+	return Table("timestamps", ["simStartTime", "warmUpEndTime", "lastCallArrivalTime", "simEndTime"];
+		rows = [[stats.simStartTime, stats.warmUpEndTime, stats.lastCallArrivalTime, stats.simEndTime]])
+end
+
 function simStatsPeriodsTable(periods::Vector{SimPeriodStats})::Table
 	periodsTable = Table("periods", ["periodIndex", "startTime", "endTime", "duration"];
 		rows = [[i, p.startTime, p.endTime, p.duration] for (i,p) in enumerate(periods)])
@@ -291,6 +296,7 @@ function writeAmbsStatsFile(filename::String, stats::SimStats)
 	
 	miscTable = Table("miscData", ["numAmbs"]; rows = [[numAmbs]])
 	
+	timestampsTable = simStatsTimestampsTable(stats)
 	periodsTable = simStatsPeriodsTable(periods)
 	
 	ambulanceTables = Table[]
@@ -309,7 +315,7 @@ function writeAmbsStatsFile(filename::String, stats::SimStats)
 		# skipped: statusTransitionCounts
 	end
 	
-	writeTablesToFile(filename, [miscTable, periodsTable, ambulanceTables..., ambulanceStatusDurationsTables...])
+	writeTablesToFile(filename, [miscTable, timestampsTable, periodsTable, ambulanceTables..., ambulanceStatusDurationsTables...])
 end
 
 function writeCallsStatsFile(filename::String, stats::SimStats)
@@ -318,6 +324,7 @@ function writeCallsStatsFile(filename::String, stats::SimStats)
 	numCalls = stats.captures[end].call.numCalls
 	miscTable = Table("miscData", ["numCalls"]; rows = [[numCalls]])
 	
+	timestampsTable = simStatsTimestampsTable(stats)
 	periodsTable = simStatsPeriodsTable(periods)
 	
 	fnames = setdiff(fieldnames(CallStats), (:callIndex,))
@@ -331,7 +338,7 @@ function writeCallsStatsFile(filename::String, stats::SimStats)
 		push!(callPrioritiesTables, table)
 	end
 	
-	writeTablesToFile(filename, [miscTable, periodsTable, callTable, callPrioritiesTables...])
+	writeTablesToFile(filename, [miscTable, timestampsTable, periodsTable, callTable, callPrioritiesTables...])
 end
 
 function writeHospitalsStatsFile(filename::String, stats::SimStats)
@@ -341,6 +348,7 @@ function writeHospitalsStatsFile(filename::String, stats::SimStats)
 	
 	miscTable = Table("miscData", ["numHospitals"]; rows = [[numHospitals]])
 	
+	timestampsTable = simStatsTimestampsTable(stats)
 	periodsTable = simStatsPeriodsTable(periods)
 	
 	hospitalTables = Table[]
@@ -351,7 +359,7 @@ function writeHospitalsStatsFile(filename::String, stats::SimStats)
 		push!(hospitalTables, hospitalTable)
 	end
 	
-	writeTablesToFile(filename, [miscTable, periodsTable, hospitalTables...])
+	writeTablesToFile(filename, [miscTable, timestampsTable, periodsTable, hospitalTables...])
 end
 
 function writeStationsStatsFile(filename::String, stats::SimStats)
@@ -361,10 +369,11 @@ function writeStationsStatsFile(filename::String, stats::SimStats)
 	
 	miscTable = Table("miscData", ["numStations"]; rows = [[numStations]])
 	
+	timestampsTable = simStatsTimestampsTable(stats)
 	periodsTable = simStatsPeriodsTable(periods)
 	
 	stationsNumIdleAmbsTotalDurationTable = Table("stations_numIdleAmbsTotalDuration", vcat("periodIndex", ["stations[$i]" for i = 1:numStations]);
 		rows = [vcat(j, [string(s.numIdleAmbsTotalDuration) for s in p.stations]) for (j,p) in enumerate(periods)])
 	
-	writeTablesToFile(filename, [miscTable, periodsTable, stationsNumIdleAmbsTotalDurationTable])
+	writeTablesToFile(filename, [miscTable, timestampsTable, periodsTable, stationsNumIdleAmbsTotalDurationTable])
 end

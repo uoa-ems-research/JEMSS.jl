@@ -58,6 +58,12 @@ function populateSimStats!(sim::Simulation)
 	@assert(issorted(captures, by = s -> s.endTime))
 	@assert(captures[end].endTime == sim.endTime)
 	
+	# timestamps
+	stats.simStartTime = sim.startTime
+	stats.simEndTime = sim.endTime
+	stats.warmUpEndTime = sim.startTime + stats.warmUpDuration
+	stats.lastCallArrivalTime = sim.calls[end].arrivalTime
+	
 	# populate call statistics
 	callsByPriority = Dict([p => filter(c -> c.priority == p, sim.calls) for p in priorities])
 	for i = 1:length(captures)
