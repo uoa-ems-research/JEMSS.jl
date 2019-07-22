@@ -324,7 +324,14 @@ function writeCallsStatsFile(filename::String, stats::SimStats)
 	callTable = Table("call", vcat("periodIndex", collect(string.(fnames)));
 		rows = [vcat(i, [getfield(p.call, fname) for fname in fnames]) for (i,p) in enumerate(periods)])
 	
-	writeTablesToFile(filename, [miscTable, periodsTable, callTable])
+	callPrioritiesTables = Table[]
+	for priority in priorities
+		table = Table("callPriorities[$priority]", vcat("periodIndex", collect(string.(fnames)));
+			rows = [vcat(i, [getfield(p.callPriorities[priority], fname) for fname in fnames]) for (i,p) in enumerate(periods)])
+		push!(callPrioritiesTables, table)
+	end
+	
+	writeTablesToFile(filename, [miscTable, periodsTable, callTable, callPrioritiesTables...])
 end
 
 function writeHospitalsStatsFile(filename::String, stats::SimStats)
