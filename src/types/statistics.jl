@@ -77,7 +77,6 @@ end
 # Accounts for durations and distances of partially completed travelling and processes.
 function AmbulanceStats(sim::Simulation, ambulance::Ambulance)::AmbulanceStats
 	stats = AmbulanceStats()
-	stats.numAmbs = 1
 	
 	# copy some fields
 	stats.ambIndex = ambulance.index
@@ -194,7 +193,6 @@ end
 function StationStats(sim::Simulation, station::Station)::StationStats
 	stats = StationStats()
 	stats.stationIndex = station.index
-	stats.numStations = 1
 	
 	stats.numIdleAmbsTotalDuration = deepcopy(station.numIdleAmbsTotalDuration)
 	@assert(sim.time >= station.currentNumIdleAmbsSetTime)

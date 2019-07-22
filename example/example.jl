@@ -44,7 +44,7 @@ simConfigFilename = joinpath(path, "sim_config.xml")
 sim = initSim(simConfigFilename; allowWriteOutput = true, doPrint = false)
 openOutputFiles!(sim)
 simulate!(sim)
-writeStatsFiles!(sim)
+writeOutputFiles(sim)
 closeOutputFiles!(sim)
 
 # create and run simulation again, resimulating based on previously created events output file

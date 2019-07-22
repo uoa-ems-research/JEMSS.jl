@@ -27,7 +27,7 @@ function runConfig(configFilename::String)
 	printSimStats(sim)
 	
 	# save statistics
-	writeStatsFiles!(sim)
+	writeOutputFiles(sim)
 	
 	# close output files
 	closeOutputFiles!(sim)

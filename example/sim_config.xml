@@ -23,10 +23,16 @@
 	<writeOutput>true</writeOutput>
 	<outputFiles>
 		<!-- filenames can be relative to outputPath, or absolute -->
+		<events>events.csv</events>
+		
 		<ambulances>ambulances.csv</ambulances>
 		<calls>calls.csv</calls>
-		<events>events.csv</events>
 		<hospitals>hospitals.csv</hospitals>
+		
+		<ambulancesStats>ambulances_stats.csv</ambulancesStats>
+		<callsStats>calls_stats.csv</callsStats>
+		<hospitalsStats>hospitals_stats.csv</hospitalsStats>
+		<stationsStats>stations_stats.csv</stationsStats>
 	</outputFiles>
 	
 	<!-- resim = true will resimulate events from outputPath/events file, if possible -->

@@ -802,7 +802,6 @@ end
 # statistics for a single ambulance, or multiple ambulances
 mutable struct AmbulanceStats
 	ambIndex::Int # for single ambulance
-	numAmbs::Int # for multiple ambulances
 	
 	totalTravelDuration::Float # total duration of completed routes, completed or not; >= ambulance.totalTravelDuration
 	totalTravelDistance::Float # total distance of completed routes, completed or not; >= ambulance.totalTravelDistance
@@ -829,7 +828,7 @@ mutable struct AmbulanceStats
 	numDispatches::Int # all dispatches, including redispatches
 	numMoveUps::Int
 	
-	AmbulanceStats() = new(nullIndex, 0,
+	AmbulanceStats() = new(nullIndex,
 		0.0, 0.0, 0.0, 0.0,
 		0, 0,
 		0, 0, 0, 0,
@@ -869,7 +868,7 @@ end
 
 # statistics for a single hospital, or multiple hospitals
 mutable struct HospitalStats
-	hospitalIndex::Int
+	hospitalIndex::Int # for single hospital
 	
 	numCalls::Int # total number of calls taken to hospital
 	
@@ -879,22 +878,21 @@ end
 
 # statistics for single station, or multiple stations
 mutable struct StationStats
-	stationIndex::Int
-	numStations::Int
+	stationIndex::Int # for single station
 	
 	numIdleAmbsTotalDuration::OffsetArray{Float,1,Vector{Float}} # numIdleAmbsTotalDuration[k] gives total duration that station had k idle ambulances
 	
-	# todo:
-	numMoveUpsOnFree::Int # number of move-ups to this station of ambulances that have just become free
-	numMoveUpsOnRoad::Int # number of move-ups to this station that were from ambulances that were driving on the road
-	numMoveUpsFromHospitals::Vector{Int} # numMoveUpsFromHospitals[i] is the number of move-ups to this station of ambulances from hospitals[i]
-	numMoveUpsFromStations::Vector{Int} # numMoveUpsFromStations[i] is the number of move-ups of ambulances from stations[i] to this station
-	numMoveUpsToStations::Vector{Int} # numMoveUpsToStations[i] is the number of move-ups of ambulances from this station to stations[i]
-	# also count how many move-ups were actually completed, and how many were cut short?
+	# # todo:
+	# numMoveUpsOnFree::Int # number of move-ups to this station of ambulances that have just become free
+	# numMoveUpsOnRoad::Int # number of move-ups to this station that were from ambulances that were driving on the road
+	# numMoveUpsFromHospitals::Vector{Int} # numMoveUpsFromHospitals[i] is the number of move-ups to this station of ambulances from hospitals[i]
+	# numMoveUpsFromStations::Vector{Int} # numMoveUpsFromStations[i] is the number of move-ups of ambulances from stations[i] to this station
+	# numMoveUpsToStations::Vector{Int} # numMoveUpsToStations[i] is the number of move-ups of ambulances from this station to stations[i]
+	# # also count how many move-ups were actually completed, and how many were cut short?
 	
-	StationStats() = new(nullIndex, 0,
-		OffsetVector(Float[],0),
-		0, 0, [], [], [])
+	StationStats() = new(nullIndex,
+		OffsetVector(Float[],0))
+		# 0, 0, [], [], [])
 end
 
 # simulation statistics for a period
