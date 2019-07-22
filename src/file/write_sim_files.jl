@@ -289,6 +289,8 @@ function writeAmbsStatsFile(filename::String, stats::SimStats)
 	periods = stats.periods
 	numAmbs = length(periods[1].ambulances)
 	
+	miscTable = Table("miscData", ["numAmbs"]; rows = [[numAmbs]])
+	
 	periodsTable = simStatsPeriodsTable(periods)
 	
 	ambulanceTables = Table[]
@@ -307,11 +309,14 @@ function writeAmbsStatsFile(filename::String, stats::SimStats)
 		# skipped: statusTransitionCounts
 	end
 	
-	writeTablesToFile(filename, [periodsTable, ambulanceTables..., ambulanceStatusDurationsTables...])
+	writeTablesToFile(filename, [miscTable, periodsTable, ambulanceTables..., ambulanceStatusDurationsTables...])
 end
 
 function writeCallsStatsFile(filename::String, stats::SimStats)
 	periods = stats.periods # shorthand
+	
+	numCalls = stats.captures[end].call.numCalls
+	miscTable = Table("miscData", ["numCalls"]; rows = [[numCalls]])
 	
 	periodsTable = simStatsPeriodsTable(periods)
 	
@@ -319,13 +324,15 @@ function writeCallsStatsFile(filename::String, stats::SimStats)
 	callTable = Table("call", vcat("periodIndex", collect(string.(fnames)));
 		rows = [vcat(i, [getfield(p.call, fname) for fname in fnames]) for (i,p) in enumerate(periods)])
 	
-	writeTablesToFile(filename, [periodsTable, callTable])
+	writeTablesToFile(filename, [miscTable, periodsTable, callTable])
 end
 
 function writeHospitalsStatsFile(filename::String, stats::SimStats)
 	# shorthand
 	periods = stats.periods
 	numHospitals = length(periods[1].hospitals)
+	
+	miscTable = Table("miscData", ["numHospitals"]; rows = [[numHospitals]])
 	
 	periodsTable = simStatsPeriodsTable(periods)
 	
@@ -337,7 +344,7 @@ function writeHospitalsStatsFile(filename::String, stats::SimStats)
 		push!(hospitalTables, hospitalTable)
 	end
 	
-	writeTablesToFile(filename, [periodsTable, hospitalTables...])
+	writeTablesToFile(filename, [miscTable, periodsTable, hospitalTables...])
 end
 
 function writeStationsStatsFile(filename::String, stats::SimStats)
@@ -345,10 +352,12 @@ function writeStationsStatsFile(filename::String, stats::SimStats)
 	periods = stats.periods
 	numStations = length(periods[1].stations)
 	
+	miscTable = Table("miscData", ["numStations"]; rows = [[numStations]])
+	
 	periodsTable = simStatsPeriodsTable(periods)
 	
 	stationsNumIdleAmbsTotalDurationTable = Table("stations_numIdleAmbsTotalDuration", vcat("periodIndex", ["stations[$i]" for i = 1:numStations]);
 		rows = [vcat(j, [string(s.numIdleAmbsTotalDuration) for s in p.stations]) for (j,p) in enumerate(periods)])
 	
-	writeTablesToFile(filename, [periodsTable, stationsNumIdleAmbsTotalDurationTable])
+	writeTablesToFile(filename, [miscTable, periodsTable, stationsNumIdleAmbsTotalDurationTable])
 end
