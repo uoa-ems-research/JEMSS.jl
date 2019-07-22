@@ -312,7 +312,7 @@ mutable struct Call
 	ambIndex::Int
 	priority::Priority
 	transport::Bool # true if requires transport to hospital
-	hospitalIndex::Int # hospital (if any) that call is transported to. If hospitalIndex == nullIndex, will transport to nearest hospital
+	hospitalIndex::Int # hospital that call should be transported to. If hospitalIndex == nullIndex, will transport to nearest hospital
 	location::Location # where call occurs
 	
 	# time/duration params:
@@ -337,6 +337,7 @@ mutable struct Call
 	wasQueued::Bool # whether call was queued or not
 	ambDispatchLoc::Location # location of responding ambulance at moment of dispatch
 	ambStatusBeforeDispatch::AmbStatus # status of ambulance just before dispatch
+	chosenHospitalIndex::Int # hospital (if any) that call was transported to
 	
 	# duration statistics:
 	queuedDuration::Float # duration between being ready to dispatch (but no ambulances are free) and dispatching an ambulance
@@ -353,7 +354,7 @@ mutable struct Call
 		nullTime, nullTime, nullTime, nullTime,
 		nullIndex, nullDist,
 		Location(), false,
-		nullTime, nullTime, nullTime, 0, false, Location(), ambNullStatus,
+		nullTime, nullTime, nullTime, 0, false, Location(), ambNullStatus, nullIndex,
 		0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
 		nullTime)
 end

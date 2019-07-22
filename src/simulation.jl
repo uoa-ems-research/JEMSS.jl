@@ -341,7 +341,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		changeRoute!(sim, ambulance.route, lowPriority, sim.time, hospital.location, hospital.nearestNodeIndex)
 		
 		setCallStatus!(call, callGoingToHospital, sim.time)
-		call.hospitalIndex = hospitalIndex
+		call.chosenHospitalIndex = hospitalIndex
 		
 		addEvent!(sim.eventList; parentEvent = event, form = ambReachesHospital, time = ambulance.route.endTime, ambulance = ambulance, call = call)
 		
@@ -357,7 +357,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 		setAmbStatus!(sim, ambulance, ambAtHospital, sim.time)
 		
 		setCallStatus!(call, callAtHospital, sim.time)
-		sim.hospitals[call.hospitalIndex].numCalls += 1 # stats
+		sim.hospitals[call.chosenHospitalIndex].numCalls += 1 # stats
 		
 		addEvent!(sim.eventList; parentEvent = event, form = ambBecomesFree, time = sim.time + call.handoverDuration, ambulance = ambulance, call = call)
 		
