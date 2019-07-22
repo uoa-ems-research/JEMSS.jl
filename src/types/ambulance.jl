@@ -47,12 +47,10 @@ end
 function setAmbStatus!(sim::Simulation, ambulance::Ambulance, status::AmbStatus, time::Float)
 	@assert(ambulance.statusSetTime <= time)
 	
-	# stats
+	# stats - previous status duration
+	prevStatus = ambulance.status
 	statusDuration = time - ambulance.statusSetTime
 	ambulance.statusDurations[ambulance.status] += statusDuration
-	ambulance.statusTransitionCounts[Int(ambulance.status), Int(status)] += 1
-	
-	prevStatus = ambulance.status
 	if isBusy(prevStatus)
 		ambulance.totalBusyDuration += statusDuration
 	end
@@ -62,6 +60,21 @@ function setAmbStatus!(sim::Simulation, ambulance::Ambulance, status::AmbStatus,
 		ambulance.totalTravelDuration += statusDuration
 		ambulance.totalTravelDistance += calcRouteDistance!(sim, ambulance.route, time)
 	end
+	if isWorking(prevStatus)
+		ambulance.totalWorkingDuration += statusDuration
+	end
+	
+	ambulance.statusSetTime = time
+	ambulance.prevStatus = prevStatus
+	ambulance.status = status
+	
+	if sim.complete
+		@assert(time == sim.endTime)
+		@assert(prevStatus == status)
+		return
+	end
+	
+	ambulance.statusTransitionCounts[Int(prevStatus), Int(status)] += 1
 	
 	# stats
 	if status == ambGoingToCall
@@ -98,10 +111,6 @@ function setAmbStatus!(sim::Simulation, ambulance::Ambulance, status::AmbStatus,
 	if status != ambMovingUpToStation
 		ambulance.moveUpFromStationIndex = nullIndex
 	end
-	
-	ambulance.statusSetTime = time
-	ambulance.prevStatus = ambulance.status
-	ambulance.status = status
 end
 
 isBusy(s::AmbStatus)::Bool = in(s, (ambGoingToCall, ambAtCall, ambGoingToHospital, ambAtHospital))
