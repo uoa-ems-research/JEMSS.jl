@@ -908,11 +908,11 @@ mutable struct SimPeriodStats
 	stations::Vector{StationStats}
 	
 	# aggregate values
-	ambulance::AmbulanceStats # for all ambulances
+	ambulancesAll::AmbulanceStats # for all ambulances
 	call::CallStats # statistics of calls that arrived within [startTime, endTime)
 	callPriorities::Dict{Priority,CallStats} # callPriorities[p] is statistics of priority p calls that arrived within [startTime, endTime)
-	hospital::HospitalStats # for all hospitals
-	station::StationStats # for all stations
+	hospitalsAll::HospitalStats # for all hospitals
+	stationsAll::StationStats # for all stations
 	
 	# numAmbsFreeTotalDuration::OffsetArray{Float,1,Vector{Float}} # numAmbsFreeTotalDuration[k] gives total duration that k ambulances were free (working but not busy)
 	
