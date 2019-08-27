@@ -367,7 +367,7 @@ mutable struct Hospital
 	
 	# for statistics:
 	numCalls::Int # total number of calls taken to hospital
-	# numCallsTotalDuration::OffsetArray{Float,1,Vector{Float}} # numCallsTotalDuration[k] gives total duration that hospital had k calls for handover
+	# numCallsTotalHandoverDuration::OffsetArray{Float,1,Vector{Float}} # numCallsTotalHandoverDuration[k] gives total duration that hospital had k calls for handover
 	
 	Hospital() = new(nullIndex, Location(), nullIndex, nullDist,
 		0)
@@ -860,6 +860,7 @@ mutable struct CallStats
 	totalAmbGoingToCallDuration::Float # duration of ambulance that responded to reach call
 	totalTransportDuration::Float # duration for transporting call to hospital
 	
+	# todo:
 	# totalQueueLengthDuration::OffsetArray{Float,1,Vector{Float}} # totalQueueLengthDuration[k] = total duration spent with k queued calls
 	
 	CallStats() = new(nullIndex, 0,
@@ -883,13 +884,13 @@ mutable struct StationStats
 	
 	numIdleAmbsTotalDuration::OffsetArray{Float,1,Vector{Float}} # numIdleAmbsTotalDuration[k] gives total duration that station had k idle ambulances
 	
-	# # todo:
+	# todo:
 	# numMoveUpsOnFree::Int # number of move-ups to this station of ambulances that have just become free
 	# numMoveUpsOnRoad::Int # number of move-ups to this station that were from ambulances that were driving on the road
 	# numMoveUpsFromHospitals::Vector{Int} # numMoveUpsFromHospitals[i] is the number of move-ups to this station of ambulances from hospitals[i]
 	# numMoveUpsFromStations::Vector{Int} # numMoveUpsFromStations[i] is the number of move-ups of ambulances from stations[i] to this station
 	# numMoveUpsToStations::Vector{Int} # numMoveUpsToStations[i] is the number of move-ups of ambulances from this station to stations[i]
-	# # also count how many move-ups were actually completed, and how many were cut short?
+	# also count how many move-ups were actually completed, and how many were cut short?
 	
 	StationStats() = new(nullIndex,
 		OffsetVector(Float[],0))
@@ -914,6 +915,7 @@ mutable struct SimPeriodStats
 	hospitalsAll::HospitalStats # for all hospitals
 	stationsAll::StationStats # for all stations
 	
+	# todo:
 	# numAmbsFreeTotalDuration::OffsetArray{Float,1,Vector{Float}} # numAmbsFreeTotalDuration[k] gives total duration that k ambulances were free (working but not busy)
 	
 	SimPeriodStats() = new(nullTime, nullTime, nullTime,
@@ -928,7 +930,7 @@ mutable struct SimStats
 	# params
 	doCapture::Bool # true if capturing statistics during simulation
 	warmUpDuration::Float # first capture will be at sim.startTime + warmUpDuration (unless warmUpDuration = 0)
-	periodDurationsIter::Stateful # iterator that returns duration between successive stats periods
+	periodDurationsIter::Stateful # iterator that returns duration of next stats period
 	nextCaptureTime::Float # time at which statistics will next be captured; updated according to periodDurationsIter
 	
 	# sim timestamps
@@ -1001,7 +1003,7 @@ mutable struct Simulation
 	outputFiles::Dict{String,File}
 	eventsFileIO::IOStream # write simulation trace of events to this file
 	
-	writeOutput::Bool # true if outputFiles should be used to write output (false if animating)
+	writeOutput::Bool # true if writing output files during simulation (e.g. events file), false otherwise (e.g. animating)
 	initialised::Bool # true if simulation has been initialised and so can be run, false otherwise
 	used::Bool # true if simulation has started running (and so restarting would require copying from backup)
 	complete::Bool # true if simulation has ended (no events remaining)

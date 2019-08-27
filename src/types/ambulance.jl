@@ -50,7 +50,7 @@ function setAmbStatus!(sim::Simulation, ambulance::Ambulance, status::AmbStatus,
 	# stats - previous status duration
 	prevStatus = ambulance.status
 	statusDuration = time - ambulance.statusSetTime
-	ambulance.statusDurations[ambulance.status] += statusDuration
+	ambulance.statusDurations[prevStatus] += statusDuration
 	if isBusy(prevStatus)
 		ambulance.totalBusyDuration += statusDuration
 	end
@@ -117,4 +117,4 @@ isBusy(s::AmbStatus)::Bool = in(s, (ambGoingToCall, ambAtCall, ambGoingToHospita
 isFree(s::AmbStatus)::Bool = in(s, (ambIdleAtStation, ambFreeAfterCall, ambReturningToStation, ambMovingUpToStation))
 isWorking(s::AmbStatus)::Bool = !in(s, (ambNullStatus, ambSleeping)) # should return same value as isBusy(s) || isFree(s)
 isGoingToStation(s::AmbStatus)::Bool = in(s, (ambReturningToStation, ambMovingUpToStation))
-isTravelling(s::AmbStatus)::Bool = in(s, (ambGoingToCall, ambGoingToHospital, ambReturningToStation, ambMovingUpToStation))
+isTravelling(s::AmbStatus)::Bool = in(s, (ambGoingToCall, ambGoingToHospital)) || isGoingToStation(s)
