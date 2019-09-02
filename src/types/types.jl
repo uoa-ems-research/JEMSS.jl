@@ -812,11 +812,13 @@ mutable struct AmbulanceStats
 	numCallsTreated::Int # total number of calls that ambulance provided treatment on scene
 	numCallsTransported::Int # total number of calls transported to hospital
 	
+	numDispatches::Int # all dispatches
 	numDispatchesFromStation::Int # total number of dispatches while at station
 	numDispatchesOnRoad::Int # total number of dispatches while on road
 	numDispatchesOnFree::Int # total number of dispatches after ambulance becomes free
 	numRedispatches::Int # number of times that ambulance is redispatched from one call to another
 	
+	numMoveUps::Int
 	numMoveUpsFromStation::Int
 	numMoveUpsOnRoad::Int
 	numMoveUpsOnFree::Int
@@ -825,17 +827,12 @@ mutable struct AmbulanceStats
 	statusDurations::Dict{AmbStatus,Float} # duration spent in each status
 	statusTransitionCounts::Array{Int,2} # statusTransitionCounts[Int(status1), Int(status2)] gives number of times that amb transitioned from status1 to status2
 	
-	# calculated:
-	numDispatches::Int # all dispatches, including redispatches
-	numMoveUps::Int
-	
 	AmbulanceStats() = new(nullIndex,
 		0.0, 0.0, 0.0, 0.0,
 		0, 0,
-		0, 0, 0, 0,
-		0, 0, 0, 0,
-		Dict(), Array{Int,2}(undef,0,0),
-		0, 0)
+		0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0,
+		Dict(), Array{Int,2}(undef,0,0))
 end
 
 # statistics for a single call, or multiple calls
@@ -909,11 +906,11 @@ mutable struct SimPeriodStats
 	stations::Vector{StationStats}
 	
 	# aggregate values
-	ambulancesAll::AmbulanceStats # for all ambulances
+	ambulance::AmbulanceStats # for all ambulances
 	call::CallStats # statistics of calls that arrived within [startTime, endTime)
 	callPriorities::Dict{Priority,CallStats} # callPriorities[p] is statistics of priority p calls that arrived within [startTime, endTime)
-	hospitalsAll::HospitalStats # for all hospitals
-	stationsAll::StationStats # for all stations
+	hospital::HospitalStats # for all hospitals
+	station::StationStats # for all stations
 	
 	# todo:
 	# numAmbsFreeTotalDuration::OffsetArray{Float,1,Vector{Float}} # numAmbsFreeTotalDuration[k] gives total duration that k ambulances were free (working but not busy)

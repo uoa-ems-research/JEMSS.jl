@@ -303,9 +303,9 @@ function writeAmbsStatsFile(filename::String, stats::SimStats)
 	ambulanceStatusDurationsTables = Table[]
 	fnames = collect(setdiff(fieldnames(AmbulanceStats), (:ambIndex, :statusDurations, :statusTransitionCounts))) # for ambulanceTables
 	statuses = collect(setdiff(instances(AmbStatus), [ambNullStatus])) # for ambulanceStatusDurationsTables
-	getAmb(period::SimPeriodStats, ambIndex::Int) = ambIndex == 0 ? period.ambulancesAll : period.ambulances[ambIndex]
+	getAmb(period::SimPeriodStats, ambIndex::Int) = ambIndex == 0 ? period.ambulance : period.ambulances[ambIndex]
 	for i = 0:numAmbs
-		name = i == 0 ? "ambulancesAll" : "ambulances[$i]"
+		name = i == 0 ? "ambulance" : "ambulances[$i]"
 		
 		ambulanceTable = Table(name, vcat("periodIndex", collect(string.(fnames)));
 			rows = [vcat(j, [getfield(getAmb(p,i), fname) for fname in fnames]) for (j,p) in enumerate(periods)])
@@ -356,9 +356,9 @@ function writeHospitalsStatsFile(filename::String, stats::SimStats)
 	
 	hospitalTables = Table[]
 	fnames = setdiff(fieldnames(HospitalStats), (:hospitalIndex,))
-	getHospital(period::SimPeriodStats, hospitalIndex::Int) = hospitalIndex == 0 ? period.hospitalsAll : period.hospitals[hospitalIndex]
+	getHospital(period::SimPeriodStats, hospitalIndex::Int) = hospitalIndex == 0 ? period.hospital : period.hospitals[hospitalIndex]
 	for i = 0:numHospitals
-		name = i == 0 ? "hospitalsAll" : "hospitals[$i]"
+		name = i == 0 ? "hospital" : "hospitals[$i]"
 		hospitalTable = Table(name, vcat("periodIndex", collect(string.(fnames)));
 			rows = [vcat(j, [getfield(getHospital(p,i), fname) for fname in fnames]) for (j,p) in enumerate(periods)])
 		push!(hospitalTables, hospitalTable)
@@ -377,8 +377,8 @@ function writeStationsStatsFile(filename::String, stats::SimStats)
 	timestampsTable = simStatsTimestampsTable(stats)
 	periodsTable = simStatsPeriodsTable(periods)
 	
-	getStation(period::SimPeriodStats, stationIndex::Int) = stationIndex == 0 ? period.stationsAll : period.stations[stationIndex]
-	stationsNumIdleAmbsTotalDurationTable = Table("stations_numIdleAmbsTotalDuration", vcat("periodIndex", "stationsAll", ["stations[$i]" for i = 1:numStations]);
+	getStation(period::SimPeriodStats, stationIndex::Int) = stationIndex == 0 ? period.station : period.stations[stationIndex]
+	stationsNumIdleAmbsTotalDurationTable = Table("stations_numIdleAmbsTotalDuration", vcat("periodIndex", "station", ["stations[$i]" for i = 1:numStations]);
 		rows = [vcat(j, [string(getStation(p,i).numIdleAmbsTotalDuration) for i = 0:numStations]) for (j,p) in enumerate(periods)])
 	
 	writeTablesToFile(filename, [miscTable, timestampsTable, periodsTable, stationsNumIdleAmbsTotalDurationTable])

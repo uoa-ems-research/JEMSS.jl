@@ -33,9 +33,9 @@ function captureSimStats!(sim::Simulation, currentTime::Float)
 	capture.ambulances = [AmbulanceStats(sim, a) for a in sim.ambulances]
 	capture.hospitals = [HospitalStats(h) for h in sim.hospitals]
 	capture.stations = [StationStats(sim, s) for s in sim.stations]
-	capture.ambulancesAll = sum(capture.ambulances)
-	capture.hospitalsAll = sum(capture.hospitals)
-	capture.stationsAll = sum(capture.stations)
+	capture.ambulance = sum(capture.ambulances)
+	capture.hospital = sum(capture.hospitals)
+	capture.station = sum(capture.stations)
 	
 	push!(sim.stats.captures, capture)
 	
