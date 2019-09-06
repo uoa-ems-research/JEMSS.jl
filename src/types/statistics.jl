@@ -13,8 +13,6 @@
 # limitations under the License.
 ##########################################################################
 
-@info("Todo: check correctness of statistics.")
-
 # Capture statistics at current time.
 # Mutates: sim.stats, sim.time
 function captureSimStats!(sim::Simulation, currentTime::Float)
