@@ -49,8 +49,8 @@ function writeCallsFile(filename::String, startTime::Float, calls::Vector{Call};
 	row1(c::Call) = [c.index, Int(c.priority), c.location.x, c.location.y, c.arrivalTime, c.dispatchDelay, c.onSceneDuration, Int(c.transport), c.hospitalIndex, c.handoverDuration]
 	
 	if writeOutputFields
-		header = vcat(header, ["dispatchTime", "ambArrivalTime", "hospitalArrivalTime", "numBumps", "wasQueued", "ambDispatchLoc.x", "ambDispatchLoc.y", "ambStatusBeforeDispatch", "chosenHospitalIndex", "queuedDuration", "bumpedDuration", "waitingForAmbDuration", "responseDuration", "ambGoingToCallDuration", "transportDuration"])
-		row2(c::Call) = [c.dispatchTime, c.ambArrivalTime, c.hospitalArrivalTime, c.numBumps, Int(c.wasQueued), c.ambDispatchLoc.x, c.ambDispatchLoc.y, string(c.ambStatusBeforeDispatch), c.chosenHospitalIndex, c.queuedDuration, c.bumpedDuration, c.waitingForAmbDuration, c.responseDuration, c.ambGoingToCallDuration, c.transportDuration]
+		header = vcat(header, ["dispatchTime", "ambArrivalTime", "hospitalArrivalTime", "numBumps", "wasQueued", "ambDispatchLoc.x", "ambDispatchLoc.y", "ambStatusBeforeDispatch", "chosenHospitalIndex", "queuedDuration", "bumpedDuration", "waitingForAmbDuration", "responseDuration", "ambGoingToCallDuration", "transportDuration", "serviceDuration"])
+		row2(c::Call) = [c.dispatchTime, c.ambArrivalTime, c.hospitalArrivalTime, c.numBumps, Int(c.wasQueued), c.ambDispatchLoc.x, c.ambDispatchLoc.y, string(c.ambStatusBeforeDispatch), c.chosenHospitalIndex, c.queuedDuration, c.bumpedDuration, c.waitingForAmbDuration, c.responseDuration, c.ambGoingToCallDuration, c.transportDuration, c.serviceDuration]
 	end
 	
 	row(c::Call) = writeOutputFields ? vcat(row1(c), row2(c)) : row1(c)

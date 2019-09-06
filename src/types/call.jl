@@ -88,6 +88,9 @@ function setCallStatus!(call::Call, status::CallStatus, time::Float)
 		call.bumpedDuration = call.waitingForAmbDuration - call.ambGoingToCallDuration
 	elseif status == callAtHospital
 		call.hospitalArrivalTime = time
+	elseif status == callProcessed
+		@assert(call.serviceDuration == 0.0) # value should not have been set yet
+		call.serviceDuration = time - call.arrivalTime
 	end
 	
 	call.status = status

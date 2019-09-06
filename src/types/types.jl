@@ -346,6 +346,7 @@ mutable struct Call
 	responseDuration::Float # duration between call arrival and ambulance arrival at call location
 	ambGoingToCallDuration::Float # duration between dispatch of ambulance that responded and ambulance reaching call
 	transportDuration::Float # duration for transporting call to hospital
+	serviceDuration::Float # duration between call arrival and ambulance finishing with call
 	
 	# for calculating statistics:
 	statusSetTime::Float # time at which status was last set, even if set to same status value
@@ -355,7 +356,7 @@ mutable struct Call
 		nullIndex, nullDist,
 		Location(), false,
 		nullTime, nullTime, nullTime, 0, false, Location(), ambNullStatus, nullIndex,
-		0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+		0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
 		nullTime)
 end
 
@@ -864,12 +865,13 @@ mutable struct CallStats
 	totalResponseDuration::Float # duration between call arrival and ambulance arrival at call location
 	totalAmbGoingToCallDuration::Float # duration of ambulance that responded to reach call
 	totalTransportDuration::Float # duration for transporting call to hospital
+	totalServiceDuration::Float # duration between call arrival and ambulance finishing with call
 	
 	# totalQueueLengthDuration::OffsetArray{Float,1,Vector{Float}} # totalQueueLengthDuration[k] = total duration spent with k queued calls
 	
 	CallStats() = new(nullIndex, 0,
 		0, 0, 0, 0, 0,
-		0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+		0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
 end
 
 # statistics for a single hospital, or multiple hospitals

@@ -165,6 +165,7 @@ function CallStats(sim::Simulation, calls::Vector{Call})::CallStats
 	stats.totalResponseDuration = sum(c -> c.responseDuration, calls)
 	stats.totalAmbGoingToCallDuration = sum(c -> c.ambGoingToCallDuration, calls)
 	stats.totalTransportDuration = sum(c -> c.transportDuration, calls)
+	stats.totalServiceDuration = sum(c -> c.serviceDuration, calls)
 	
 	if checkMode
 		@assert(all(c -> c.wasQueued || c.queuedDuration == 0, calls))

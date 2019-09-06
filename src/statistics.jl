@@ -374,6 +374,7 @@ function statsDictFromPeriodStatsList(periods::Vector{SimPeriodStats}; conf = 0.
 		d1["avgResponseDurationMinutes"] = getCallsStat(:totalResponseDuration) * (24*60)
 		d1["avgAmbGoingToCallDurationMinutes"] = getCallsStat(:totalAmbGoingToCallDuration) * (24*60)
 		d1["avgTransportDurationMinutes"] = getCallsStat(:totalTransportDuration) * (24*60)
+		d1["avgServiceDurationMinutes"] = getCallsStat(:totalServiceDuration) * (24*60)
 		
 		# misc
 		d1["avgNumBumps"] = getCallsStat(:numBumps)
