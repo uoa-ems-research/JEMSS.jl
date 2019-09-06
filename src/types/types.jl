@@ -800,6 +800,14 @@ mutable struct Resimulation
 		[], [], nullIndex)
 end
 
+# Mean and half the width of the confidence interval of the mean
+# Half-width is also known as half-length, or margin of error.
+struct MeanAndHalfWidth
+	mean::Float
+	halfWidth::Float
+	MeanAndHalfWidth(m, hw) = new(convert(Float,m), convert(Float,hw))
+end
+
 # statistics for a single ambulance, or multiple ambulances
 mutable struct AmbulanceStats
 	ambIndex::Int # for single ambulance
@@ -857,7 +865,6 @@ mutable struct CallStats
 	totalAmbGoingToCallDuration::Float # duration of ambulance that responded to reach call
 	totalTransportDuration::Float # duration for transporting call to hospital
 	
-	# todo:
 	# totalQueueLengthDuration::OffsetArray{Float,1,Vector{Float}} # totalQueueLengthDuration[k] = total duration spent with k queued calls
 	
 	CallStats() = new(nullIndex, 0,
@@ -881,7 +888,6 @@ mutable struct StationStats
 	
 	numIdleAmbsTotalDuration::OffsetArray{Float,1,Vector{Float}} # numIdleAmbsTotalDuration[k] gives total duration that station had k idle ambulances
 	
-	# todo:
 	# numMoveUpsOnFree::Int # number of move-ups to this station of ambulances that have just become free
 	# numMoveUpsOnRoad::Int # number of move-ups to this station that were from ambulances that were driving on the road
 	# numMoveUpsFromHospitals::Vector{Int} # numMoveUpsFromHospitals[i] is the number of move-ups to this station of ambulances from hospitals[i]
@@ -912,7 +918,6 @@ mutable struct SimPeriodStats
 	hospital::HospitalStats # for all hospitals
 	station::StationStats # for all stations
 	
-	# todo:
 	# numAmbsFreeTotalDuration::OffsetArray{Float,1,Vector{Float}} # numAmbsFreeTotalDuration[k] gives total duration that k ambulances were free (working but not busy)
 	
 	SimPeriodStats() = new(nullTime, nullTime, nullTime,

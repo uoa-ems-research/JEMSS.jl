@@ -85,11 +85,12 @@ export
 	isFNodeInRGraph, shortestPathNextRNode, shortestPathNextRArc, shortestPathData, shortestPathTravelTime, shortestPathDistance, shortestPath, findRArcFromFNodeToFNode, # network
 	rasterRandLocations, printRasterSize, # raster
 	shortestRouteTravelTime!, # route
-	getCallResponseDurations, getAvgCallResponseDuration, getCallsReachedInTime, countCallsReachedInTime, printSimStats, printAmbsStats, printCallsStats, printHospitalsStats, calcBatchMeans, calcBatchMeanResponseDurations, meanErrorPlot, calcAR0DurbinWatsonTestPValue, # statistics
+	getCallResponseDurations, getAvgCallResponseDuration, getCallsReachedInTime, countCallsReachedInTime, printSimStats, printAmbsStats, printCallsStats, printHospitalsStats, calcBatchMeans, calcBatchMeanResponseDurations, meanErrorPlot, calcAR0DurbinWatsonTestPValue, tDistrHalfWidth, statsDictFromPeriodStatsList, # statistics
 	checkCompTable, checkCompTableIsNested, nestCompTable, unnestCompTable, makeRandNestedCompTable, # compliance table
 	makeRandDeployment, makeRandDeployments, deploymentToStationsNumAmbs, stationsNumAmbsToDeployment, getDeployment, getStationsNumAmbs, setAmbStation!, applyDeployment!, applyStationsNumAmbs!, simulateDeployment!, simulateDeployments!, # deployment
 	checkPriorityList, makeRandPriorityList, # priority list
-	solveMexclp! # mexclp
+	solveMexclp!, # mexclp
+	flatten # dict
 
 # types
 export
@@ -97,7 +98,7 @@ export
 	Event, Ambulance, Call, Hospital, Station, Redispatch,
 	Map, GridSearchRect, GridRect, Grid, Raster, RasterSampler, DemandMode, Demand, PointsCoverageMode, DemandCoverage,
 	CompTableData, DdsmData, DmexclpData, PriorityListData, ZhangIpData, Temp0Data, Temp1Data, Temp2Data, MoveUpData,
-	AmbulanceStats, CallStats, HospitalStats, StationStats, SimPeriodStats, SimStats,
+	MeanAndHalfWidth, AmbulanceStats, CallStats, HospitalStats, StationStats, SimPeriodStats, SimStats,
 	File, Table, Resimulation, Simulation,
 	DistrRng
 
@@ -124,8 +125,9 @@ export
 
 include("defs.jl")
 
-include("misc/stream.jl")
+include("misc/dict.jl")
 include("misc/rand.jl")
+include("misc/stream.jl")
 
 include("types/types.jl")
 include("types/ambulance.jl")

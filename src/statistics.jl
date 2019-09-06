@@ -272,3 +272,115 @@ function calcAR0DurbinWatsonTestPValue(x::Vector{T}) where T <: Real
 	dwTest = HypothesisTests.DurbinWatsonTest(xFit, residuals)
 	return HypothesisTests.pvalue(dwTest)
 end
+
+# Return half-width of two-sided confidence interval of estimate of mean.
+# Samples should come from a normal distribution, standard deviation is assumed to be unknown.
+function tDistrHalfWidth(x::Vector{T}; conf = 0.95) where T <: Real
+	t = StatsFuns.tdistinvcdf(length(x)-1, 1-(1-conf)/2) # t-value, for two sided confidence interval
+	return t * sem(x)
+end
+
+# Return a dictionary of statistics from a list of period statistics.
+# Periods should be the same duration.
+# Confidence intervals assume that samples obtained from periods are IID, and are from a population with a normal distribution.
+# The function flatten(dict) may be useful if writing this dict to file.
+function statsDictFromPeriodStatsList(periods::Vector{SimPeriodStats}; conf = 0.95)
+	duration = periods[1].duration
+	ambDays = periods[1].ambulance.statusDurations |> values |> sum
+	@assert(all(p -> p.duration == duration, periods))
+	@assert(all(p -> isapprox(sum(values(p.ambulance.statusDurations)), ambDays), periods))
+	
+	d = statsDict = Dict{String,Any}()
+	
+	meanAndHalfWidth(x; conf = conf) = MeanAndHalfWidth(mean(x), tDistrHalfWidth(x; conf = conf))
+	
+	###########
+	# ambulance
+	
+	d["ambs"] = Dict{String,Any}()
+	
+	function getAmbsStats(statName::Symbol)
+		x = [getfield(p.ambulance, statName) for p in periods] / ambDays
+		return meanAndHalfWidth(x)
+	end
+	function getAmbsDurationStat(s::AmbStatus)
+		x = [p.ambulance.statusDurations[s] for p in periods] / ambDays
+		return meanAndHalfWidth(x)
+	end
+	
+	# durations
+	d["ambs"]["avgDailyWorkingDurationHours"] = getAmbsStats(:totalWorkingDuration) * 24
+	d["ambs"]["avgDailyBusyDurationHours"] = getAmbsStats(:totalBusyDuration) * 24
+	d["ambs"]["avgDailyTravelDurationHours"] = getAmbsStats(:totalTravelDuration) * 24
+	d["ambs"]["avgDailySleepingDurationHours"] = getAmbsDurationStat(ambSleeping) * 24
+	d["ambs"]["avgDailyIdleAtStationDurationHours"] = getAmbsDurationStat(ambIdleAtStation) * 24
+	d["ambs"]["avgDailyGoingToCallDurationHours"] = getAmbsDurationStat(ambGoingToCall) * 24
+	d["ambs"]["avgDailyAtCallDurationHours"] = getAmbsDurationStat(ambAtCall) * 24
+	d["ambs"]["avgDailyGoingToHospitalDurationHours"] = getAmbsDurationStat(ambGoingToHospital) * 24
+	d["ambs"]["avgDailyAtHospitalDurationHours"] = getAmbsDurationStat(ambAtHospital) * 24
+	d["ambs"]["avgDailyReturningToStationDurationHours"] = getAmbsDurationStat(ambReturningToStation) * 24
+	d["ambs"]["avgDailyMovingUpToStationDurationHours"] = getAmbsDurationStat(ambMovingUpToStation) * 24
+	
+	# todo:
+	# ambulance - status set durations
+	# d["ambs"]["avgDailyGoingToStationDurationHours"]
+	# etc
+	
+	# counts
+	d["ambs"]["avgDailyNumCallsTreated"] = getAmbsStats(:numCallsTreated)
+	d["ambs"]["avgDailyNumCallsTransported"] = getAmbsStats(:numCallsTransported)
+	d["ambs"]["avgDailyNumDispatches"] = getAmbsStats(:numDispatches)
+	d["ambs"]["avgDailyNumDispatchesFromStation"] = getAmbsStats(:numDispatchesFromStation)
+	d["ambs"]["avgDailyNumDispatchesOnRoad"] = getAmbsStats(:numDispatchesOnRoad)
+	d["ambs"]["avgDailyNumDispatchesOnFree"] = getAmbsStats(:numDispatchesOnFree)
+	d["ambs"]["avgDailyNumRedispatches"] = getAmbsStats(:numRedispatches)
+	d["ambs"]["avgDailyNumMoveUps"] = getAmbsStats(:numMoveUps)
+	d["ambs"]["avgDailyNumMoveUpsFromStation"] = getAmbsStats(:numMoveUpsFromStation)
+	d["ambs"]["avgDailyNumMoveUpsOnRoad"] = getAmbsStats(:numMoveUpsOnRoad)
+	d["ambs"]["avgDailyNumMoveUpsOnFree"] = getAmbsStats(:numMoveUpsOnFree)
+	d["ambs"]["avgDailyNumMoveUpsReturnToPrevStation"] = getAmbsStats(:numMoveUpsReturnToPrevStation)
+	
+	# misc
+	d["ambs"]["avgDailyTravelDistanceKms"] = getAmbsStats(:totalTravelDistance)
+	
+	###########
+	# call
+	
+	d["calls"] = Dict{String,Any}()
+	
+	for priority in instances(Priority) # will use nullPriority to indicate all priorities
+		name = priority == nullPriority ? "all" : string(priority)
+		d1 = d["calls"][name] = Dict{String,Any}()
+		
+		callStatsList = priority == nullPriority ? [p.call for p in periods] : [p.callPriorities[priority] for p in periods]
+		function getCallsStat(statName::Symbol)
+			x = [getfield(callStats, statName) / callStats.numCalls for callStats in callStatsList]
+			return meanAndHalfWidth(x)
+		end
+		
+		# fractions (between 0 and 1); don't need to write "avgFrac", as fraction is already an average
+		d1["fracQueued"] = getCallsStat(:numQueued)
+		d1["fracBumped"] = getCallsStat(:numBumped)
+		d1["fracTransported"] = getCallsStat(:numTransports)
+		d1["fracResponsesInTime"] = getCallsStat(:numResponsesInTime)
+		
+		# durations
+		d1["avgDispatchDelayMinutes"] = getCallsStat(:totalDispatchDelay) * (24*60)
+		d1["avgOnSceneDurationMinutes"] = getCallsStat(:totalOnSceneDuration) * (24*60)
+		d1["avgHandoverDurationMinutes"] = getCallsStat(:totalHandoverDuration) * (24*60)
+		d1["avgQueuedDurationMinutes"] = getCallsStat(:totalQueuedDuration) * (24*60)
+		d1["avgBumpedDurationMinutes"] = getCallsStat(:totalBumpedDuration) * (24*60)
+		d1["avgWaitingForAmbDurationMinutes"] = getCallsStat(:totalWaitingForAmbDuration) * (24*60)
+		d1["avgResponseDurationMinutes"] = getCallsStat(:totalResponseDuration) * (24*60)
+		d1["avgAmbGoingToCallDurationMinutes"] = getCallsStat(:totalAmbGoingToCallDuration) * (24*60)
+		d1["avgTransportDurationMinutes"] = getCallsStat(:totalTransportDuration) * (24*60)
+		
+		# misc
+		d1["avgNumBumps"] = getCallsStat(:numBumps)
+		d1["avgDailyNumCalls"] = meanAndHalfWidth([callStats.numCalls / duration for callStats in callStatsList])
+	end
+	
+	###########
+	
+	return statsDict
+end

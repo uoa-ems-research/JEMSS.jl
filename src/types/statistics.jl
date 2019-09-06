@@ -309,3 +309,19 @@ function Base.:-(a::SimPeriodStats, b::SimPeriodStats)::SimPeriodStats
 	stats.endTime = a.endTime
 	return stats
 end
+
+function Base.print(mhw::MeanAndHalfWidth)
+	print(mhw.mean, " ± ", mhw.halfWidth)
+end
+
+function confint(mhw::MeanAndHalfWidth)
+	return (mhw.mean - mhw.halfWidth, mhw.mean + mhw.halfWidth)
+end
+
+function Base.:*(mhw::MeanAndHalfWidth, x::T) where T <: Real
+	return MeanAndHalfWidth(mhw.mean * x, mhw.halfWidth * x)
+end
+
+function Base.:/(mhw::MeanAndHalfWidth, x::T) where T <: Real
+	return MeanAndHalfWidth(mhw.mean / x, mhw.halfWidth / x)
+end
