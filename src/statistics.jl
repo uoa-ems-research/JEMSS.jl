@@ -306,6 +306,10 @@ function statsDictFromPeriodStatsList(periods::Vector{SimPeriodStats}; conf = 0.
 		x = [p.ambulance.statusDurations[s] for p in periods] / ambDays
 		return meanAndHalfWidth(x)
 	end
+	function getAmbsDistanceStat(s::Union{AmbStatus,AmbStatusSet})
+		x = [p.ambulance.statusDistances[s] for p in periods] / ambDays
+		return meanAndHalfWidth(x)
+	end
 	
 	# durations - status
 	d["ambs"]["avgDailySleepingDurationHours"] = getAmbsDurationStat(ambSleeping) * 24
@@ -339,7 +343,11 @@ function statsDictFromPeriodStatsList(periods::Vector{SimPeriodStats}; conf = 0.
 	d["ambs"]["avgDailyNumMoveUpsReturnToPrevStation"] = getAmbsStat(:numMoveUpsReturnToPrevStation)
 	
 	# misc
-	d["ambs"]["avgDailyTravelDistanceKms"] = getAmbsStat(:totalTravelDistance)
+	d["ambs"]["avgDailyTravelDistanceKms"] = getAmbsDistanceStat(ambTravelling)
+	d["ambs"]["avgDailyGoingToCallDistanceKms"] = getAmbsDistanceStat(ambGoingToCall)
+	d["ambs"]["avgDailyGoingToHospitalDistanceKms"] = getAmbsDistanceStat(ambGoingToHospital)
+	d["ambs"]["avgDailyReturningToStationDistanceKms"] = getAmbsDistanceStat(ambReturningToStation)
+	d["ambs"]["avgDailyMovingUpToStationDistanceKms"] = getAmbsDistanceStat(ambMovingUpToStation)
 	
 	###########
 	# call

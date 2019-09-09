@@ -287,6 +287,7 @@ mutable struct Ambulance
 	
 	# status statistics
 	statusDurations::Dict{Union{AmbStatus,AmbStatusSet},Float} # duration spent in each status (or status set); only updated after setting status
+	statusDistances::Dict{Union{AmbStatus,AmbStatusSet},Float} # distance travelled in each status (or status set); only updated after setting status
 	statusTransitionCounts::Array{Int,2} # statusTransitionCounts[Int(status1), Int(status2)] gives number of times that amb transitioned from status1 to status2 (in AmbStatus enum)
 	
 	# for calculating statistics:
@@ -301,7 +302,7 @@ mutable struct Ambulance
 		Location(), false,
 		0.0, 0.0, 0.0, 0.0,
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		Dict(), Array{Int,2}(undef,0,0),
+		Dict(), Dict(), Array{Int,2}(undef,0,0),
 		nullTime, ambNullStatus, nullIndex,
 		Dict())
 end
@@ -834,6 +835,7 @@ mutable struct AmbulanceStats
 	numMoveUpsReturnToPrevStation::Int
 	
 	statusDurations::Dict{Union{AmbStatus,AmbStatusSet},Float} # duration spent in each status (or status set)
+	statusDistances::Dict{Union{AmbStatus,AmbStatusSet},Float} # distance travelled in each status (or status set)
 	statusTransitionCounts::Array{Int,2} # statusTransitionCounts[Int(status1), Int(status2)] gives number of times that amb transitioned from status1 to status2
 	
 	AmbulanceStats() = new(nullIndex,
@@ -841,7 +843,7 @@ mutable struct AmbulanceStats
 		0, 0,
 		0, 0, 0, 0, 0,
 		0, 0, 0, 0, 0,
-		Dict(), Array{Int,2}(undef,0,0))
+		Dict(), Dict(), Array{Int,2}(undef,0,0))
 end
 
 # statistics for a single call, or multiple calls

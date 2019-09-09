@@ -102,10 +102,12 @@ function AmbulanceStats(sim::Simulation, ambulance::Ambulance)::AmbulanceStats
 	addStatusDuration!(stats.statusDurations, ambulance.status, sim.time - ambulance.statusSetTime) # account for time spent in current/final status
 	
 	# calculate travel distance, accounting for any partially completed route
-	stats.totalTravelDistance = ambulance.totalTravelDistance # ambulance.totalTravelDistance is for routes completed before sim.time
+	stats.statusDistances = deepcopy(ambulance.statusDistances) # ambulance.statusDistances is for routes completed before or at sim.time
 	if sim.time < ambulance.route.endTime # have not finished route
-		stats.totalTravelDistance += calcRouteDistance!(sim, ambulance.route, sim.time)
+		dist = calcRouteDistance!(sim, ambulance.route, sim.time)
+		addStatusDistance!(stats.statusDistances, ambulance.status, dist) # account for distance travelled in current/final status
 	end
+	stats.totalTravelDistance = stats.statusDistances[ambTravelling]
 	
 	# status sets durations
 	stats.totalBusyDuration = stats.statusDurations[ambBusy]
@@ -122,6 +124,9 @@ function AmbulanceStats(sim::Simulation, ambulance::Ambulance)::AmbulanceStats
 		@assert(geApprox(stats.statusDurations[ambBusy], ambulance.totalBusyDuration))
 		@assert(geApprox(stats.statusDurations[ambTravelling], ambulance.totalTravelDuration))
 		@assert(geApprox(stats.statusDurations[ambWorking], ambulance.totalWorkingDuration))
+		
+		# distance
+		@assert(geApprox(stats.statusDistances[ambTravelling], ambulance.totalTravelDistance))
 		
 		# statusTransitionCounts
 		travelStatuses = ambStatusSets[ambTravelling]
@@ -210,7 +215,7 @@ function StationStats(sim::Simulation, station::Station)::StationStats
 	return stats
 end
 
-# for ambulance statusDurations:
+# for ambulance statusDurations and statusDistances:
 Base.:+(a::Dict{Union{AmbStatus,AmbStatusSet},Float}, b::Dict{Union{AmbStatus,AmbStatusSet},Float}) = merge(+, a, b)
 Base.:-(a::Dict{Union{AmbStatus,AmbStatusSet},Float}, b::Dict{Union{AmbStatus,AmbStatusSet},Float}) = merge(-, a, b)
 

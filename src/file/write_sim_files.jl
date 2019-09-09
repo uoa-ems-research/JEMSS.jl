@@ -22,7 +22,7 @@ function writeAmbsFile(filename::String, ambulances::Vector{Ambulance}; writeOut
 	if writeOutputFields
 		header = vcat(header, ["totalTravelDuration", "totalTravelDistance", "totalBusyDuration", "totalWorkingDuration", "numCallsTreated", "numCallsTransported", "numDispatches", "numDispatchesFromStation", "numDispatchesOnRoad", "numDispatchesOnFree", "numRedispatches", "numMoveUps", "numMoveUpsFromStation", "numMoveUpsOnRoad", "numMoveUpsOnFree", "numMoveUpsReturnToPrevStation"])
 		row2(a::Ambulance) = [a.totalTravelDuration, a.totalTravelDistance, a.totalBusyDuration, a.totalWorkingDuration, a.numCallsTreated, a.numCallsTransported, a.numDispatches, a.numDispatchesFromStation, a.numDispatchesOnRoad, a.numDispatchesOnFree, a.numRedispatches, a.numMoveUps, a.numMoveUpsFromStation, a.numMoveUpsOnRoad, a.numMoveUpsOnFree, a.numMoveUpsReturnToPrevStation]
-		# skipped: statusDurations (dict), statusTransitionCounts (array)
+		# skipped: statusDurations (dict), statusDistances (dict), statusTransitionCounts (array)
 	end
 	
 	row(a::Ambulance) = writeOutputFields ? vcat(row1(a), row2(a)) : row1(a)
@@ -301,8 +301,10 @@ function writeAmbsStatsFile(filename::String, stats::SimStats)
 	
 	ambulanceTables = Table[]
 	ambulanceStatusDurationsTables = Table[]
-	fnames = collect(setdiff(fieldnames(AmbulanceStats), (:ambIndex, :statusDurations, :statusTransitionCounts))) # for ambulanceTables
+	ambulanceStatusDistancesTables = Table[]
+	fnames = collect(setdiff(fieldnames(AmbulanceStats), (:ambIndex, :statusDurations, :statusDistances, :statusTransitionCounts))) # for ambulanceTables
 	statuses = (setdiff(instances(AmbStatus), (ambNullStatus,))..., instances(AmbStatusSet)...) # for ambulanceStatusDurationsTables
+	travelStatuses = (ambStatusSets[ambTravelling]..., instances(AmbStatusSet)...)
 	getAmb(period::SimPeriodStats, ambIndex::Int) = ambIndex == 0 ? period.ambulance : period.ambulances[ambIndex]
 	for i = 0:numAmbs
 		name = i == 0 ? "ambulance" : "ambulances[$i]"
@@ -315,10 +317,14 @@ function writeAmbsStatsFile(filename::String, stats::SimStats)
 			rows = [vcat(j, [getAmb(p,i).statusDurations[s] for s in statuses]) for (j,p) in enumerate(periods)])
 		push!(ambulanceStatusDurationsTables, ambulanceStatusDurationsTable)
 		
+		ambulanceStatusDistancesTable = Table("$name.statusDistances", vcat("periodIndex", string.(travelStatuses)...);
+			rows = [vcat(j, [getAmb(p,i).statusDistances[s] for s in travelStatuses]) for (j,p) in enumerate(periods)])
+		push!(ambulanceStatusDistancesTables, ambulanceStatusDistancesTable)
+		
 		# skipped: statusTransitionCounts
 	end
 	
-	writeTablesToFile(filename, [miscTable, timestampsTable, periodsTable, ambulanceTables..., ambulanceStatusDurationsTables...])
+	writeTablesToFile(filename, [miscTable, timestampsTable, periodsTable, ambulanceTables..., ambulanceStatusDurationsTables..., ambulanceStatusDistancesTables...])
 end
 
 function writeCallsStatsFile(filename::String, stats::SimStats)

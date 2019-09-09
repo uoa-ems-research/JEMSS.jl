@@ -38,6 +38,7 @@ function initAmbulance!(sim::Simulation, ambulance::Ambulance;
 	ambulance.statusTransitionCounts = zeros(Int, n, n)
 	statusesAndSets = (ambStatuses..., instances(AmbStatusSet)...)
 	ambulance.statusDurations = Dict([s => 0.0 for s in statusesAndSets])
+	ambulance.statusDistances = Dict([s => 0.0 for s in (ambStatusSets[ambTravelling]..., instances(AmbStatusSet)...)])
 	
 	# add wake up event
 	addEvent!(sim.eventList; form = ambWakesUp, time = wakeUpTime, ambulance = ambulance, station = station)
@@ -46,6 +47,12 @@ end
 function addStatusDuration!(statusDurations::Dict{Union{AmbStatus,AmbStatusSet},Float}, status::AmbStatus, duration::Float)
 	statusDurations[status] += duration
 	for s in ambStatusToSets[status] statusDurations[s] += duration end # for status sets
+end
+
+function addStatusDistance!(statusDistances::Dict{Union{AmbStatus,AmbStatusSet},Float}, status::AmbStatus, dist::Float)
+	@assert(isTravelling(status))
+	statusDistances[status] += dist
+	for s in ambStatusToSets[status] statusDistances[s] += dist end # for status sets
 end
 
 # Set the ambulance status and time at which status started
@@ -64,7 +71,9 @@ function setAmbStatus!(sim::Simulation, ambulance::Ambulance, status::AmbStatus,
 		@assert(ambulance.statusSetTime == ambulance.route.startTime)
 		@assert(time <= ambulance.route.endTime) # status should change when route ends, not after
 		ambulance.totalTravelDuration += statusDuration
-		ambulance.totalTravelDistance += calcRouteDistance!(sim, ambulance.route, time)
+		dist = calcRouteDistance!(sim, ambulance.route, time)
+		addStatusDistance!(ambulance.statusDistances, prevStatus, dist)
+		ambulance.totalTravelDistance += dist
 	end
 	if isWorking(prevStatus)
 		ambulance.totalWorkingDuration += statusDuration
