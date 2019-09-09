@@ -814,11 +814,6 @@ end
 mutable struct AmbulanceStats
 	ambIndex::Int # for single ambulance
 	
-	totalTravelDuration::Float # total duration of completed routes, completed or not; >= ambulance.totalTravelDuration
-	totalTravelDistance::Float # total distance of completed routes, completed or not; >= ambulance.totalTravelDistance
-	totalBusyDuration::Float # total duration that ambulance has been busy; >= ambulance.totalBusyDuration
-	totalWorkingDuration::Float # total time that ambulance was working (busy or free); >= ambulance.totalWorkingDuration
-	
 	numCallsTreated::Int # total number of calls that ambulance provided treatment on scene
 	numCallsTransported::Int # total number of calls transported to hospital
 	
@@ -839,7 +834,6 @@ mutable struct AmbulanceStats
 	statusTransitionCounts::Array{Int,2} # statusTransitionCounts[Int(status1), Int(status2)] gives number of times that amb transitioned from status1 to status2
 	
 	AmbulanceStats() = new(nullIndex,
-		0.0, 0.0, 0.0, 0.0,
 		0, 0,
 		0, 0, 0, 0, 0,
 		0, 0, 0, 0, 0,

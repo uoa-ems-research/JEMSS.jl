@@ -107,12 +107,6 @@ function AmbulanceStats(sim::Simulation, ambulance::Ambulance)::AmbulanceStats
 		dist = calcRouteDistance!(sim, ambulance.route, sim.time)
 		addStatusDistance!(stats.statusDistances, ambulance.status, dist) # account for distance travelled in current/final status
 	end
-	stats.totalTravelDistance = stats.statusDistances[ambTravelling]
-	
-	# status sets durations
-	stats.totalBusyDuration = stats.statusDurations[ambBusy]
-	stats.totalTravelDuration = stats.statusDurations[ambTravelling]
-	stats.totalWorkingDuration = stats.statusDurations[ambWorking]
 	
 	if checkMode
 		@assert(stats.numDispatches == stats.numDispatchesFromStation + stats.numDispatchesOnRoad + stats.numDispatchesOnFree) # numRedispatches already included in numDispatchesOnRoad
