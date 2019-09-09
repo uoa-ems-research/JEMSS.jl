@@ -281,7 +281,7 @@ function tDistrHalfWidth(x::Vector{T}; conf = 0.95) where T <: Real
 end
 
 # confidence interval
-function confInt(mhw::MeanAndHalfWidth)
+function confInterval(mhw::MeanAndHalfWidth)
 	return (mhw.mean - mhw.halfWidth, mhw.mean + mhw.halfWidth)
 end
 
