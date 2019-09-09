@@ -108,7 +108,7 @@ end
 # returns a randomly generated priority list
 function makeRandPriorityList(numAmbs::Int, numStations::Int;
 	stationCapacities::Union{Vector{Int},Nothing} = nothing,
-	rng::AbstractRNG = Base.GLOBAL_RNG)::PriorityList
+	rng::AbstractRNG = GLOBAL_RNG)::PriorityList
 	
 	@assert(numStations > 0)
 	if stationCapacities == nothing

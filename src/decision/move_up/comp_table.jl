@@ -254,7 +254,7 @@ end
 # returns a randomly generated nested comp table
 function makeRandNestedCompTable(numAmbs::Int, numStations::Int;
 	stationCapacities::Union{Vector{Int},Nothing} = nothing,
-	rng::AbstractRNG = Base.GLOBAL_RNG)::NestedCompTable
+	rng::AbstractRNG = GLOBAL_RNG)::NestedCompTable
 	
 	@assert(numStations > 0)
 	if stationCapacities == nothing
