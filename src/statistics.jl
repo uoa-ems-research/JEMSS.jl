@@ -298,7 +298,7 @@ function statsDictFromPeriodStatsList(periods::Vector{SimPeriodStats}; conf = 0.
 	
 	d["ambs"] = Dict{String,Any}()
 	
-	function getAmbsStats(statName::Symbol)
+	function getAmbsStat(statName::Symbol)
 		x = [getfield(p.ambulance, statName) for p in periods] / ambDays
 		return meanAndHalfWidth(x)
 	end
@@ -325,21 +325,21 @@ function statsDictFromPeriodStatsList(periods::Vector{SimPeriodStats}; conf = 0.
 	d["ambs"]["avgDailyGoingToStationDurationHours"] = getAmbsDurationStat(ambGoingToStation) * 24
 	
 	# counts
-	d["ambs"]["avgDailyNumCallsTreated"] = getAmbsStats(:numCallsTreated)
-	d["ambs"]["avgDailyNumCallsTransported"] = getAmbsStats(:numCallsTransported)
-	d["ambs"]["avgDailyNumDispatches"] = getAmbsStats(:numDispatches)
-	d["ambs"]["avgDailyNumDispatchesFromStation"] = getAmbsStats(:numDispatchesFromStation)
-	d["ambs"]["avgDailyNumDispatchesOnRoad"] = getAmbsStats(:numDispatchesOnRoad)
-	d["ambs"]["avgDailyNumDispatchesOnFree"] = getAmbsStats(:numDispatchesOnFree)
-	d["ambs"]["avgDailyNumRedispatches"] = getAmbsStats(:numRedispatches)
-	d["ambs"]["avgDailyNumMoveUps"] = getAmbsStats(:numMoveUps)
-	d["ambs"]["avgDailyNumMoveUpsFromStation"] = getAmbsStats(:numMoveUpsFromStation)
-	d["ambs"]["avgDailyNumMoveUpsOnRoad"] = getAmbsStats(:numMoveUpsOnRoad)
-	d["ambs"]["avgDailyNumMoveUpsOnFree"] = getAmbsStats(:numMoveUpsOnFree)
-	d["ambs"]["avgDailyNumMoveUpsReturnToPrevStation"] = getAmbsStats(:numMoveUpsReturnToPrevStation)
+	d["ambs"]["avgDailyNumCallsTreated"] = getAmbsStat(:numCallsTreated)
+	d["ambs"]["avgDailyNumCallsTransported"] = getAmbsStat(:numCallsTransported)
+	d["ambs"]["avgDailyNumDispatches"] = getAmbsStat(:numDispatches)
+	d["ambs"]["avgDailyNumDispatchesFromStation"] = getAmbsStat(:numDispatchesFromStation)
+	d["ambs"]["avgDailyNumDispatchesOnRoad"] = getAmbsStat(:numDispatchesOnRoad)
+	d["ambs"]["avgDailyNumDispatchesOnFree"] = getAmbsStat(:numDispatchesOnFree)
+	d["ambs"]["avgDailyNumRedispatches"] = getAmbsStat(:numRedispatches)
+	d["ambs"]["avgDailyNumMoveUps"] = getAmbsStat(:numMoveUps)
+	d["ambs"]["avgDailyNumMoveUpsFromStation"] = getAmbsStat(:numMoveUpsFromStation)
+	d["ambs"]["avgDailyNumMoveUpsOnRoad"] = getAmbsStat(:numMoveUpsOnRoad)
+	d["ambs"]["avgDailyNumMoveUpsOnFree"] = getAmbsStat(:numMoveUpsOnFree)
+	d["ambs"]["avgDailyNumMoveUpsReturnToPrevStation"] = getAmbsStat(:numMoveUpsReturnToPrevStation)
 	
 	# misc
-	d["ambs"]["avgDailyTravelDistanceKms"] = getAmbsStats(:totalTravelDistance)
+	d["ambs"]["avgDailyTravelDistanceKms"] = getAmbsStat(:totalTravelDistance)
 	
 	###########
 	# call
