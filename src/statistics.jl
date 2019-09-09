@@ -282,13 +282,12 @@ end
 
 # Return a dictionary of statistics from a list of period statistics.
 # Periods should be the same duration.
-# Confidence intervals assume that samples obtained from periods are IID, and are from a population with a normal distribution.
+# Confidence intervals assume that samples obtained from periods are IID, and are from a population with a normal distribution and unknown standard deviation.
 # The function flatten(dict) may be useful if writing this dict to file.
 function statsDictFromPeriodStatsList(periods::Vector{SimPeriodStats}; conf = 0.95)
 	duration = periods[1].duration
-	ambDays = periods[1].ambulance.statusDurations |> values |> sum
+	ambDays = length(periods[1].ambulances) * duration
 	@assert(all(p -> p.duration == duration, periods))
-	@assert(all(p -> isapprox(sum(values(p.ambulance.statusDurations)), ambDays), periods))
 	
 	d = statsDict = Dict{String,Any}()
 	
@@ -303,15 +302,12 @@ function statsDictFromPeriodStatsList(periods::Vector{SimPeriodStats}; conf = 0.
 		x = [getfield(p.ambulance, statName) for p in periods] / ambDays
 		return meanAndHalfWidth(x)
 	end
-	function getAmbsDurationStat(s::AmbStatus)
+	function getAmbsDurationStat(s::Union{AmbStatus,AmbStatusSet})
 		x = [p.ambulance.statusDurations[s] for p in periods] / ambDays
 		return meanAndHalfWidth(x)
 	end
 	
-	# durations
-	d["ambs"]["avgDailyWorkingDurationHours"] = getAmbsStats(:totalWorkingDuration) * 24
-	d["ambs"]["avgDailyBusyDurationHours"] = getAmbsStats(:totalBusyDuration) * 24
-	d["ambs"]["avgDailyTravelDurationHours"] = getAmbsStats(:totalTravelDuration) * 24
+	# durations - status
 	d["ambs"]["avgDailySleepingDurationHours"] = getAmbsDurationStat(ambSleeping) * 24
 	d["ambs"]["avgDailyIdleAtStationDurationHours"] = getAmbsDurationStat(ambIdleAtStation) * 24
 	d["ambs"]["avgDailyGoingToCallDurationHours"] = getAmbsDurationStat(ambGoingToCall) * 24
@@ -321,10 +317,12 @@ function statsDictFromPeriodStatsList(periods::Vector{SimPeriodStats}; conf = 0.
 	d["ambs"]["avgDailyReturningToStationDurationHours"] = getAmbsDurationStat(ambReturningToStation) * 24
 	d["ambs"]["avgDailyMovingUpToStationDurationHours"] = getAmbsDurationStat(ambMovingUpToStation) * 24
 	
-	# todo:
-	# ambulance - status set durations
-	# d["ambs"]["avgDailyGoingToStationDurationHours"]
-	# etc
+	# durations - status sets
+	d["ambs"]["avgDailyWorkingDurationHours"] = getAmbsDurationStat(ambWorking) * 24
+	d["ambs"]["avgDailyBusyDurationHours"] = getAmbsDurationStat(ambBusy) * 24
+	d["ambs"]["avgDailyFreeDurationHours"] = getAmbsDurationStat(ambFree) * 24
+	d["ambs"]["avgDailyTravelDurationHours"] = getAmbsDurationStat(ambTravelling) * 24
+	d["ambs"]["avgDailyGoingToStationDurationHours"] = getAmbsDurationStat(ambGoingToStation) * 24
 	
 	# counts
 	d["ambs"]["avgDailyNumCallsTreated"] = getAmbsStats(:numCallsTreated)

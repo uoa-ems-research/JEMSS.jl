@@ -302,7 +302,7 @@ function writeAmbsStatsFile(filename::String, stats::SimStats)
 	ambulanceTables = Table[]
 	ambulanceStatusDurationsTables = Table[]
 	fnames = collect(setdiff(fieldnames(AmbulanceStats), (:ambIndex, :statusDurations, :statusTransitionCounts))) # for ambulanceTables
-	statuses = collect(setdiff(instances(AmbStatus), [ambNullStatus])) # for ambulanceStatusDurationsTables
+	statuses = (setdiff(instances(AmbStatus), (ambNullStatus,))..., instances(AmbStatusSet)...) # for ambulanceStatusDurationsTables
 	getAmb(period::SimPeriodStats, ambIndex::Int) = ambIndex == 0 ? period.ambulance : period.ambulances[ambIndex]
 	for i = 0:numAmbs
 		name = i == 0 ? "ambulance" : "ambulances[$i]"
@@ -311,7 +311,7 @@ function writeAmbsStatsFile(filename::String, stats::SimStats)
 			rows = [vcat(j, [getfield(getAmb(p,i), fname) for fname in fnames]) for (j,p) in enumerate(periods)])
 		push!(ambulanceTables, ambulanceTable)
 		
-		ambulanceStatusDurationsTable = Table("$name.statusDurations", vcat("periodIndex", string.(statuses));
+		ambulanceStatusDurationsTable = Table("$name.statusDurations", vcat("periodIndex", string.(statuses)...);
 			rows = [vcat(j, [getAmb(p,i).statusDurations[s] for s in statuses]) for (j,p) in enumerate(periods)])
 		push!(ambulanceStatusDurationsTables, ambulanceStatusDurationsTable)
 		

@@ -35,11 +35,17 @@ function initAmbulance!(sim::Simulation, ambulance::Ambulance;
 	ambStatuses = setdiff(instances(AmbStatus), (ambNullStatus,))
 	n = maximum(s -> Int(s), ambStatuses)
 	@assert(all(s -> in(Int(s), 1:n), ambStatuses)) # statuses should be numbered 1:n
-	ambulance.statusDurations = Dict([s => 0.0 for s in ambStatuses])
 	ambulance.statusTransitionCounts = zeros(Int, n, n)
+	statusesAndSets = (ambStatuses..., instances(AmbStatusSet)...)
+	ambulance.statusDurations = Dict([s => 0.0 for s in statusesAndSets])
 	
 	# add wake up event
 	addEvent!(sim.eventList; form = ambWakesUp, time = wakeUpTime, ambulance = ambulance, station = station)
+end
+
+function addStatusDuration!(statusDurations::Dict{Union{AmbStatus,AmbStatusSet},Float}, status::AmbStatus, duration::Float)
+	statusDurations[status] += duration
+	for s in ambStatusToSets[status] statusDurations[s] += duration end # for status sets
 end
 
 # Set the ambulance status and time at which status started
@@ -50,7 +56,7 @@ function setAmbStatus!(sim::Simulation, ambulance::Ambulance, status::AmbStatus,
 	# stats - previous status duration
 	prevStatus = ambulance.status
 	statusDuration = time - ambulance.statusSetTime
-	ambulance.statusDurations[prevStatus] += statusDuration
+	addStatusDuration!(ambulance.statusDurations, prevStatus, statusDuration)
 	if isBusy(prevStatus)
 		ambulance.totalBusyDuration += statusDuration
 	end
@@ -115,6 +121,20 @@ end
 
 isBusy(s::AmbStatus)::Bool = in(s, (ambGoingToCall, ambAtCall, ambGoingToHospital, ambAtHospital))
 isFree(s::AmbStatus)::Bool = in(s, (ambIdleAtStation, ambFreeAfterCall, ambReturningToStation, ambMovingUpToStation))
-isWorking(s::AmbStatus)::Bool = !in(s, (ambNullStatus, ambSleeping)) # should return same value as isBusy(s) || isFree(s)
+isWorking(s::AmbStatus)::Bool = !in(s, (ambNullStatus, ambSleeping)) # ambulance is operational, whether busy or free; should return same value as isBusy(s) || isFree(s)
 isGoingToStation(s::AmbStatus)::Bool = in(s, (ambReturningToStation, ambMovingUpToStation))
 isTravelling(s::AmbStatus)::Bool = in(s, (ambGoingToCall, ambGoingToHospital)) || isGoingToStation(s)
+
+ambStatuses = collect(instances(AmbStatus))
+const ambStatusSets = Dict{AmbStatusSet,Set{AmbStatus}}(
+	ambWorking => Set(filter(s -> isWorking(s), ambStatuses)),
+	ambBusy => Set(filter(s -> isBusy(s), ambStatuses)),
+	ambFree => Set(filter(s -> isFree(s), ambStatuses)),
+	ambTravelling => Set(filter(s -> isTravelling(s), ambStatuses)),
+	ambGoingToStation => Set(filter(s -> isGoingToStation(s), ambStatuses))
+)
+
+ambStatusToSets = Dict([status => Set{AmbStatusSet}() for status in instances(AmbStatus)])
+for (k, v) in ambStatusSets, ambStatus in v
+	push!(ambStatusToSets[ambStatus], k)
+end

@@ -162,7 +162,7 @@ function simulateNextEvent!(sim::Simulation)
 		sim.endTime = sim.time
 		sim.complete = true
 		for amb in sim.ambulances
-			setAmbStatus!(sim, amb, amb.status, sim.time) # to make sure that sum of ambulance statusDurations equals the sim duration
+			setAmbStatus!(sim, amb, amb.status, sim.time) # to account for duration spent with final status
 		end
 	end
 end

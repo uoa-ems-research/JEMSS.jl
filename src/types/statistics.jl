@@ -99,7 +99,7 @@ function AmbulanceStats(sim::Simulation, ambulance::Ambulance)::AmbulanceStats
 	stats.statusTransitionCounts = deepcopy(ambulance.statusTransitionCounts)
 	
 	stats.statusDurations = deepcopy(ambulance.statusDurations)
-	stats.statusDurations[ambulance.status] += sim.time - ambulance.statusSetTime # to make sure that sum of statusDurations equals the sim duration
+	addStatusDuration!(stats.statusDurations, ambulance.status, sim.time - ambulance.statusSetTime) # account for time spent in current/final status
 	
 	# calculate travel distance, accounting for any partially completed route
 	stats.totalTravelDistance = ambulance.totalTravelDistance # ambulance.totalTravelDistance is for routes completed before sim.time
@@ -107,24 +107,24 @@ function AmbulanceStats(sim::Simulation, ambulance::Ambulance)::AmbulanceStats
 		stats.totalTravelDistance += calcRouteDistance!(sim, ambulance.route, sim.time)
 	end
 	
-	ambStatuses = collect(instances(AmbStatus))
-	busyStatuses = filter(s -> isBusy(s), ambStatuses)
-	travelStatuses = filter(s -> isTravelling(s), ambStatuses)
-	workingStatuses = filter(s -> isWorking(s), ambStatuses)
-	stats.totalBusyDuration = sum(status -> stats.statusDurations[status], busyStatuses) # >= ambulance.totalBusyDuration
-	stats.totalTravelDuration = sum(status -> stats.statusDurations[status], travelStatuses) # >= ambulance.totalTravelDuration
-	stats.totalWorkingDuration = sum(status -> stats.statusDurations[status], workingStatuses) # >= ambulance.totalWorkingDuration
+	# status sets durations
+	stats.totalBusyDuration = stats.statusDurations[ambBusy]
+	stats.totalTravelDuration = stats.statusDurations[ambTravelling]
+	stats.totalWorkingDuration = stats.statusDurations[ambWorking]
 	
 	if checkMode
 		@assert(stats.numDispatches == stats.numDispatchesFromStation + stats.numDispatchesOnRoad + stats.numDispatchesOnFree) # numRedispatches already included in numDispatchesOnRoad
 		@assert(stats.numMoveUps == stats.numMoveUpsFromStation + stats.numMoveUpsOnRoad + stats.numMoveUpsOnFree)
 		
-		@assert(isapprox(sum(values(stats.statusDurations)), sim.time - sim.startTime))
-		@assert(stats.totalBusyDuration >= ambulance.totalBusyDuration || isapprox(stats.totalBusyDuration, ambulance.totalBusyDuration))
-		@assert(stats.totalTravelDuration >= ambulance.totalTravelDuration || isapprox(stats.totalTravelDuration, ambulance.totalTravelDuration))
-		@assert(stats.totalWorkingDuration >= ambulance.totalWorkingDuration || isapprox(stats.totalWorkingDuration, ambulance.totalWorkingDuration))
+		ambStatuses = setdiff(instances(AmbStatus), (ambNullStatus,))
+		@assert(isapprox(sum(s -> stats.statusDurations[s], ambStatuses), sim.time - sim.startTime))
+		geApprox(a,b) = a >= b || isapprox(a, b) # greater or equal, approximately
+		@assert(geApprox(stats.statusDurations[ambBusy], ambulance.totalBusyDuration))
+		@assert(geApprox(stats.statusDurations[ambTravelling], ambulance.totalTravelDuration))
+		@assert(geApprox(stats.statusDurations[ambWorking], ambulance.totalWorkingDuration))
 		
 		# statusTransitionCounts
+		travelStatuses = ambStatusSets[ambTravelling]
 		@assert(stats.numCallsTreated == sum(stats.statusTransitionCounts[:, Int(ambAtCall)]))
 		@assert(stats.numCallsTransported == stats.statusTransitionCounts[Int(ambGoingToHospital), Int(ambAtHospital)])
 		@assert(stats.numDispatches == sum(stats.statusTransitionCounts[:, Int(ambGoingToCall)]))
@@ -211,8 +211,8 @@ function StationStats(sim::Simulation, station::Station)::StationStats
 end
 
 # for ambulance statusDurations:
-Base.:+(a::Dict{AmbStatus,Float}, b::Dict{AmbStatus,Float}) = merge(+, a, b)
-Base.:-(a::Dict{AmbStatus,Float}, b::Dict{AmbStatus,Float}) = merge(-, a, b)
+Base.:+(a::Dict{Union{AmbStatus,AmbStatusSet},Float}, b::Dict{Union{AmbStatus,AmbStatusSet},Float}) = merge(+, a, b)
+Base.:-(a::Dict{Union{AmbStatus,AmbStatusSet},Float}, b::Dict{Union{AmbStatus,AmbStatusSet},Float}) = merge(-, a, b)
 
 function Base.:+(a::AmbulanceStats, b::AmbulanceStats)::AmbulanceStats
 	stats = AmbulanceStats()
