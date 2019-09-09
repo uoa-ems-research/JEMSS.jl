@@ -85,7 +85,7 @@ export
 	isFNodeInRGraph, shortestPathNextRNode, shortestPathNextRArc, shortestPathData, shortestPathTravelTime, shortestPathDistance, shortestPath, findRArcFromFNodeToFNode, # network
 	rasterRandLocations, printRasterSize, # raster
 	shortestRouteTravelTime!, # route
-	getCallResponseDurations, getAvgCallResponseDuration, getCallsReachedInTime, countCallsReachedInTime, printSimStats, printAmbsStats, printCallsStats, printHospitalsStats, calcBatchMeans, calcBatchMeanResponseDurations, meanErrorPlot, calcAR0DurbinWatsonTestPValue, tDistrHalfWidth, confInt, statsDictFromPeriodStatsList, # statistics
+	getCallResponseDurations, getAvgCallResponseDuration, getCallsReachedInTime, countCallsReachedInTime, printSimStats, printAmbsStats, printCallsStats, printHospitalsStats, calcBatchMeans, calcBatchMeanResponseDurations, meanErrorPlot, calcAR0DurbinWatsonTestPValue, tDistrHalfWidth, confInterval, statsDictFromPeriodStatsList, # statistics
 	checkCompTable, checkCompTableIsNested, nestCompTable, unnestCompTable, makeRandNestedCompTable, # compliance table
 	makeRandDeployment, makeRandDeployments, deploymentToStationsNumAmbs, stationsNumAmbsToDeployment, getDeployment, getStationsNumAmbs, setAmbStation!, applyDeployment!, applyStationsNumAmbs!, simulateDeployment!, simulateDeployments!, # deployment
 	checkPriorityList, makeRandPriorityList, # priority list
