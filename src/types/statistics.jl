@@ -114,13 +114,6 @@ function AmbulanceStats(sim::Simulation, ambulance::Ambulance)::AmbulanceStats
 		
 		ambStatuses = setdiff(instances(AmbStatus), (ambNullStatus,))
 		@assert(isapprox(sum(s -> stats.statusDurations[s], ambStatuses), sim.time - sim.startTime))
-		geApprox(a,b) = a >= b || isapprox(a, b) # greater or equal, approximately
-		@assert(geApprox(stats.statusDurations[ambBusy], ambulance.totalBusyDuration))
-		@assert(geApprox(stats.statusDurations[ambTravelling], ambulance.totalTravelDuration))
-		@assert(geApprox(stats.statusDurations[ambWorking], ambulance.totalWorkingDuration))
-		
-		# distance
-		@assert(geApprox(stats.statusDistances[ambTravelling], ambulance.totalTravelDistance))
 		
 		# statusTransitionCounts
 		travelStatuses = ambStatusSets[ambTravelling]

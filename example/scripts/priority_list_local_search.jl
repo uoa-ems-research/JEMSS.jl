@@ -90,8 +90,8 @@ function simStats(sim::Simulation)
 	stats["avgResponseDurationMinutes"] = ""
 	stats["callsReachedInTime"] = ""
 	if sim.complete
-		stats["totalAmbTravelDuration"] = sum(amb -> amb.totalTravelDuration, sim.ambulances)
-		stats["totalAmbBusyDuration"] = sum(amb -> amb.totalBusyDuration, sim.ambulances)
+		stats["totalAmbTravelDuration"] = sum(amb -> amb.statusDurations[ambTravelling], sim.ambulances)
+		stats["totalAmbBusyDuration"] = sum(amb -> amb.statusDurations[ambBusy], sim.ambulances)
 		@assert(all(call -> call.responseDuration != nullTime, sim.calls))
 		stats["avgResponseDurationMinutes"] = mean(call -> call.responseDuration, sim.calls) * 24 * 60
 		stats["callsReachedInTime"] = sum(call -> call.responseDuration <= sim.targetResponseDurations[Int(call.priority)], sim.calls)

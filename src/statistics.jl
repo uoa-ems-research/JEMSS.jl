@@ -62,8 +62,8 @@ end
 function printAmbsStats(sim::Simulation)
 	@assert(sim.complete)
 	
-	ambsAvgDailyTravelTimes = [amb.totalTravelDuration for amb in sim.ambulances] ./ (sim.time - sim.startTime)
-	ambsAvgDailyTravelDists = [amb.totalTravelDistance for amb in sim.ambulances] ./ (sim.time - sim.startTime)
+	ambsAvgDailyTravelTimes = [amb.statusDurations[ambTravelling] for amb in sim.ambulances] ./ (sim.time - sim.startTime)
+	ambsAvgDailyTravelDists = [amb.statusDistances[ambTravelling] for amb in sim.ambulances] ./ (sim.time - sim.startTime)
 	
 	# Gadfly.plot(ecdf(ambsAvgDailyTravelTimes*24*60),
 		# x="Average daily travel time (minutes)",

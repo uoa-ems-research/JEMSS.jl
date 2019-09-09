@@ -20,9 +20,18 @@ function writeAmbsFile(filename::String, ambulances::Vector{Ambulance}; writeOut
 	row1(a::Ambulance) = [a.index, a.stationIndex, Int(a.class)]
 	
 	if writeOutputFields
-		header = vcat(header, ["totalTravelDuration", "totalTravelDistance", "totalBusyDuration", "totalWorkingDuration", "numCallsTreated", "numCallsTransported", "numDispatches", "numDispatchesFromStation", "numDispatchesOnRoad", "numDispatchesOnFree", "numRedispatches", "numMoveUps", "numMoveUpsFromStation", "numMoveUpsOnRoad", "numMoveUpsOnFree", "numMoveUpsReturnToPrevStation"])
-		row2(a::Ambulance) = [a.totalTravelDuration, a.totalTravelDistance, a.totalBusyDuration, a.totalWorkingDuration, a.numCallsTreated, a.numCallsTransported, a.numDispatches, a.numDispatchesFromStation, a.numDispatchesOnRoad, a.numDispatchesOnFree, a.numRedispatches, a.numMoveUps, a.numMoveUpsFromStation, a.numMoveUpsOnRoad, a.numMoveUpsOnFree, a.numMoveUpsReturnToPrevStation]
-		# skipped: statusDurations (dict), statusDistances (dict), statusTransitionCounts (array)
+		counts = (:numCallsTreated, :numCallsTransported, :numDispatches, :numDispatchesFromStation, :numDispatchesOnRoad, :numDispatchesOnFree, :numRedispatches, :numMoveUps, :numMoveUpsFromStation, :numMoveUpsOnRoad, :numMoveUpsOnFree, :numMoveUpsReturnToPrevStation)
+		countHeaders = [string(c) for c in counts]
+		
+		statuses = (setdiff(instances(AmbStatus), (ambNullStatus,))..., instances(AmbStatusSet)...)
+		travelStatuses = (ambStatusSets[ambTravelling]..., instances(AmbStatusSet)...)
+		statusDurationHeaders = [string("statusDurations_", string(s)) for s in statuses]
+		statusDistanceHeaders = [string("statusDistances_", string(s)) for s in travelStatuses]
+		
+		header = vcat(header, countHeaders, statusDurationHeaders, statusDistanceHeaders)
+		row2(a::Ambulance) = vcat([getfield(a,c) for c in counts], [a.statusDurations[s] for s in statuses], [a.statusDistances[s] for s in travelStatuses])
+		
+		# skipped: statusTransitionCounts (array)
 	end
 	
 	row(a::Ambulance) = writeOutputFields ? vcat(row1(a), row2(a)) : row1(a)
