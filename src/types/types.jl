@@ -802,7 +802,7 @@ mutable struct Resimulation
 		[], [], nullIndex)
 end
 
-# Mean and half the width of the confidence interval of the mean
+# Mean and half the width of the confidence interval of the mean.
 # Half-width is also known as half-length, or margin of error.
 struct MeanAndHalfWidth
 	mean::Float

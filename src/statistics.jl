@@ -280,6 +280,11 @@ function tDistrHalfWidth(x::Vector{T}; conf = 0.95) where T <: Real
 	return t * sem(x)
 end
 
+# confidence interval
+function confInt(mhw::MeanAndHalfWidth)
+	return (mhw.mean - mhw.halfWidth, mhw.mean + mhw.halfWidth)
+end
+
 # Return a dictionary of statistics from a list of period statistics.
 # Periods should be the same duration.
 # Confidence intervals assume that samples obtained from periods are IID, and are from a population with a normal distribution and unknown standard deviation.
