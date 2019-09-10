@@ -290,6 +290,17 @@ end
 # Confidence intervals assume that samples obtained from periods are IID, and are from a population with a normal distribution and unknown standard deviation.
 # The function flatten(dict) may be useful if writing this dict to file.
 function statsDictFromPeriodStatsList(periods::Vector{SimPeriodStats}; conf = 0.95)
+	
+	if isempty(periods)
+		period = SimPeriodStats()
+		period.duration = 0.0
+		ambStatuses = (instances(AmbStatus)..., instances(AmbStatusSet)...)
+		period.ambulance.statusDurations = Dict([s => 0.0 for s in ambStatuses])
+		period.ambulance.statusDistances = Dict([s => 0.0 for s in ambStatuses])
+		period.callPriorities = Dict([p => CallStats() for p in priorities])
+		periods = [period]
+	end
+	
 	duration = periods[1].duration
 	ambDays = length(periods[1].ambulances) * duration
 	@assert(all(p -> p.duration == duration, periods))
