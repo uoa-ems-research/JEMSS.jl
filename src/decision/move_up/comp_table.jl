@@ -54,7 +54,7 @@ function compTableMoveUp(sim::Simulation)
 	
 	# get movable ambulances (movableAmbs)
 	for i = 1:numAmbs
-		ambMovable[i] = isAmbAvailableForMoveUp(ambulances[i])
+		ambMovable[i] = isAmbMovable(ambulances[i])
 	end
 	movableAmbs = ambulances[ambMovable]
 	numMovableAmbs = length(movableAmbs)
@@ -63,7 +63,7 @@ function compTableMoveUp(sim::Simulation)
 		return moveUpNull()
 	end
 	
-	# calculate travel time for each available ambulance to reach every station that requires >= 1 amb
+	# calculate travel time for each movable ambulance to reach every station that requires >= 1 amb
 	ambToStationTimes = zeros(Float, numMovableAmbs, numStations) # ambToStationTimes[i,j] = time for movable ambulance i to travel to station j
 	moveUpStations = findall(!iszero, compTable[numMovableAmbs,:]) # indices of stations that require >= 1 amb
 	for i = 1:numMovableAmbs
@@ -202,7 +202,7 @@ function checkCompTable(compTable::CompTable;
 	(m,n) = size(compTable)
 	@assert(all(v -> v >= 0, compTable)) # need non-negative integers
 	for i = 1:m
-		@assert(sum(compTable[i,:]) == i) # row sum should match row index (= number of available ambulances)
+		@assert(sum(compTable[i,:]) == i) # row sum should match row index (= number of movable ambulances)
 	end
 	@assert(numAmbs == nullIndex || numAmbs == m)
 	@assert(numStations == nullIndex || numStations == n)
@@ -254,7 +254,7 @@ end
 # returns a randomly generated nested comp table
 function makeRandNestedCompTable(numAmbs::Int, numStations::Int;
 	stationCapacities::Union{Vector{Int},Nothing} = nothing,
-	rng::AbstractRNG = Base.GLOBAL_RNG)::NestedCompTable
+	rng::AbstractRNG = GLOBAL_RNG)::NestedCompTable
 	
 	@assert(numStations > 0)
 	if stationCapacities == nothing

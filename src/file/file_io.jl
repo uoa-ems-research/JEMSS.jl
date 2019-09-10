@@ -98,7 +98,7 @@ struct Table
 end
 
 function writeTablesToFile!(file::IOStream, table::Table;
-	writeNumRows::Bool = true, writeNumCols::Bool = false)
+	writeNumRows::Bool = false, writeNumCols::Bool = false)
 	
 	(numRows, numCols) = size(table.data)
 	writeDlmLine!(file, table.name, writeNumRows ? numRows : "", writeNumCols ? numCols : "")

@@ -39,6 +39,7 @@ function initResim!(sim::Simulation)
 	# check that checksum values of input files are same as in events file
 	allMatch = true
 	for i = 1:length(inputFiles)
+		if inputFiles[i] == "statsControl" continue end # allow this file to change, should not affect sim events
 		if fileChecksums[i] != sim.inputFiles[inputFiles[i]].checksum
 			println(" checksum mismatch for file: ", inputFiles[i])
 			allMatch = false
@@ -77,7 +78,7 @@ function resimCheckCurrentEvent!(sim::Simulation, event::Event)
 	elseif event.callIndex != resimEvent.callIndex
 		println("mismatching event call index")
 		eventsMatch = false
-	elseif !(event.ambIndex == nullIndex && resimEvent.stationIndex == nullIndex || sim.ambulances[event.ambIndex].stationIndex == resimEvent.stationIndex)
+	elseif event.stationIndex != resimEvent.stationIndex
 		println("mismatching event station index")
 		eventsMatch = false
 	end
@@ -126,7 +127,7 @@ function resimMoveUp(sim::Simulation)
 	ambStations = Vector{Station}()
 	eventChildren = resim.eventsChildren[resimEvent.index]
 	for event in reverse(eventChildren)
-		@assert(event.form == ambMoveUp)
+		@assert(event.form == ambMoveUpToStation)
 		push!(movableAmbs, sim.ambulances[event.ambIndex])
 		push!(ambStations, sim.stations[event.stationIndex])
 	end

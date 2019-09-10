@@ -27,7 +27,7 @@ function runConfig(configFilename::String)
 	printSimStats(sim)
 	
 	# save statistics
-	writeStatsFiles!(sim)
+	writeOutputFiles(sim)
 	
 	# close output files
 	closeOutputFiles!(sim)
@@ -134,7 +134,7 @@ function initSim(configFilename::String;
 	# read misc
 	sim.map = readMapFile(simFilePath("map"))
 	map = sim.map # shorthand
-	(sim.targetResponseTimes, sim.responseTravelPriorities) = readPrioritiesFile(simFilePath("priorities"))
+	(sim.targetResponseDurations, sim.responseTravelPriorities) = readPrioritiesFile(simFilePath("priorities"))
 	sim.travel = readTravelFile(simFilePath("travel"))
 	# "demand" file can be slow to read, will not read here but read elsewhere when needed
 	if haskey(sim.inputFiles, "demandCoverage")
@@ -258,6 +258,12 @@ function initSim(configFilename::String;
 	for a in sim.ambulances
 		initAmbulance!(sim, a)
 		# currently, this sets ambulances to wake up at start of sim, since wake up and sleep events are not in ambulances file yet
+	end
+	
+	# init station stats
+	for station in sim.stations
+		station.numIdleAmbsTotalDuration = OffsetVector(zeros(Float,sim.numAmbs+1), 0:sim.numAmbs)
+		station.currentNumIdleAmbsSetTime = sim.startTime
 	end
 	
 	initTime(t)
@@ -400,6 +406,18 @@ function initSim(configFilename::String;
 	end
 	
 	##################
+	# statistics
+	
+	if haskey(sim.inputFiles, "statsControl")
+		initMessage(t, "initialising statistics")
+		stats = sim.stats # shorthand
+		stats.doCapture = true
+		(stats.periodDurationsIter, stats.warmUpDuration) = readStatsControlFile(simFilePath("statsControl"))
+		stats.nextCaptureTime = sim.startTime + (stats.warmUpDuration > 0 ? stats.warmUpDuration : first(stats.periodDurationsIter))
+		initTime(t)
+	end
+	
+	##################
 	# misc
 	
 	sim.initialised = true # at this point, the simulation could be run
@@ -414,27 +432,4 @@ function initSim(configFilename::String;
 	end
 	
 	return sim
-end
-
-# initialise given ambulance
-# sets ambulance as sleeping, creates wake up event
-function initAmbulance!(sim::Simulation, ambulance::Ambulance;
-	wakeUpTime::Float = nullTime)
-	wakeUpTime = (wakeUpTime == nullTime ? sim.startTime : wakeUpTime)
-	
-	@assert(ambulance.index != nullIndex)
-	@assert(ambulance.stationIndex != nullIndex)
-	@assert(sim.startTime <= wakeUpTime)
-	
-	ambulance.status = ambSleeping
-	# ambulance.stationIndex
-	# ambulance.callIndex
-	
-	# initialise route to start at station
-	ambulance.route = Route()
-	station = sim.stations[ambulance.stationIndex]
-	initRoute!(sim, ambulance.route; startLoc = station.location, startFNode = station.nearestNodeIndex, startFNodeDist = station.nearestNodeDist)
-	
-	# add wake up event
-	addEvent!(sim.eventList; form = ambWakesUp, time = wakeUpTime, ambulance = ambulance)
 end

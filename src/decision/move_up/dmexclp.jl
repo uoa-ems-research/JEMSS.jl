@@ -48,14 +48,14 @@ function initDmexclp!(sim::Simulation;
 	dcd.marginalBenefit = (busyFraction.^[0:numAmbs-1;])*(1-busyFraction)
 	
 	# values that will be calculated when needed
-	dcd.stationNumIdleAmbs = zeros(Int, numStations)
-	dcd.stationMarginalCoverages = zeros(Float, numStations) # stationMarginalCoverages[i] gives extra coverage provided from placing newly idle ambulance at station i
-	# dcd.pointSetsCoverCounts = [zeros(Int, length(pointsCoverageMode.pointSets)) for pointsCoverageMode in sim.demandCoverage.pointsCoverageModes] # pointSetsCoverCounts[i][j] = number of idle ambulances covering node set j, for demand.pointsCoverageModes i
+	dcd.stationNumFreeAmbs = zeros(Int, numStations)
+	dcd.stationMarginalCoverages = zeros(Float, numStations) # stationMarginalCoverages[i] gives extra coverage provided from placing newly freed ambulance at station i
+	# dcd.pointSetsCoverCounts = [zeros(Int, length(pointsCoverageMode.pointSets)) for pointsCoverageMode in sim.demandCoverage.pointsCoverageModes] # pointSetsCoverCounts[i][j] = number of free ambulances covering node set j, for demand.pointsCoverageModes i
 end
 
-function dmexclpMoveUp(sim::Simulation, newlyIdleAmb::Ambulance)
+function dmexclpMoveUp(sim::Simulation, newlyFreedAmb::Ambulance)
 	@assert(sim.moveUpData.useMoveUp)
-	@assert(newlyIdleAmb.status != ambGoingToCall)
+	@assert(newlyFreedAmb.status != ambGoingToCall)
 	@assert(sim.demand.initialised && sim.demandCoverage.initialised)
 	
 	# shorthand names:
@@ -64,19 +64,19 @@ function dmexclpMoveUp(sim::Simulation, newlyIdleAmb::Ambulance)
 	stations = sim.stations
 	numStations = sim.numStations
 	
-	# calculate the number of idle ambulances at (or travelling to) each station
-	dcd.stationNumIdleAmbs[:] .= 0
+	# calculate the number of free ambulances at (or travelling to) each station
+	dcd.stationNumFreeAmbs[:] .= 0
 	for (i,ambulance) in enumerate(ambulances)
-		# do not count newly idle ambulance, it has not been assigned a station
-		if isAmbAvailableForMoveUp(ambulance) && i != newlyIdleAmb.index
-			dcd.stationNumIdleAmbs[ambulance.stationIndex] += 1
+		# do not count newly freed ambulance, it has not been assigned a station
+		if isAmbMovable(ambulance) && i != newlyFreedAmb.index
+			dcd.stationNumFreeAmbs[ambulance.stationIndex] += 1
 		end
 	end
 	
-	# ignoring newly idle amb, count number of ambulances covering each point set
-	demandsPointSetsCoverCounts = calcPointSetsCoverCounts!(sim, sim.time, dcd.stationNumIdleAmbs)
+	# ignoring newly freed amb, count number of ambulances covering each point set
+	demandsPointSetsCoverCounts = calcPointSetsCoverCounts!(sim, sim.time, dcd.stationNumFreeAmbs)
 	
-	# find station allocation for newly idle ambulance that gives greatest
+	# find station allocation for newly freed ambulance that gives greatest
 	# increase in expected demand coverage
 	dcd.stationMarginalCoverages[:] .= 0.0
 	for demandPriority in priorities
@@ -98,5 +98,5 @@ function dmexclpMoveUp(sim::Simulation, newlyIdleAmb::Ambulance)
 	end
 	(bestMarginalCoverage, bestStationIndex) = findmax(dcd.stationMarginalCoverages)
 	
-	return [newlyIdleAmb], [stations[bestStationIndex]]
+	return [newlyFreedAmb], [stations[bestStationIndex]]
 end

@@ -13,27 +13,27 @@
 # limitations under the License.
 ##########################################################################
 
-# return true if ambulance is available for dispatch to a call
-function isAmbAvailableForDispatch(sim::Simulation, ambulance::Ambulance, call::Call)
+# return true if ambulance can be dispatched to a call
+function isAmbDispatchable(sim::Simulation, ambulance::Ambulance, call::Call)
 	status = ambulance.status
-	if status == ambIdleAtStation || status == ambGoingToStation
+	if isFree(status)
 		return true
 	elseif status == ambGoingToCall
-		return isAmbRedispatchAllowed(sim, ambulance, sim.calls[ambulance.callIndex], call)
+		return isAmbRedispatchable(sim, ambulance, sim.calls[ambulance.callIndex], call)
 	end
 	return false
 end
 
 # return true if ambulance may be redispatched from its current call to a different call, false otherwise.
-function isAmbRedispatchAllowed(sim::Simulation, ambulance::Ambulance, fromCall::Call, toCall::Call)
+function isAmbRedispatchable(sim::Simulation, ambulance::Ambulance, fromCall::Call, toCall::Call)
 	@assert(ambulance.status == ambGoingToCall)
 	@assert(ambulance.callIndex == fromCall.index)
 	sim.redispatch.allow || return false
 	return sim.redispatch.conditions[Int(fromCall.priority), Int(toCall.priority)]
 end
 
-# return the index of the nearest available ambulance to dispatch to a call
-function findNearestFreeAmbToCall!(sim::Simulation, call::Call)
+# return the index of the nearest dispatchable ambulance for a call
+function findNearestDispatchableAmb!(sim::Simulation, call::Call)
 	
 	# nearest node to call, this is independent of chosen ambulance
 	(node2, dist2) = (call.nearestNodeIndex, call.nearestNodeDist)
@@ -44,7 +44,7 @@ function findNearestFreeAmbToCall!(sim::Simulation, call::Call)
 	ambIndex = nullIndex # nearest free ambulance
 	minTime = Inf
 	for amb in sim.ambulances
-		if isAmbAvailableForDispatch(sim, amb, call)
+		if isAmbDispatchable(sim, amb, call)
 			(node1, time1) = getRouteNextNode!(sim, amb.route, travelMode.index, sim.time) # next/nearest node in ambulance route
 			travelTime = shortestPathTravelTime(sim.net, travelMode.index, node1, node2) # time spent on network
 			travelTime += time1 + time2 # add time to get on and off network
@@ -57,3 +57,4 @@ function findNearestFreeAmbToCall!(sim::Simulation, call::Call)
 	
 	return ambIndex
 end
+findNearestFreeAmbToCall!(sim::Simulation, call::Call) = findNearestDispatchableAmb!(sim, call) # compat

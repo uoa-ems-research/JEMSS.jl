@@ -34,52 +34,52 @@ function initPriorityList!(sim::Simulation, priorityList::PriorityList)
 	checkPriorityList(priorityList, sim)
 	pld.priorityList = priorityList
 	
-	pld.stationNumIdleAmbs = Vector{Int}(undef, numStations)
+	pld.stationNumFreeAmbs = Vector{Int}(undef, numStations)
 	
 	# check that ambulance to station assignments follow priority list
-	pld.stationNumIdleAmbs[:] .= 0
+	pld.stationNumFreeAmbs[:] .= 0
 	for i = 1:sim.numAmbs
-		pld.stationNumIdleAmbs[ambulances[i].stationIndex] += 1
+		pld.stationNumFreeAmbs[ambulances[i].stationIndex] += 1
 	end
-	if !all(pld.stationNumIdleAmbs[i] == sum(pld.priorityList .== i) for i = 1:numStations)
+	if !all(pld.stationNumFreeAmbs[i] == sum(pld.priorityList .== i) for i = 1:numStations)
 		@warn("Number of ambulances at each station does not match priority list")
 	end
 end
 
-function priorityListMoveUp(sim::Simulation, newlyIdleAmb::Ambulance)
+function priorityListMoveUp(sim::Simulation, newlyFreedAmb::Ambulance)
 	@assert(sim.moveUpData.useMoveUp)
 	
 	# shorthand:
 	pld = sim.moveUpData.priorityListData
 	priorityList = pld.priorityList
-	stationNumIdleAmbs = pld.stationNumIdleAmbs
+	stationNumFreeAmbs = pld.stationNumFreeAmbs
 	ambulances = sim.ambulances
 	stations = sim.stations
 	numAmbs = sim.numAmbs
 	
-	# calculate the number of idle ambulances at (or travelling to) each station
-	stationNumIdleAmbs[:] .= 0
+	# calculate the number of free ambulances at (or travelling to) each station
+	stationNumFreeAmbs[:] .= 0
 	for i = 1:numAmbs
-		# do not count newly idle ambulance, it has not been assigned a station
-		if isAmbAvailableForMoveUp(ambulances[i]) && i != newlyIdleAmb.index
-			stationNumIdleAmbs[ambulances[i].stationIndex] += 1
+		# do not count newly freed ambulance, it has not been assigned a station
+		if isAmbMovable(ambulances[i]) && i != newlyFreedAmb.index
+			stationNumFreeAmbs[ambulances[i].stationIndex] += 1
 		end
 	end
-	numIdleAmbs = sum(stationNumIdleAmbs) + 1
+	numFreeAmbs = sum(stationNumFreeAmbs) + 1
 	
 	# return first item in priority list that is not already filled
 	stationIndex = nullIndex
-	for i = 1:numIdleAmbs
+	for i = 1:numFreeAmbs
 		j = priorityList[i] # station index
-		stationNumIdleAmbs[j] -= 1
-		if stationNumIdleAmbs[j] < 0
+		stationNumFreeAmbs[j] -= 1
+		if stationNumFreeAmbs[j] < 0
 			stationIndex = j
 			break
 		end
 	end
 	@assert(stationIndex != nullIndex)
 	
-	return [newlyIdleAmb], [stations[stationIndex]]
+	return [newlyFreedAmb], [stations[stationIndex]]
 end
 
 # check that priority list is valid
@@ -108,7 +108,7 @@ end
 # returns a randomly generated priority list
 function makeRandPriorityList(numAmbs::Int, numStations::Int;
 	stationCapacities::Union{Vector{Int},Nothing} = nothing,
-	rng::AbstractRNG = Base.GLOBAL_RNG)::PriorityList
+	rng::AbstractRNG = GLOBAL_RNG)::PriorityList
 	
 	@assert(numStations > 0)
 	if stationCapacities == nothing

@@ -33,8 +33,8 @@ const jemssDir = realpath(joinpath(sourceDir, ".."))
 const pkgVersions = Pkg.installed()
 
 const Deployment = Vector{Int} # deployment[i] gives index of station to deploy ambulance i to
-const CompTable = Array{Int,2} # compTable[i,j] gives number of ambulances to place at station j when there are i available ambulances
-const NestedCompTable = Vector{Int} # nested compliance table can be represented as a list of station indices; nestedCompTable[1:i] gives indices of stations that i available ambulances should be placed at
+const CompTable = Array{Int,2} # compTable[i,j] gives number of ambulances to place at station j when there are i free ambulances
+const NestedCompTable = Vector{Int} # nested compliance table can be represented as a list of station indices; nestedCompTable[1:i] gives indices of stations that i free ambulances should be placed at
 const PriorityList = Vector{Int} # a priority list gives the order of preference for which ambulances should be redeployed (moved up) to stations; priorityList[1] has the index of the station with highest priority
 
 # run modes
@@ -62,13 +62,14 @@ const numPriorities = length(priorities)
 @enum AmbClass nullAmbClass=0 als=1 bls=2 # als = advanced life support, bls = basic life support
 
 # event types/forms
-@enum EventForm nullEvent ambGoesToSleep ambWakesUp callArrives considerDispatch ambDispatched ambReachesCall ambGoesToHospital ambReachesHospital ambBecomesIdle ambReachesStation ambRedirected considerMoveUp ambMoveUp
+@enum EventForm nullEvent ambGoesToSleep ambWakesUp callArrives considerDispatch ambDispatched ambReachesCall ambGoesToHospital ambReachesHospital ambBecomesFree ambReturnsToStation ambReachesStation ambRedirected considerMoveUp ambMoveUpToStation
 
 # ambulance statuses
-@enum AmbStatus ambNullStatus ambSleeping ambIdleAtStation ambGoingToCall ambAtCall ambGoingToHospital ambAtHospital ambGoingToStation
+@enum AmbStatus ambNullStatus ambSleeping ambIdleAtStation ambGoingToCall ambAtCall ambGoingToHospital ambAtHospital ambFreeAfterCall ambReturningToStation ambMovingUpToStation
+@enum AmbStatusSet ambWorking ambBusy ambFree ambTravelling ambGoingToStation
 
 # call statuses
-@enum CallStatus callNullStatus callScreening callQueued callWaitingForAmb callOnSceneCare callGoingToHospital callAtHospital callProcessed
+@enum CallStatus callNullStatus callScreening callQueued callWaitingForAmb callOnSceneTreatment callGoingToHospital callAtHospital callProcessed
 
 # route statuses
 @enum RouteStatus routeNullStatus routeBeforeStartNode routeOnPath routeAfterEndNode

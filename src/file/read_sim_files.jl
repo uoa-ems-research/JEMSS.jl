@@ -145,8 +145,8 @@ function readCallsFile(filename::String)
 		calls[i].arrivalTime = arrivalTimeCol[i]
 		calls[i].dispatchDelay = dispatchDelayCol[i]
 		calls[i].onSceneDuration = onSceneDurationCol[i]
-		calls[i].handoverDuration = handoverDurationCol[i]
 		calls[i].transport = transportCol[i]
+		calls[i].handoverDuration = calls[i].transport ? handoverDurationCol[i] : 0.0
 		calls[i].hospitalIndex = hospitalIndexCol[i]
 		
 		@assert(calls[i].index == i)
@@ -154,9 +154,7 @@ function readCallsFile(filename::String)
 		@assert(calls[i].arrivalTime >= 0)
 		@assert(calls[i].dispatchDelay >= 0)
 		@assert(calls[i].onSceneDuration >= 0)
-		if calls[i].transport
-			@assert(calls[i].handoverDuration >= 0)
-		end
+		@assert(calls[i].handoverDuration >= 0)
 	end
 	
 	# check that calls are ordered by arrival time
@@ -469,22 +467,23 @@ function readPrioritiesFile(filename::String)
 	
 	# read data from table
 	columns = table.columns # shorthand
-	targetResponseTimes = Vector{Float}(undef, n)
+	targetResponseDurationString = haskey(columns, "targetResponseDuration") ? "targetResponseDuration" : "targetResponseTime" # compat for "targetResponseTime"
+	targetResponseDurations = Vector{Float}(undef, n)
 	responseTravelPriorities = Dict([p => p for p in priorities]) # default is to have response travel priority equal to call priority
 	for i = 1:n
 		@assert(columns["priority"][i] == i)
 		@assert(eval(Meta.parse(columns["name"][i])) == Priority(i))
-		targetResponseTimes[i] = columns["targetResponseTime"][i]
+		targetResponseDurations[i] = columns[targetResponseDurationString][i]
 		
 		if haskey(columns, "responseTravelPriority")
 			responseTravelPriorities[Priority(i)] = eval(Meta.parse(columns["responseTravelPriority"][i]))
 		end
 	end
 	
-	# target response times should be positive
-	@assert(all(targetResponseTimes .> 0))
+	# target response durations should be positive
+	@assert(all(targetResponseDurations .> 0))
 	
-	return targetResponseTimes, responseTravelPriorities
+	return targetResponseDurations, responseTravelPriorities
 end
 
 function readPriorityListFile(filename::String)
@@ -602,6 +601,27 @@ function readStationsFile(filename::String)
 	end
 	
 	return stations
+end
+
+function readStatsControlFile(filename::String)
+	tables = readTablesFromFile(filename)
+	
+	table = tables["params"]
+	param(s::String) = table.columns[s][1]
+	warmUpDuration = param("warmUpDuration")
+	periodDurationsString = param("periodDurations")
+	doCyclePeriodDurations = Bool(param("doCyclePeriodDurations"))
+	
+	@assert(warmUpDuration >= 0.0)
+	
+	# create period durations iterator
+	@assert(isa(periodDurationsString, String) || isa(periodDurationsString, SubString)) # should be string representation of a vector
+	periodDurations = periodDurationsString |> Meta.parse |> eval
+	@assert(all(x -> x > 0, periodDurations))
+	if doCyclePeriodDurations periodDurations = Iterators.cycle(periodDurations) end
+	periodDurationsIter = Stateful(periodDurations)
+	
+	return periodDurationsIter, warmUpDuration
 end
 
 function readTravelFile(filename::String)

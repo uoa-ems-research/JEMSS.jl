@@ -13,7 +13,7 @@
 # limitations under the License.
 ##########################################################################
 
-# Script to generate many different deployments, and rank them by batch mean response times.
+# Script to generate many different deployments, and rank them by batch mean response durations.
 
 using JEMSS
 using Random
@@ -22,7 +22,7 @@ using Random
 # parameters:
 const configFilename = "sim_config.xml"
 const outputFolder = "output"
-const batchMeanResponseTimesFilename = joinpath(outputFolder, "deployments_batch_mean_response_times.csv")
+const batchMeanResponseDurationsFilename = joinpath(outputFolder, "deployments_batch_mean_response_durations.csv")
 const batchTime = 1.0 # batch by day
 const warmUpTime = 1.0 # one day warm-up period
 
@@ -57,50 +57,50 @@ applyDeployment!(sim, deployments[1])
 simulateToTime!(sim, 1.0)
 reset!(sim)
 
-# run simulation for each deployment, save call response times
-getCallResponseTimes(sim::Simulation) = [call.responseTime * 24 * 60 for call in sim.calls] # times in minutes
-responseTimeUnits = "minutes"
+# run simulation for each deployment, save call response durations
+getCallResponseDurations(sim::Simulation) = [call.responseDuration * 24 * 60 for call in sim.calls] # times in minutes
+responseDurationUnits = "minutes"
 t = time()
-callResponseTimes = simulateDeployments!(sim, deployments, getCallResponseTimes; showEta = true)
+callResponseDurations = simulateDeployments!(sim, deployments, getCallResponseDurations; showEta = true)
 println("total time for simulating $numDeployments deployments (seconds): ", round(time() - t, digits = 2))
 
-# calculate batch mean response times
-x = Vector{Vector{Float}}() # will populate with batch mean response times
+# calculate batch mean response durations
+x = Vector{Vector{Float}}() # will populate with batch mean response durations
 callArrivalTimes = [call.arrivalTime for call in sim.calls] # same for each simulation
 startTime = sim.startTime + warmUpTime; endTime = callArrivalTimes[end] # ignore last call (cool-down period)
 for i = 1:numDeployments
-	push!(x, calcBatchMeans(callResponseTimes[i], callArrivalTimes, batchTime;
+	push!(x, calcBatchMeans(callResponseDurations[i], callArrivalTimes, batchTime;
 		startTime = startTime, endTime = endTime, rmPartialBatch = true))
 end
-batchMeanResponseTimes = collect(hcat(x...)') # batchMeanResponseTimes[i,j] is for calls in simulation i, batch j
+batchMeanResponseDurations = collect(hcat(x...)') # batchMeanResponseDurations[i,j] is for calls in simulation i, batch j
 
-@warn("Have assumed that batch time of $batchTime is sufficient for values in batchMeanResponseTimes[i,:] to be from a normal distribution (for each i).")
+@warn("Have assumed that batch time of $batchTime is sufficient for values in batchMeanResponseDurations[i,:] to be from a normal distribution (for each i).")
 
-# Check for serial autocorrelation of batchMeanResponseTimes for each deployment,
+# Check for serial autocorrelation of batchMeanResponseDurations for each deployment,
 # if autocorrelation is detected, then the batch sizes / durations need to be increased.
 # Will apply AR(0) model and use Durbin-Watson test.
-x = batchMeanResponseTimes # shorthand
+x = batchMeanResponseDurations # shorthand
 dwPValues = [calcAR0DurbinWatsonTestPValue(x[i,:]) for i = 1:size(x,1)]
 for p in [0.01, 0.05, 0.10]
 	println(" number of p-values <= ", p, ": ", count(dwPValues .<= p), " out of ", numDeployments)
 end
 # number of p-values <= p should be approximately <= p * numDeployments, for there to be no evidence against null hypothesis (H0: no serial autocorrelation)
 
-# save batch mean response times to file
-writeBatchMeanResponseTimesFile(batchMeanResponseTimesFilename, batchMeanResponseTimes;
-	batchTime = batchTime, startTime = startTime, endTime = endTime, responseTimeUnits = responseTimeUnits)
-println("Saved batch mean response times to $batchMeanResponseTimesFilename")
+# save batch mean response durations to file
+writeBatchMeanResponseDurationsFile(batchMeanResponseDurationsFilename, batchMeanResponseDurations;
+	batchTime = batchTime, startTime = startTime, endTime = endTime, responseDurationUnits = responseDurationUnits)
+println("Saved batch mean response durations to $batchMeanResponseDurationsFilename")
 
-# calculate mean and standard error of batch mean response times, plot for each deployment
+# calculate mean and standard error of batch mean response durations, plot for each deployment
 false && begin
 using Plots
-x = batchMeanResponseTimes # shorthand
+x = batchMeanResponseDurations # shorthand
 conf = 0.95
 order = sortperm(squeeze(mean(x, dims = 2),2)) # sort by average value
 Plots.plotly()
 plot = meanErrorPlot(x[order,:], conf);
-Plots.title!(plot, "Deployment : batch mean response time, mean & error");
+Plots.title!(plot, "Deployment : batch mean response duration, mean & error");
 Plots.xaxis!(plot, "Deployment");
-Plots.yaxis!(plot, "Batch mean response time ($responseTimeUnits)");
+Plots.yaxis!(plot, "Batch mean response duration ($responseDurationUnits)");
 display(plot);
 end

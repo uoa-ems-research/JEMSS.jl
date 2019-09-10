@@ -49,7 +49,7 @@ mutable struct GenConfig
 	# misc
 	startTime::Float
 	maxCallArrivalTime::Float
-	targetResponseTime::Float
+	targetResponseDuration::Float
 	offRoadSpeed::Float
 	stationCapacity::Int
 	travelModeSpeeds::Vector{Float}
@@ -171,7 +171,8 @@ function readGenConfig(genConfigFilename::String)
 	genConfig.maxCallArrivalTime = containsElt(simElt, "maxCallArrivalTime") ? eltContentVal(simElt, "maxCallArrivalTime") : nullTime
 	@assert((genConfig.numCalls != nullIndex) + (genConfig.maxCallArrivalTime != nullTime) == 1, "Need exactly one of these values: numCalls, maxCallArrivalTime.")
 	@assert(genConfig.startTime <= genConfig.maxCallArrivalTime || genConfig.maxCallArrivalTime == nullTime)
-	genConfig.targetResponseTime = eltContentVal(simElt, "targetResponseTime")
+	targetResponseDurationString = containsElt(simElt, "targetResponseDuration") ? "targetResponseDuration" : "targetResponseTime" # compat for "targetResponseTime"
+	genConfig.targetResponseDuration = eltContentVal(simElt, targetResponseDurationString)
 	genConfig.offRoadSpeed = eltContentVal(simElt, "offRoadSpeed") # km / day
 	genConfig.stationCapacity = eltContentVal(simElt, "stationCapacity")
 	travelModeSpeedsElt = findElt(simElt, "travelModeSpeeds")
@@ -243,7 +244,7 @@ function runGenConfig(genConfigFilename::String; overwriteOutputPath::Bool = fal
 		writeHospitalsFile(genConfig.hospitalsFilename, hospitals)
 		writeMapFile(genConfig.mapFilename, genConfig.map)
 		writeNodesFile(genConfig.nodesFilename, nodes)
-		writePrioritiesFile(genConfig.prioritiesFilename, repeat([genConfig.targetResponseTime],numPriorities))
+		writePrioritiesFile(genConfig.prioritiesFilename, repeat([genConfig.targetResponseDuration],numPriorities))
 		writeStationsFile(genConfig.stationsFilename, stations)
 		writeTravelFile(genConfig.travelFilename, travel)
 	elseif genConfig.mode == "calls"

@@ -15,9 +15,27 @@
 
 # write sim object and output files
 
-function writeAmbsFile(filename::String, ambulances::Vector{Ambulance})
-	table = Table("ambulances", ["index", "stationIndex", "class"];
-		rows = [[a.index, a.stationIndex, Int(a.class)] for a in ambulances])
+function writeAmbsFile(filename::String, ambulances::Vector{Ambulance}; writeOutputFields::Bool = false)
+	header = ["index", "stationIndex", "class"]
+	row1(a::Ambulance) = [a.index, a.stationIndex, Int(a.class)]
+	
+	if writeOutputFields
+		counts = (:numCallsTreated, :numCallsTransported, :numDispatches, :numDispatchesFromStation, :numDispatchesOnRoad, :numDispatchesOnFree, :numRedispatches, :numMoveUps, :numMoveUpsFromStation, :numMoveUpsOnRoad, :numMoveUpsOnFree, :numMoveUpsReturnToPrevStation)
+		countHeaders = [string(c) for c in counts]
+		
+		statuses = (setdiff(instances(AmbStatus), (ambNullStatus,))..., instances(AmbStatusSet)...)
+		travelStatuses = (ambStatusSets[ambTravelling]..., instances(AmbStatusSet)...)
+		statusDurationHeaders = [string("statusDurations_", string(s)) for s in statuses]
+		statusDistanceHeaders = [string("statusDistances_", string(s)) for s in travelStatuses]
+		
+		header = vcat(header, countHeaders, statusDurationHeaders, statusDistanceHeaders)
+		row2(a::Ambulance) = vcat([getfield(a,c) for c in counts], [a.statusDurations[s] for s in statuses], [a.statusDistances[s] for s in travelStatuses])
+		
+		# skipped: statusTransitionCounts (array)
+	end
+	
+	row(a::Ambulance) = writeOutputFields ? vcat(row1(a), row2(a)) : row1(a)
+	table = Table("ambulances", header; rows = [row(a) for a in ambulances])
 	writeTablesToFile(filename, table)
 end
 
@@ -32,11 +50,20 @@ function writeArcsFile(filename::String, arcs::Vector{Arc}, travelTimes::Array{F
 	writeTablesToFile(filename, [miscTable, arcsTable])
 end
 
-function writeCallsFile(filename::String, startTime::Float, calls::Vector{Call})
+function writeCallsFile(filename::String, startTime::Float, calls::Vector{Call}; writeOutputFields::Bool = false)
 	@assert(length(calls) >= 1)
 	miscTable = Table("miscData", ["startTime"]; rows = [[startTime]])
-	callsTable = Table("calls", ["index", "priority", "x", "y", "arrivalTime", "dispatchDelay", "onSceneDuration", "transport", "hospitalIndex", "handoverDuration"];
-		rows = [[c.index, Int(c.priority), c.location.x, c.location.y, c.arrivalTime, c.dispatchDelay, c.onSceneDuration, Int(c.transport), c.hospitalIndex, c.handoverDuration] for c in calls])
+	
+	header = ["index", "priority", "x", "y", "arrivalTime", "dispatchDelay", "onSceneDuration", "transport", "hospitalIndex", "handoverDuration"]
+	row1(c::Call) = [c.index, Int(c.priority), c.location.x, c.location.y, c.arrivalTime, c.dispatchDelay, c.onSceneDuration, Int(c.transport), c.hospitalIndex, c.handoverDuration]
+	
+	if writeOutputFields
+		header = vcat(header, ["dispatchTime", "ambArrivalTime", "hospitalArrivalTime", "numBumps", "wasQueued", "ambDispatchLoc.x", "ambDispatchLoc.y", "ambStatusBeforeDispatch", "chosenHospitalIndex", "queuedDuration", "bumpedDuration", "waitingForAmbDuration", "responseDuration", "ambGoingToCallDuration", "transportDuration", "serviceDuration"])
+		row2(c::Call) = [c.dispatchTime, c.ambArrivalTime, c.hospitalArrivalTime, c.numBumps, Int(c.wasQueued), c.ambDispatchLoc.x, c.ambDispatchLoc.y, string(c.ambStatusBeforeDispatch), c.chosenHospitalIndex, c.queuedDuration, c.bumpedDuration, c.waitingForAmbDuration, c.responseDuration, c.ambGoingToCallDuration, c.transportDuration, c.serviceDuration]
+	end
+	
+	row(c::Call) = writeOutputFields ? vcat(row1(c), row2(c)) : row1(c)
+	callsTable = Table("calls", header; rows = [row(c) for c in calls])
 	writeTablesToFile(filename, [miscTable, callsTable])
 end
 
@@ -74,9 +101,17 @@ function writeDemandCoverageFile(filename::String, demandCoverage::DemandCoverag
 	writeTablesToFile(filename, [coverTimesTable, demandRasterCellNumPointsTable])
 end
 
-function writeHospitalsFile(filename::String, hospitals::Vector{Hospital})
-	table = Table("hospitals", ["index", "x", "y"];
-		rows = [[h.index, h.location.x, h.location.y] for h in hospitals])
+function writeHospitalsFile(filename::String, hospitals::Vector{Hospital}; writeOutputFields::Bool = false)
+	header = ["index", "x", "y"]
+	row1(h::Hospital) = [h.index, h.location.x, h.location.y]
+	
+	if writeOutputFields
+		header = vcat(header, ["numCalls"])
+		row2(h::Hospital) = [h.numCalls]
+	end
+	
+	row(h::Hospital) = writeOutputFields ? vcat(row1(h), row2(h)) : row1(h)
+	table = Table("hospitals", header, rows = [row(h) for h in hospitals])
 	writeTablesToFile(filename, table)
 end
 
@@ -113,9 +148,9 @@ function writeRNetTravelsFile(filename::String, rNetTravels::Vector{NetTravel})
 	serializeToFile(filename, rNetTravelsSave)
 end
 
-function writePrioritiesFile(filename::String, targetResponseTimes::Vector{Float})
-	table = Table("priorities", ["priority", "name", "targetResponseTime"];
-		rows = [[i, string(Priority(i)), targetResponseTimes[i]] for i = 1:length(targetResponseTimes)])
+function writePrioritiesFile(filename::String, targetResponseDurations::Vector{Float})
+	table = Table("priorities", ["priority", "name", "targetResponseDuration"];
+		rows = [[i, string(Priority(i)), targetResponseDurations[i]] for i = 1:length(targetResponseDurations)])
 	writeTablesToFile(filename, table)
 end
 
@@ -181,6 +216,19 @@ function openOutputFiles!(sim::Simulation)
 	end
 end
 
+function writeOutputFiles(sim::Simulation)
+	writeMiscOutputFiles(sim)
+	writeStatsFiles(sim)
+end
+
+function writeMiscOutputFiles(sim::Simulation)
+	outputFileKeys = keys(sim.outputFiles)
+	outputFilePath(name::String) = sim.outputFiles[name].path
+	if in("ambulances", outputFileKeys) writeAmbsFile(outputFilePath("ambulances"), sim.ambulances; writeOutputFields = true) end
+	if in("calls", outputFileKeys) writeCallsFile(outputFilePath("calls"), sim.startTime, sim.calls; writeOutputFields = true) end
+	if in("hospitals", outputFileKeys) writeHospitalsFile(outputFilePath("hospitals"), sim.hospitals; writeOutputFields = true) end
+end
+
 function closeOutputFiles!(sim::Simulation)
 	if !sim.writeOutput; return; end
 	
@@ -193,39 +241,9 @@ end
 function writeEventToFile!(sim::Simulation, event::Event)
 	if !sim.writeOutput || sim.resim.use; return; end
 	
-	# find station index of ambulance (if any)
-	stationIndex = nullIndex
-	if event.ambIndex != nullIndex
-		stationIndex = sim.ambulances[event.ambIndex].stationIndex
-	end
-	
-	writeDlmLine!(sim.eventsFileIO, event.index, event.parentIndex, @sprintf("%0.5f", event.time), Int(event.form), event.ambIndex, event.callIndex, stationIndex)
+	writeDlmLine!(sim.eventsFileIO, event.index, event.parentIndex, @sprintf("%0.5f", event.time), Int(event.form), event.ambIndex, event.callIndex, event.stationIndex)
 	
 	# flush(sim.eventsFileIO)
-end
-
-function writeStatsFiles!(sim::Simulation)
-	if !sim.writeOutput; return; end
-	
-	timeRounding = 6 # number of digits to keep in time values, after decimal place
-	
-	outputFilePath(name::String) = sim.outputFiles[name].path
-	
-	println("saving stats to folder: ", sim.outputPath)
-	
-	# save ambulance stats
-	writeTablesToFile(outputFilePath("ambulances"), Table("ambStats",
-		["index", "stationIndex", "totalTravelTime", "totalBusyTime", "numCallsTreated", "numCallsTransported", "numDispatchesAtStation", "numDispatchesOnRoad", "numDispatchesAfterService", "numRedispatches"];
-		rows = [vcat(a.index, a.stationIndex, round.([a.totalTravelTime, a.totalBusyTime], digits = timeRounding)..., a.numCallsTreated, a.numCallsTransported, a.numDispatchesAtStation, a.numDispatchesOnRoad, a.numDispatchesAfterService, a.numRedispatches) for a in sim.ambulances]))
-	
-	# save call stats
-	writeTablesToFile(outputFilePath("calls"), Table("callStats",
-		["index", "priority", "ambIndex", "transport", "arrivalTime", "dispatchDelay", "onSceneDuration", "hospitalArrivalTime", "handoverDuration", "dispatchTime", "ambArrivalTime", "hospitalIndex", "numBumps", "wasQueued"];
-		rows = [vcat(c.index, Int(c.priority), c.ambIndex, Int(c.transport), round.([c.arrivalTime, c.dispatchDelay, c.onSceneDuration, c.hospitalArrivalTime, c.handoverDuration * c.transport, c.dispatchTime, c.ambArrivalTime], digits = timeRounding)..., c.hospitalIndex, c.numBumps, Int(c.wasQueued)) for c in sim.calls]))
-	
-	# save hospital stats file
-	writeTablesToFile(outputFilePath("hospitals"), Table("hospitalStats", ["index", "numCalls"];
-		rows = [[h.index, h.numCalls] for h in sim.hospitals]))
 end
 
 # write deployments to file
@@ -241,20 +259,135 @@ function writeDeploymentsFile(filename::String, deployments::Vector{Deployment},
 	writeTablesToFile(filename, [miscTable, deploymentsTable])
 end
 
-# save batch mean response times to file
-function writeBatchMeanResponseTimesFile(filename::String, batchMeanResponseTimes::Array{Float,2};
-	batchTime = nullTime, startTime = nullTime, endTime = nullTime, responseTimeUnits::String = "minutes")
+# save batch mean response durations to file
+function writeBatchMeanResponseDurationsFile(filename::String, batchMeanResponseDurations::Array{Float,2};
+	batchTime = nullTime, startTime = nullTime, endTime = nullTime, responseDurationUnits::String = "minutes")
 	@assert(batchTime != nullTime && startTime != nullTime && endTime != nullTime)
-	x = batchMeanResponseTimes # shorthand
+	x = batchMeanResponseDurations # shorthand
 	(numRows, numCols) = size(x) # numRows = numSims, numCols = numBatches
 	miscTable = Table("misc_data",
-		["numSims", "numBatches", "batchTime", "startTime", "endTime", "response_time_units"];
-		rows=[[numRows, numCols, batchTime, startTime, endTime, responseTimeUnits]])
-	avgBatchMeansTable = Table("avg_batch_mean_response_times",
-		["sim_index", "avg_batch_mean_response_time", "standard_error"];
+		["numSims", "numBatches", "batchTime", "startTime", "endTime", "response_duration_units"];
+		rows=[[numRows, numCols, batchTime, startTime, endTime, responseDurationUnits]])
+	avgBatchMeansTable = Table("avg_batch_mean_response_durations",
+		["sim_index", "avg_batch_mean_response_duration", "standard_error"];
 		rows = [[i, mean(x[i,:]), sem(x[i,:])] for i = 1:numRows])
-	batchMeansTable = Table("batch_mean_response_times",
+	batchMeansTable = Table("batch_mean_response_durations",
 		["batch_index", ["sim_$i" for i = 1:numRows]...];
 		rows = [[i, x[:,i]...] for i = 1:numCols])
 	writeTablesToFile(filename, [miscTable, avgBatchMeansTable, batchMeansTable])
+end
+
+function writeStatsFiles(sim::Simulation)
+	outputFileKeys = keys(sim.outputFiles)
+	outputFilePath(name::String) = sim.outputFiles[name].path
+	stats = sim.stats # shorthand
+	if in("ambulancesStats", outputFileKeys) writeAmbsStatsFile(outputFilePath("ambulancesStats"), stats) end
+	if in("callsStats", outputFileKeys) writeCallsStatsFile(outputFilePath("callsStats"), stats) end
+	if in("hospitalsStats", outputFileKeys) writeHospitalsStatsFile(outputFilePath("hospitalsStats"), stats) end
+	if in("stationsStats", outputFileKeys) writeStationsStatsFile(outputFilePath("stationsStats"), stats) end
+end
+
+function simStatsTimestampsTable(stats::SimStats)::Table
+	return Table("timestamps", ["simStartTime", "warmUpEndTime", "lastCallArrivalTime", "simEndTime"];
+		rows = [[stats.simStartTime, stats.warmUpEndTime, stats.lastCallArrivalTime, stats.simEndTime]])
+end
+
+function simStatsPeriodsTable(periods::Vector{SimPeriodStats})::Table
+	periodsTable = Table("periods", ["periodIndex", "startTime", "endTime", "duration"];
+		rows = [[i, p.startTime, p.endTime, p.duration] for (i,p) in enumerate(periods)])
+	return periodsTable
+end
+
+function writeAmbsStatsFile(filename::String, stats::SimStats)
+	# shorthand
+	periods = stats.periods
+	numAmbs = length(periods[1].ambulances)
+	
+	miscTable = Table("miscData", ["numAmbs"]; rows = [[numAmbs]])
+	
+	timestampsTable = simStatsTimestampsTable(stats)
+	periodsTable = simStatsPeriodsTable(periods)
+	
+	ambulanceTables = Table[]
+	counts = (:numCallsTreated, :numCallsTransported, :numDispatches, :numDispatchesFromStation, :numDispatchesOnRoad, :numDispatchesOnFree, :numRedispatches, :numMoveUps, :numMoveUpsFromStation, :numMoveUpsOnRoad, :numMoveUpsOnFree, :numMoveUpsReturnToPrevStation)
+	statuses = (setdiff(instances(AmbStatus), (ambNullStatus,))..., instances(AmbStatusSet)...)
+	travelStatuses = (ambStatusSets[ambTravelling]..., instances(AmbStatusSet)...)
+	countHeaders = [string(c) for c in counts]
+	statusDurationHeaders = [string("duration_", string(s)) for s in statuses]
+	statusDistanceHeaders = [string("distance_", string(s)) for s in travelStatuses]
+	getAmb(period::SimPeriodStats, ambIndex::Int) = ambIndex == 0 ? period.ambulance : period.ambulances[ambIndex]
+	header = vcat("periodIndex", countHeaders, statusDurationHeaders, statusDistanceHeaders)
+	row(a::AmbulanceStats) = vcat([getfield(a,c) for c in counts], [a.statusDurations[s] for s in statuses], [a.statusDistances[s] for s in travelStatuses])
+	# skipped: statusTransitionCounts
+	for i = 0:numAmbs
+		name = i == 0 ? "ambulance" : "ambulances[$i]"
+		ambulanceTable = Table(name, header;
+			rows = [vcat(j, row(getAmb(p,i))) for (j,p) in enumerate(periods)])
+		push!(ambulanceTables, ambulanceTable)
+	end
+	
+	writeTablesToFile(filename, [miscTable, timestampsTable, periodsTable, ambulanceTables...])
+end
+
+function writeCallsStatsFile(filename::String, stats::SimStats)
+	periods = stats.periods # shorthand
+	
+	numCalls = stats.captures[end].call.numCalls
+	miscTable = Table("miscData", ["numCalls"]; rows = [[numCalls]])
+	
+	timestampsTable = simStatsTimestampsTable(stats)
+	periodsTable = simStatsPeriodsTable(periods)
+	
+	fnames = setdiff(fieldnames(CallStats), (:callIndex,))
+	callTable = Table("call", vcat("periodIndex", collect(string.(fnames)));
+		rows = [vcat(i, [getfield(p.call, fname) for fname in fnames]) for (i,p) in enumerate(periods)])
+	
+	callPrioritiesTables = Table[]
+	for priority in priorities
+		table = Table("callPriorities[$priority]", vcat("periodIndex", collect(string.(fnames)));
+			rows = [vcat(i, [getfield(p.callPriorities[priority], fname) for fname in fnames]) for (i,p) in enumerate(periods)])
+		push!(callPrioritiesTables, table)
+	end
+	
+	writeTablesToFile(filename, [miscTable, timestampsTable, periodsTable, callTable, callPrioritiesTables...])
+end
+
+function writeHospitalsStatsFile(filename::String, stats::SimStats)
+	# shorthand
+	periods = stats.periods
+	numHospitals = length(periods[1].hospitals)
+	
+	miscTable = Table("miscData", ["numHospitals"]; rows = [[numHospitals]])
+	
+	timestampsTable = simStatsTimestampsTable(stats)
+	periodsTable = simStatsPeriodsTable(periods)
+	
+	hospitalTables = Table[]
+	fnames = setdiff(fieldnames(HospitalStats), (:hospitalIndex,))
+	getHospital(period::SimPeriodStats, hospitalIndex::Int) = hospitalIndex == 0 ? period.hospital : period.hospitals[hospitalIndex]
+	for i = 0:numHospitals
+		name = i == 0 ? "hospital" : "hospitals[$i]"
+		hospitalTable = Table(name, vcat("periodIndex", collect(string.(fnames)));
+			rows = [vcat(j, [getfield(getHospital(p,i), fname) for fname in fnames]) for (j,p) in enumerate(periods)])
+		push!(hospitalTables, hospitalTable)
+	end
+	
+	writeTablesToFile(filename, [miscTable, timestampsTable, periodsTable, hospitalTables...])
+end
+
+function writeStationsStatsFile(filename::String, stats::SimStats)
+	# shorthand
+	periods = stats.periods
+	numStations = length(periods[1].stations)
+	
+	miscTable = Table("miscData", ["numStations"]; rows = [[numStations]])
+	
+	timestampsTable = simStatsTimestampsTable(stats)
+	periodsTable = simStatsPeriodsTable(periods)
+	
+	getStation(period::SimPeriodStats, stationIndex::Int) = stationIndex == 0 ? period.station : period.stations[stationIndex]
+	stationsNumIdleAmbsTotalDurationTable = Table("stations_numIdleAmbsTotalDuration", vcat("periodIndex", "station", ["stations[$i]" for i = 1:numStations]);
+		rows = [vcat(j, [string(getStation(p,i).numIdleAmbsTotalDuration) for i = 0:numStations]) for (j,p) in enumerate(periods)])
+	
+	writeTablesToFile(filename, [miscTable, timestampsTable, periodsTable, stationsNumIdleAmbsTotalDurationTable])
 end

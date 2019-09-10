@@ -14,8 +14,8 @@
 ##########################################################################
 
 mutable struct Location
-	x::Float # latitude, or other
-	y::Float # longitude, or other
+	x::Float # longitude, or other
+	y::Float # latitude, or other
 	
 	Location() = new(nullX, nullY)
 	Location(x,y) = new(x,y)
@@ -246,7 +246,7 @@ mutable struct Event
 	time::Float
 	ambIndex::Int
 	callIndex::Int
-	stationIndex::Int # for now, only use this for resimulation, otherwise use ambulances[ambIndex].stationIndex
+	stationIndex::Int
 	
 	Event() = new(nullIndex, nullIndex, nullEvent, nullTime, nullIndex, nullIndex, nullIndex)
 end
@@ -265,21 +265,39 @@ mutable struct Ambulance
 	currentLoc::Location
 	movedLoc::Bool
 	
-	# for statistics:
-	totalTravelTime::Float # this should only be updated after finishing each route / sim end
-	totalTravelDist::Float # this should only be updated after finishing each route / sim end
-	totalBusyTime::Float # total time that ambulance has been busy
-	# totalStationTime::Float # total time spent at station
-	numCallsTreated::Int # total number of calls that ambulance provided treatment for
+	# count statistics:
+	numCallsTreated::Int # total number of calls that ambulance provided treatment on scene
 	numCallsTransported::Int # total number of calls transported to hospital
-	numRedispatches::Int # number of times that ambulance is redispatched from one call to another
-	numDispatchesAtStation::Int # total number of dispatches while at station
+	numDispatches::Int
+	numDispatchesFromStation::Int # total number of dispatches while at station
 	numDispatchesOnRoad::Int # total number of dispatches while on road
-	numDispatchesAfterService::Int # total number of dispatches directly after providing service at callout
+	numDispatchesOnFree::Int # total number of dispatches after ambulance becomes free
+	numRedispatches::Int # number of times that ambulance is redispatched from one call to another
+	numMoveUps::Int
+	numMoveUpsFromStation::Int
+	numMoveUpsOnRoad::Int
+	numMoveUpsOnFree::Int
+	numMoveUpsReturnToPrevStation::Int # number of times that ambulance is told to return to the station from which it started move up (see moveUpFromStationIndex)
+	
+	# status statistics
+	statusDurations::Dict{Union{AmbStatus,AmbStatusSet},Float} # duration spent in each status (or status set); only updated after setting status
+	statusDistances::Dict{Union{AmbStatus,AmbStatusSet},Float} # distance travelled in each status (or status set); only updated after setting status
+	statusTransitionCounts::Array{Int,2} # statusTransitionCounts[Int(status1), Int(status2)] gives number of times that amb transitioned from status1 to status2 (in AmbStatus enum)
+	
+	# for calculating statistics:
+	statusSetTime::Float # time at which status was last set, even if set to same status value
+	prevStatus::AmbStatus
+	moveUpFromStationIndex::Int # index from which ambulance started move up; = nullIndex if not moving up from station
+	
+	# dispatch statistics:
+	dispatchStartLocCounts::Dict{Location,Int} # dispatchStartLocCounts[loc] gives number of times that ambulance was dispatched from location 'loc'
 	
 	Ambulance() = new(nullIndex, ambNullStatus, nullIndex, nullIndex, Route(), Event(), nullAmbClass,
 		Location(), false,
-		0.0, 0.0, 0.0, 0, 0, 0, 0, 0, 0)
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+		Dict(), Dict(), Array{Int,2}(undef,0,0),
+		nullTime, ambNullStatus, nullIndex,
+		Dict())
 end
 
 mutable struct Call
@@ -288,11 +306,12 @@ mutable struct Call
 	ambIndex::Int
 	priority::Priority
 	transport::Bool # true if requires transport to hospital
-	hospitalIndex::Int # hospital (if any) that call is transported to. If hospitalIndex == nullIndex, will transport to nearest hospital
+	hospitalIndex::Int # hospital that call should be transported to. If hospitalIndex == nullIndex, will transport to nearest hospital
 	location::Location # where call occurs
 	
+	# time/duration params:
 	arrivalTime::Float # time at which call arrives
-	dispatchDelay::Float # delay between call arrival and considering dispatching an ambulance
+	dispatchDelay::Float # delay between call arrival and being ready to dispatch an ambulance
 	onSceneDuration::Float # time spent at call location
 	handoverDuration::Float # for hospital handover
 	
@@ -304,19 +323,35 @@ mutable struct Call
 	currentLoc::Location
 	movedLoc::Bool
 	
-	# for statistics:
+	# statistics:
 	dispatchTime::Float # time at which final ambulance was dispatched (= arrivalTime + dispatchDelay, unless call queued/bumped)
 	ambArrivalTime::Float # time at which ambulance arrives on-site
-	responseTime::Float # time (duration) between call arrival and ambulance arrival at call location
 	hospitalArrivalTime::Float # time at which ambulance arrives at hospital
-	numBumps::Int # total number of times that call gets bumped
+	numBumps::Int # total number of times that call gets bumped due to redispatch
 	wasQueued::Bool # whether call was queued or not
+	ambDispatchLoc::Location # location of responding ambulance at moment of dispatch
+	ambStatusBeforeDispatch::AmbStatus # status of ambulance just before dispatch
+	chosenHospitalIndex::Int # hospital (if any) that call was transported to
+	
+	# duration statistics:
+	queuedDuration::Float # duration between being ready to dispatch (but no ambulances are free) and dispatching an ambulance
+	bumpedDuration::Float # total duration spent waiting for ambulances that were later redirected away from call due to bumping
+	waitingForAmbDuration::Float # total duration spent waiting for ambulances that have been dispatched, even if call bumped and ambulance did not reach call
+	responseDuration::Float # duration between call arrival and ambulance arrival at call location
+	ambGoingToCallDuration::Float # duration between dispatch of ambulance that responded and ambulance reaching call
+	transportDuration::Float # duration for transporting call to hospital
+	serviceDuration::Float # duration between call arrival and ambulance finishing with call
+	
+	# for calculating statistics:
+	statusSetTime::Float # time at which status was last set, even if set to same status value
 	
 	Call() = new(nullIndex, callNullStatus, nullIndex, nullPriority, true, nullIndex, Location(),
 		nullTime, nullTime, nullTime, nullTime,
 		nullIndex, nullDist,
 		Location(), false,
-		nullTime, nullTime, nullTime, nullTime, 0, false)
+		nullTime, nullTime, nullTime, 0, false, Location(), ambNullStatus, nullIndex,
+		0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+		nullTime)
 end
 
 mutable struct Hospital
@@ -327,6 +362,7 @@ mutable struct Hospital
 	
 	# for statistics:
 	numCalls::Int # total number of calls taken to hospital
+	# numCallsTotalHandoverDuration::OffsetArray{Float,1,Vector{Float}} # numCallsTotalHandoverDuration[k] gives total duration that hospital had k calls for handover
 	
 	Hospital() = new(nullIndex, Location(), nullIndex, nullDist,
 		0)
@@ -339,10 +375,17 @@ mutable struct Station
 	nearestNodeIndex::Int
 	nearestNodeDist::Float
 	
-	# for statistics:
-	# totalAmbIdleTime::Float # total time that ambulances are idle at station
+	# statistics:
+	numIdleAmbsTotalDuration::OffsetArray{Float,1,Vector{Float}} # numIdleAmbsTotalDuration[k] gives total duration that station had k idle ambulances
+	currentNumIdleAmbs::Int # current number of idle ambulances at station
+	currentNumIdleAmbsSetTime::Float # time at currentNumIdleAmbs was last set (even if set to same value)
 	
-	Station() = new(nullIndex, Location(), 0, nullIndex, nullDist)
+	# move up statistics:
+	moveUpStartLocCounts::Dict{Location,Int} # locations (and counts) from which ambulances have started move up towards this station
+	
+	Station() = new(nullIndex, Location(), 0, nullIndex, nullDist,
+		OffsetVector(Float[],0), 0, nullTime,
+		Dict())
 end
 
 # conditions that determine ambulance redispatch behaviour
@@ -592,12 +635,12 @@ mutable struct EmptyMoveUpData <: MoveUpDataType end
 # compliance table data
 mutable struct CompTableData <: MoveUpDataType
 	# parameters:
-	compTable::CompTable # compTable[i,j] = number of ambulances to place at station j, with i total idle ambs
+	compTable::CompTable # compTable[i,j] = number of ambulances to place at station j, with i total free ambs
 	
 	compTableStationSlots::Vector{Vector{Int}} # sum(compTableStationSlots[i] .== j) == compTable[i,j]
 	
 	# arrays for recycling:
-	ambMovable::Vector{Bool} # ambMovable[i] = true if ambulance i is available for move up, false otherwise
+	ambMovable::Vector{Bool} # ambMovable[i] = true if ambulance i can be moved up, false otherwise
 	
 	CompTableData() = new(CompTable(undef,0,0),
 		[],
@@ -612,7 +655,7 @@ mutable struct DdsmData <: MoveUpDataType
 	slackWeight::Float
 	coverTimeDemandPriorities::Vector{Priority} # coverTimeDemandPriorities[i] is demand priority for coverTimes[i]
 	
-	coverTimes::Vector{Float} # target coverage response times; coverTimes[1] <= coverTimes[2]
+	coverTimes::Vector{Float} # target coverage response durations; coverTimes[1] <= coverTimes[2]
 	options::Dict{Symbol,Any}
 	
 	DdsmData() = new(0.0, 0.0, 0.0, [],
@@ -629,9 +672,9 @@ mutable struct DmexclpData <: MoveUpDataType
 	marginalBenefit::Vector{Float} # marginalBenefit[i] = benefit of adding an ith ambulance to cover single demand, calculated from busyFraction
 	
 	# arrays for recycling:
-	stationNumIdleAmbs::Vector{Int} # stationNumIdleAmbs[i] = number of idle ambulances assigned to station i
-	stationMarginalCoverages::Vector{Float} # stationMarginalCoverages[i] gives extra coverage provided from placing newly idle ambulance at station i
-	# pointSetsCoverCounts::Vector{Vector{Int}} # pointSetsCoverCounts[i][j] = number of idle ambulances covering node set j, for demand.pointsCoverageModes i
+	stationNumFreeAmbs::Vector{Int} # stationNumFreeAmbs[i] = number of free ambulances assigned to station i
+	stationMarginalCoverages::Vector{Float} # stationMarginalCoverages[i] gives extra coverage provided from placing newly freed ambulance at station i
+	# pointSetsCoverCounts::Vector{Vector{Int}} # pointSetsCoverCounts[i][j] = number of free ambulances covering node set j, for demand.pointsCoverageModes i
 	
 	DmexclpData() = new(0.0, Dict(),
 		[],
@@ -643,7 +686,7 @@ mutable struct PriorityListData <: MoveUpDataType
 	priorityList::Vector{Int} # priorityList[i] gives station index that the ith free ambulance should be moved to
 	
 	# arrays for recycling:
-	stationNumIdleAmbs::Vector{Int} # number of idle ambulances assigned to each station
+	stationNumFreeAmbs::Vector{Int} # number of free ambulances assigned to each station
 	
 	PriorityListData() = new([],
 		[])
@@ -752,6 +795,153 @@ mutable struct Resimulation
 		[], [], nullIndex)
 end
 
+# Mean and half the width of the confidence interval of the mean.
+# Half-width is also known as half-length, or margin of error.
+struct MeanAndHalfWidth
+	mean::Float
+	halfWidth::Float
+	MeanAndHalfWidth(m, hw) = new(convert(Float,m), convert(Float,hw))
+end
+
+# statistics for a single ambulance, or multiple ambulances
+mutable struct AmbulanceStats
+	ambIndex::Int # for single ambulance
+	
+	numCallsTreated::Int # total number of calls that ambulance provided treatment on scene
+	numCallsTransported::Int # total number of calls transported to hospital
+	
+	numDispatches::Int # all dispatches
+	numDispatchesFromStation::Int # total number of dispatches while at station
+	numDispatchesOnRoad::Int # total number of dispatches while on road
+	numDispatchesOnFree::Int # total number of dispatches after ambulance becomes free
+	numRedispatches::Int # number of times that ambulance is redispatched from one call to another
+	
+	numMoveUps::Int
+	numMoveUpsFromStation::Int
+	numMoveUpsOnRoad::Int
+	numMoveUpsOnFree::Int
+	numMoveUpsReturnToPrevStation::Int
+	
+	statusDurations::Dict{Union{AmbStatus,AmbStatusSet},Float} # duration spent in each status (or status set)
+	statusDistances::Dict{Union{AmbStatus,AmbStatusSet},Float} # distance travelled in each status (or status set)
+	statusTransitionCounts::Array{Int,2} # statusTransitionCounts[Int(status1), Int(status2)] gives number of times that amb transitioned from status1 to status2
+	
+	AmbulanceStats() = new(nullIndex,
+		0, 0,
+		0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0,
+		Dict(), Dict(), Array{Int,2}(undef,0,0))
+end
+
+# statistics for a single call, or multiple calls
+mutable struct CallStats
+	callIndex::Int # for single call
+	numCalls::Int # for multiple calls
+	
+	numQueued::Int
+	numBumped::Int # number of calls bumped once or more
+	numBumps::Int # number of bumps from all calls
+	numTransports::Int
+	numResponsesInTime::Int # number of in time ambulance responses
+	
+	# durations
+	totalDispatchDelay::Float # delay between call arrival and being ready to dispatch an ambulance
+	totalOnSceneDuration::Float # duration spent at call location
+	totalHandoverDuration::Float # for hospital handover
+	totalQueuedDuration::Float # duration between being ready to dispatch (but no ambulances are free) and dispatching an ambulance
+	totalBumpedDuration::Float # total duration spent waiting for ambulances that were later redirected away from call due to bumping
+	totalWaitingForAmbDuration::Float # total duration spent waiting for ambulances that have been dispatched, even if call bumped and ambulance did not reach call
+	totalResponseDuration::Float # duration between call arrival and ambulance arrival at call location
+	totalAmbGoingToCallDuration::Float # duration of ambulance that responded to reach call
+	totalTransportDuration::Float # duration for transporting call to hospital
+	totalServiceDuration::Float # duration between call arrival and ambulance finishing with call
+	
+	# totalQueueLengthDuration::OffsetArray{Float,1,Vector{Float}} # totalQueueLengthDuration[k] = total duration spent with k queued calls
+	
+	CallStats() = new(nullIndex, 0,
+		0, 0, 0, 0, 0,
+		0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+end
+
+# statistics for a single hospital, or multiple hospitals
+mutable struct HospitalStats
+	hospitalIndex::Int # for single hospital
+	
+	numCalls::Int # total number of calls taken to hospital
+	
+	HospitalStats() = new(nullIndex,
+		0)
+end
+
+# statistics for single station, or multiple stations
+mutable struct StationStats
+	stationIndex::Int # for single station
+	
+	numIdleAmbsTotalDuration::OffsetArray{Float,1,Vector{Float}} # numIdleAmbsTotalDuration[k] gives total duration that station had k idle ambulances
+	
+	# numMoveUpsOnFree::Int # number of move-ups to this station of ambulances that have just become free
+	# numMoveUpsOnRoad::Int # number of move-ups to this station that were from ambulances that were driving on the road
+	# numMoveUpsFromHospitals::Vector{Int} # numMoveUpsFromHospitals[i] is the number of move-ups to this station of ambulances from hospitals[i]
+	# numMoveUpsFromStations::Vector{Int} # numMoveUpsFromStations[i] is the number of move-ups of ambulances from stations[i] to this station
+	# numMoveUpsToStations::Vector{Int} # numMoveUpsToStations[i] is the number of move-ups of ambulances from this station to stations[i]
+	# also count how many move-ups were actually completed, and how many were cut short?
+	
+	StationStats() = new(nullIndex,
+		OffsetVector(Float[],0))
+		# 0, 0, [], [], [])
+end
+
+# simulation statistics for a period
+mutable struct SimPeriodStats
+	# statistics are for [startTime, endTime)
+	startTime::Float # start time for stats
+	endTime::Float # end time for stats
+	duration::Float # = endTime - startTime
+	
+	ambulances::Vector{AmbulanceStats}
+	hospitals::Vector{HospitalStats}
+	stations::Vector{StationStats}
+	
+	# aggregate values
+	ambulance::AmbulanceStats # for all ambulances
+	call::CallStats # statistics of calls that arrived within [startTime, endTime)
+	callPriorities::Dict{Priority,CallStats} # callPriorities[p] is statistics of priority p calls that arrived within [startTime, endTime)
+	hospital::HospitalStats # for all hospitals
+	station::StationStats # for all stations
+	
+	# numAmbsFreeTotalDuration::OffsetArray{Float,1,Vector{Float}} # numAmbsFreeTotalDuration[k] gives total duration that k ambulances were free (working but not busy)
+	
+	SimPeriodStats() = new(nullTime, nullTime, nullTime,
+		[], [], [],
+		AmbulanceStats(), CallStats(), Dict(), HospitalStats(), StationStats())
+end
+
+mutable struct SimStats
+	captures::Vector{SimPeriodStats} # from sim start to some time
+	periods::Vector{SimPeriodStats} # arbitrary start and end times; calculated from captures, periods[i] = captures[i] - captures[i-1]
+	
+	# params
+	doCapture::Bool # true if capturing statistics during simulation
+	warmUpDuration::Float # first capture will be at sim.startTime + warmUpDuration (unless warmUpDuration = 0)
+	periodDurationsIter::Stateful # iterator that returns duration of next stats period
+	nextCaptureTime::Float # time at which statistics will next be captured; updated according to periodDurationsIter
+	
+	# sim timestamps
+	simStartTime::Float
+	simEndTime::Float
+	warmUpEndTime::Float # = simStartTime + warmUpDuration
+	lastCallArrivalTime::Float # useful for ignoring cool-down period
+	
+	# misc
+	recordDispatchStartLocCounts::Bool # if true, will save starting location of ambulance dispatches in ambulance.dispatchStartLocCounts
+	recordMoveUpStartLocCounts::Bool # if true, will save starting location of ambulance move up in station.moveUpStartLocCounts
+	
+	SimStats() = new([], [],
+		true, 0.0, Stateful([]), Inf,
+		nullTime, nullTime, nullTime, nullTime,
+		false, false)
+end
+
 mutable struct Simulation
 	startTime::Float
 	time::Float # time of most recent event, or time of recent animation frame if animating
@@ -791,11 +981,13 @@ mutable struct Simulation
 	demandCoverage::DemandCoverage
 	
 	responseTravelPriorities::Dict{Priority,Priority} # responseTravelPriorities[p] gives the travel priority for responding to call of priority p
-	targetResponseTimes::Vector{Float} # targetResponseTimes[Int(priority)] gives maximum desired response time for call of given priority
+	targetResponseDurations::Vector{Float} # targetResponseDurations[Int(priority)] gives maximum desired response duration for call of given priority
 	
 	# for animation:
 	currentCalls::Set{Call} # all calls between arrival and service finish at current time
 	previousCalls::Set{Call} # calls in currentCalls for previous frame
+	
+	stats::SimStats
 	
 	# files/folders:
 	inputPath::String
@@ -804,7 +996,7 @@ mutable struct Simulation
 	outputFiles::Dict{String,File}
 	eventsFileIO::IOStream # write simulation trace of events to this file
 	
-	writeOutput::Bool # true if outputFiles should be used to write output (false if animating)
+	writeOutput::Bool # true if writing output files during simulation (e.g. events file), false otherwise (e.g. animating)
 	initialised::Bool # true if simulation has been initialised and so can be run, false otherwise
 	used::Bool # true if simulation has started running (and so restarting would require copying from backup)
 	complete::Bool # true if simulation has ended (no events remaining)
@@ -824,6 +1016,7 @@ mutable struct Simulation
 		Demand(), DemandCoverage(),
 		Dict(), [],
 		Set(), Set(),
+		SimStats(),
 		"", "", Dict(), Dict(), IOStream(""),
 		false, false, false, false, false)
 end

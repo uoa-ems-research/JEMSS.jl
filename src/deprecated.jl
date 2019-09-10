@@ -97,4 +97,27 @@ initResim!(sim))
 calcBatchMeans(; values::Vector{Float} = [], times::Vector{Float} = [], batchTime::Float = nullTime, startTime::Float = nullTime, endTime::Float = nullTime),
 calcBatchMeans(values, times, batchTime; startTime = startTime, endTime = endTime, rmPartialBatch = true, returnBatchSizes = true))
 
+@deprecate(
+writeStatsFiles!(sim::Simulation),
+writeMiscOutputFiles(sim))
+
+##
+
+# renamed "response time" to "response duration"
+@deprecate(
+getCallResponseTimes(sim::Simulation),
+getCallResponseDurations(sim))
+
+@deprecate(
+getAvgCallResponseTime(sim::Simulation; useMinutes::Bool = false),
+getAvgCallResponseDuration(sim; useMinutes = useMinutes))
+
+@deprecate(
+calcBatchMeanResponseTimes(sim::Simulation; batchTime::Float = nullTime, warmUpTime::Float = nullTime, coolDownTime::Float = nullTime, rmPartialBatch::Bool = true, returnBatchSizes::Bool = true),
+calcBatchMeanResponseDurations(sim; batchTime = batchTime, warmUpTime = warmUpTime, coolDownTime = coolDownTime, rmPartialBatch = rmPartialBatch, returnBatchSizes = returnBatchSizes))
+
+@deprecate(
+writeBatchMeanResponseTimesFile(filename::String, batchMeanResponseTimes::Array{Float,2}; batchTime = nullTime, startTime = nullTime, endTime = nullTime, responseTimeUnits::String = "minutes"),
+writeBatchMeanResponseDurationsFile(filename, batchMeanResponseTimes; batchTime = batchTime, startTime = startTime, endTime = endTime, responseDurationUnits = responseTimeUnits))
+
 ##

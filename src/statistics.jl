@@ -13,30 +13,30 @@
 # limitations under the License.
 ##########################################################################
 
-function getCallResponseTimes(sim::Simulation)
+function getCallResponseDurations(sim::Simulation)
 	@assert(sim.complete)
-	@assert(all(call -> call.responseTime >= 0, sim.calls))
-	return map(call -> call.responseTime, sim.calls)
+	@assert(all(call -> call.responseDuration >= 0, sim.calls))
+	return map(call -> call.responseDuration, sim.calls)
 end
 
-function getAvgCallResponseTime(sim::Simulation; useMinutes::Bool = false)
+function getAvgCallResponseDuration(sim::Simulation; useMinutes::Bool = false)
 	@assert(sim.complete)
-	@assert(all(call -> call.responseTime >= 0, sim.calls))
-	return mean(call -> call.responseTime, sim.calls) * (useMinutes ? 60*24 : 1) # if useMinutes, convert days to minutes
+	@assert(all(call -> call.responseDuration >= 0, sim.calls))
+	return mean(call -> call.responseDuration, sim.calls) * (useMinutes ? 60*24 : 1) # if useMinutes, convert days to minutes
 end
 
 function getCallsReachedInTime(sim::Simulation;
-	targetResponseTimes::Vector{Float} = sim.targetResponseTimes)
+	targetResponseDurations::Vector{Float} = sim.targetResponseDurations)
 	@assert(sim.complete)
-	@assert(all(call -> call.responseTime >= 0, sim.calls))
-	return map(call -> call.responseTime <= targetResponseTimes[Int(call.priority)], sim.calls)
+	@assert(all(call -> call.responseDuration >= 0, sim.calls))
+	return map(call -> call.responseDuration <= targetResponseDurations[Int(call.priority)], sim.calls)
 end
 
 function countCallsReachedInTime(sim::Simulation;
-	targetResponseTimes::Vector{Float} = sim.targetResponseTimes)
+	targetResponseDurations::Vector{Float} = sim.targetResponseDurations)
 	@assert(sim.complete)
-	@assert(all(call -> call.responseTime >= 0, sim.calls))
-	return count(call -> call.responseTime <= targetResponseTimes[Int(call.priority)], sim.calls)
+	@assert(all(call -> call.responseDuration >= 0, sim.calls))
+	return count(call -> call.responseDuration <= targetResponseDurations[Int(call.priority)], sim.calls)
 end
 
 printDays(t::Float) = string(round(t, digits = 2), " days")
@@ -62,8 +62,8 @@ end
 function printAmbsStats(sim::Simulation)
 	@assert(sim.complete)
 	
-	ambsAvgDailyTravelTimes = [amb.totalTravelTime for amb in sim.ambulances] ./ (sim.time - sim.startTime)
-	ambsAvgDailyTravelDists = [amb.totalTravelDist for amb in sim.ambulances] ./ (sim.time - sim.startTime)
+	ambsAvgDailyTravelTimes = [amb.statusDurations[ambTravelling] for amb in sim.ambulances] ./ (sim.time - sim.startTime)
+	ambsAvgDailyTravelDists = [amb.statusDistances[ambTravelling] for amb in sim.ambulances] ./ (sim.time - sim.startTime)
 	
 	# Gadfly.plot(ecdf(ambsAvgDailyTravelTimes*24*60),
 		# x="Average daily travel time (minutes)",
@@ -89,27 +89,27 @@ end
 function printCallsStats(sim::Simulation)
 	@assert(sim.complete)
 	
-	responseTimes = getCallResponseTimes(sim)
+	responseDurations = getCallResponseDurations(sim)
 	callsReachedInTime = getCallsReachedInTime(sim)
 	
 	println("Call statistics:")
 	
 	# # print, then remove, unanswered calls
-	# callAnswered = [call.responseTime != nullTime for call in sim.calls] # may be false if sim not finished, or call cancelled
+	# callAnswered = [call.responseDuration != nullTime for call in sim.calls] # may be false if sim not finished, or call cancelled
 	# println("Unanswered calls: ", sim.numCalls - sum(callAnswered))
-	# responseTimes = responseTimes[callAnswered] # no longer consider unanswered calls
+	# responseDurations = responseDurations[callAnswered] # no longer consider unanswered calls
 	
-	# Gadfly.plot(ecdf(responseTimes*24*60), x="Call response time (minutes)", y="Cdf")
+	# Gadfly.plot(ecdf(responseDurations*24*60), x="Call response duration (minutes)", y="Cdf")
 	
 	println("Number of calls = ", sim.numCalls)
 	
-	println("Response time: ")
-	println(" mean = ", printMinutes(mean(responseTimes)))
-	println(" std = ", printMinutes(std(responseTimes)))
-	println(" min = ", printMinutes(minimum(responseTimes)))
-	println(" max = ", printMinutes(maximum(responseTimes)))
+	println("Response duration: ")
+	println(" mean = ", printMinutes(mean(responseDurations)))
+	println(" std = ", printMinutes(std(responseDurations)))
+	println(" min = ", printMinutes(minimum(responseDurations)))
+	println(" max = ", printMinutes(maximum(responseDurations)))
 	
-	println("Reached in target response time: ")
+	println("Reached in target response duration: ")
 	println(" mean = ", printPercent(mean(callsReachedInTime)))
 	println(" sem = ", printPercent(sem(callsReachedInTime)))
 end
@@ -220,8 +220,8 @@ function calcBatchMeans(values::Vector{Float}, times::Vector{Float}, batchTime::
 	return returnBatchSizes ? (batchMeans, batchSizes) : batchMeans
 end
 
-# calculate statistics on average response time based on batch means
-function calcBatchMeanResponseTimes(sim::Simulation;
+# calculate statistics on average response duration based on batch means
+function calcBatchMeanResponseDurations(sim::Simulation;
 	batchTime::Float = nullTime, warmUpTime::Float = nullTime, coolDownTime::Float = nullTime,
 	rmPartialBatch::Bool = true, returnBatchSizes::Bool = true)
 	
@@ -230,7 +230,7 @@ function calcBatchMeanResponseTimes(sim::Simulation;
 	# collate data for use by calcBatchMeans function
 	n = sim.numCalls
 	times = [sim.calls[i].arrivalTime for i = 1:n]
-	values = [sim.calls[i].responseTime for i = 1:n]
+	values = [sim.calls[i].responseDuration for i = 1:n]
 	
 	return calcBatchMeans(values, times, batchTime;
 		startTime = sim.startTime + warmUpTime, endTime = sim.endTime - coolDownTime,
@@ -271,4 +271,139 @@ function calcAR0DurbinWatsonTestPValue(x::Vector{T}) where T <: Real
 	residuals = x - xFit
 	dwTest = HypothesisTests.DurbinWatsonTest(xFit, residuals)
 	return HypothesisTests.pvalue(dwTest)
+end
+
+# Return half-width of two-sided confidence interval of estimate of mean.
+# Samples should come from a normal distribution, standard deviation is assumed to be unknown.
+function tDistrHalfWidth(x::Vector{T}; conf = 0.95) where T <: Real
+	t = StatsFuns.tdistinvcdf(length(x)-1, 1-(1-conf)/2) # t-value, for two sided confidence interval
+	return t * sem(x)
+end
+
+# confidence interval
+function confInterval(mhw::MeanAndHalfWidth)
+	return (mhw.mean - mhw.halfWidth, mhw.mean + mhw.halfWidth)
+end
+
+# Return a dictionary of statistics from a list of period statistics.
+# Periods should be the same duration.
+# Confidence intervals assume that samples obtained from periods are IID, and are from a population with a normal distribution and unknown standard deviation.
+# The function flatten(dict) may be useful if writing this dict to file.
+function statsDictFromPeriodStatsList(periods::Vector{SimPeriodStats}; conf = 0.95)
+	
+	if isempty(periods)
+		period = SimPeriodStats()
+		period.duration = 0.0
+		ambStatuses = (instances(AmbStatus)..., instances(AmbStatusSet)...)
+		period.ambulance.statusDurations = Dict([s => 0.0 for s in ambStatuses])
+		period.ambulance.statusDistances = Dict([s => 0.0 for s in ambStatuses])
+		period.callPriorities = Dict([p => CallStats() for p in priorities])
+		periods = [period]
+	end
+	
+	duration = periods[1].duration
+	ambDays = length(periods[1].ambulances) * duration
+	@assert(all(p -> p.duration == duration, periods))
+	
+	d = statsDict = Dict{String,Any}()
+	
+	meanAndHalfWidth(x; conf = conf) = MeanAndHalfWidth(mean(x), tDistrHalfWidth(x; conf = conf))
+	
+	###########
+	# ambulance
+	
+	d["ambs"] = Dict{String,Any}()
+	
+	function getAmbsStat(statName::Symbol)
+		x = [getfield(p.ambulance, statName) for p in periods] / ambDays
+		return meanAndHalfWidth(x)
+	end
+	function getAmbsDurationStat(s::Union{AmbStatus,AmbStatusSet})
+		x = [p.ambulance.statusDurations[s] for p in periods] / ambDays
+		return meanAndHalfWidth(x)
+	end
+	function getAmbsDistanceStat(s::Union{AmbStatus,AmbStatusSet})
+		x = [p.ambulance.statusDistances[s] for p in periods] / ambDays
+		return meanAndHalfWidth(x)
+	end
+	
+	# counts
+	d["ambs"]["avgDailyNumCallsTreated"] = getAmbsStat(:numCallsTreated)
+	d["ambs"]["avgDailyNumCallsTransported"] = getAmbsStat(:numCallsTransported)
+	d["ambs"]["avgDailyNumDispatches"] = getAmbsStat(:numDispatches)
+	d["ambs"]["avgDailyNumDispatchesFromStation"] = getAmbsStat(:numDispatchesFromStation)
+	d["ambs"]["avgDailyNumDispatchesOnRoad"] = getAmbsStat(:numDispatchesOnRoad)
+	d["ambs"]["avgDailyNumDispatchesOnFree"] = getAmbsStat(:numDispatchesOnFree)
+	d["ambs"]["avgDailyNumRedispatches"] = getAmbsStat(:numRedispatches)
+	d["ambs"]["avgDailyNumMoveUps"] = getAmbsStat(:numMoveUps)
+	d["ambs"]["avgDailyNumMoveUpsFromStation"] = getAmbsStat(:numMoveUpsFromStation)
+	d["ambs"]["avgDailyNumMoveUpsOnRoad"] = getAmbsStat(:numMoveUpsOnRoad)
+	d["ambs"]["avgDailyNumMoveUpsOnFree"] = getAmbsStat(:numMoveUpsOnFree)
+	d["ambs"]["avgDailyNumMoveUpsReturnToPrevStation"] = getAmbsStat(:numMoveUpsReturnToPrevStation)
+	
+	# durations - status
+	d["ambs"]["avgDailySleepingDurationHours"] = getAmbsDurationStat(ambSleeping) * 24
+	d["ambs"]["avgDailyIdleAtStationDurationHours"] = getAmbsDurationStat(ambIdleAtStation) * 24
+	d["ambs"]["avgDailyGoingToCallDurationHours"] = getAmbsDurationStat(ambGoingToCall) * 24
+	d["ambs"]["avgDailyAtCallDurationHours"] = getAmbsDurationStat(ambAtCall) * 24
+	d["ambs"]["avgDailyGoingToHospitalDurationHours"] = getAmbsDurationStat(ambGoingToHospital) * 24
+	d["ambs"]["avgDailyAtHospitalDurationHours"] = getAmbsDurationStat(ambAtHospital) * 24
+	d["ambs"]["avgDailyReturningToStationDurationHours"] = getAmbsDurationStat(ambReturningToStation) * 24
+	d["ambs"]["avgDailyMovingUpToStationDurationHours"] = getAmbsDurationStat(ambMovingUpToStation) * 24
+	
+	# durations - status sets
+	d["ambs"]["avgDailyWorkingDurationHours"] = getAmbsDurationStat(ambWorking) * 24
+	d["ambs"]["avgDailyBusyDurationHours"] = getAmbsDurationStat(ambBusy) * 24
+	d["ambs"]["avgDailyFreeDurationHours"] = getAmbsDurationStat(ambFree) * 24
+	d["ambs"]["avgDailyTravelDurationHours"] = getAmbsDurationStat(ambTravelling) * 24
+	d["ambs"]["avgDailyGoingToStationDurationHours"] = getAmbsDurationStat(ambGoingToStation) * 24
+	
+	# distances
+	d["ambs"]["avgDailyTravelDistanceKms"] = getAmbsDistanceStat(ambTravelling)
+	d["ambs"]["avgDailyGoingToCallDistanceKms"] = getAmbsDistanceStat(ambGoingToCall)
+	d["ambs"]["avgDailyGoingToHospitalDistanceKms"] = getAmbsDistanceStat(ambGoingToHospital)
+	d["ambs"]["avgDailyReturningToStationDistanceKms"] = getAmbsDistanceStat(ambReturningToStation)
+	d["ambs"]["avgDailyMovingUpToStationDistanceKms"] = getAmbsDistanceStat(ambMovingUpToStation)
+	
+	###########
+	# call
+	
+	d["calls"] = Dict{String,Any}()
+	
+	for priority in instances(Priority) # will use nullPriority to indicate all priorities
+		name = priority == nullPriority ? "all" : string(priority)
+		d1 = d["calls"][name] = Dict{String,Any}()
+		
+		callStatsList = priority == nullPriority ? [p.call for p in periods] : [p.callPriorities[priority] for p in periods]
+		function getCallsStat(statName::Symbol)
+			x = [getfield(callStats, statName) / callStats.numCalls for callStats in callStatsList]
+			return meanAndHalfWidth(x)
+		end
+		
+		# fractions (between 0 and 1); don't need to write "avgFrac", as fraction is already an average
+		d1["fracQueued"] = getCallsStat(:numQueued)
+		d1["fracBumped"] = getCallsStat(:numBumped)
+		d1["fracTransported"] = getCallsStat(:numTransports)
+		d1["fracResponsesInTime"] = getCallsStat(:numResponsesInTime)
+		
+		# durations
+		d1["avgDispatchDelayMinutes"] = getCallsStat(:totalDispatchDelay) * (24*60)
+		d1["avgOnSceneDurationMinutes"] = getCallsStat(:totalOnSceneDuration) * (24*60)
+		d1["avgHandoverDurationMinutes"] = getCallsStat(:totalHandoverDuration) * (24*60)
+		d1["avgQueuedDurationMinutes"] = getCallsStat(:totalQueuedDuration) * (24*60)
+		d1["avgBumpedDurationMinutes"] = getCallsStat(:totalBumpedDuration) * (24*60)
+		d1["avgWaitingForAmbDurationMinutes"] = getCallsStat(:totalWaitingForAmbDuration) * (24*60)
+		d1["avgResponseDurationMinutes"] = getCallsStat(:totalResponseDuration) * (24*60)
+		d1["avgAmbGoingToCallDurationMinutes"] = getCallsStat(:totalAmbGoingToCallDuration) * (24*60)
+		d1["avgTransportDurationMinutes"] = getCallsStat(:totalTransportDuration) * (24*60)
+		d1["avgServiceDurationMinutes"] = getCallsStat(:totalServiceDuration) * (24*60)
+		
+		# misc
+		d1["avgNumBumps"] = getCallsStat(:numBumps)
+		d1["avgDailyNumCalls"] = meanAndHalfWidth([callStats.numCalls / duration for callStats in callStatsList])
+	end
+	
+	###########
+	
+	return statsDict
 end

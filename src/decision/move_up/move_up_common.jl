@@ -15,12 +15,8 @@
 
 # common move-up functions
 
-function isAmbAvailableForMoveUp(ambulance::Ambulance)
-	status = ambulance.status
-	if status == ambIdleAtStation || status == ambGoingToStation
-		return true
-	end
-	return false
+function isAmbMovable(ambulance::Ambulance)
+	return isFree(ambulance.status)
 end
 
 # for an ambulance, gives travel time for it to travel to each station
