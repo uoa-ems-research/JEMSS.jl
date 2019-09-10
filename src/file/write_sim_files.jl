@@ -313,8 +313,8 @@ function writeAmbsStatsFile(filename::String, stats::SimStats)
 	statuses = (setdiff(instances(AmbStatus), (ambNullStatus,))..., instances(AmbStatusSet)...)
 	travelStatuses = (ambStatusSets[ambTravelling]..., instances(AmbStatusSet)...)
 	countHeaders = [string(c) for c in counts]
-	statusDurationHeaders = [string("statusDurations_", string(s)) for s in statuses]
-	statusDistanceHeaders = [string("statusDistances_", string(s)) for s in travelStatuses]
+	statusDurationHeaders = [string("duration_", string(s)) for s in statuses]
+	statusDistanceHeaders = [string("distance_", string(s)) for s in travelStatuses]
 	getAmb(period::SimPeriodStats, ambIndex::Int) = ambIndex == 0 ? period.ambulance : period.ambulances[ambIndex]
 	header = vcat("periodIndex", countHeaders, statusDurationHeaders, statusDistanceHeaders)
 	row(a::AmbulanceStats) = vcat([getfield(a,c) for c in counts], [a.statusDurations[s] for s in statuses], [a.statusDistances[s] for s in travelStatuses])
