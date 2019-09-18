@@ -877,6 +877,11 @@ limitations under the License.
 			showNodeByIndex(idToIndex(nodeId))
 		}
 		
+		function show(object) {
+			// object could be: ambulance, call, hospital, station
+			object.marker.openPopup()
+		}
+		
 	</script>
 
 </body>
