@@ -307,6 +307,10 @@ function Base.print(mhw::MeanAndHalfWidth)
 	print(mhw.mean, " ± ", mhw.halfWidth)
 end
 
+function Base.println(mhw::MeanAndHalfWidth)
+	println(mhw.mean, " ± ", mhw.halfWidth)
+end
+
 function Base.:*(mhw::MeanAndHalfWidth, x::T) where T <: Real
 	return MeanAndHalfWidth(mhw.mean * x, mhw.halfWidth * x)
 end
