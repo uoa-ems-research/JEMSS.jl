@@ -82,7 +82,7 @@ function initRoute!(sim::Simulation, route::Route;
 	startLoc::Location = Location(), startFNode::Int = nullIndex, startFNodeDist::Float = nullDist)
 	
 	@assert(route.status == routeNullStatus)
-	@assert(!isSameLocation(startLoc, Location()))
+	@assert(startLoc != Location())
 	@assert(startFNode != nullIndex)
 	@assert(startFNodeDist >= 0.0)
 	
@@ -105,7 +105,7 @@ function initRoute!(sim::Simulation, route::Route;
 		t = route.recentUpdateTime = 0.0
 		travelModeIndex = 1
 		@assert(isRouteUpToDate(route, t))
-		@assert(isSameLocation(getRouteCurrentLocation!(sim.net, route, t), route.startLoc))
+		@assert(getRouteCurrentLocation!(sim.net, route, t) == route.startLoc)
 		@assert(getRouteNextNode!(sim, route, travelModeIndex, t)[1] == startFNode)
 		@assert(getRouteNextNodeDist!(sim, route, t) == startFNodeDist)
 		@assert(calcRouteDistance!(sim, route, t) == 0)

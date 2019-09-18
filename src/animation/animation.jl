@@ -147,7 +147,7 @@ function updateFrame!(client::Client, sim::Simulation, time::Float)
 	messageDict = createMessageDict("move_ambulance")
 	for amb in sim.ambulances
 		ambLocation = getRouteCurrentLocation!(sim.net, amb.route, time)
-		if !isSameLocation(ambLocation, amb.currentLoc)
+		if ambLocation != amb.currentLoc
 			copy!(amb.currentLoc, ambLocation)
 			amb.movedLoc = true
 			# move ambulance

@@ -121,3 +121,9 @@ writeBatchMeanResponseTimesFile(filename::String, batchMeanResponseTimes::Array{
 writeBatchMeanResponseDurationsFile(filename, batchMeanResponseTimes; batchTime = batchTime, startTime = startTime, endTime = endTime, responseDurationUnits = responseTimeUnits))
 
 ##
+
+@deprecate(
+isSameLocation(loc1::Location, loc2::Location),
+(==)(loc1, loc2))
+
+##

@@ -81,7 +81,7 @@ export
 	printEvent, # event
 	findNearestNode, # graph
 	findNearestNodeInGrid, # grid
-	isSameLocation, squareDist, normDist, offRoadTravelTime, linearInterpLocation, randLocation, # location
+	squareDist, normDist, offRoadTravelTime, linearInterpLocation, randLocation, # location
 	isFNodeInRGraph, shortestPathNextRNode, shortestPathNextRArc, shortestPathData, shortestPathTravelTime, shortestPathDistance, shortestPath, findRArcFromFNodeToFNode, # network
 	rasterRandLocations, printRasterSize, # raster
 	shortestRouteTravelTime!, # route
@@ -122,7 +122,8 @@ export
 
 # deprecated
 export
-	Depol, makeRandDeploymentPolicy, makeRandDeploymentPolicies, applyDeploymentPolicy!, simulateDeploymentPolicy!, simulateDeploymentPolicies!, writeDeploymentPoliciesFile, readDeploymentPoliciesFile # renamed "deployment policy" to "deployment"
+	Depol, makeRandDeploymentPolicy, makeRandDeploymentPolicies, applyDeploymentPolicy!, simulateDeploymentPolicy!, simulateDeploymentPolicies!, writeDeploymentPoliciesFile, readDeploymentPoliciesFile, # renamed "deployment policy" to "deployment"
+	isSameLocation
 
 include("defs.jl")
 
