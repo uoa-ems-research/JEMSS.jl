@@ -101,7 +101,7 @@ end
 # mutates: ambulance
 function setAmbStation!(ambulance::Ambulance, station::Station)
 	ambulance.stationIndex = station.index
-	ambulance.route.endLoc = station.location
+	copy!(ambulance.route.endLoc, station.location)
 	ambulance.route.endFNode = station.nearestNodeIndex
 end
 

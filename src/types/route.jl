@@ -64,9 +64,9 @@ function changeRoute!(sim::Simulation, route::Route, priority::Priority, startTi
 	end
 	
 	# start and end locations and times
-	route.startLoc = startLoc
+	copy!(route.startLoc, startLoc)
 	route.startTime = startTime
-	route.endLoc = endLoc
+	copy!(route.endLoc, endLoc)
 	route.endTime = route.endFNodeTime + offRoadTravelTime(travelMode, map, net.fGraph.nodes[endFNode].location, endLoc)
 	
 	# recent rArc, recent fNode, next fNode, status
@@ -88,12 +88,12 @@ function initRoute!(sim::Simulation, route::Route;
 	
 	# make route that starts at time = Inf
 	route.startTime = Inf
-	route.startLoc = startLoc
+	copy!(route.startLoc, startLoc)
 	route.startFNode = startFNode
 	route.startFNodeDist = startFNodeDist
 	route.startFNodeTime = Inf
 	# route.endTime = Inf # leave as nullTime, for getRouteNextNode!
-	route.endLoc = startLoc # needed for animation
+	copy!(route.endLoc, startLoc) # needed for animation
 	route.endFNode = startFNode
 	route.endFNodeTime = Inf
 	route.nextFNode = startFNode
@@ -114,31 +114,29 @@ function initRoute!(sim::Simulation, route::Route;
 end
 
 # given a route and time, get current location
+# Note that this may return the instance of `route.startLoc` or `route.endLoc` instead of a copy.
 function getRouteCurrentLocation!(net::Network, route::Route, time::Float)
 	updateRouteToTime!(net, route, time)
 	
 	fNodes = net.fGraph.nodes # shorthand
-	currentLoc = nothing # init
 	if time <= route.startTime
-		currentLoc = route.startLoc
+		return route.startLoc
 		
 	elseif time >= route.endTime
-		currentLoc = route.endLoc
+		return route.endLoc
 		
 	elseif time <= route.startFNodeTime # and time > route.startTime
 		# currently between startLoc and startFNode
-		currentLoc = linearInterpLocation(route.startLoc, fNodes[route.startFNode].location, route.startTime, route.startFNodeTime, time)
+		return linearInterpLocation(route.startLoc, fNodes[route.startFNode].location, route.startTime, route.startFNodeTime, time)
 		
 	elseif time >= route.endFNodeTime # and time < route.endTime
 		# currently between endFNode and endLoc
-		currentLoc = linearInterpLocation(fNodes[route.endFNode].location, route.endLoc, route.endFNodeTime, route.endTime, time)
+		return linearInterpLocation(fNodes[route.endFNode].location, route.endLoc, route.endFNodeTime, route.endTime, time)
 		
 	else
 		# currently somewhere on network
-		currentLoc = linearInterpLocation(fNodes[route.recentFNode].location, fNodes[route.nextFNode].location, route.recentFNodeTime, route.nextFNodeTime, time)
+		return linearInterpLocation(fNodes[route.recentFNode].location, fNodes[route.nextFNode].location, route.recentFNodeTime, route.nextFNodeTime, time)
 	end
-	
-	return currentLoc
 end
 
 # given route and current time,

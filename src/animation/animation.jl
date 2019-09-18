@@ -133,8 +133,7 @@ end
 function animAddAmbs!(client::Client, sim::Simulation)
 	messageDict = createMessageDict("add_ambulance")
 	for amb in sim.ambulances
-		ambLocation = getRouteCurrentLocation!(sim.net, amb.route, sim.time)
-		amb.currentLoc = ambLocation
+		copy!(amb.currentLoc, getRouteCurrentLocation!(sim.net, amb.route, sim.time))
 		messageDict["ambulance"] = amb
 		write(client, json(messageDict))
 	end
@@ -149,7 +148,7 @@ function updateFrame!(client::Client, sim::Simulation, time::Float)
 	for amb in sim.ambulances
 		ambLocation = getRouteCurrentLocation!(sim.net, amb.route, time)
 		if !isSameLocation(ambLocation, amb.currentLoc)
-			amb.currentLoc = ambLocation
+			copy!(amb.currentLoc, ambLocation)
 			amb.movedLoc = true
 			# move ambulance
 			messageDict["ambulance"] = amb
@@ -170,7 +169,7 @@ function updateFrame!(client::Client, sim::Simulation, time::Float)
 	addCalls = setdiff(currentCalls, previousCalls)
 	changeMessageDict!(messageDict, "remove_call")
 	for call in removeCalls
-		call.currentLoc = Location()
+		copy!(call.currentLoc, Location())
 		messageDict["call"] = call
 		write(client, json(messageDict))
 	end
@@ -182,7 +181,7 @@ function updateFrame!(client::Client, sim::Simulation, time::Float)
 	end
 	changeMessageDict!(messageDict, "add_call")
 	for call in addCalls
-		call.currentLoc = deepcopy(call.location)
+		copy!(call.currentLoc, call.location)
 		call.movedLoc = false
 		updateCallLocation!(sim, call)
 		messageDict["call"] = call
@@ -198,7 +197,7 @@ function updateCallLocation!(sim::Simulation, call::Call)
 		amb = sim.ambulances[call.ambIndex]
 		call.movedLoc = amb.movedLoc
 		if amb.movedLoc
-			call.currentLoc = amb.currentLoc
+			copy!(call.currentLoc, amb.currentLoc)
 		end
 	end
 end

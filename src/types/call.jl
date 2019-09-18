@@ -28,14 +28,13 @@ function resetCalls!(sim::Simulation)
 	calls = sim.calls
 	backupCalls = sim.backup.calls
 	numCalls = sim.numCalls
-	nullCall = Call()
 	fnames = Set(fieldnames(Call))
 	
 	@assert(length(calls) == numCalls)
 	@assert(length(backupCalls) == numCalls)
 	
 	# from fnames, remove fixed parameters
-	fnamesFixed = Set([:index, :priority, :transport, :location,
+	fnamesFixed = Set([:index, :priority, :transport, :hospitalIndex, :location,
 		:arrivalTime, :dispatchDelay, :onSceneDuration, :handoverDuration,
 		:nearestNodeIndex, :nearestNodeDist])
 	setdiff!(fnames, fnamesFixed)
@@ -45,9 +44,13 @@ function resetCalls!(sim::Simulation)
 	
 	# reset calls that arrived before (or at) sim.time
 	for fname in fnames
-		if typeof(getfield(nullCall, fname)) <: Number
+		if isprimitivetype(fieldtype(Call, fname))
 			for i = 1:recentCallIndex
 				setfield!(calls[i], fname, getfield(backupCalls[i], fname))
+			end
+		elseif fieldtype(Call, fname) == Location
+			for i = 1:recentCallIndex
+				copy!(getfield(calls[i], fname), getfield(backupCalls[i], fname)) # faster than deepcopy for Location
 			end
 		else
 			for i = 1:recentCallIndex
