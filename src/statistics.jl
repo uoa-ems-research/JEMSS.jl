@@ -75,13 +75,13 @@ function printAmbsStats(sim::Simulation)
 	
 	println("Average daily travel time: ")
 	println(" mean = ", printHours(mean(ambsAvgDailyTravelTimes)))
-	println(" std = ", printHours(std(ambsAvgDailyTravelTimes)))
+	println(" std = ", printHours(std(ambsAvgDailyTravelTimes, corrected = false)))
 	println(" min = ", printHours(minimum(ambsAvgDailyTravelTimes)))
 	println(" max = ", printHours(maximum(ambsAvgDailyTravelTimes)))
 	
 	println("Average daily travel distance: ")
 	println(" mean = ", printKilometres(mean(ambsAvgDailyTravelDists)))
-	println(" std = ", printKilometres(std(ambsAvgDailyTravelDists)))
+	println(" std = ", printKilometres(std(ambsAvgDailyTravelDists, corrected = false)))
 	println(" min = ", printKilometres(minimum(ambsAvgDailyTravelDists)))
 	println(" max = ", printKilometres(maximum(ambsAvgDailyTravelDists)))
 end
@@ -105,7 +105,7 @@ function printCallsStats(sim::Simulation)
 	
 	println("Response duration: ")
 	println(" mean = ", printMinutes(mean(responseDurations)))
-	println(" std = ", printMinutes(std(responseDurations)))
+	println(" std = ", printMinutes(std(responseDurations, corrected = false)))
 	println(" min = ", printMinutes(minimum(responseDurations)))
 	println(" max = ", printMinutes(maximum(responseDurations)))
 	
@@ -122,7 +122,7 @@ function printHospitalsStats(sim::Simulation)
 	println("Calls:")
 	hospitalsNumCalls = map(h -> h.numCalls, sim.hospitals)
 	println(" mean = ", round(mean(hospitalsNumCalls), digits = 2))
-	println(" std = ", round(std(hospitalsNumCalls), digits = 2))
+	println(" std = ", round(std(hospitalsNumCalls, corrected = false), digits = 2))
 end
 
 """
