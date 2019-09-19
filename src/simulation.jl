@@ -170,13 +170,36 @@ end
 # simulate event
 function simulateEvent!(sim::Simulation, event::Event)
 	@assert(sim.time == event.time)
-	simulateEvent!(sim, event, Val(event.form))
-	# Format of simulateEvent! functions:
-	# - next event may change relevant ambulance / call fields at event.time
+	
+	# Find event simulation function to match event form.
+	# Use of if/else here is faster than dict lookup, and using multiple dispatch was very slow (at least doubled simulation run time).
+	form = event.form # shorthand
+	simulateEventFunction =
+	if form == ambGoesToSleep simulateEventAmbGoesToSleep!
+	elseif form == ambWakesUp simulateEventAmbWakesUp!
+	elseif form == callArrives simulateEventCallArrives!
+	elseif form == considerDispatch simulateEventConsiderDispatch!
+	elseif form == ambDispatched simulateEventAmbDispatched!
+	elseif form == ambReachesCall simulateEventAmbReachesCall!
+	elseif form == ambGoesToHospital simulateEventAmbGoesToHospital!
+	elseif form == ambReachesHospital simulateEventAmbReachesHospital!
+	elseif form == ambBecomesFree simulateEventAmbBecomesFree!
+	elseif form == ambReturnsToStation simulateEventAmbReturnsToStation!
+	elseif form == ambReachesStation simulateEventAmbReachesStation!
+	elseif form == considerMoveUp simulateEventConsiderMoveUp!
+	elseif form == ambMoveUpToStation simulateEventAmbMoveUpToStation!
+	else error("Unknown event: ", form, ".")
+	end
+	simulateEventFunction(sim, event)
+	
+	# Format of event simulation functions:
+	# - event may change relevant ambulance / call fields at event.time
+	# - collect statistics
 	# - event may then trigger future events / cancel scheduled events
 end
 
-function simulateEvent!(sim::Simulation, event::Event, ::Val{ambGoesToSleep})
+function simulateEventAmbGoesToSleep!(sim::Simulation, event::Event)
+	@assert(event.form == ambGoesToSleep)
 	ambulance = sim.ambulances[event.ambIndex]
 	@assert(ambulance.status == ambIdleAtStation) # ambulance should be at station before sleeping
 	@assert(event.callIndex == nullIndex)
@@ -189,7 +212,8 @@ function simulateEvent!(sim::Simulation, event::Event, ::Val{ambGoesToSleep})
 	addEvent!(sim.eventList; parentEvent = event, form = ambWakesUp, time = sim.time + sleepDuration, ambulance = ambulance, station = station)
 end
 
-function simulateEvent!(sim::Simulation, event::Event, ::Val{ambWakesUp})
+function simulateEventAmbWakesUp!(sim::Simulation, event::Event)
+	@assert(event.form == ambWakesUp)
 	ambulance = sim.ambulances[event.ambIndex]
 	@assert(ambulance.status == ambSleeping) # ambulance should have been sleeping
 	@assert(event.callIndex == nullIndex)
@@ -200,7 +224,8 @@ function simulateEvent!(sim::Simulation, event::Event, ::Val{ambWakesUp})
 	updateStationStats!(sim.stations[ambulance.stationIndex]; numIdleAmbsChange = +1, time = sim.time)
 end
 
-function simulateEvent!(sim::Simulation, event::Event, ::Val{callArrives})
+function simulateEventCallArrives!(sim::Simulation, event::Event)
+	@assert(event.form == callArrives)
 	@assert(event.ambIndex == nullIndex) # no ambulance should be assigned yet
 	call = sim.calls[event.callIndex]
 	@assert(call.status == callNullStatus)
@@ -216,7 +241,8 @@ function simulateEvent!(sim::Simulation, event::Event, ::Val{callArrives})
 	end
 end
 
-function simulateEvent!(sim::Simulation, event::Event, ::Val{considerDispatch})
+function simulateEventConsiderDispatch!(sim::Simulation, event::Event)
+	@assert(event.form == considerDispatch)
 	@assert(event.ambIndex == nullIndex) # no ambulance should be assigned yet
 	call = sim.calls[event.callIndex]
 	@assert(call.status == callScreening || call.status == callWaitingForAmb) # callWaitingForAmb if call bumped
@@ -256,7 +282,8 @@ function simulateEvent!(sim::Simulation, event::Event, ::Val{considerDispatch})
 	end
 end
 
-function simulateEvent!(sim::Simulation, event::Event, ::Val{ambDispatched})
+function simulateEventAmbDispatched!(sim::Simulation, event::Event)
+	@assert(event.form == ambDispatched)
 	ambulance = sim.ambulances[event.ambIndex]
 	status = ambulance.status # shorthand
 	@assert(isFree(status) || status == ambGoingToCall)
@@ -291,7 +318,8 @@ function simulateEvent!(sim::Simulation, event::Event, ::Val{ambDispatched})
 	end
 end
 
-function simulateEvent!(sim::Simulation, event::Event, ::Val{ambReachesCall})
+function simulateEventAmbReachesCall!(sim::Simulation, event::Event)
+	@assert(event.form == ambReachesCall)
 	ambulance = sim.ambulances[event.ambIndex]
 	@assert(ambulance.status == ambGoingToCall)
 	call = sim.calls[event.callIndex]
@@ -311,7 +339,8 @@ function simulateEvent!(sim::Simulation, event::Event, ::Val{ambReachesCall})
 	end
 end
 
-function simulateEvent!(sim::Simulation, event::Event, ::Val{ambGoesToHospital})
+function simulateEventAmbGoesToHospital!(sim::Simulation, event::Event)
+	@assert(event.form == ambGoesToHospital)
 	ambulance = sim.ambulances[event.ambIndex]
 	@assert(ambulance.status == ambAtCall)
 	call = sim.calls[event.callIndex]
@@ -335,7 +364,8 @@ function simulateEvent!(sim::Simulation, event::Event, ::Val{ambGoesToHospital})
 	addEvent!(sim.eventList; parentEvent = event, form = ambReachesHospital, time = ambulance.route.endTime, ambulance = ambulance, call = call)
 end
 
-function simulateEvent!(sim::Simulation, event::Event, ::Val{ambReachesHospital})
+function simulateEventAmbReachesHospital!(sim::Simulation, event::Event)
+	@assert(event.form == ambReachesHospital)
 	ambulance = sim.ambulances[event.ambIndex]
 	@assert(ambulance.status == ambGoingToHospital)
 	call = sim.calls[event.callIndex]
@@ -350,7 +380,8 @@ function simulateEvent!(sim::Simulation, event::Event, ::Val{ambReachesHospital}
 	addEvent!(sim.eventList; parentEvent = event, form = ambBecomesFree, time = sim.time + call.handoverDuration, ambulance = ambulance, call = call)
 end
 
-function simulateEvent!(sim::Simulation, event::Event, ::Val{ambBecomesFree})
+function simulateEventAmbBecomesFree!(sim::Simulation, event::Event)
+	@assert(event.form == ambBecomesFree)
 	ambulance = sim.ambulances[event.ambIndex]
 	@assert(ambulance.status == ambAtCall || ambulance.status == ambAtHospital)
 	call = sim.calls[event.callIndex]
@@ -386,7 +417,8 @@ function simulateEvent!(sim::Simulation, event::Event, ::Val{ambBecomesFree})
 	end
 end
 
-function simulateEvent!(sim::Simulation, event::Event, ::Val{ambReturnsToStation})
+function simulateEventAmbReturnsToStation!(sim::Simulation, event::Event)
+	@assert(event.form == ambReturnsToStation)
 	ambulance = sim.ambulances[event.ambIndex]
 	@assert(ambulance.status == ambFreeAfterCall)
 	@assert(event.callIndex == nullIndex)
@@ -398,7 +430,8 @@ function simulateEvent!(sim::Simulation, event::Event, ::Val{ambReturnsToStation
 	addEvent!(sim.eventList; parentEvent = event, form = ambReachesStation, time = ambulance.route.endTime, ambulance = ambulance, station = station)
 end
 
-function simulateEvent!(sim::Simulation, event::Event, ::Val{ambReachesStation})
+function simulateEventAmbReachesStation!(sim::Simulation, event::Event)
+	@assert(event.form == ambReachesStation)
 	ambulance = sim.ambulances[event.ambIndex]
 	@assert(isGoingToStation(ambulance.status))
 	@assert(event.callIndex == nullIndex)
@@ -409,7 +442,8 @@ function simulateEvent!(sim::Simulation, event::Event, ::Val{ambReachesStation})
 	updateStationStats!(sim.stations[ambulance.stationIndex]; numIdleAmbsChange = +1, time = sim.time)
 end
 
-function simulateEvent!(sim::Simulation, event::Event, ::Val{considerMoveUp})
+function simulateEventConsiderMoveUp!(sim::Simulation, event::Event)
+	@assert(event.form == considerMoveUp)
 	ambulance = sim.ambulances[event.ambIndex] # ambulance that triggered consideration of move up
 	@assert(event.callIndex == nullIndex)
 	mud = sim.moveUpData # shorthand
@@ -462,7 +496,8 @@ function simulateEvent!(sim::Simulation, event::Event, ::Val{considerMoveUp})
 	end
 end
 
-function simulateEvent!(sim::Simulation, event::Event, ::Val{ambMoveUpToStation})
+function simulateEventAmbMoveUpToStation!(sim::Simulation, event::Event)
+	@assert(event.form == ambMoveUpToStation)
 	ambulance = sim.ambulances[event.ambIndex]
 	@assert(event.callIndex == nullIndex)
 	station = sim.stations[event.stationIndex] # station to move up to
@@ -488,12 +523,4 @@ function simulateEvent!(sim::Simulation, event::Event, ::Val{ambMoveUpToStation}
 	end
 	
 	addEvent!(sim.eventList; parentEvent = event, form = ambReachesStation, time = ambulance.route.endTime, ambulance = ambulance, station = station)
-end
-
-function simulateEvent!(sim::Simulation, event::Event, ::Val{nullEvent})
-	error("Null event.")
-end
-
-function simulateEvent!(sim::Simulation, event::Event, ::T) where T <: Any
-	error("Unknown event type.")
 end
