@@ -602,18 +602,18 @@ function calcRNetTravelShortestPathTimes(net::Network, rNetTravel::NetTravel)
 			end
 			
 			# backtrack path, setting time from node j to k
-			d = spTimes[j,k]
+			t = spTimes[j,k]
 			while p > 0
 				j = path[p]
-				d += spNextArcTime[j]
-				spTimes[j,k] = d
+				t += spNextArcTime[j]
+				spTimes[j,k] = t
 				visited[j] = true
 				p -= 1
 			end
 		end
 	end
 	
-	@assert(all(d -> d >= 0 && d != FloatSpTime(Inf), spTimes))
+	@assert(all(t -> t >= 0 && t != FloatSpTime(Inf), spTimes))
 	
 	return spTimes
 end
