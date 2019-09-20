@@ -556,10 +556,11 @@ function calcRNetTravelShortestPathDists!(net::Network, rNetTravel::NetTravel)
 	# shorthand
 	rGraph = net.rGraph
 	fadjList = rGraph.fadjList
-	badjList = rGraph.badjList
 	n = length(rGraph.nodes)
 	spFadjIndex = rNetTravel.spFadjIndex
+	spFadjArcList = rNetTravel.spFadjArcList
 	spNodePairArcIndex = rNetTravel.spNodePairArcIndex
+	arcDists = rNetTravel.arcDists
 	
 	spDists = rNetTravel.spDists = fill(FloatSpDist(Inf), n, n) # spDists[i,j] = shortest path distance from node i to j
 	for i = 1:n spDists[i,i] = 0 end
@@ -572,37 +573,46 @@ function calcRNetTravelShortestPathDists!(net::Network, rNetTravel::NetTravel)
 	end
 	
 	spNextNode = zeros(Int, n)
+	spNextArcDist = zeros(Float, n)
 	visited = fill(false, n) # visited[i] = true if node i has been visited and so had distance populated
-	queue = Int[] # node indices to search next
-	sizehint!(queue, n)
+	path = zeros(Int, n) # path node indices
 	for k = 1:n # root node of shortest path tree, find distance from each node to this node
 		# get data for paths towards node k
 		spNextNode[k] = 0
 		for j = 1:n
 			if j == k continue end
-			fadjIndex = rNetTravel.spFadjIndex[j,k]
+			fadjIndex = spFadjIndex[j,k]
 			spNextNode[j] = fadjList[j][fadjIndex]
+			spNextArcDist[j] = arcDists[spFadjArcList[j][fadjIndex]]
 		end
 		
 		fill!(visited, false)
 		visited[k] = true
-		empty!(queue)
-		push!(queue, k)
-		while !isempty(queue)
-			j = pop!(queue)
-			d = spDists[j,k] # shorthand
-			for i in badjList[j] # all nodes with arcs incoming to node j
-				if !visited[i] && spNextNode[i] == j # successor of node i on shortest path from node i to k is j
-					spDists[i,k] = spDists[i,j] + d # d[i,k] = d[i,j] + d[j,k]
-					visited[i] = true
-					push!(queue, i)
-				end
+		for i = 1:n
+			if i == k || visited[i] continue end
+			
+			# trace path from i to k, or to node that already has data for path to k
+			j = i
+			p = 0
+			while j != k && !visited[j]
+				p += 1
+				path[p] = j
+				j = spNextNode[j]
+			end
+			
+			# backtrack path, setting distance from node j to k
+			d = spDists[j,k]
+			while p > 0
+				j = path[p]
+				d += spNextArcDist[j]
+				spDists[j,k] = d
+				visited[j] = true
+				p -= 1
 			end
 		end
 	end
 	
-	@assert(!any(d -> d == FloatSpDist(Inf), spDists))
-	@assert(all(d -> d >= 0, spDists))
+	@assert(all(d -> d >= 0 && d != FloatSpDist(Inf), spDists))
 end
 
 # for the shortest path from startRNode to endRNode,
