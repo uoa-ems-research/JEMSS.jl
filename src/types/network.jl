@@ -420,9 +420,12 @@ function createRNetTravelsFromFNetTravels!(net::Network;
 			@assert(rNetTravel.arcDists == rNetTravelLoaded.arcDists)
 			
 			# set rNetTravel values by rNetTravelLoaded
-			for fname in [:spTimes, :spDists, :spFadjIndex, :spNodePairArcIndex, :spFadjArcList]
+			for fname in [:spFadjIndex, :spNodePairArcIndex, :spFadjArcList]
 				setfield!(rNetTravel, fname, getfield(rNetTravelLoaded, fname))
 			end
+			
+			rNetTravel.spTimes = calcRNetTravelShortestPathTimes(net, rNetTravel)
+			rNetTravel.spDists = calcRNetTravelShortestPathDists(net, rNetTravel)
 		end
 		
 	end
