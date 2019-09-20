@@ -89,6 +89,7 @@ mutable struct NetTravel
 	
 	# for use in reduced graph:
 	arcDists::Vector{Float} # arcDists[i] = distance of arc i; reference to Graph.arcDists, useful for checking that loaded rNetTravel is correct
+	fadjList::Vector{Vector{Int}} # = rGraph.fadjList; useful for checking that loaded rNetTravel is correct
 	spTimes::Array{FloatSpTime,2} # spTimes[i,j] = shortest path time between node i and j
 	spDists::Array{FloatSpDist,2} # spDists[i,j] = shortest path distance between node i and j
 	spFadjIndex::Array{IntFadj,2} # for shortest path from rNode i to j, spFadjIndex[i,j] gives the index (in fadjList[i], see Graph) of the successor rNode of i for this path
@@ -110,7 +111,7 @@ mutable struct NetTravel
 	fNodeNearestHospitalIndex::Vector{Int} # fNodeNearestHospitalIndex[i] gives index of nearest hospital from fNode[i]
 	
 	NetTravel(isReduced::Bool) = new(isReduced, nullIndex, [],
-		[], Array{FloatSpTime,2}(undef,0,0), Array{FloatSpDist,2}(undef,0,0), Array{IntFadj,2}(undef,0,0), spzeros(Int, 0, 0), [],
+		[], [], Array{FloatSpTime,2}(undef,0,0), Array{FloatSpDist,2}(undef,0,0), Array{IntFadj,2}(undef,0,0), spzeros(Int, 0, 0), [],
 		[], [], [],
 		Array{Float,2}(undef,0,0), Array{Float,2}(undef,0,0), Array{Float,2}(undef,0,0), Array{Float,2}(undef,0,0), Array{Tuple{Int,Int},2}(undef,0,0), Array{Tuple{Int,Int},2}(undef,0,0), [])
 end

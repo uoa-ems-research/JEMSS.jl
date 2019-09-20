@@ -355,6 +355,7 @@ function createRNetTravelsFromFNetTravels!(net::Network;
 		
 		rNetTravel.modeIndex = fNetTravel.modeIndex
 		rNetTravel.arcDists = rGraph.arcDists
+		rNetTravel.fadjList = rGraph.fadjList
 		
 		for rArcIndex = 1:numRArcs
 			fNodesOnRArc = rArcFNodes[rArcIndex]
@@ -418,6 +419,7 @@ function createRNetTravelsFromFNetTravels!(net::Network;
 			rNetTravelLoaded = rNetTravelsLoaded[travelModeIndex]
 			@assert(rNetTravel.arcTimes == rNetTravelLoaded.arcTimes)
 			@assert(rNetTravel.arcDists == rNetTravelLoaded.arcDists)
+			@assert(rNetTravel.fadjList == rNetTravelLoaded.fadjList)
 			
 			# set rNetTravel values by rNetTravelLoaded
 			for fname in [:spFadjIndex, :spNodePairArcIndex, :spFadjArcList]
