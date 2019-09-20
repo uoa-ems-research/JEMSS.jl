@@ -553,7 +553,6 @@ end
 # Calculate time of shortest path between each pair of nodes for rNetTravel.
 # Requires some shortest path data (spFadjIndex, spNodePairArcIndex) to be calculated already.
 # See also: calcRNetTravelShortestPathDists
-# Combining calcRNetTravelShortestPathTimes and calcRNetTravelShortestPathDists made it run much slower.
 function calcRNetTravelShortestPathTimes(net::Network, rNetTravel::NetTravel)
 	@assert(rNetTravel.isReduced)
 	
@@ -624,7 +623,6 @@ end
 # Calculate distance of shortest path between each pair of nodes for rNetTravel.
 # Requires some shortest path data (spFadjIndex, spNodePairArcIndex) to be calculated already.
 # See also: calcRNetTravelShortestPathTimes
-# Combining calcRNetTravelShortestPathTimes and calcRNetTravelShortestPathDists made it run much slower.
 function calcRNetTravelShortestPathDists(net::Network, rNetTravel::NetTravel)
 	@assert(rNetTravel.isReduced)
 	
