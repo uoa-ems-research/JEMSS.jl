@@ -95,14 +95,10 @@ end
 # note that for reducing memory usage, sim.backup does not contain backups of all fields
 function backup!(sim::Simulation)
 	@assert(!sim.used)
-	
-	# remove certain fields from sim before copying sim
-	(net, travel, grid, resim, demand, demandCoverage) = (sim.net, sim.travel, sim.grid, sim.resim, sim.demand, sim.demandCoverage)
-	(sim.net, sim.travel, sim.grid, sim.resim, sim.demand, sim.demandCoverage) = (Network(), Travel(), Grid(), Resimulation(), Demand(), DemandCoverage())
-	
-	sim.backup = deepcopy(sim)
-	
-	(sim.net, sim.travel, sim.grid, sim.resim, sim.demand, sim.demandCoverage) = (net, travel, grid, resim, demand, demandCoverage)
+	fnamesDontCopy = (:backup, :net, :travel, :grid, :resim, :demand, :demandCoverage)
+	for fname in setdiff(fieldnames(Simulation), fnamesDontCopy)
+		setfield!(sim.backup, fname, deepcopy(getfield(sim, fname)))
+	end
 end
 backupSim!(sim::Simulation) = backup!(sim) # compat
 
