@@ -293,6 +293,14 @@ mutable struct Ambulance
 	# dispatch statistics:
 	dispatchStartLocCounts::Dict{Location,Int} # dispatchStartLocCounts[loc] gives number of times that ambulance was dispatched from location 'loc'
 	
+	# # hospital and station statistics:
+	# atHospitalDurations::Vector{Float} # atHospitalDurations[i] gives the duration that the ambulance spent at hospitals[i]
+	# atHospitalCounts::Vector{Int} # atHospitalCounts[i] gives the number of times that the ambulance was at hospitals[i]
+	# idleAtStationDurations::Vector{Int} # idleAtStationDurations[i] is the duration that the ambulance spent idle at stations[i]
+	
+	# # redispatch statistics
+	# redispatchCounts::Array{Int,2} # redispatchCounts[Int(p1),Int(p2)] gives number of redispatches from call of priority p1 to call of priority p2
+	
 	Ambulance() = new(nullIndex, ambNullStatus, nullIndex, nullIndex, Route(), Event(), nullAmbClass,
 		Location(), false,
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,

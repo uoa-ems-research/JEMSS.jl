@@ -68,7 +68,7 @@ function zhangIpMoveUp(sim::Simulation)::Tuple{Vector{Ambulance}, Vector{Station
 	@assert(!any(a -> isAmbMovable(a) && a.status == ambAtHospital, ambulances)) # @assert(isempty(intersect(movableAmbs, atHospitalAmbs))) is much slower
 	if isempty(movableAmbs) return moveUpNull() end
 	
-	# let "move-up ambulances" be the ambulances that can be moved now, and those that can be moved later (currently at-hospital)
+	# let moveUpAmbs be the ambulances that can be moved now, and those that can be moved later (currently at-hospital)
 	moveUpAmbs = vcat(movableAmbs, atHospitalAmbs)
 	numMoveUpAmbs = length(moveUpAmbs)
 	
