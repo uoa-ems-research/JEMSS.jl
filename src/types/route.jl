@@ -582,7 +582,7 @@ function shortestRouteTravelTime!(sim::Simulation;
 	fNodes = sim.net.fGraph.nodes # shorthand
 	if route == nothing
 		if firstNode == nullIndex
-			(firstNode, dist1) = findNearestNodeInGrid(sim.map, sim.grid, fNodes, startLoc)
+			(firstNode, dist1) = findNearestNode(sim.map, sim.grid, fNodes, startLoc)
 		end
 		if time1 == nullTime
 			if dist1 == nullDist
@@ -598,7 +598,7 @@ function shortestRouteTravelTime!(sim::Simulation;
 	
 	# find lastNode, and time from it to endLoc
 	if lastNode == nullIndex
-		(lastNode, dist2) = findNearestNodeInGrid(sim.map, sim.grid, fNodes, endLoc)
+		(lastNode, dist2) = findNearestNode(sim.map, sim.grid, fNodes, endLoc)
 	end
 	if time2 == nullTime
 		if dist2 == nullDist

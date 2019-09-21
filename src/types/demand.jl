@@ -117,7 +117,7 @@ function setPointsNearestNodes!(sim::Simulation, points::Vector{Point})
 	# find and set nearest node index of each point
 	for point in points
 		@assert(point.location.x != nullX && point.location.y != nullY)
-		(point.nearestNodeIndex, point.nearestNodeDist) = findNearestNodeInGrid(sim.map, sim.grid, sim.net.fGraph.nodes, point.location)
+		(point.nearestNodeIndex, point.nearestNodeDist) = findNearestNode(sim.map, sim.grid, sim.net.fGraph.nodes, point.location)
 	end
 end
 

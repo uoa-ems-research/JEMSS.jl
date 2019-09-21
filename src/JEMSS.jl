@@ -79,8 +79,7 @@ export
 	isBusy, isFree, isWorking, isGoingToStation, isTravelling, # ambulance
 	initDemand!, initDemandCoverage!, # demand
 	printEvent, # event
-	findNearestNode, # graph
-	findNearestNodeInGrid, # grid
+	findNearestNode, # grid
 	squareDist, normDist, offRoadTravelTime, linearInterpLocation, randLocation, # location
 	isFNodeInRGraph, shortestPathNextRNode, shortestPathNextRArc, shortestPathData, shortestPathTravelTime, shortestPathDistance, shortestPath, findRArcFromFNodeToFNode, # network
 	rasterRandLocations, printRasterSize, # raster
@@ -123,7 +122,7 @@ export
 # deprecated
 export
 	Depol, makeRandDeploymentPolicy, makeRandDeploymentPolicies, applyDeploymentPolicy!, simulateDeploymentPolicy!, simulateDeploymentPolicies!, writeDeploymentPoliciesFile, readDeploymentPoliciesFile, # renamed "deployment policy" to "deployment"
-	isSameLocation
+	isSameLocation, findNearestNodeInGrid
 
 include("defs.jl")
 

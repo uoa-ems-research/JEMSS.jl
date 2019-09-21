@@ -40,7 +40,7 @@ end
 # extending search outward in a rectangle, until
 # borders of search rectangle are further from given
 # location than the nearest node found
-function findNearestNodeInGrid(map::Map, grid::Grid, nodes::Vector{Node}, location::Location)
+function findNearestNode(map::Map, grid::Grid, nodes::Vector{Node}, location::Location)
 	
 	# indices of grid rectangle for given location
 	(ix, iy) = locationToGridIndex(map, grid, location)

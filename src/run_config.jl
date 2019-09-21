@@ -238,13 +238,13 @@ function initSim(configFilename::String;
 	
 	# for each call, hospital, and station, find nearest node
 	for c in sim.calls
-		(c.nearestNodeIndex, c.nearestNodeDist) = findNearestNodeInGrid(map, grid, fGraph.nodes, c.location)
+		(c.nearestNodeIndex, c.nearestNodeDist) = findNearestNode(map, grid, fGraph.nodes, c.location)
 	end
 	for h in sim.hospitals
-		(h.nearestNodeIndex, h.nearestNodeDist) = findNearestNodeInGrid(map, grid, fGraph.nodes, h.location)
+		(h.nearestNodeIndex, h.nearestNodeDist) = findNearestNode(map, grid, fGraph.nodes, h.location)
 	end
 	for s in sim.stations
-		(s.nearestNodeIndex, s.nearestNodeDist) = findNearestNodeInGrid(map, grid, fGraph.nodes, s.location)
+		(s.nearestNodeIndex, s.nearestNodeDist) = findNearestNode(map, grid, fGraph.nodes, s.location)
 	end
 	
 	# create event list
