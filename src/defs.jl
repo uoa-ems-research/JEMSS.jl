@@ -38,7 +38,6 @@ const NestedCompTable = Vector{Int} # nested compliance table can be represented
 const PriorityList = Vector{Int} # a priority list gives the order of preference for which ambulances should be redeployed (moved up) to stations; priorityList[1] has the index of the station with highest priority
 
 # run modes
-const debugMode = false
 const checkMode = true # for data checking, e.g. assertions that are checked frequently
 
 # file chars
