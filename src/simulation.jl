@@ -105,21 +105,16 @@ backupSim!(sim::Simulation) = backup!(sim) # compat
 
 # reset sim from sim.backup
 function reset!(sim::Simulation)
+	@assert(isdefined(sim, :backup))
 	@assert(!sim.backup.used)
 	
 	if sim.used
 		resetCalls!(sim) # reset calls from sim.backup, need to do this before resetting sim.time
 		
-		fnames = Set(fieldnames(Simulation))
-		fnamesDontCopy = Set([:backup, :net, :travel, :grid, :resim, :calls, :demand, :demandCoverage, :animating]) # will not (yet) copy these fields from sim.backup to sim
-		# note that sim.backup does not contain a backup of all fields
-		setdiff!(fnames, fnamesDontCopy) # remove fnamesDontCopy from fnames
-		for fname in fnames
-			try
-				setfield!(sim, fname, deepcopy(getfield(sim.backup, fname)))
-			catch e
-				error(e)
-			end
+		fnamesDontCopy = (:backup, :net, :travel, :grid, :resim, :calls, :demand, :demandCoverage, :animating)
+		# fnamesDontCopy lists fields that are not backed up in sim.backup, or will be reset by another method
+		for fname in setdiff(fieldnames(Simulation), fnamesDontCopy)
+			setfield!(sim, fname, deepcopy(getfield(sim.backup, fname)))
 		end
 		
 		# reset resimulation state
