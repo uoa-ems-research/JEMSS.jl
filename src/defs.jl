@@ -45,6 +45,10 @@ const checkMode = true # for data checking, e.g. assertions that are checked fre
 const delimiter = ','
 const newline = "\r\n"
 
+# misc globals
+configFileDir = "" # hacky; to allow using "$configFileDir" in config files
+genConfigFileDir = "" # hacky; to allow using "$genConfigFileDir" in gen config files
+
 # misc null values
 const nullIndex = -1
 const nullX = -200 # outside lat/lon range

@@ -88,7 +88,7 @@ end
 function readGenConfig(genConfigFilename::String)
 	# read gen config xml file
 	genConfigFilename = genConfigFilename |> interpolateString |> abspath
-	genConfigFileDir = splitdir(genConfigFilename)[1]
+	global genConfigFileDir = splitdir(genConfigFilename)[1]
 	rootElt = xmlFileRoot(genConfigFilename)
 	@assert(xName(rootElt) == "genConfig", string("xml root has incorrect name: ", xName(rootElt)))
 	

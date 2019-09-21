@@ -39,7 +39,7 @@ function initSim(configFilename::String;
 	
 	# read sim config xml file
 	configFilename = configFilename |> interpolateString |> abspath
-	configFileDir = splitdir(configFilename)[1]
+	global configFileDir = splitdir(configFilename)[1]
 	rootElt = xmlFileRoot(configFilename)
 	@assert(xName(rootElt) == "simConfig", string("xml root has incorrect name: ", xName(rootElt)))
 	

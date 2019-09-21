@@ -236,7 +236,7 @@ end
 joinPathIfNotAbs(absPath::String, path::String) = isabspath(path) ? abspath(path) : joinpath(absPath, path)
 
 function interpolateString(s::String)
-	return string("\"", escape_string(s), "\"") |> Meta.parse |> eval
+	return string("\"", escape_string(s), "\"") |> Meta.parse |> eval # note that eval only works for global vars
 end
 interpolateString(s::SubString{String}) = interpolateString(String(s))
 
