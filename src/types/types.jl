@@ -311,8 +311,6 @@ end
 
 mutable struct Call
 	index::Int
-	status::CallStatus
-	ambIndex::Int
 	priority::Priority
 	transport::Bool # true if requires transport to hospital
 	hospitalIndex::Int # hospital that call should be transported to. If hospitalIndex == nullIndex, will transport to nearest hospital
@@ -327,6 +325,10 @@ mutable struct Call
 	# node nearest to call location:
 	nearestNodeIndex::Int
 	nearestNodeDist::Float
+	
+	# call state
+	status::CallStatus
+	ambIndex::Int # index of responding ambulance
 	
 	# for animation:
 	currentLoc::Location
@@ -354,9 +356,10 @@ mutable struct Call
 	# for calculating statistics:
 	statusSetTime::Float # time at which status was last set, even if set to same status value
 	
-	Call() = new(nullIndex, callNullStatus, nullIndex, nullPriority, true, nullIndex, Location(),
+	Call() = new(nullIndex, nullPriority, true, nullIndex, Location(),
 		nullTime, nullTime, nullTime, nullTime,
 		nullIndex, nullDist,
+		callNullStatus, nullIndex,
 		Location(), false,
 		nullTime, nullTime, nullTime, 0, false, Location(), ambNullStatus, nullIndex,
 		0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,

@@ -18,47 +18,35 @@ function getNextCall!(queuedCallList::Vector{Call})
 	return length(queuedCallList) > 0 ? pop!(queuedCallList) : nothing
 end
 
-# reset simulation calls from sim.backup
-# only reset calls with arrival time <= sim.time
-# faster than sim.calls = deepcopy(sim.backup.calls)
-function resetCalls!(sim::Simulation)
-	@assert(!sim.backup.used)
-	
-	# shorthand:
-	calls = sim.calls
-	backupCalls = sim.backup.calls
-	numCalls = sim.numCalls
-	fnames = Set(fieldnames(Call))
-	
-	@assert(length(calls) == numCalls)
-	@assert(length(backupCalls) == numCalls)
-	
-	# from fnames, remove fixed parameters
-	fnamesFixed = Set([:index, :priority, :transport, :hospitalIndex, :location,
+# reset calls
+function reset!(calls::Vector{Call})
+	# do not reset fixed call parameters
+	fnamesFixed = (:index, :priority, :transport, :hospitalIndex, :location,
 		:arrivalTime, :dispatchDelay, :onSceneDuration, :handoverDuration,
-		:nearestNodeIndex, :nearestNodeDist])
-	setdiff!(fnames, fnamesFixed)
+		:nearestNodeIndex, :nearestNodeDist)
+	fnames = setdiff(fieldnames(Call), fnamesFixed)
 	
-	recentCallIndex = something(findlast(call -> call.arrivalTime <= sim.time, calls), 0)
-	@assert(all(i -> calls[i].status == callNullStatus, recentCallIndex+1:numCalls))
-	
-	# reset calls that arrived before (or at) sim.time
+	# reset calls
+	nullCall = Call()
+	recentCallIndex = something(findlast(call -> call.status != callNullStatus, calls), 0) # index of last call that needs reset
 	for fname in fnames
+		val = getfield(nullCall, fname)
 		if isprimitivetype(fieldtype(Call, fname))
 			for i = 1:recentCallIndex
-				setfield!(calls[i], fname, getfield(backupCalls[i], fname))
+				setfield!(calls[i], fname, val)
 			end
 		elseif fieldtype(Call, fname) == Location
 			for i = 1:recentCallIndex
-				copy!(getfield(calls[i], fname), getfield(backupCalls[i], fname)) # faster than deepcopy for Location
+				copy!(getfield(calls[i], fname), val) # faster than deepcopy for Location
 			end
 		else
 			for i = 1:recentCallIndex
-				setfield!(calls[i], fname, deepcopy(getfield(backupCalls[i], fname)))
+				setfield!(calls[i], fname, deepcopy(val))
 			end
 		end
 	end
 end
+resetCalls!(sim::Simulation) = reset!(sim.calls) # compat
 
 function setCallStatus!(call::Call, status::CallStatus, time::Float)
 	@assert(call.statusSetTime <= time)
