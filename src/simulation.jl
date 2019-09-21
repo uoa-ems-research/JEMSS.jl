@@ -95,6 +95,7 @@ end
 # note that for reducing memory usage, sim.backup does not contain backups of all fields
 function backup!(sim::Simulation)
 	@assert(!sim.used)
+	if !isdefined(sim, :backup) sim.backup = Simulation() end
 	fnamesDontCopy = (:backup, :net, :travel, :grid, :resim, :demand, :demandCoverage)
 	for fname in setdiff(fieldnames(Simulation), fnamesDontCopy)
 		setfield!(sim.backup, fname, deepcopy(getfield(sim, fname)))
