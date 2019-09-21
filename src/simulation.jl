@@ -166,24 +166,21 @@ function simulateEvent!(sim::Simulation, event::Event)
 	# Find event simulation function to match event form.
 	# Use of if/else here is faster than dict lookup, and using multiple dispatch was very slow (at least doubled simulation run time).
 	form = event.form # shorthand
-	simulateEventFunction =
-	if form == ambGoesToSleep simulateEventAmbGoesToSleep!
-	elseif form == ambWakesUp simulateEventAmbWakesUp!
-	elseif form == callArrives simulateEventCallArrives!
-	elseif form == considerDispatch simulateEventConsiderDispatch!
-	elseif form == ambDispatched simulateEventAmbDispatched!
-	elseif form == ambReachesCall simulateEventAmbReachesCall!
-	elseif form == ambGoesToHospital simulateEventAmbGoesToHospital!
-	elseif form == ambReachesHospital simulateEventAmbReachesHospital!
-	elseif form == ambBecomesFree simulateEventAmbBecomesFree!
-	elseif form == ambReturnsToStation simulateEventAmbReturnsToStation!
-	elseif form == ambReachesStation simulateEventAmbReachesStation!
-	elseif form == considerMoveUp simulateEventConsiderMoveUp!
-	elseif form == ambMoveUpToStation simulateEventAmbMoveUpToStation!
+	if form == ambGoesToSleep simulateEventAmbGoesToSleep!(sim, event)
+	elseif form == ambWakesUp simulateEventAmbWakesUp!(sim, event)
+	elseif form == callArrives simulateEventCallArrives!(sim, event)
+	elseif form == considerDispatch simulateEventConsiderDispatch!(sim, event)
+	elseif form == ambDispatched simulateEventAmbDispatched!(sim, event)
+	elseif form == ambReachesCall simulateEventAmbReachesCall!(sim, event)
+	elseif form == ambGoesToHospital simulateEventAmbGoesToHospital!(sim, event)
+	elseif form == ambReachesHospital simulateEventAmbReachesHospital!(sim, event)
+	elseif form == ambBecomesFree simulateEventAmbBecomesFree!(sim, event)
+	elseif form == ambReturnsToStation simulateEventAmbReturnsToStation!(sim, event)
+	elseif form == ambReachesStation simulateEventAmbReachesStation!(sim, event)
+	elseif form == considerMoveUp simulateEventConsiderMoveUp!(sim, event)
+	elseif form == ambMoveUpToStation simulateEventAmbMoveUpToStation!(sim, event)
 	else error("Unknown event: ", form, ".")
 	end
-	simulateEventFunction(sim, event)
-	
 	# Format of event simulation functions:
 	# - event may change relevant ambulance / call fields at event.time
 	# - collect statistics
