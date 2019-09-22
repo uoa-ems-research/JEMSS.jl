@@ -41,6 +41,7 @@ using ArchGDAL
 using Hungarian
 using OffsetArrays
 using Base.Iterators: Stateful
+using Parameters
 
 # optimisation
 using JuMP
