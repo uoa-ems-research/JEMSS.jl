@@ -55,10 +55,8 @@ end
 # graph is strongly connected
 function checkGraph(graph::Graph, map::Map)
 	
-	# shorthand names
-	nodes = graph.nodes
-	arcs = graph.arcs
-	
+	# shorthand
+	@unpack nodes, arcs = graph
 	numNodes = length(nodes)
 	numArcs = length(arcs)
 	

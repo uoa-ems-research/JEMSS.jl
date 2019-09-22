@@ -19,9 +19,7 @@
 function changeRoute!(sim::Simulation, route::Route, priority::Priority, startTime::Float, endLoc::Location, endFNode::Int)
 	
 	# shorthand:
-	map = sim.map
-	net = sim.net
-	travel = sim.travel
+	@unpack map, net, travel = sim
 	
 	# get data on current route before changing
 	startLoc = getRouteCurrentLocation!(net, route, startTime)
@@ -146,8 +144,7 @@ end
 function getRouteNextNode!(sim::Simulation, route::Route, travelModeIndex::Int, time::Float)
 	
 	# shorthand:
-	map = sim.map
-	net = sim.net
+	@unpack map, net = sim
 	travelModes = sim.travel.modes
 	
 	# first need to update route
@@ -196,8 +193,7 @@ end
 # See also: getRouteNextNode!
 function getRouteNextNodeDist!(sim::Simulation, route::Route, time::Float)
 	# shorthand:
-	map = sim.map
-	net = sim.net
+	@unpack map, net = sim
 	fGraph = net.fGraph
 	
 	# first need to update route
