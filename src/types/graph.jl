@@ -37,34 +37,6 @@ function initGraph!(graph::Graph)
 	end
 end
 
-# find nearest node by evaluating distances to all nodes from given location
-# should not be used except for asserting results of faster algorithms
-# can set offRoadAccessRequired in order to search nodes with off-road access, or all nodes
-function findNearestNode(map::Map, nodes::Vector{Node}, location::Location;
-	offRoadAccessRequired::Bool = true)
-	
-	numNodes = length(nodes)
-	
-	# compare square distances
-	bestSqrDist = Inf
-	chosenNode = nullIndex
-	sqrDist = 0.0 # init
-	for i = 1:numNodes
-		node = nodes[i]
-		if offRoadAccessRequired && !node.offRoadAccess
-			continue
-		end
-		sqrDist = squareDist(map, node.location, location)
-		if sqrDist < bestSqrDist
-			bestSqrDist = sqrDist
-			chosenNode = i
-		end
-	end
-	dist = sqrt(bestSqrDist)
-	
-	return chosenNode, dist
-end
-
 # Set arc distance with normDist function,
 # for arcs that pass arcFilter.
 function setArcDistances!(graph::Graph, map::Map;
