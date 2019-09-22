@@ -18,8 +18,7 @@
 # initialise data relevant to move up
 function initCompTable!(sim::Simulation, compTable::CompTable)
 	# shorthand names:
-	numAmbs = sim.numAmbs
-	numStations = sim.numStations
+	@unpack numAmbs, numStations = sim
 	ctd = sim.moveUpData.compTableData
 	
 	# set compliance table
@@ -44,13 +43,9 @@ function compTableMoveUp(sim::Simulation)
 	@assert(sim.moveUpData.useMoveUp)
 	
 	# shorthand:
-	ambulances = sim.ambulances
-	stations = sim.stations
-	numAmbs = sim.numAmbs
-	numStations = sim.numStations
+	@unpack ambulances, stations, numAmbs, numStations = sim
 	ctd = sim.moveUpData.compTableData
-	compTable = ctd.compTable
-	ambMovable = ctd.ambMovable
+	@unpack compTable, ambMovable = ctd
 	
 	# get movable ambulances (movableAmbs)
 	for i = 1:numAmbs

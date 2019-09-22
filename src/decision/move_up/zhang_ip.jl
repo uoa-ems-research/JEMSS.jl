@@ -56,11 +56,8 @@ function zhangIpMoveUp(sim::Simulation)::Tuple{Vector{Ambulance}, Vector{Station
 	
 	# shorthand names:
 	zid = sim.moveUpData.zhangIpData
-	stationSlots = zid.stationSlots
-	benefitSlots = zid.benefitSlots
-	ambulances = sim.ambulances
-	stations = sim.stations
-	numStations = sim.numStations
+	@unpack stationSlots, benefitSlots = zid
+	@unpack ambulances, stations, numStations = sim
 	
 	# get currently movable ambulances, and at-hospital ambulances
 	movableAmbs = filter(a -> isAmbMovable(a), ambulances)

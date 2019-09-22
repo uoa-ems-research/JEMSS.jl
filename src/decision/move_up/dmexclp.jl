@@ -37,8 +37,7 @@ function initDmexclp!(sim::Simulation;
 	sim.demandCoverage.initialised || initDemandCoverage!(sim)
 	
 	# shorthand
-	numAmbs = sim.numAmbs
-	numStations = sim.numStations
+	@unpack numAmbs, numStations = sim
 	
 	dcd = sim.moveUpData.dmexclpData # shorthand
 	dcd.busyFraction = busyFraction
@@ -60,9 +59,7 @@ function dmexclpMoveUp(sim::Simulation, newlyFreedAmb::Ambulance)
 	
 	# shorthand names:
 	dcd = sim.moveUpData.dmexclpData
-	ambulances = sim.ambulances
-	stations = sim.stations
-	numStations = sim.numStations
+	@unpack ambulances, stations, numStations = sim
 	
 	# calculate the number of free ambulances at (or travelling to) each station
 	dcd.stationNumFreeAmbs[:] .= 0

@@ -34,8 +34,7 @@ function changeRoute!(sim::Simulation, route::Route, priority::Priority, startTi
 	
 	# shorthand:
 	fNetTravel = travelMode.fNetTravel
-	fNodeFromRNodeTime = fNetTravel.fNodeFromRNodeTime
-	fNodeToRNodeTime = fNetTravel.fNodeToRNodeTime
+	@unpack fNodeFromRNodeTime, fNodeToRNodeTime = fNetTravel
 	
 	## change route
 	

@@ -90,17 +90,10 @@ function ddsmMoveUp(sim::Simulation)
 	@assert(sim.moveUpData.useMoveUp)
 	
 	# shorthand:
-	ambulances = sim.ambulances
-	stations = sim.stations
-	numStations = sim.numStations
+	@unpack ambulances, stations, numStations, demand = sim
 	currentTime = sim.time
-	demand = sim.demand
 	ddsmd = sim.moveUpData.ddsmData
-	coverTimes = ddsmd.coverTimes
-	coverTimeDemandPriorities = ddsmd.coverTimeDemandPriorities
-	coverFractionTargetT1 = ddsmd.coverFractionTargetT1
-	slackWeight = ddsmd.slackWeight
-	options = ddsmd.options
+	@unpack coverTimes, coverTimeDemandPriorities, coverFractionTargetT1, slackWeight, options = ddsmd
 	
 	# get movable ambulances (movableAmbs)
 	ambMovable = [isAmbMovable(amb) for amb in ambulances]
