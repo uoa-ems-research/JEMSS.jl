@@ -18,7 +18,7 @@ using Random
 # find nearest node by evaluating distances to all nodes from given location (brute-force)
 # should not be used except for asserting results of faster algorithms
 # can set offRoadAccessRequired in order to search nodes with off-road access, or all nodes
-function JEMSS.findNearestNode(map::Map, nodes::Vector{Node}, location::Location;
+function findNearestNodeBruteForce(map::Map, nodes::Vector{Node}, location::Location;
 	offRoadAccessRequired::Bool = true)
 	
 	numNodes = length(nodes)
@@ -83,8 +83,8 @@ end
 	grid1pass = grid2pass = true
 	for x = range(0; length = 10*nx+1, stop = 1), y = range(0; length = 10*ny+1, stop = 1)
 		location = Location(x,y)
-		grid1pass &= findNearestNode(mp, grid1, nodes, location) == findNearestNode(mp, nodes, location; offRoadAccessRequired = true)
-		grid2pass &= findNearestNode(mp, grid2, nodes, location) == findNearestNode(mp, nodes, location; offRoadAccessRequired = false)
+		grid1pass &= findNearestNode(mp, grid1, nodes, location) == findNearestNodeBruteForce(mp, nodes, location; offRoadAccessRequired = true)
+		grid2pass &= findNearestNode(mp, grid2, nodes, location) == findNearestNodeBruteForce(mp, nodes, location; offRoadAccessRequired = false)
 	end
 	@test grid1pass
 	@test grid2pass
