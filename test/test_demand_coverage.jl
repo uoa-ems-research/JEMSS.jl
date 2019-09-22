@@ -54,17 +54,12 @@ initDemandCoverage!(simDemandCoverage, coverTimes = coverTimes, rasterCellNumRow
 		@assert pointsCoverageMode.points == demandCoverage.points
 		
 		# will check fields of pointsCoverageMode: pointSets, stationSets, stationsCoverPointSets
-		
-		# shorthand
-		pointSets = pointsCoverageMode.pointSets
-		stationSets = pointsCoverageMode.stationSets
-		stationsCoverPointSets = pointsCoverageMode.stationsCoverPointSets
+		@unpack pointSets, stationSets, stationsCoverPointSets, travelMode = pointsCoverageMode
 		
 		@assert(length(pointSets) == length(stationSets))
 		@test vcat(pointSets...) |> sort == [1:numPoints;] # each point should be included in exactly one point set
 		@test allunique(stationSets) # each set of stations should be unique, otherwise any duplicates should be combined
 		
-		travelMode = pointsCoverageMode.travelMode # shorthand
 		stationsCoverPoints = fill(false, numStations, numPoints) # stationsCoverPoints[i,j] is true if station i covers point j
 		@assert(all(i -> stations[i].index == i, 1:numStations))
 		for (i,station) in enumerate(stations)
@@ -83,6 +78,7 @@ initDemandCoverage!(simDemandCoverage, coverTimes = coverTimes, rasterCellNumRow
 		end
 		
 		@test all(i -> all(j -> findall(stationsCoverPoints[:,j]) == stationSets[i], pointSets[i]), 1:length(pointSets)) # assume that both vectors (stationsCoverPoints[:,j] and stationSets[i]) are sorted the same
+		@test all(i -> Set(vcat(pointSets[stationsCoverPointSets[i]]...)) == Set(findall(stationsCoverPoints[i,:])), 1:numStations) # check stationsCoverPointSets
 	end
 	
 	# check pointsCoverageModeLookup
