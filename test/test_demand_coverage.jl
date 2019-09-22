@@ -13,32 +13,28 @@
 # limitations under the License.
 ##########################################################################
 
+using Parameters
+
 # initialise sim
 testRegionDataFolder = "data/regions/small/1"
-sim = initSim(joinpath(testRegionDataFolder, "sim_config.xml"), doPrint = false);
+global simDemandCoverage = initSim(joinpath(testRegionDataFolder, "sim_config.xml"), doPrint = false);
 
 # initialise demand and demand coverage
-initDemand!(sim, demandFilename = joinpath(testRegionDataFolder, "demand", "demand.csv"))
+initDemand!(simDemandCoverage, demandFilename = joinpath(testRegionDataFolder, "demand", "demand.csv"))
 coverTimes = Dict([p => 20/60/24 for p in priorities])
 coverTimes[highPriority] = 12/60/24
-initDemandCoverage!(sim, coverTimes = coverTimes, rasterCellNumRows = 2, rasterCellNumCols = 2)
-
-# shorthand
-demand = sim.demand
-demandCoverage = sim.demandCoverage;
-nodesPoints = demandCoverage.nodesPoints
-points = demandCoverage.points
-numPoints = length(points)
-nodes = sim.net.fGraph.nodes
-numNodes = length(nodes)
-pointsCoverageModes = demandCoverage.pointsCoverageModes;
-stations = sim.stations
-numStations = sim.numStations
-pointsCoverageModeLookup = demandCoverage.pointsCoverageModeLookup
-travel = sim.travel;
+initDemandCoverage!(simDemandCoverage, coverTimes = coverTimes, rasterCellNumRows = 2, rasterCellNumCols = 2)
 
 @testset "demand coverage init" begin
 	# check sim.demandCoverage after being initialised with function initDemandCoverage!
+	
+	# shorthand
+	global simDemandCoverage
+	sim = simDemandCoverage
+	@unpack demand, demandCoverage, stations, numStations, travel = sim;
+	@unpack nodesPoints, points, pointsCoverageModes, pointsCoverageModeLookup = demandCoverage;
+	numPoints = length(points)
+	numNodes = length(sim.net.fGraph.nodes)
 	
 	# check that demand of points adds up to demand of raster, for each raster
 	# note that this is not the true demand, as it has not been multiplied by a DemandMode.rasterMultiplier value
@@ -98,6 +94,13 @@ end
 @testset "demand coverage calc" begin
 	# compare results of fast (using sim.demandCoverage) and slow calculation of demand point coverage
 	
+	# shorthand
+	global simDemandCoverage
+	sim = simDemandCoverage
+	@unpack demand, demandCoverage, stations, numStations, travel = sim;
+	@unpack points = demandCoverage;
+	numPoints = length(points)
+	
 	stationsNumAmbs = ones(Int, numStations)
 	pointCoverCounts = Vector{Int}(undef, numPoints)
 	times = vcat(travel.setsStartTimes, demand.setsStartTimes) |> unique |> sort # simulating to these points in time will cause each combination of travel and demand states to be checked
@@ -107,7 +110,7 @@ end
 		demandsPointSetsCoverCounts = JEMSS.calcPointSetsCoverCounts!(sim, sim.time, stationsNumAmbs)
 		for demandPriority in priorities
 			travelMode = JEMSS.getTravelMode!(travel, sim.responseTravelPriorities[demandPriority], sim.time)
-			coverTime = sim.demandCoverage.coverTimes[demandPriority]
+			coverTime = demandCoverage.coverTimes[demandPriority]
 			pointCoverCounts[:] .= 0
 			for (i,station) in enumerate(stations)
 				for (j,point) in enumerate(points)
