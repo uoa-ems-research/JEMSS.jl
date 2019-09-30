@@ -16,7 +16,7 @@
 		<priorities>priorities.csv</priorities>
 		<rNetTravels>r_net_travels_jl-v$(VERSION).jls</rNetTravels>
 		<stations>stations.csv</stations>
-		<statsControl>../stats_control.csv</statsControl>
+		<statsControl>$configFileDir/stats_control.csv</statsControl>
 		<travel>travel.csv</travel>
 	</simFiles>
 	

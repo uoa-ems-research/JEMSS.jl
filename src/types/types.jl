@@ -89,6 +89,7 @@ mutable struct NetTravel
 	
 	# for use in reduced graph:
 	arcDists::Vector{Float} # arcDists[i] = distance of arc i; reference to Graph.arcDists, useful for checking that loaded rNetTravel is correct
+	fadjList::Vector{Vector{Int}} # = rGraph.fadjList; useful for checking that loaded rNetTravel is correct
 	spTimes::Array{FloatSpTime,2} # spTimes[i,j] = shortest path time between node i and j
 	spDists::Array{FloatSpDist,2} # spDists[i,j] = shortest path distance between node i and j
 	spFadjIndex::Array{IntFadj,2} # for shortest path from rNode i to j, spFadjIndex[i,j] gives the index (in fadjList[i], see Graph) of the successor rNode of i for this path
@@ -110,7 +111,7 @@ mutable struct NetTravel
 	fNodeNearestHospitalIndex::Vector{Int} # fNodeNearestHospitalIndex[i] gives index of nearest hospital from fNode[i]
 	
 	NetTravel(isReduced::Bool) = new(isReduced, nullIndex, [],
-		[], Array{FloatSpTime,2}(undef,0,0), Array{FloatSpDist,2}(undef,0,0), Array{IntFadj,2}(undef,0,0), spzeros(Int, 0, 0), [],
+		[], [], Array{FloatSpTime,2}(undef,0,0), Array{FloatSpDist,2}(undef,0,0), Array{IntFadj,2}(undef,0,0), spzeros(Int, 0, 0), [],
 		[], [], [],
 		Array{Float,2}(undef,0,0), Array{Float,2}(undef,0,0), Array{Float,2}(undef,0,0), Array{Float,2}(undef,0,0), Array{Tuple{Int,Int},2}(undef,0,0), Array{Tuple{Int,Int},2}(undef,0,0), [])
 end
@@ -292,6 +293,14 @@ mutable struct Ambulance
 	# dispatch statistics:
 	dispatchStartLocCounts::Dict{Location,Int} # dispatchStartLocCounts[loc] gives number of times that ambulance was dispatched from location 'loc'
 	
+	# # hospital and station statistics:
+	# atHospitalDurations::Vector{Float} # atHospitalDurations[i] gives the duration that the ambulance spent at hospitals[i]
+	# atHospitalCounts::Vector{Int} # atHospitalCounts[i] gives the number of times that the ambulance was at hospitals[i]
+	# idleAtStationDurations::Vector{Int} # idleAtStationDurations[i] is the duration that the ambulance spent idle at stations[i]
+	
+	# # redispatch statistics
+	# redispatchCounts::Array{Int,2} # redispatchCounts[Int(p1),Int(p2)] gives number of redispatches from call of priority p1 to call of priority p2
+	
 	Ambulance() = new(nullIndex, ambNullStatus, nullIndex, nullIndex, Route(), Event(), nullAmbClass,
 		Location(), false,
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -302,11 +311,9 @@ end
 
 mutable struct Call
 	index::Int
-	status::CallStatus
-	ambIndex::Int
 	priority::Priority
 	transport::Bool # true if requires transport to hospital
-	hospitalIndex::Int # hospital that call should be transported to. If hospitalIndex == nullIndex, will transport to nearest hospital
+	hospitalIndex::Int # hospital that call should be transported to. If hospitalIndex == nullIndex, will transport to nearest hospital. See also chosenHospitalIndex
 	location::Location # where call occurs
 	
 	# time/duration params:
@@ -318,6 +325,10 @@ mutable struct Call
 	# node nearest to call location:
 	nearestNodeIndex::Int
 	nearestNodeDist::Float
+	
+	# call state
+	status::CallStatus
+	ambIndex::Int # index of responding ambulance
 	
 	# for animation:
 	currentLoc::Location
@@ -345,9 +356,10 @@ mutable struct Call
 	# for calculating statistics:
 	statusSetTime::Float # time at which status was last set, even if set to same status value
 	
-	Call() = new(nullIndex, callNullStatus, nullIndex, nullPriority, true, nullIndex, Location(),
+	Call() = new(nullIndex, nullPriority, true, nullIndex, Location(),
 		nullTime, nullTime, nullTime, nullTime,
 		nullIndex, nullDist,
+		callNullStatus, nullIndex,
 		Location(), false,
 		nullTime, nullTime, nullTime, 0, false, Location(), ambNullStatus, nullIndex,
 		0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,

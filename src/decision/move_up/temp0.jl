@@ -40,15 +40,8 @@ function temp0MoveUp(sim::Simulation)
 	
 	# shorthand names:
 	tmp = sim.moveUpData.temp0Data
-	travelTimeCost = tmp.travelTimeCost
-	maxIdleAmbTravelTime = tmp.maxIdleAmbTravelTime
-	maxNumNearestStations = tmp.maxNumNearestStations
-	marginalBenefit = tmp.marginalBenefit
-	ambulances = sim.ambulances
-	stations = sim.stations
-	
-	numAmbs = sim.numAmbs
-	numStations = sim.numStations
+	@unpack travelTimeCost, maxIdleAmbTravelTime, maxNumNearestStations, marginalBenefit = tmp
+	@unpack ambulances, stations, numAmbs, numStations = sim
 	
 	# get movable ambulances (movableAmbs)
 	ambMovable = Vector{Bool}(undef, numAmbs) # ambMovable[i] = true if ambulances[i] can move-up

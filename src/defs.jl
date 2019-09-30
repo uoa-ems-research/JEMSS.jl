@@ -38,12 +38,15 @@ const NestedCompTable = Vector{Int} # nested compliance table can be represented
 const PriorityList = Vector{Int} # a priority list gives the order of preference for which ambulances should be redeployed (moved up) to stations; priorityList[1] has the index of the station with highest priority
 
 # run modes
-const debugMode = false
 const checkMode = true # for data checking, e.g. assertions that are checked frequently
 
 # file chars
 const delimiter = ','
 const newline = "\r\n"
+
+# misc globals
+configFileDir = "" # hacky; to allow using "$configFileDir" in config files
+genConfigFileDir = "" # hacky; to allow using "$genConfigFileDir" in gen config files
 
 # misc null values
 const nullIndex = -1
@@ -62,7 +65,7 @@ const numPriorities = length(priorities)
 @enum AmbClass nullAmbClass=0 als=1 bls=2 # als = advanced life support, bls = basic life support
 
 # event types/forms
-@enum EventForm nullEvent ambGoesToSleep ambWakesUp callArrives considerDispatch ambDispatched ambReachesCall ambGoesToHospital ambReachesHospital ambBecomesFree ambReturnsToStation ambReachesStation ambRedirected considerMoveUp ambMoveUpToStation
+@enum EventForm nullEvent ambGoesToSleep ambWakesUp callArrives considerDispatch ambDispatched ambReachesCall ambGoesToHospital ambReachesHospital ambBecomesFree ambReturnsToStation ambReachesStation considerMoveUp ambMoveUpToStation
 
 # ambulance statuses
 @enum AmbStatus ambNullStatus ambSleeping ambIdleAtStation ambGoingToCall ambAtCall ambGoingToHospital ambAtHospital ambFreeAfterCall ambReturningToStation ambMovingUpToStation

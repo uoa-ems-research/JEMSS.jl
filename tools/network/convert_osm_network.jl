@@ -16,7 +16,7 @@
 # for converting OpenStreetMap files with road networks to format usable for JEMSS
 
 using JEMSS
-import OpenStreetMapX
+import OpenStreetMapX # v0.1.1
 const OSM = OpenStreetMapX
 
 include("graph_tools.jl")

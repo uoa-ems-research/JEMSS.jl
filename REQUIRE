@@ -13,6 +13,7 @@ JuMP
 LightGraphs
 LightXML
 OffsetArrays
+Parameters
 StatsBase
 StatsFuns
 WebSockets

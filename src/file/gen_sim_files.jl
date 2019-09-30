@@ -88,7 +88,7 @@ end
 function readGenConfig(genConfigFilename::String)
 	# read gen config xml file
 	genConfigFilename = genConfigFilename |> interpolateString |> abspath
-	genConfigFileDir = splitdir(genConfigFilename)[1]
+	global genConfigFileDir = dirname(genConfigFilename)
 	rootElt = xmlFileRoot(genConfigFilename)
 	@assert(xName(rootElt) == "genConfig", string("xml root has incorrect name: ", xName(rootElt)))
 	
@@ -346,6 +346,7 @@ function makeCalls(genConfig::GenConfig; rasterSampler::Union{RasterSampler,Noth
 		call.transport = (rand(genConfig.transportDistrRng) == 1)
 		call.hospitalIndex = nullIndex
 		call.handoverDuration = rand(genConfig.handoverDurationDistrRng)
+		if !call.transport call.handoverDuration = 0.0 end
 		if rasterSampler == nothing
 			call.location = randLocation(genConfig.map; trim = genConfig.mapTrim, rng = genConfig.callLocRng)
 		else

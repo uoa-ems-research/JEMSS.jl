@@ -23,9 +23,7 @@ function initTemp2!(sim::Simulation;
 	
 	# shorthand names:
 	tmp = sim.moveUpData.temp2Data
-	numAmbs = sim.numAmbs
-	stations = sim.stations
-	numStations = sim.numStations
+	@unpack stations, numStations = sim
 	
 	# parameters:
 	tmp.busyFraction = busyFraction
@@ -82,16 +80,8 @@ function temp2MoveUp(sim::Simulation)
 	
 	# shorthand names:
 	tmp = sim.moveUpData.temp2Data
-	stationPairs = tmp.stationPairs
-	travelTimeCost = tmp.travelTimeCost
-	maxIdleAmbTravelTime = tmp.maxIdleAmbTravelTime
-	maxNumNearestStations = tmp.maxNumNearestStations
-	marginalBenefit = tmp.marginalBenefit
-	ambulances = sim.ambulances
-	stations = sim.stations
-	
-	numAmbs = sim.numAmbs
-	numStations = sim.numStations
+	@unpack stationPairs, travelTimeCost, maxIdleAmbTravelTime, maxNumNearestStations, marginalBenefit = tmp
+	@unpack ambulances, stations, numAmbs, numStations = sim
 	
 	# get movable ambulances (movableAmbs)
 	ambMovable = Vector{Bool}(undef, numAmbs) # ambMovable[i] = true if ambulances[i] can move-up

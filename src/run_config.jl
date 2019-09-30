@@ -39,7 +39,7 @@ function initSim(configFilename::String;
 	
 	# read sim config xml file
 	configFilename = configFilename |> interpolateString |> abspath
-	configFileDir = splitdir(configFilename)[1]
+	global configFileDir = dirname(configFilename)
 	rootElt = xmlFileRoot(configFilename)
 	@assert(xName(rootElt) == "simConfig", string("xml root has incorrect name: ", xName(rootElt)))
 	
@@ -64,7 +64,7 @@ function initSim(configFilename::String;
 	for inputFile in inputFiles
 		file = File()
 		file.path = joinPathIfNotAbs(sim.inputPath, eltContentInterpVal(simFilesElt, inputFile))
-		file.name = splitdir(file.path)[2]
+		file.name = basename(file.path)
 		if inputFile != "rNetTravels" # do not need checksum of rNetTravels file
 			file.checksum = fileChecksum(file.path)
 		end
@@ -80,7 +80,7 @@ function initSim(configFilename::String;
 	for outputFile in outputFiles
 		file = File()
 		file.path = joinPathIfNotAbs(sim.outputPath, eltContentInterpVal(outputFilesElt, outputFile))
-		file.name = splitdir(file.path)[2]
+		file.name = basename(file.path)
 		sim.outputFiles[outputFile] = file
 	end
 	
@@ -123,7 +123,7 @@ function initSim(configFilename::String;
 			catch
 				@warn("failed to read rNetTravels file")
 			end
-		elseif !isdir(dirname(rNetTravelsFilename)) || splitdir(rNetTravelsFilename)[2] == ""
+		elseif !isdir(dirname(rNetTravelsFilename)) || basename(rNetTravelsFilename) == ""
 			# rNetTravelsFilename is invalid
 			rNetTravelsFilename = ""
 		else
@@ -238,13 +238,13 @@ function initSim(configFilename::String;
 	
 	# for each call, hospital, and station, find nearest node
 	for c in sim.calls
-		(c.nearestNodeIndex, c.nearestNodeDist) = findNearestNodeInGrid(map, grid, fGraph.nodes, c.location)
+		(c.nearestNodeIndex, c.nearestNodeDist) = findNearestNode(map, grid, fGraph.nodes, c.location)
 	end
 	for h in sim.hospitals
-		(h.nearestNodeIndex, h.nearestNodeDist) = findNearestNodeInGrid(map, grid, fGraph.nodes, h.location)
+		(h.nearestNodeIndex, h.nearestNodeDist) = findNearestNode(map, grid, fGraph.nodes, h.location)
 	end
 	for s in sim.stations
-		(s.nearestNodeIndex, s.nearestNodeDist) = findNearestNodeInGrid(map, grid, fGraph.nodes, s.location)
+		(s.nearestNodeIndex, s.nearestNodeDist) = findNearestNode(map, grid, fGraph.nodes, s.location)
 	end
 	
 	# create event list

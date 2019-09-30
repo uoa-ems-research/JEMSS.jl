@@ -18,8 +18,9 @@ function locationToGridIndex(map::Map, grid::Grid, location::Location)
 	# fails if location.x == map.xMin or location.y == map.yMin, can fix this later if needed
 	ix = Int(ceil((location.x - map.xMin) / map.xRange * grid.nx))
 	iy = Int(ceil((location.y - map.yMin) / map.yRange * grid.ny))
+	if location.x == map.xMin ix = 1 end
+	if location.y == map.yMin iy = 1 end
 	@assert(1 <= ix && ix <= grid.nx && 1 <= iy && iy <= grid.ny)
-	
 	return ix, iy
 end
 
@@ -40,7 +41,7 @@ end
 # extending search outward in a rectangle, until
 # borders of search rectangle are further from given
 # location than the nearest node found
-function findNearestNodeInGrid(map::Map, grid::Grid, nodes::Vector{Node}, location::Location)
+function findNearestNode(map::Map, grid::Grid, nodes::Vector{Node}, location::Location)
 	
 	# indices of grid rectangle for given location
 	(ix, iy) = locationToGridIndex(map, grid, location)

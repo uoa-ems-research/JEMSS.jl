@@ -59,10 +59,8 @@ function createDemandPointsFromRasters(demand::Demand; numCellRows::Int = 1, num
 	@assert(numCellCols >= 1)
 	
 	# shorthand
-	rasters = demand.rasters
-	numRasters = demand.numRasters
-	nx = rasters[1].nx
-	ny = rasters[1].ny
+	@unpack rasters, numRasters = demand
+	@unpack nx, ny = rasters[1]
 	
 	# check that all rasters have same dimensions,
 	# otherwise creating points that work for all rasters may be tricky
@@ -117,7 +115,7 @@ function setPointsNearestNodes!(sim::Simulation, points::Vector{Point})
 	# find and set nearest node index of each point
 	for point in points
 		@assert(point.location.x != nullX && point.location.y != nullY)
-		(point.nearestNodeIndex, point.nearestNodeDist) = findNearestNodeInGrid(sim.map, sim.grid, sim.net.fGraph.nodes, point.location)
+		(point.nearestNodeIndex, point.nearestNodeDist) = findNearestNode(sim.map, sim.grid, sim.net.fGraph.nodes, point.location)
 	end
 end
 
@@ -134,8 +132,7 @@ function createPointsCoverageMode(sim::Simulation, travelMode::TravelMode, cover
 	# shorthand:
 	points = pointsCoverageMode.points
 	numPoints = length(points)
-	stations = sim.stations
-	numStations = sim.numStations
+	@unpack stations, numStations = sim
 	numNodes = length(sim.net.fGraph.nodes)
 	nodesPoints = sim.demandCoverage.nodesPoints
 	
@@ -317,11 +314,9 @@ function initDemandCoverage!(sim::Simulation;
 	@assert(sim.demand.recentSetsStartTimesIndex == 1)
 	
 	# shorthand
-	demand = sim.demand
-	rasters = demand.rasters
-	numRasters = demand.numRasters
+	@unpack demand, travel = sim
+	@unpack rasters, numRasters = demand
 	numNodes = length(sim.net.fGraph.nodes)
-	travel = sim.travel
 	
 	# set demand coverage params
 	oldDemandCoverage = sim.demandCoverage

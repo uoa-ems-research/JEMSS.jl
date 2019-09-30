@@ -121,3 +121,15 @@ writeBatchMeanResponseTimesFile(filename::String, batchMeanResponseTimes::Array{
 writeBatchMeanResponseDurationsFile(filename, batchMeanResponseTimes; batchTime = batchTime, startTime = startTime, endTime = endTime, responseDurationUnits = responseTimeUnits))
 
 ##
+
+@deprecate(
+isSameLocation(loc1::Location, loc2::Location),
+(==)(loc1, loc2))
+
+##
+
+@deprecate(
+findNearestNodeInGrid(map::Map, grid::Grid, nodes::Vector{Node}, location::Location),
+findNearestNode(map, grid, nodes, location))
+
+##

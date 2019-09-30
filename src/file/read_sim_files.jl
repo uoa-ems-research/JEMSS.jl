@@ -220,7 +220,7 @@ function readDemandFile(filename::String)
 	demand.rasters = Vector{Raster}(undef, n)
 	demand.rasterFilenames = Vector{String}(undef, n)
 	allunique(columns["rasterFilename"]) || @warn("There are duplicate raster filenames in the demand file, this is unnecessary.")
-	demandFileDir = splitdir(realpath(filename))[1]
+	demandFileDir = dirname(realpath(filename))
 	for i = 1:n
 		@assert(columns["rasterIndex"][i] == i)
 		

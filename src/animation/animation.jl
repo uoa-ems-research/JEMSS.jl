@@ -133,8 +133,7 @@ end
 function animAddAmbs!(client::Client, sim::Simulation)
 	messageDict = createMessageDict("add_ambulance")
 	for amb in sim.ambulances
-		ambLocation = getRouteCurrentLocation!(sim.net, amb.route, sim.time)
-		amb.currentLoc = ambLocation
+		copy!(amb.currentLoc, getRouteCurrentLocation!(sim.net, amb.route, sim.time))
 		messageDict["ambulance"] = amb
 		write(client, json(messageDict))
 	end
@@ -148,8 +147,8 @@ function updateFrame!(client::Client, sim::Simulation, time::Float)
 	messageDict = createMessageDict("move_ambulance")
 	for amb in sim.ambulances
 		ambLocation = getRouteCurrentLocation!(sim.net, amb.route, time)
-		if !isSameLocation(ambLocation, amb.currentLoc)
-			amb.currentLoc = ambLocation
+		if ambLocation != amb.currentLoc
+			copy!(amb.currentLoc, ambLocation)
 			amb.movedLoc = true
 			# move ambulance
 			messageDict["ambulance"] = amb
@@ -170,7 +169,7 @@ function updateFrame!(client::Client, sim::Simulation, time::Float)
 	addCalls = setdiff(currentCalls, previousCalls)
 	changeMessageDict!(messageDict, "remove_call")
 	for call in removeCalls
-		call.currentLoc = Location()
+		copy!(call.currentLoc, Location())
 		messageDict["call"] = call
 		write(client, json(messageDict))
 	end
@@ -182,7 +181,7 @@ function updateFrame!(client::Client, sim::Simulation, time::Float)
 	end
 	changeMessageDict!(messageDict, "add_call")
 	for call in addCalls
-		call.currentLoc = deepcopy(call.location)
+		copy!(call.currentLoc, call.location)
 		call.movedLoc = false
 		updateCallLocation!(sim, call)
 		messageDict["call"] = call
@@ -198,7 +197,7 @@ function updateCallLocation!(sim::Simulation, call::Call)
 		amb = sim.ambulances[call.ambIndex]
 		call.movedLoc = amb.movedLoc
 		if amb.movedLoc
-			call.currentLoc = amb.currentLoc
+			copy!(call.currentLoc, amb.currentLoc)
 		end
 	end
 end
@@ -248,11 +247,11 @@ function animateClient(client::Client)
 	write(client, json(messageDict))
 	
 	animSetIcons(client) # set icons before adding items to map
-	animAddNodes(client, sim.net.fGraph.nodes)
-	animAddArcs(client, sim.net) # add first, should be underneath other objects
-	animSetArcSpeeds(client, sim.map, sim.net)
 	animAddBuildings(client, sim)
 	animAddAmbs!(client, sim)
+	animAddNodes(client, sim.net.fGraph.nodes)
+	animAddArcs(client, sim.net)
+	animSetArcSpeeds(client, sim.map, sim.net)
 	
 	if sim.time > sim.startTime
 		# set animation to current sim state
@@ -403,6 +402,8 @@ function openLocalhost(port::Int)
 end
 
 # JSON.lower for various types, to reduce length of string returned from json function
+JSON.lower(n::Node) = Dict("index" => n.index, "location" => n.location)
+JSON.lower(a::Arc) = Dict("index" => a.index)
 JSON.lower(a::Ambulance) = Dict("index" => a.index, "currentLoc" => a.currentLoc, "endLoc" => a.route.endLoc)
 JSON.lower(c::Call) = Dict("index" => c.index, "currentLoc" => c.currentLoc, "priority" => c.priority)
 JSON.lower(h::Hospital) = Dict("index" => h.index, "location" => h.location)

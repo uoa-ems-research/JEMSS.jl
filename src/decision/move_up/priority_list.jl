@@ -27,8 +27,7 @@ end
 # initialise data relevant to move up
 function initPriorityList!(sim::Simulation, priorityList::PriorityList)
 	# shorthand names:
-	ambulances = sim.ambulances
-	numStations = sim.numStations
+	@unpack ambulances, numStations = sim
 	pld = sim.moveUpData.priorityListData
 	
 	checkPriorityList(priorityList, sim)
@@ -51,11 +50,8 @@ function priorityListMoveUp(sim::Simulation, newlyFreedAmb::Ambulance)
 	
 	# shorthand:
 	pld = sim.moveUpData.priorityListData
-	priorityList = pld.priorityList
-	stationNumFreeAmbs = pld.stationNumFreeAmbs
-	ambulances = sim.ambulances
-	stations = sim.stations
-	numAmbs = sim.numAmbs
+	@unpack priorityList, stationNumFreeAmbs = pld
+	@unpack ambulances, stations, numAmbs = sim
 	
 	# calculate the number of free ambulances at (or travelling to) each station
 	stationNumFreeAmbs[:] .= 0

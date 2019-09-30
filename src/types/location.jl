@@ -13,8 +13,14 @@
 # limitations under the License.
 ##########################################################################
 
-# return true if locations are same, false otherwise
-function isSameLocation(loc1::Location, loc2::Location)
+# copy from src to dst
+function Base.copy!(dst::Location, src::Location)
+	dst.x = src.x
+	dst.y = src.y
+end
+
+# return true if locations have same x and y values, false otherwise
+function Base.:(==)(loc1::Location, loc2::Location)
 	return (loc1.x == loc2.x && loc1.y == loc2.y)
 end
 

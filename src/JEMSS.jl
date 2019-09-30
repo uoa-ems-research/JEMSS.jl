@@ -41,6 +41,7 @@ using ArchGDAL
 using Hungarian
 using OffsetArrays
 using Base.Iterators: Stateful
+using Parameters
 
 # optimisation
 using JuMP
@@ -79,9 +80,8 @@ export
 	isBusy, isFree, isWorking, isGoingToStation, isTravelling, # ambulance
 	initDemand!, initDemandCoverage!, # demand
 	printEvent, # event
-	findNearestNode, # graph
-	findNearestNodeInGrid, # grid
-	isSameLocation, squareDist, normDist, offRoadTravelTime, linearInterpLocation, randLocation, # location
+	findNearestNode, # grid
+	squareDist, normDist, offRoadTravelTime, linearInterpLocation, randLocation, # location
 	isFNodeInRGraph, shortestPathNextRNode, shortestPathNextRArc, shortestPathData, shortestPathTravelTime, shortestPathDistance, shortestPath, findRArcFromFNodeToFNode, # network
 	rasterRandLocations, printRasterSize, # raster
 	shortestRouteTravelTime!, # route
@@ -100,7 +100,7 @@ export
 	CompTableData, DdsmData, DmexclpData, PriorityListData, ZhangIpData, Temp0Data, Temp1Data, Temp2Data, MoveUpData,
 	MeanAndHalfWidth, AmbulanceStats, CallStats, HospitalStats, StationStats, SimPeriodStats, SimStats,
 	File, Table, Resimulation, Simulation,
-	DistrRng
+	DistrRng, GenConfig
 
 # defs - consts
 export
@@ -113,7 +113,7 @@ export
 export
 	Priority, nullPriority, highPriority, medPriority, lowPriority, # priorities
 	AmbClass, nullAmbClass, als, bls, # ambulance classes
-	EventForm, nullEvent, ambGoesToSleep, ambWakesUp, callArrives, considerDispatch, ambDispatched, ambReachesCall, ambGoesToHospital, ambReachesHospital, ambBecomesFree, ambReturnsToStation, ambReachesStation, ambRedirected, considerMoveUp, ambMoveUpToStation,
+	EventForm, nullEvent, ambGoesToSleep, ambWakesUp, callArrives, considerDispatch, ambDispatched, ambReachesCall, ambGoesToHospital, ambReachesHospital, ambBecomesFree, ambReturnsToStation, ambReachesStation, considerMoveUp, ambMoveUpToStation,
 	AmbStatus, ambNullStatus, ambSleeping, ambIdleAtStation, ambGoingToCall, ambAtCall, ambGoingToHospital, ambAtHospital, ambFreeAfterCall, ambReturningToStation, ambMovingUpToStation,
 	AmbStatusSet, ambWorking, ambBusy, ambFree, ambTravelling, ambGoingToStation,
 	CallStatus, callNullStatus, callScreening, callQueued, callWaitingForAmb, callOnSceneTreatment, callGoingToHospital, callAtHospital, callProcessed,
@@ -122,7 +122,8 @@ export
 
 # deprecated
 export
-	Depol, makeRandDeploymentPolicy, makeRandDeploymentPolicies, applyDeploymentPolicy!, simulateDeploymentPolicy!, simulateDeploymentPolicies!, writeDeploymentPoliciesFile, readDeploymentPoliciesFile # renamed "deployment policy" to "deployment"
+	Depol, makeRandDeploymentPolicy, makeRandDeploymentPolicies, applyDeploymentPolicy!, simulateDeploymentPolicy!, simulateDeploymentPolicies!, writeDeploymentPoliciesFile, readDeploymentPoliciesFile, # renamed "deployment policy" to "deployment"
+	isSameLocation, findNearestNodeInGrid
 
 include("defs.jl")
 

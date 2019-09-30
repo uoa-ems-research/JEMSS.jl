@@ -24,8 +24,7 @@ function ambMoveUpTravelTimes!(sim::Simulation, ambulance::Ambulance;
 	stations::Vector{Station} = sim.stations)
 	
 	# shorthand:
-	net = sim.net
-	travel = sim.travel
+	@unpack net, travel = sim
 	priority = lowPriority # default travel priority for this function
 	
 	travelMode = getTravelMode!(travel, sim.responseTravelPriorities[priority], sim.time)
@@ -53,11 +52,7 @@ function createStationPairs(sim::Simulation, travelMode::TravelMode;
 	maxPairsPerStation::Int = Inf, maxPairSeparation::Float = Inf)
 	
 	# shorthand:
-	net = sim.net
-	travel = sim.travel
-	map = sim.map
-	stations = sim.stations
-	numStations = sim.numStations
+	@unpack net, travel, map, stations, numStations = sim
 	priority = lowPriority # default travel priority for this function
 	
 	maxPairsPerStation = min(maxPairsPerStation, numStations)

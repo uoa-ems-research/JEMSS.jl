@@ -214,11 +214,7 @@ function createRGraphFromFGraph!(net::Network)
 	net.fNodeToRNodes = [Vector{Int}() for i = 1:numFNodes]
 	net.fNodeFromRNodes = [Vector{Int}() for i = 1:numFNodes]
 	net.fNodeToRNodeNextFNode = [Dict{Int,Int}() for i = 1:numFNodes]
-	
-	# shorthand:
-	fNodeToRNodes = net.fNodeToRNodes
-	fNodeFromRNodes = net.fNodeFromRNodes
-	fNodeToRNodeNextFNode = net.fNodeToRNodeNextFNode
+	@unpack fNodeToRNodes, fNodeFromRNodes, fNodeToRNodeNextFNode = net
 	
 	# traverse each rArc
 	for rArc = rArcs
@@ -324,17 +320,11 @@ function createRNetTravelsFromFNetTravels!(net::Network;
 	rNetTravelsLoaded::Vector{NetTravel} = NetTravel[])
 	
 	# shorthand names:
-	fGraph = net.fGraph
-	rGraph = net.rGraph
-	fNetTravels = net.fNetTravels
+	@unpack fGraph, rGraph, fNetTravels, rArcFNodes, fNodeRNode, rNodeFNode, fNodeToRNodes = net
 	numTravelModes = length(fNetTravels)
-	rArcFNodes = net.rArcFNodes
 	numFNodes = length(fGraph.nodes)
 	numRNodes = length(rGraph.nodes)
 	numRArcs = length(rGraph.arcs)
-	fNodeRNode = net.fNodeRNode
-	rNodeFNode = net.rNodeFNode
-	fNodeToRNodes = net.fNodeToRNodes
 	
 	rNetTravels = net.rNetTravels = [NetTravel(true) for i = 1:numTravelModes]
 	
@@ -355,6 +345,7 @@ function createRNetTravelsFromFNetTravels!(net::Network;
 		
 		rNetTravel.modeIndex = fNetTravel.modeIndex
 		rNetTravel.arcDists = rGraph.arcDists
+		rNetTravel.fadjList = rGraph.fadjList
 		
 		for rArcIndex = 1:numRArcs
 			fNodesOnRArc = rArcFNodes[rArcIndex]
@@ -418,11 +409,15 @@ function createRNetTravelsFromFNetTravels!(net::Network;
 			rNetTravelLoaded = rNetTravelsLoaded[travelModeIndex]
 			@assert(rNetTravel.arcTimes == rNetTravelLoaded.arcTimes)
 			@assert(rNetTravel.arcDists == rNetTravelLoaded.arcDists)
+			@assert(rNetTravel.fadjList == rNetTravelLoaded.fadjList)
 			
 			# set rNetTravel values by rNetTravelLoaded
-			for fname in [:spTimes, :spDists, :spFadjIndex, :spNodePairArcIndex, :spFadjArcList]
+			for fname in [:spFadjIndex, :spNodePairArcIndex, :spFadjArcList]
 				setfield!(rNetTravel, fname, getfield(rNetTravelLoaded, fname))
 			end
+			
+			rNetTravel.spTimes = calcRNetTravelShortestPathTimes(net, rNetTravel)
+			rNetTravel.spDists = calcRNetTravelShortestPathDists(net, rNetTravel)
 		end
 		
 	end
@@ -511,7 +506,7 @@ function calcRNetTravelShortestPaths!(net::Network, rNetTravel::NetTravel)
 		@assert(0 < spTimes[i,j] < Inf)
 	end
 	
-	calcRNetTravelShortestPathDists!(net, rNetTravel)
+	rNetTravel.spDists = calcRNetTravelShortestPathDists(net, rNetTravel)
 end
 
 # For a given travel mode, check that the stored shortest paths data
@@ -520,8 +515,7 @@ function checkRNetTravelShortestPathTimes(net::Network, rNetTravel::NetTravel)
 	# shorthand:
 	numRNodes = length(net.rGraph.nodes)
 	travelModeIndex = rNetTravel.modeIndex
-	spTimes = rNetTravel.spTimes
-	spNodePairArcIndex = rNetTravel.spNodePairArcIndex
+	@unpack spTimes, spNodePairArcIndex = rNetTravel
 	
 	@assert(size(spTimes) == (numRNodes, numRNodes))
 	
@@ -547,21 +541,86 @@ function checkRNetTravelShortestPathTimes(net::Network, rNetTravel::NetTravel)
 	end
 end
 
-# Calculate distance of shortest path between each pair of nodes for rNetTravel.
+# Calculate time of shortest path between each pair of nodes for rNetTravel.
 # Requires some shortest path data (spFadjIndex, spNodePairArcIndex) to be calculated already.
-# Mutates: rNetTravel.spDists
-function calcRNetTravelShortestPathDists!(net::Network, rNetTravel::NetTravel)
+# See also: calcRNetTravelShortestPathDists
+function calcRNetTravelShortestPathTimes(net::Network, rNetTravel::NetTravel)
 	@assert(rNetTravel.isReduced)
 	
 	# shorthand
 	rGraph = net.rGraph
 	fadjList = rGraph.fadjList
-	badjList = rGraph.badjList
 	n = length(rGraph.nodes)
-	spFadjIndex = rNetTravel.spFadjIndex
-	spNodePairArcIndex = rNetTravel.spNodePairArcIndex
+	@unpack spFadjIndex, spFadjArcList, spNodePairArcIndex, arcTimes = rNetTravel
 	
-	spDists = rNetTravel.spDists = fill(FloatSpDist(Inf), n, n) # spDists[i,j] = shortest path distance from node i to j
+	spTimes = fill(FloatSpTime(Inf), n, n) # spTimes[i,j] = shortest path time from node i to j
+	for i = 1:n spTimes[i,i] = 0 end
+	for arc in rGraph.arcs
+		i = arc.fromNodeIndex
+		j = arc.toNodeIndex
+		if spNodePairArcIndex[i,j] == arc.index
+			spTimes[i,j] = arcTimes[arc.index]
+		end
+	end
+	
+	spNextNode = zeros(Int, n)
+	spNextArcTime = zeros(Float, n)
+	visited = fill(false, n) # visited[i] = true if node i has been visited and so had time populated
+	path = zeros(Int, n) # path node indices
+	for k = 1:n # root node of shortest path tree, find time from each node to this node
+		# get data for paths towards node k
+		spNextNode[k] = 0
+		for j = 1:n
+			if j == k continue end
+			fadjIndex = spFadjIndex[j,k]
+			spNextNode[j] = fadjList[j][fadjIndex]
+			spNextArcTime[j] = arcTimes[spFadjArcList[j][fadjIndex]]
+		end
+		
+		fill!(visited, false)
+		visited[k] = true
+		for i = 1:n
+			if i == k || visited[i] continue end
+			
+			# trace path from i to k, or to node that already has data for path to k
+			j = i
+			p = 0
+			while j != k && !visited[j]
+				p += 1
+				path[p] = j
+				j = spNextNode[j]
+			end
+			
+			# backtrack path, setting time from node j to k
+			t = spTimes[j,k]
+			while p > 0
+				j = path[p]
+				t += spNextArcTime[j]
+				spTimes[j,k] = t
+				visited[j] = true
+				p -= 1
+			end
+		end
+	end
+	
+	@assert(all(t -> t >= 0 && t != FloatSpTime(Inf), spTimes))
+	
+	return spTimes
+end
+
+# Calculate distance of shortest path between each pair of nodes for rNetTravel.
+# Requires some shortest path data (spFadjIndex, spNodePairArcIndex) to be calculated already.
+# See also: calcRNetTravelShortestPathTimes
+function calcRNetTravelShortestPathDists(net::Network, rNetTravel::NetTravel)
+	@assert(rNetTravel.isReduced)
+	
+	# shorthand
+	rGraph = net.rGraph
+	fadjList = rGraph.fadjList
+	n = length(rGraph.nodes)
+	@unpack spFadjIndex, spFadjArcList, spNodePairArcIndex, arcDists = rNetTravel
+	
+	spDists = fill(FloatSpDist(Inf), n, n) # spDists[i,j] = shortest path distance from node i to j
 	for i = 1:n spDists[i,i] = 0 end
 	for arc in rGraph.arcs
 		i = arc.fromNodeIndex
@@ -572,37 +631,48 @@ function calcRNetTravelShortestPathDists!(net::Network, rNetTravel::NetTravel)
 	end
 	
 	spNextNode = zeros(Int, n)
+	spNextArcDist = zeros(Float, n)
 	visited = fill(false, n) # visited[i] = true if node i has been visited and so had distance populated
-	queue = Int[] # node indices to search next
-	sizehint!(queue, n)
+	path = zeros(Int, n) # path node indices
 	for k = 1:n # root node of shortest path tree, find distance from each node to this node
 		# get data for paths towards node k
 		spNextNode[k] = 0
 		for j = 1:n
 			if j == k continue end
-			fadjIndex = rNetTravel.spFadjIndex[j,k]
+			fadjIndex = spFadjIndex[j,k]
 			spNextNode[j] = fadjList[j][fadjIndex]
+			spNextArcDist[j] = arcDists[spFadjArcList[j][fadjIndex]]
 		end
 		
 		fill!(visited, false)
 		visited[k] = true
-		empty!(queue)
-		push!(queue, k)
-		while !isempty(queue)
-			j = pop!(queue)
-			d = spDists[j,k] # shorthand
-			for i in badjList[j] # all nodes with arcs incoming to node j
-				if !visited[i] && spNextNode[i] == j # successor of node i on shortest path from node i to k is j
-					spDists[i,k] = spDists[i,j] + d # d[i,k] = d[i,j] + d[j,k]
-					visited[i] = true
-					push!(queue, i)
-				end
+		for i = 1:n
+			if i == k || visited[i] continue end
+			
+			# trace path from i to k, or to node that already has data for path to k
+			j = i
+			p = 0
+			while j != k && !visited[j]
+				p += 1
+				path[p] = j
+				j = spNextNode[j]
+			end
+			
+			# backtrack path, setting distance from node j to k
+			d = spDists[j,k]
+			while p > 0
+				j = path[p]
+				d += spNextArcDist[j]
+				spDists[j,k] = d
+				visited[j] = true
+				p -= 1
 			end
 		end
 	end
 	
-	@assert(!any(d -> d == FloatSpDist(Inf), spDists))
-	@assert(all(d -> d >= 0, spDists))
+	@assert(all(d -> d >= 0 && d != FloatSpDist(Inf), spDists))
+	
+	return spDists
 end
 
 # for the shortest path from startRNode to endRNode,
@@ -634,13 +704,8 @@ function shortestPathData(net::Network, travelModeIndex::Int, startFNode::Int, e
 	# shorthand:
 	fNetTravel = net.fNetTravels[travelModeIndex]
 	rNetTravel = net.rNetTravels[travelModeIndex]
-	fNodeFromRNodeTime = fNetTravel.fNodeFromRNodeTime
-	fNodeToRNodeTime = fNetTravel.fNodeToRNodeTime
-	fNodeRArcs = net.fNodeRArcs
-	fNodeToRNodes = net.fNodeToRNodes
-	fNodeFromRNodes = net.fNodeFromRNodes
-	isFNodeCommon = net.isFNodeCommon
-	fNodeCommonFNodeIndex = net.fNodeCommonFNodeIndex
+	@unpack fNodeFromRNodeTime, fNodeToRNodeTime = fNetTravel
+	@unpack fNodeRArcs, fNodeToRNodes, fNodeFromRNodes, isFNodeCommon, fNodeCommonFNodeIndex = net
 	
 	# return values:
 	shortestTravelTime = Inf
@@ -709,10 +774,7 @@ function shortestPathDistance(net::Network, travelModeIndex::Int, startFNode::In
 	
 	# shorthand:
 	rArcs = net.rGraph.arcs
-	fNodeToRNodeDist = net.fNodeToRNodeDist
-	fNodeFromRNodeDist = net.fNodeFromRNodeDist
-	isFNodeCommon = net.isFNodeCommon
-	fNodeCommonFNodeIndex = net.fNodeCommonFNodeIndex
+	@unpack fNodeToRNodeDist, fNodeFromRNodeDist, isFNodeCommon, fNodeCommonFNodeIndex = net
 	fNetTravel = net.fNetTravels[travelModeIndex]
 	rNetTravel = net.rNetTravels[travelModeIndex]
 	
@@ -770,17 +832,9 @@ function shortestPath(net::Network, travelModeIndex::Int, startFNode::Int, endFN
 	# shorthand:
 	fNetTravel = net.fNetTravels[travelModeIndex]
 	rNetTravel = net.rNetTravels[travelModeIndex]
-	fNodeToRNodeTime = fNetTravel.fNodeToRNodeTime
-	fNodeFromRNodeTime = fNetTravel.fNodeFromRNodeTime
-	rArcFNodesTimes = fNetTravel.rArcFNodesTimes
-	fGraph = net.fGraph
-	rGraph = net.rGraph
+	@unpack fNodeToRNodeTime, fNodeFromRNodeTime, rArcFNodesTimes = fNetTravel
+	@unpack fGraph, rGraph, rArcFNodes, rNodeFNode, fNodeRArcs, fNodeToRNodeNextFNode = net
 	rArcs = rGraph.arcs
-	rArcFNodes = net.rArcFNodes
-	rNodeFNode = net.rNodeFNode
-	fNodeRArcs = net.fNodeRArcs
-	# fNodeToRNodes = net.fNodeToRNodes
-	fNodeToRNodeNextFNode = net.fNodeToRNodeNextFNode
 	
 	# return values:
 	fNodeList = Vector{Int}() # list of indices of nodes to travel through, in traversal order
