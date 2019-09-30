@@ -16,7 +16,7 @@ limitations under the License.
 <html>
 <head>
 	<meta charset='utf-8' />
-	<title>EMS Simulation</title>
+	<title>JEMSS</title>
 	<script src='https://api.mapbox.com/mapbox.js/v2.4.0/mapbox.js'></script>
 	<link href='https://api.mapbox.com/mapbox.js/v2.4.0/mapbox.css' rel='stylesheet' />
 	<style>
@@ -689,7 +689,7 @@ limitations under the License.
 					weight: 1,
 					opacity: .2
 				}
-			).addTo(map);
+			).addTo(map).bringToBack();
 		}
 		
 		function showArcs() {

@@ -247,11 +247,11 @@ function animateClient(client::Client)
 	write(client, json(messageDict))
 	
 	animSetIcons(client) # set icons before adding items to map
-	animAddNodes(client, sim.net.fGraph.nodes)
-	animAddArcs(client, sim.net) # add first, should be underneath other objects
-	animSetArcSpeeds(client, sim.map, sim.net)
 	animAddBuildings(client, sim)
 	animAddAmbs!(client, sim)
+	animAddNodes(client, sim.net.fGraph.nodes)
+	animAddArcs(client, sim.net)
+	animSetArcSpeeds(client, sim.map, sim.net)
 	
 	if sim.time > sim.startTime
 		# set animation to current sim state
@@ -402,6 +402,8 @@ function openLocalhost(port::Int)
 end
 
 # JSON.lower for various types, to reduce length of string returned from json function
+JSON.lower(n::Node) = Dict("index" => n.index, "location" => n.location)
+JSON.lower(a::Arc) = Dict("index" => a.index)
 JSON.lower(a::Ambulance) = Dict("index" => a.index, "currentLoc" => a.currentLoc, "endLoc" => a.route.endLoc)
 JSON.lower(c::Call) = Dict("index" => c.index, "currentLoc" => c.currentLoc, "priority" => c.priority)
 JSON.lower(h::Hospital) = Dict("index" => h.index, "location" => h.location)
