@@ -313,7 +313,7 @@ mutable struct Call
 	index::Int
 	priority::Priority
 	transport::Bool # true if requires transport to hospital
-	hospitalIndex::Int # hospital that call should be transported to. If hospitalIndex == nullIndex, will transport to nearest hospital
+	hospitalIndex::Int # hospital that call should be transported to. If hospitalIndex == nullIndex, will transport to nearest hospital. See also chosenHospitalIndex
 	location::Location # where call occurs
 	
 	# time/duration params:
