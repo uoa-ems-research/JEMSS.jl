@@ -70,6 +70,20 @@ end
 	end
 end
 
+@testset "set sim calls" begin
+	sim = initSim("data/regions/small/1/sim_config.xml", doPrint = false);
+	genConfig = readGenConfig("data/regions/small/1/gen_config.xml")
+	callSets = [makeCalls(genConfig) for i = 1:3]
+	for calls in callSets
+		for call in calls call.index = 0 end # test that setSimCalls! can handle this
+		@assert(calls[1].nearestNodeIndex == nullIndex) # test that setSimCalls! can handle this
+		setSimCalls!(sim, calls)
+		@assert(sim.calls[1].index == 1)
+		simulate!(sim)
+	end
+	@test true
+end
+
 # test that mexclp can be solved, but not solution correctness
 @testset "mexclp" begin
 	@assert(isdir("data/regions/small/1/generated"))

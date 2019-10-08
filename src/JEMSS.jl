@@ -78,6 +78,7 @@ export
 # misc functions
 export
 	isBusy, isFree, isWorking, isGoingToStation, isTravelling, # ambulance
+	setSimCalls!, # call
 	initDemand!, initDemandCoverage!, # demand
 	printEvent, # event
 	findNearestNode, # grid

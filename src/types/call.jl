@@ -87,3 +87,40 @@ function setCallStatus!(call::Call, status::CallStatus, time::Float)
 	call.status = status
 	call.statusSetTime = time
 end
+
+# Set the calls of the simulation.
+# Note that the old sim.calls will not be kept.
+# I tried to write this function to allow sim.startTime to be changed,
+# but that would also require sim stats capturing to change, so startTime cannot be changed.
+# Mutates: sim, calls
+function setSimCalls!(sim::Simulation, calls::Vector{Call})
+	@assert(length(calls) >= 1)
+	@assert(sim.startTime <= calls[1].arrivalTime)
+	
+	reset!(sim) # for safety, as changing calls part-way through a simulation could be tricky
+	
+	sim.numCalls = length(calls)
+	
+	for (i,call) in enumerate(calls)
+		call.index = i
+		
+		# find nearest nodes
+		if call.nearestNodeIndex == nullIndex
+			(call.nearestNodeIndex, call.nearestNodeDist) = findNearestNode(sim.map, sim.grid, sim.net.fGraph.nodes, call.location)
+		end
+	end
+	
+	# set first event to match first call arrival time; hacky
+	firstCallEvents = filter(e -> e.form == callArrives, sim.eventList)
+	@assert(length(firstCallEvents) == 1)
+	firstCallEvents[1].time = calls[1].arrivalTime
+	
+	if isdefined(sim, :backup)
+		sim.backup.numCalls = sim.numCalls
+		sim.backup.eventList = deepcopy(sim.eventList)
+	end
+	
+	reset!(calls)
+	
+	sim.calls = calls
+end
