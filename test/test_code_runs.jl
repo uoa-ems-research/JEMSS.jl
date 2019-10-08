@@ -61,8 +61,11 @@ end
 @testset "generate calls" begin
 	cd("data/regions/small/3") do
 		runGenConfig("gen_config_calls.xml", overwriteOutputPath = true, doPrint = false) # single calls file, limit calls by count
-		runGenConfig("gen_config_calls_2.xml", overwriteOutputPath = true, doPrint = false) # single calls file, limit calls by time
-		runGenConfig("gen_config_calls_multiple.xml", overwriteOutputPath = true, doPrint = false) # multiple calls files
+		runGenConfig("gen_config_calls_2.xml", overwriteOutputPath = true, doPrint = false) # single calls file, with maximum arrival time for last call
+		runGenConfig("gen_config_calls_3.xml", overwriteOutputPath = true, doPrint = false) # single calls file, with minimum arrival time for last call
+		genConfig = runGenConfig("gen_config_calls_multiple.xml", overwriteOutputPath = true, doPrint = false) # multiple calls files
+		callSets = runGenConfigCalls(genConfig, doPrint = false, writeFile = false)
+		@assert(isa(callSets, Vector{Vector{Call}}) && length(callSets) == genConfig.numCallsFiles)
 		@test true
 	end
 end

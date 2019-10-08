@@ -49,6 +49,7 @@ mutable struct GenConfig
 	# misc
 	startTime::Float
 	maxCallArrivalTime::Float
+	minLastCallArrivalTime::Float
 	targetResponseDuration::Float
 	offRoadSpeed::Float
 	stationCapacity::Int
@@ -74,14 +75,16 @@ mutable struct GenConfig
 	hospitalLocRng::AbstractRNG
 	stationLocRng::AbstractRNG
 	
+	# undefined
 	travelTimeFactorDistrRng::DistrRng
+	callRasterSampler::RasterSampler
 	
 	GenConfig() = new("", "", "", 1,
 		"", "", "", "", "", "", "", "", "",
 		nullIndex, nullIndex, nullIndex, nullIndex,
 		nullIndex, nullIndex,
 		Map(), 1e-6,
-		nullTime, nullTime, nullTime, nullTime, nullIndex, [],
+		nullTime, nullTime, nullTime, nullTime, nullTime, nullIndex, [],
 		"", false, nullIndex, nullIndex)
 end
 
@@ -156,7 +159,7 @@ function readGenConfig(genConfigFilename::String)
 	
 	# number of ambulances, calls, hospitals, stations
 	genConfig.numAmbs = eltContentVal(simElt, "numAmbs")
-	genConfig.numCalls = containsElt(simElt, "numCalls") ? eltContentVal(simElt, "numCalls") : nullIndex # can alternatively specify maxCallArrivalTime
+	genConfig.numCalls = containsElt(simElt, "numCalls") ? eltContentVal(simElt, "numCalls") : nullIndex # can alternatively specify maxCallArrivalTime or minLastCallArrivalTime
 	genConfig.numHospitals = eltContentVal(simElt, "numHospitals")
 	genConfig.numStations = eltContentVal(simElt, "numStations")
 	
@@ -169,8 +172,10 @@ function readGenConfig(genConfigFilename::String)
 	genConfig.startTime = eltContentVal(simElt, "startTime")
 	@assert(genConfig.startTime >= 0)
 	genConfig.maxCallArrivalTime = containsElt(simElt, "maxCallArrivalTime") ? eltContentVal(simElt, "maxCallArrivalTime") : nullTime
-	@assert((genConfig.numCalls != nullIndex) + (genConfig.maxCallArrivalTime != nullTime) == 1, "Need exactly one of these values: numCalls, maxCallArrivalTime.")
+	genConfig.minLastCallArrivalTime = containsElt(simElt, "minLastCallArrivalTime") ? eltContentVal(simElt, "minLastCallArrivalTime") : nullTime
+	@assert((genConfig.numCalls != nullIndex) + (genConfig.maxCallArrivalTime != nullTime) + (genConfig.minLastCallArrivalTime != nullTime) == 1, "Need exactly one of these values: numCalls, maxCallArrivalTime, minLastCallArrivalTime.")
 	@assert(genConfig.startTime <= genConfig.maxCallArrivalTime || genConfig.maxCallArrivalTime == nullTime)
+	@assert(genConfig.startTime <= genConfig.minLastCallArrivalTime || genConfig.minLastCallArrivalTime == nullTime)
 	targetResponseDurationString = containsElt(simElt, "targetResponseDuration") ? "targetResponseDuration" : "targetResponseTime" # compat for "targetResponseTime"
 	genConfig.targetResponseDuration = eltContentVal(simElt, targetResponseDurationString)
 	genConfig.offRoadSpeed = eltContentVal(simElt, "offRoadSpeed") # km / day
@@ -190,6 +195,15 @@ function readGenConfig(genConfigFilename::String)
 	end
 	genConfig.callRasterCellSeed = callRasterSeedVal("cellSeed")
 	genConfig.callRasterCellLocSeed = callRasterSeedVal("cellLocSeed")
+	if isfile(genConfig.callDensityRasterFilename)
+		raster = readRasterFile(genConfig.callDensityRasterFilename)
+		if genConfig.cropRaster
+			# crop raster to be within genConfig.map
+			mapTrimmed = trimmedMap(genConfig.map, genConfig.mapTrim)
+			cropRaster!(raster, mapTrimmed)
+		end
+		genConfig.callRasterSampler = RasterSampler(raster, genConfig.callRasterCellSeed, genConfig.callRasterCellLocSeed)
+	end
 	
 	# some defaults - should move to config file sometime
 	genConfig.ambStationRng = MersenneTwister(0)
@@ -201,9 +215,7 @@ function readGenConfig(genConfigFilename::String)
 	return genConfig
 end
 
-function runGenConfig(genConfigFilename::String; overwriteOutputPath::Bool = false, doPrint::Bool = true)
-	genConfig = readGenConfig(genConfigFilename)
-	
+function runGenConfig(genConfig::GenConfig; overwriteOutputPath::Bool = false, doPrint::Bool = true)
 	if isdir(genConfig.outputPath) && !overwriteOutputPath
 		doPrint && println("Output path already exists: ", genConfig.outputPath)
 		doPrint && print("Delete folder contents and continue anyway? (y = yes): ")
@@ -252,46 +264,38 @@ function runGenConfig(genConfigFilename::String; overwriteOutputPath::Bool = fal
 	else
 		error("Unrecognised generation mode")
 	end
+	
+	return genConfig
+end
+function runGenConfig(genConfigFilename::String; overwriteOutputPath::Bool = false, doPrint::Bool = true)
+	genConfig = readGenConfig(genConfigFilename)
+	return runGenConfig(genConfig, overwriteOutputPath = overwriteOutputPath, doPrint = doPrint)
 end
 
 # generate calls, and generate locations using call density raster file (file name stored in genConfig)
-# raster may be cropped to be within map borders
-function runGenConfigCalls(genConfig::GenConfig; doPrint::Bool = true)
-	
-	# read call density raster file
-	doPrint && println("Reading raster file: ", genConfig.callDensityRasterFilename)
-	raster = readRasterFile(genConfig.callDensityRasterFilename)
-	
-	if genConfig.cropRaster
-		# crop raster to be within genConfig.map
-		doPrint && println("Before cropping:")
-		doPrint && printRasterSize(raster)
-		mapTrimmed = trimmedMap(genConfig.map, genConfig.mapTrim)
-		if cropRaster!(raster, mapTrimmed)
-			doPrint && println("After cropping:")
-			doPrint && printRasterSize(raster)
-		end
-	end
-	
-	rasterSampler = RasterSampler(raster, genConfig.callRasterCellSeed, genConfig.callRasterCellLocSeed)
-	
+function runGenConfigCalls(genConfig::GenConfig; doPrint::Bool = true, writeFile::Bool = true)
 	numFiles = genConfig.numCallsFiles # shorthand
-	if numFiles == 1
-		filename = genConfig.callsFilename
-		doPrint && println("Saving calls file to: ", filename)
-		calls = makeCalls(genConfig; rasterSampler = rasterSampler)
-		writeCallsFile(filename, genConfig.startTime, calls)
-	else
-		@assert(numFiles > 1)
-		doPrint && println("Saving calls files to: ", genConfig.outputPath)
-		for j = 1:numFiles
-			filename = joinpath(genConfig.outputPath, "calls_$j.csv")
-			doPrint && print("\rCreating calls file $j (of $numFiles)")
-			calls = makeCalls(genConfig; rasterSampler = rasterSampler)
+	@assert(numFiles >= 1)
+	doPrint && println("Generating $numFiles call set(s).")
+	callSets = [makeCalls(genConfig) for i = 1:numFiles]
+	
+	if writeFile
+		if numFiles == 1
+			calls = callSets[1]
+			filename = genConfig.callsFilename
+			doPrint && println("Saving calls file to: ", filename)
 			writeCallsFile(filename, genConfig.startTime, calls)
+		else
+			@assert(numFiles > 1)
+			doPrint && println("Saving calls files to: ", genConfig.outputPath)
+			for j = 1:numFiles
+				filename = joinpath(genConfig.outputPath, "calls_$j.csv")
+				writeCallsFile(filename, genConfig.startTime, callSets[j])
+			end
 		end
-		doPrint && (println(); println("Generated $numFiles calls files"))
 	end
+	
+	return callSets
 end
 
 function makeAmbs(genConfig::GenConfig)
@@ -331,6 +335,7 @@ end
 
 # make calls that are spatially randomly uniform in map, or distributed according to raster
 function makeCalls(genConfig::GenConfig; rasterSampler::Union{RasterSampler,Nothing} = nothing)
+	if (rasterSampler == nothing && isdefined(genConfig, :callRasterSampler)) rasterSampler = genConfig.callRasterSampler end
 	calls = Call[]
 	currentTime = genConfig.startTime
 	while length(calls) < genConfig.numCalls || genConfig.numCalls == nullIndex
@@ -354,6 +359,8 @@ function makeCalls(genConfig::GenConfig; rasterSampler::Union{RasterSampler,Noth
 		end
 		
 		push!(calls, call)
+		
+		if (currentTime >= genConfig.minLastCallArrivalTime && genConfig.minLastCallArrivalTime != nullTime) break end
 	end
 	
 	return calls

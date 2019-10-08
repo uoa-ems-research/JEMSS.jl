@@ -66,7 +66,7 @@ export
 # file functions
 export
 	readDlmFileNextLine!, readDlmFile, openNewFile, writeDlmLine!, arrayDict, writeTablesToFile!, writeTablesToFile, readTablesFromFile, readTablesFromData, tableRowsFieldDicts, fileChecksum, serializeToFile, deserializeFile, joinPathIfNotAbs, interpolateString, xmlFileRoot, findElt, eltContent, eltContentVal, eltContentInterpVal, childrenNodeNames, selectXmlFile, # file_io
-	runGenConfig, # gen_sim_files
+	readGenConfig, runGenConfig, runGenConfigCalls, makeCalls, # gen_sim_files
 	readAmbsFile, readArcsFile, readCallsFile, readCompTableFile, readDemandFile, readDemandCoverageFile, readEventsFile, readGeoFile, readHospitalsFile, readMapFile, readNodesFile, readPrioritiesFile, readPriorityListFile, readRasterFile, readRedispatchFile, readRNetTravelsFile, readStationsFile, readStatsControlFile, readTravelFile, readDeploymentsFile, readZhangIpParamsFile, # read_sim_files
 	writeAmbsFile, writeArcsFile, writeCallsFile, writeDemandFile, writeDemandCoverageFile, writeHospitalsFile, writeMapFile, writeNodesFile, writePrioritiesFile, writeRedispatchFile, writeRNetTravelsFile, writeStationsFile, writeTravelFile, openOutputFiles!, writeOutputFiles, writeMiscOutputFiles, closeOutputFiles!, writeEventToFile!, writeDeploymentsFile, writeBatchMeanResponseDurationsFile, # write_sim_files
 	writeStatsFiles, writeAmbsStatsFile, writeCallsStatsFile, writeHospitalsStatsFile, writeStationsStatsFile # write_sim_files - stats
