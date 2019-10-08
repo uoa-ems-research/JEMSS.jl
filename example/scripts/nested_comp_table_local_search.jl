@@ -65,7 +65,7 @@ function simObjVal!(sim::Simulation, nestedCompTable::NestedCompTable)::ObjVal
 	@assert(!haskey(nestedCompTablesObjVal, nestedCompTable))
 	reset!(sim)
 	for i = 1:sim.numAmbs
-		setAmbStation!(sim.ambulances[i], sim.stations[nestedCompTable[i]])
+		setAmbStation!(sim, sim.ambulances[i], sim.stations[nestedCompTable[i]])
 	end
 	initCompTable!(sim, nestedCompTable)
 	simulateToEnd!(sim)

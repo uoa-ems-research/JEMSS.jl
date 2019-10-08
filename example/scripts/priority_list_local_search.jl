@@ -66,7 +66,7 @@ function simObjVal!(sim::Simulation, priorityList::PriorityList)::ObjVal
 	@assert(!haskey(priorityListsObjVal, priorityList))
 	reset!(sim)
 	for i = 1:sim.numAmbs
-		setAmbStation!(sim.ambulances[i], sim.stations[priorityList[i]])
+		setAmbStation!(sim, sim.ambulances[i], sim.stations[priorityList[i]])
 	end
 	initPriorityList!(sim, priorityList)
 	simulateToEnd!(sim)

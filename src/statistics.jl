@@ -303,7 +303,7 @@ function statsDictFromPeriodStatsList(periods::Vector{SimPeriodStats}; conf = 0.
 	
 	duration = periods[1].duration
 	ambDays = length(periods[1].ambulances) * duration
-	@assert(all(p -> p.duration == duration, periods))
+	@assert(all(p -> isapprox(p.duration, duration), periods))
 	
 	d = statsDict = Dict{String,Any}()
 	
