@@ -86,7 +86,7 @@ end
 ##
 
 @deprecate(
-initSimulation(configFilename::String; allowResim::Bool = false, createBackup::Bool = true, allowWriteOutput::Bool = false, doPrint::Bool = true),
+initSimulation(configFilename::String; allowResim::Bool = false, createBackup::Bool = true, allowWriteOutput::Bool = false, doPrint::Bool = false),
 initSim(configFilename; allowResim = allowResim, createBackup = createBackup, allowWriteOutput = allowWriteOutput, doPrint = doPrint))
 
 @deprecate(

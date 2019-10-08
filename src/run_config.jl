@@ -14,9 +14,9 @@
 ##########################################################################
 
 # run configuration xml file
-function runConfig(configFilename::String)
+function runConfig(configFilename::String; doPrint::Bool = false)
 	# read input files, initialise simulation
-	sim = initSim(configFilename; allowResim = true, createBackup = false, allowWriteOutput = true)
+	sim = initSim(configFilename; allowResim = true, createBackup = false, allowWriteOutput = true, doPrint = doPrint)
 	
 	# open output files
 	openOutputFiles!(sim)
@@ -35,7 +35,7 @@ end
 
 # initialise simulation from input files
 function initSim(configFilename::String;
-	allowResim::Bool = false, createBackup::Bool = true, allowWriteOutput::Bool = false, doPrint::Bool = true)
+	allowResim::Bool = false, createBackup::Bool = true, allowWriteOutput::Bool = false, doPrint::Bool = false)
 	
 	# read sim config xml file
 	configFilename = configFilename |> interpolateString |> abspath

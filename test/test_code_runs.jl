@@ -21,7 +21,7 @@
 	simConfigFolder = "data/regions/small/1/sim_configs"
 	for configFilename in readdir(simConfigFolder)
 		filename = joinpath(pwd(), simConfigFolder, configFilename)
-		sim = initSim(filename, doPrint = false);
+		sim = initSim(filename);
 		simulate!(sim)
 		@test true
 	end
@@ -71,7 +71,7 @@ end
 end
 
 @testset "set sim calls" begin
-	sim = initSim("data/regions/small/1/sim_config.xml", doPrint = false);
+	sim = initSim("data/regions/small/1/sim_config.xml");
 	genConfig = readGenConfig("data/regions/small/1/gen_config.xml")
 	callSets = [makeCalls(genConfig) for i = 1:3]
 	for calls in callSets
@@ -88,7 +88,7 @@ end
 @testset "mexclp" begin
 	@assert(isdir("data/regions/small/1/generated"))
 	filename = joinpath(pwd(), "data/regions/small/1/mexclp/sim_config.xml")
-	sim = initSim(filename, doPrint = false);
+	sim = initSim(filename);
 	# solve mexclp with various kwarg values
 	demandWeights = Dict([p => 1.0 for p in priorities])
 	demandWeights[lowPriority] = 0

@@ -17,7 +17,7 @@ using Parameters
 
 # initialise sim
 testRegionDataFolder = "data/regions/small/1"
-global simDemandCoverage = initSim(joinpath(testRegionDataFolder, "sim_config.xml"), doPrint = false);
+global simDemandCoverage = initSim(joinpath(testRegionDataFolder, "sim_config.xml"));
 
 # initialise demand and demand coverage
 initDemand!(simDemandCoverage, demandFilename = joinpath(testRegionDataFolder, "demand", "demand.csv"))

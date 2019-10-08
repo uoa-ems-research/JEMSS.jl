@@ -115,7 +115,7 @@ end
 # perform local search, starting at each of the priority lists provided
 function repeatedLocalSearch()
 	println("Initialising simulation from config: ", configFilename)
-	sim = initSim(configFilename; createBackup = false, doPrint = false)
+	sim = initSim(configFilename; createBackup = false)
 	
 	# change move up module index to priority_list
 	sim.moveUpData.moveUpModule = priorityListModule

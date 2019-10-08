@@ -32,7 +32,7 @@ numDeployments = 2 # number of deployments to generate and test
 deploymentRng = Random.MersenneTwister(0)
 
 # load sim
-sim = initSim(configFilename, createBackup = true, doPrint = false)
+sim = initSim(configFilename, createBackup = true)
 (numAmbs, numStations) = (sim.numAmbs, sim.numStations)
 @assert(numAmbs > 0 && numStations > 1) # otherwise only one deployment is possible
 

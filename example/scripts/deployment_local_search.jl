@@ -114,7 +114,7 @@ end
 # perform local search, starting at each of the deployments provided
 function repeatedLocalSearch()
 	println("Initialising simulation from config: ", configFilename)
-	sim = initSim(configFilename, createBackup = true, doPrint = false)
+	sim = initSim(configFilename, createBackup = true)
 	
 	# open files for writing solution
 	solFile = open(solFilename, "w")

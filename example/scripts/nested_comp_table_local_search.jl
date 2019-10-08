@@ -116,7 +116,7 @@ nestedCompTableSols = Vector{NestedCompTable}() # solution of each complete loca
 # perform local search, starting at each of the nested compliance tables provided
 function repeatedLocalSearch()
 	println("Initialising simulation from config: ", configFilename)
-	sim = initSim(configFilename; createBackup = false, doPrint = false)
+	sim = initSim(configFilename; createBackup = false)
 	
 	# change move up module index to comp_table
 	sim.moveUpData.moveUpModule = compTableModule

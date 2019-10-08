@@ -217,7 +217,7 @@ function animateClient(client::Client)
 		@assert(typeof(nextAnimItem) == String)
 		configFilename = nextAnimItem
 		println("Initialising simulation from config:", configFilename)
-		sim = initSim(configFilename; allowResim = true, doPrint = false)
+		sim = initSim(configFilename; allowResim = true)
 		println("...initialised")
 	end
 	
