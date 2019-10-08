@@ -36,14 +36,14 @@ function initSim(configFilename::String;
 	@assert(xName(rootElt) == "simConfig", string("xml root has incorrect name: ", xName(rootElt)))
 	
 	# for progress messages:
-	t = [0.0]
-	initMessage(t, msg) = doPrint && (t[1] = time(); print(msg))
-	initTime(t) = doPrint && println(": ", round(time() - t[1], digits = 2), " seconds")
+	t = 0.0
+	printInitMsg(msg) = doPrint && (t = time(); print(msg))
+	printInitTime() = doPrint && println(": ", round(time() - t, digits = 2), " seconds")
 	
 	##################
 	# sim config
 	
-	initMessage(t, "reading config file data")
+	printInitMsg("reading config file data")
 	
 	sim = Simulation()
 	sim.configRootElt = rootElt
@@ -76,12 +76,12 @@ function initSim(configFilename::String;
 		sim.outputFiles[outputFile] = file
 	end
 	
-	initTime(t)
+	printInitTime()
 	
 	##################
 	# read simulation input files
 	
-	initMessage(t, "reading input data")
+	printInitMsg("reading input data")
 	
 	simFilePath(name::String) = sim.inputFiles[name].path
 	
@@ -133,44 +133,44 @@ function initSim(configFilename::String;
 		sim.demandCoverage = readDemandCoverageFile(simFilePath("demandCoverage"))
 	end
 	
-	initTime(t)
+	printInitTime()
 	
 	##################
 	# network
 	
-	initMessage(t, "initialising fGraph")
+	printInitMsg("initialising fGraph")
 	initGraph!(fGraph)
-	initTime(t)
+	printInitTime()
 	
 	if any(arc -> isnan(arc.distance), fGraph.arcs)
-		initMessage(t, "calculating arc distances for arcs with NaN distance")
+		printInitMsg("calculating arc distances for arcs with NaN distance")
 		setArcDistances!(fGraph, map)
-		initTime(t)
+		printInitTime()
 	end
 	
-	initMessage(t, "checking fGraph")
+	printInitMsg("checking fGraph")
 	checkGraph(fGraph, map)
-	initTime(t)
+	printInitTime()
 	
-	initMessage(t, "initialising fNetTravels")
+	printInitMsg("initialising fNetTravels")
 	initFNetTravels!(net, arcTravelTimes)
-	initTime(t)
+	printInitTime()
 	
-	initMessage(t, "creating rGraph from fGraph")
+	printInitMsg("creating rGraph from fGraph")
 	createRGraphFromFGraph!(net)
-	initTime(t)
+	printInitTime()
 	doPrint && println("fNodes: ", length(net.fGraph.nodes), ", rNodes: ", length(net.rGraph.nodes))
 	
-	initMessage(t, "checking rGraph")
+	printInitMsg("checking rGraph")
 	checkGraph(net.rGraph, map)
-	initTime(t)
+	printInitTime()
 	
 	if rNetTravelsLoaded != []
 		doPrint && println("using data from rNetTravels file")
 		try
-			initMessage(t, "creating rNetTravels from fNetTravels")
+			printInitMsg("creating rNetTravels from fNetTravels")
 			createRNetTravelsFromFNetTravels!(net; rNetTravelsLoaded = rNetTravelsLoaded)
-			initTime(t)
+			printInitTime()
 		catch
 			doPrint && println()
 			@warn("failed to use data from rNetTravels file")
@@ -178,20 +178,20 @@ function initSim(configFilename::String;
 		end
 	end
 	if rNetTravelsLoaded == []
-		initMessage(t, "creating rNetTravels from fNetTravels, and shortest paths")
+		printInitMsg("creating rNetTravels from fNetTravels, and shortest paths")
 		createRNetTravelsFromFNetTravels!(net)
-		initTime(t)
+		printInitTime()
 		if rNetTravelsFilename != ""
-			initMessage(t, "saving rNetTravels to file")
+			printInitMsg("saving rNetTravels to file")
 			writeRNetTravelsFile(rNetTravelsFilename, net.rNetTravels)
-			initTime(t)
+			printInitTime()
 		end
 	end
 	
 	##################
 	# travel
 	
-	initMessage(t, "initialising travel")
+	printInitMsg("initialising travel")
 	
 	travel = sim.travel # shorthand
 	@assert(travel.setsStartTimes[1] <= sim.startTime)
@@ -201,12 +201,12 @@ function initSim(configFilename::String;
 		travelMode.rNetTravel = net.rNetTravels[travelMode.index]
 	end
 	
-	initTime(t)
+	printInitTime()
 	
 	##################
 	# grid
 	
-	initMessage(t, "placing nodes in grid")
+	printInitMsg("placing nodes in grid")
 	
 	# hard-coded grid size
 	# grid rects will be roughly square, with one node per square on average
@@ -219,14 +219,14 @@ function initSim(configFilename::String;
 	sim.grid = Grid(map, nx, ny)
 	grid = sim.grid # shorthand
 	gridPlaceNodes!(map, grid, fGraph.nodes)
-	initTime(t)
+	printInitTime()
 	
 	doPrint && println("nodes: ", length(fGraph.nodes), ", grid size: ", nx, " x ", ny)
 	
 	##################
 	# sim - ambulances, calls, hospitals, stations...
 	
-	initMessage(t, "adding ambulances, calls, etc")
+	printInitMsg("adding ambulances, calls, etc")
 	
 	# for each call, hospital, and station, find nearest node
 	for c in sim.calls
@@ -258,9 +258,9 @@ function initSim(configFilename::String;
 		station.currentNumIdleAmbsSetTime = sim.startTime
 	end
 	
-	initTime(t)
+	printInitTime()
 	
-	initMessage(t, "storing times between fNodes and common locations")
+	printInitMsg("storing times between fNodes and common locations")
 	
 	# for each station, find time to each node in fGraph for each travel mode, and vice versa (node to station)
 	# for each node in fGraph and each travel mode, find nearest hospital
@@ -291,7 +291,7 @@ function initSim(configFilename::String;
 		end
 	end
 	
-	initTime(t)
+	printInitTime()
 	
 	##################
 	# decision logic
@@ -311,7 +311,7 @@ function initSim(configFilename::String;
 		mud.moveUpModule = nullMoveUpModule
 		doPrint && println("not using move up")
 	else
-		initMessage(t, "initialising move up")
+		printInitMsg("initialising move up")
 		
 		mud.useMoveUp = true
 		
@@ -379,7 +379,7 @@ function initSim(configFilename::String;
 			error("invalid move up module name given: ", moveUpModuleName)
 		end
 		
-		initTime(t)
+		printInitTime()
 		
 		doPrint && println("using move up module: ", moveUpModuleName)
 	end
@@ -390,10 +390,10 @@ function initSim(configFilename::String;
 	if allowResim
 		sim.resim.use = eltContentVal(rootElt, "resim")
 		if sim.resim.use
-			initMessage(t, "")
+			printInitMsg("")
 			initResim!(sim)
 			doPrint && print("initialised resimulation")
-			initTime(t)
+			printInitTime()
 		end
 	end
 	
@@ -401,12 +401,12 @@ function initSim(configFilename::String;
 	# statistics
 	
 	if haskey(sim.inputFiles, "statsControl")
-		initMessage(t, "initialising statistics")
+		printInitMsg("initialising statistics")
 		stats = sim.stats # shorthand
 		stats.doCapture = true
 		(stats.periodDurationsIter, stats.warmUpDuration) = readStatsControlFile(simFilePath("statsControl"))
 		stats.nextCaptureTime = sim.startTime + (stats.warmUpDuration > 0 ? stats.warmUpDuration : first(stats.periodDurationsIter))
-		initTime(t)
+		printInitTime()
 	end
 	
 	##################
@@ -418,9 +418,9 @@ function initSim(configFilename::String;
 	# sim backup
 	
 	if createBackup
-		initMessage(t, "creating sim backup")
+		printInitMsg("creating sim backup")
 		backup!(sim) # for restarting sim
-		initTime(t)
+		printInitTime()
 	end
 	
 	return sim
