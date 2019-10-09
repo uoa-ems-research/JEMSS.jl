@@ -91,20 +91,25 @@ function simulateToEnd!(sim::Simulation)
 	end
 end
 
+# run single simulation replication
+function simulateRep!(sim::Simulation, rep::Simulation)
+	sim.calls = Call[] # so calls will not be reset
+	reset!(sim)
+	setSimCalls!(sim, rep.calls)
+	simulate!(sim)
+	for fname in (:startTime, :time, :endTime, :stats, :used, :complete)
+		setfield!(rep, fname, getfield(sim, fname))
+	end
+end
+
 # run simulation replications
-function simulateReps!(sim::Simulation; doPrint::Bool = false)
-	numReps = sim.numReps # shorthand
-	@assert(numReps >= 1)
-	for (i,rep) in enumerate(sim.reps)
+function simulateReps!(sim::Simulation; repIndices::Vector{Int} = [1:sim.numReps;], doPrint::Bool = false)
+	@assert(all(in(1:sim.numReps), repIndices))
+	reps = sim.reps[repIndices] # shorthand
+	numReps = length(reps)
+	for (i,rep) in enumerate(reps)
 		doPrint && print("\rSimulating replication $i of $numReps.")
-		reset!(sim)
-		setSimCalls!(sim, rep.calls)
-		simulate!(sim)
-		for fname in (:startTime, :time, :endTime, :stats, :used, :complete)
-			setfield!(rep, fname, getfield(sim, fname))
-		end
-		sim.calls = Call[] # so that rep.calls will not be reset
-		reset!(sim)
+		simulateRep!(sim, rep)
 	end
 	doPrint && println()
 end
