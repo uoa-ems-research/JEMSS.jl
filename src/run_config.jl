@@ -66,6 +66,7 @@ function initSim(configFilename::String;
 	# output
 	sim.writeOutput = allowWriteOutput && eltContentVal(rootElt, "writeOutput")
 	sim.outputPath = joinPathIfNotAbs(configFileDir, eltContentInterpVal(rootElt, "outputPath")) # output path can be absolute, or relative to configFilename
+	isdir(sim.outputPath) || mkdir(sim.outputPath)
 	outputFilesElt = findElt(rootElt, "outputFiles")
 	outputFiles = childrenNodeNames(outputFilesElt)
 	sim.outputFiles = Dict{String,File}()
@@ -84,13 +85,24 @@ function initSim(configFilename::String;
 	printInitMsg("reading input data")
 	
 	simFilePath(name::String) = sim.inputFiles[name].path
+	hasInputFile(name::String) = haskey(sim.inputFiles, name)
 	
 	# read sim data
 	sim.ambulances = readAmbsFile(simFilePath("ambulances"))
-	(sim.calls, sim.startTime) = readCallsFile(simFilePath("calls"))
-	sim.time = sim.startTime
 	sim.hospitals = readHospitalsFile(simFilePath("hospitals"))
 	sim.stations = readStationsFile(simFilePath("stations"))
+	
+	# calls
+	callGenConfig = nothing
+	@assert(hasInputFile("calls") + hasInputFile("callGenConfig") == 1, "Need exactly one of these input files: calls, callGenConfig.")
+	if hasInputFile("calls")
+		(sim.calls, sim.startTime) = readCallsFile(simFilePath("calls"))
+	elseif hasInputFile("callGenConfig")
+		callGenConfig = readGenConfig(simFilePath("callGenConfig"))
+		sim.startTime = callGenConfig.startTime
+	else error()
+	end
+	sim.time = sim.startTime
 	
 	sim.numAmbs = length(sim.ambulances)
 	sim.numCalls = length(sim.calls)
@@ -107,7 +119,7 @@ function initSim(configFilename::String;
 	# read rNetTravels from file, if saved
 	rNetTravelsLoaded = NetTravel[]
 	rNetTravelsFilename = ""
-	if haskey(sim.inputFiles, "rNetTravels")
+	if hasInputFile("rNetTravels")
 		rNetTravelsFilename = simFilePath("rNetTravels")
 		if isfile(rNetTravelsFilename)
 			try
@@ -129,11 +141,42 @@ function initSim(configFilename::String;
 	(sim.targetResponseDurations, sim.responseTravelPriorities) = readPrioritiesFile(simFilePath("priorities"))
 	sim.travel = readTravelFile(simFilePath("travel"))
 	# "demand" file can be slow to read, will not read here but read elsewhere when needed
-	if haskey(sim.inputFiles, "demandCoverage")
+	if hasInputFile("demandCoverage")
 		sim.demandCoverage = readDemandCoverageFile(simFilePath("demandCoverage"))
 	end
 	
 	printInitTime()
+	
+	##################
+	# generate calls
+	
+	callSets = [Call[]] # init
+	if hasInputFile("callGenConfig")
+		printInitMsg("generating calls")
+		
+		numReps = sim.numReps = callGenConfig.numCallsFiles # shorthand
+		@assert(numReps >= 1)
+		callSets = [makeCalls(callGenConfig) for i = 1:numReps]
+		
+		if numReps > 1
+			# set sim.reps
+			for calls in callSets
+				rep = Simulation()
+				rep.calls = calls
+				rep.numCalls = length(calls)
+				push!(sim.reps, rep)
+			end
+			
+			sim.writeOutput = false # have not yet handled writing output files for each replication
+		end
+		
+		sim.calls = callSets[1] # set sim.calls for first replication
+		sim.numCalls = length(sim.calls)
+		
+		printInitTime()
+		
+		(numReps > 1) && doPrint && println("number of call sets: $numReps")
+	end
 	
 	##################
 	# network
@@ -229,8 +272,10 @@ function initSim(configFilename::String;
 	printInitMsg("adding ambulances, calls, etc")
 	
 	# for each call, hospital, and station, find nearest node
-	for c in sim.calls
-		(c.nearestNodeIndex, c.nearestNodeDist) = findNearestNode(map, grid, fGraph.nodes, c.location)
+	for calls in (sim.calls, callSets[2:end]...) # note that sim.calls should be callSets[1] (if callSets is not empty)
+		for c in calls
+			(c.nearestNodeIndex, c.nearestNodeDist) = findNearestNode(map, grid, fGraph.nodes, c.location)
+		end
 	end
 	for h in sim.hospitals
 		(h.nearestNodeIndex, h.nearestNodeDist) = findNearestNode(map, grid, fGraph.nodes, h.location)
@@ -299,7 +344,7 @@ function initSim(configFilename::String;
 	decisionElt = findElt(rootElt, "decision")
 	sim.addCallToQueue! = eltContentVal(decisionElt, "callQueueing")
 	sim.findAmbToDispatch! = eltContentVal(decisionElt, "dispatch")
-	haskey(sim.inputFiles, "redispatch") && (sim.redispatch = readRedispatchFile(simFilePath("redispatch")))
+	hasInputFile("redispatch") && (sim.redispatch = readRedispatchFile(simFilePath("redispatch")))
 	
 	# move up
 	mud = sim.moveUpData # shorthand
@@ -400,7 +445,7 @@ function initSim(configFilename::String;
 	##################
 	# statistics
 	
-	if haskey(sim.inputFiles, "statsControl")
+	if hasInputFile("statsControl")
 		printInitMsg("initialising statistics")
 		stats = sim.stats # shorthand
 		stats.doCapture = true

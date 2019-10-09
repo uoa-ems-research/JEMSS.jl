@@ -1001,6 +1001,9 @@ mutable struct Simulation
 	
 	stats::SimStats
 	
+	reps::Vector{Simulation} # simulation replications, should have calls and stats defined
+	numReps::Int # length(reps)
+	
 	# files/folders:
 	inputPath::String
 	outputPath::String
@@ -1029,6 +1032,7 @@ mutable struct Simulation
 		Dict(), [],
 		Set(), Set(),
 		SimStats(),
+		[], 0,
 		"", "", Dict(), Dict(), IOStream(""),
 		false, false, false, false, false)
 end

@@ -71,7 +71,7 @@ end
 end
 
 @testset "set sim calls" begin
-	sim = initSim("data/regions/small/1/sim_config.xml");
+	sim = initSim("data/regions/small/1/sim_config.xml")
 	genConfig = readGenConfig("data/regions/small/1/gen_config.xml")
 	callSets = [makeCalls(genConfig) for i = 1:3]
 	for calls in callSets
@@ -82,6 +82,18 @@ end
 		simulate!(sim)
 	end
 	@test true
+end
+
+@testset "sim replications" begin
+	cd("data/regions/small/5") do
+		runGenConfig("gen_config.xml", overwriteOutputPath = true, doPrint = false)
+		sim = initSim("sim_config.xml")
+		@assert(sim.numReps == 3)
+		simulateReps!(sim)
+		@assert(all(rep -> rep.complete, sim.reps))
+		writeStatsFiles(sim, sim.reps)
+		@test true
+	end
 end
 
 # test that mexclp can be solved, but not solution correctness

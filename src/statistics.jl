@@ -285,6 +285,17 @@ function confInterval(mhw::MeanAndHalfWidth)
 	return (mhw.mean - mhw.halfWidth, mhw.mean + mhw.halfWidth)
 end
 
+# given the sim replications, return a list with the main stats period for each rep
+function getRepsPeriodStatsList(reps::Vector{Simulation}; periodIndex::Int = nullIndex)::Vector{SimPeriodStats}
+	@assert(all(rep -> rep.complete, reps))
+	if periodIndex == nullIndex
+		warmUpDuration = reps[1].stats.warmUpDuration
+		@assert(all(rep -> rep.stats.warmUpDuration == warmUpDuration, reps))
+		periodIndex = warmUpDuration == 0 ? 1 : 2
+	end
+	return [rep.stats.periods[periodIndex] for rep in reps]
+end
+
 # Return a dictionary of statistics from a list of period statistics.
 # Periods should be the same duration.
 # Confidence intervals assume that samples obtained from periods are IID, and are from a population with a normal distribution and unknown standard deviation.

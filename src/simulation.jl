@@ -91,12 +91,30 @@ function simulateToEnd!(sim::Simulation)
 	end
 end
 
+# run simulation replications
+function simulateReps!(sim::Simulation; doPrint::Bool = false)
+	numReps = sim.numReps # shorthand
+	@assert(numReps >= 1)
+	for (i,rep) in enumerate(sim.reps)
+		doPrint && print("\rSimulating replication $i of $numReps.")
+		reset!(sim)
+		setSimCalls!(sim, rep.calls)
+		simulate!(sim)
+		for fname in (:startTime, :time, :endTime, :stats, :used, :complete)
+			setfield!(rep, fname, getfield(sim, fname))
+		end
+		sim.calls = Call[] # so that rep.calls will not be reset
+		reset!(sim)
+	end
+	doPrint && println()
+end
+
 # set sim.backup to copy of sim (before running)
 # note that for reducing memory usage, sim.backup does not contain backups of all fields
 function backup!(sim::Simulation)
 	@assert(!sim.used)
 	if !isdefined(sim, :backup) sim.backup = Simulation() end
-	fnamesDontCopy = (:backup, :net, :travel, :grid, :resim, :calls, :demand, :demandCoverage)
+	fnamesDontCopy = (:backup, :net, :travel, :grid, :resim, :calls, :demand, :demandCoverage, :reps)
 	for fname in setdiff(fieldnames(Simulation), fnamesDontCopy)
 		setfield!(sim.backup, fname, deepcopy(getfield(sim, fname)))
 	end
@@ -109,7 +127,7 @@ function reset!(sim::Simulation)
 	@assert(!sim.backup.used)
 	
 	if sim.used
-		fnamesDontCopy = (:backup, :net, :travel, :grid, :resim, :calls, :demand, :demandCoverage, :animating)
+		fnamesDontCopy = (:backup, :net, :travel, :grid, :resim, :calls, :demand, :demandCoverage, :reps, :animating)
 		# fnamesDontCopy lists fields that are not backed up in sim.backup, or will be reset by another method
 		for fname in setdiff(fieldnames(Simulation), fnamesDontCopy)
 			setfield!(sim, fname, deepcopy(getfield(sim.backup, fname)))
