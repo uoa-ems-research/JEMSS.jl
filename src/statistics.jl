@@ -293,7 +293,9 @@ function getRepsPeriodStatsList(reps::Vector{Simulation}; periodIndex::Int = nul
 		@assert(all(rep -> rep.stats.warmUpDuration == warmUpDuration, reps))
 		periodIndex = warmUpDuration == 0 ? 1 : 2
 	end
-	return [rep.stats.periods[periodIndex] for rep in reps]
+	periods = [rep.stats.periods[periodIndex] for rep in reps]
+	@assert(all(p -> isapprox(p.duration, periods[1].duration), periods))
+	return periods
 end
 
 # Return a dictionary of statistics from a list of period statistics.
