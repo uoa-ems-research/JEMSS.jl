@@ -24,16 +24,16 @@ using Random
 using Statistics
 
 # parameters:
-const configFilename = "sim_config.xml"
-const outputFolder = "output"
-const solFilename = "$outputFolder/solutions.csv" # final solutions from each local search
-const logFilename = "$outputFolder/log.csv" # log search progress to file
-const ObjVal = Int # type alias, return type of objFn
-const nullObjVal = -1 # depends on objective function, see objFn
-const sense = :max # :min or :max; direction of optimisation for objective function
+configFilename = "sim_config.xml"
+outputFolder = "output"
+solFilename = "$outputFolder/solutions.csv" # final solutions from each local search
+logFilename = "$outputFolder/log.csv" # log search progress to file
+ObjVal = Int # type alias, return type of objFn
+nullObjVal = -1 # depends on objective function, see objFn
+sense = :max # :min or :max; direction of optimisation for objective function
 priorityLists = [] # leave empty (and set numSearches) if generating random priority lists for random restarts
-const numSearches = isempty(priorityLists) ? 1 : length(priorityLists) # number of local searches to perform
-const priorityListRng = Random.MersenneTwister(0) # useful for reproducing results, if using random restarts
+numSearches = isempty(priorityLists) ? 1 : length(priorityLists) # number of local searches to perform
+priorityListRng = Random.MersenneTwister(0) # useful for reproducing results, if using random restarts
 
 # some parameter checks
 @assert(isfile(configFilename))

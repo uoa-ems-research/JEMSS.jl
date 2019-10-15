@@ -34,11 +34,22 @@ else
 	@testset "example scripts" begin
 		scriptsFolder = joinpath(dirname(pathof(JEMSS)), "..", "example", "scripts")
 		
+		# deployment local search
+		cd("data/regions/small/6") do
+			runGenConfig("gen_config.xml", overwriteOutputPath = true, doPrint = false)
+			isdir("output") || mkdir("output")
+			script = "deployment_local_search.jl"
+			@info(string("Running script: ", script))
+			include(joinpath(scriptsFolder, script))
+			@test true
+			rm("output", recursive = true)
+		end
+		
 		# local search scripts, tested with a very small sim for speed
 		cd("data/regions/small/2") do
 			runGenConfig("gen_config.xml", overwriteOutputPath = true, doPrint = false)
 			isdir("output") || mkdir("output")
-			for script in ["deployment_local_search.jl", "nested_comp_table_local_search.jl", "priority_list_local_search.jl"]
+			for script in ("nested_comp_table_local_search.jl", "priority_list_local_search.jl")
 				@info(string("Running script: ", script))
 				include(joinpath(scriptsFolder, script))
 				@test true

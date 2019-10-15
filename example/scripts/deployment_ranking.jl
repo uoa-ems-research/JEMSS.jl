@@ -20,14 +20,14 @@ using Random
 # using Statistics
 
 # parameters:
-const configFilename = "sim_config.xml"
-const outputFolder = "output"
-const batchMeanResponseDurationsFilename = joinpath(outputFolder, "deployments_batch_mean_response_durations.csv")
-const batchTime = 1.0 # batch by day
-const warmUpTime = 1.0 # one day warm-up period
+configFilename = "sim_config.xml"
+outputFolder = "output"
+batchMeanResponseDurationsFilename = joinpath(outputFolder, "deployments_batch_mean_response_durations.csv")
+batchTime = 1.0 # batch by day
+warmUpTime = 1.0 # one day warm-up period
 
 # additional parameters to use if config does not include deployments:
-const deploymentsOutFilename = joinpath(outputFolder, "deployments.csv")
+deploymentsOutFilename = joinpath(outputFolder, "deployments.csv")
 numDeployments = 2 # number of deployments to generate and test
 deploymentRng = Random.MersenneTwister(0)
 
