@@ -88,6 +88,17 @@ function setCallStatus!(call::Call, status::CallStatus, time::Float)
 	call.statusSetTime = time
 end
 
+function initCalls!(sim::Simulation, calls::Vector{Call})
+	for (i,call) in enumerate(calls)
+		call.index = i
+		
+		# find nearest nodes
+		if call.nearestNodeIndex == nullIndex
+			(call.nearestNodeIndex, call.nearestNodeDist) = findNearestNode(sim.map, sim.grid, sim.net.fGraph.nodes, call.location)
+		end
+	end
+end
+
 # Set the calls of the simulation.
 # Note that the old sim.calls will not be kept.
 # I tried to write this function to allow sim.startTime to be changed,
@@ -101,14 +112,7 @@ function setSimCalls!(sim::Simulation, calls::Vector{Call})
 	
 	sim.numCalls = length(calls)
 	
-	for (i,call) in enumerate(calls)
-		call.index = i
-		
-		# find nearest nodes
-		if call.nearestNodeIndex == nullIndex
-			(call.nearestNodeIndex, call.nearestNodeDist) = findNearestNode(sim.map, sim.grid, sim.net.fGraph.nodes, call.location)
-		end
-	end
+	initCalls!(sim, calls)
 	
 	# set first event to match first call arrival time; hacky
 	firstCallEvents = filter(e -> e.form == callArrives, sim.eventList)

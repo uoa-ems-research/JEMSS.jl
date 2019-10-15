@@ -114,6 +114,20 @@ function simulateReps!(sim::Simulation; repIndices::Vector{Int} = [1:sim.numReps
 	doPrint && println()
 end
 
+# mutates: sim, callSets
+function setSimReps!(sim::Simulation, callSets::Vector{Vector{Call}})
+	sim.reps = []
+	for calls in callSets
+		initCalls!(sim, calls)
+		rep = Simulation()
+		rep.calls = calls
+		rep.numCalls = length(calls)
+		push!(sim.reps, rep)
+	end
+	
+	sim.writeOutput = false # have not yet handled writing output files for each replication
+end
+
 # set sim.backup to copy of sim (before running)
 # note that for reducing memory usage, sim.backup does not contain backups of all fields
 function backup!(sim::Simulation)

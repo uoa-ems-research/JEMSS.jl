@@ -59,7 +59,7 @@ using StatsFuns
 # simulation functions
 export
 	initSim, runConfig, # run_config
-	simulate!, simulateToTime!, simulateToEnd!, simulateRep!, simulateReps!, backup!, reset!, simulateNextEvent!, # simulation
+	simulate!, simulateToTime!, simulateToEnd!, simulateRep!, simulateReps!, setSimReps!, backup!, reset!, simulateNextEvent!, # simulation
 	animate!, animate, # animation
 	backupSim!, resetSim! # compat
 

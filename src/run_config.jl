@@ -148,6 +148,26 @@ function initSim(configFilename::String;
 	printInitTime()
 	
 	##################
+	# grid
+	
+	printInitMsg("placing nodes in grid")
+	
+	# hard-coded grid size
+	# grid rects will be roughly square, with one node per square on average
+	n = length(fGraph.nodes)
+	xDist = map.xRange * map.xScale
+	yDist = map.yRange * map.yScale
+	nx = Int(ceil(sqrt(n * xDist / yDist)))
+	ny = Int(ceil(sqrt(n * yDist / xDist)))
+	
+	sim.grid = Grid(map, nx, ny)
+	grid = sim.grid # shorthand
+	gridPlaceNodes!(map, grid, fGraph.nodes)
+	printInitTime()
+	
+	doPrint && println("nodes: ", length(fGraph.nodes), ", grid size: ", nx, " x ", ny)
+	
+	##################
 	# generate calls
 	
 	callSets = [Call[]] # init
@@ -159,15 +179,7 @@ function initSim(configFilename::String;
 		callSets = [makeCalls(callGenConfig) for i = 1:numReps]
 		
 		if numReps > 1
-			# set sim.reps
-			for calls in callSets
-				rep = Simulation()
-				rep.calls = calls
-				rep.numCalls = length(calls)
-				push!(sim.reps, rep)
-			end
-			
-			sim.writeOutput = false # have not yet handled writing output files for each replication
+			setSimReps!(sim, callSets)
 		end
 		
 		sim.calls = callSets[1] # set sim.calls for first replication
@@ -247,26 +259,6 @@ function initSim(configFilename::String;
 	printInitTime()
 	
 	##################
-	# grid
-	
-	printInitMsg("placing nodes in grid")
-	
-	# hard-coded grid size
-	# grid rects will be roughly square, with one node per square on average
-	n = length(fGraph.nodes)
-	xDist = map.xRange * map.xScale
-	yDist = map.yRange * map.yScale
-	nx = Int(ceil(sqrt(n * xDist / yDist)))
-	ny = Int(ceil(sqrt(n * yDist / xDist)))
-	
-	sim.grid = Grid(map, nx, ny)
-	grid = sim.grid # shorthand
-	gridPlaceNodes!(map, grid, fGraph.nodes)
-	printInitTime()
-	
-	doPrint && println("nodes: ", length(fGraph.nodes), ", grid size: ", nx, " x ", ny)
-	
-	##################
 	# sim - ambulances, calls, hospitals, stations...
 	
 	printInitMsg("adding ambulances, calls, etc")
@@ -274,7 +266,9 @@ function initSim(configFilename::String;
 	# for each call, hospital, and station, find nearest node
 	for calls in (sim.calls, callSets[2:end]...) # note that sim.calls should be callSets[1] (if callSets is not empty)
 		for c in calls
-			(c.nearestNodeIndex, c.nearestNodeDist) = findNearestNode(map, grid, fGraph.nodes, c.location)
+			if c.nearestNodeIndex == nullIndex
+				(c.nearestNodeIndex, c.nearestNodeDist) = findNearestNode(map, grid, fGraph.nodes, c.location)
+			end
 		end
 	end
 	for h in sim.hospitals
