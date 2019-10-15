@@ -22,7 +22,6 @@
 using JEMSS
 using Random
 using Statistics
-using Stats
 using StatsFuns
 using Base.Iterators: Stateful
 
