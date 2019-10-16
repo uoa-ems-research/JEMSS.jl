@@ -27,7 +27,7 @@ using Base.Iterators: Stateful
 
 const StationsNumAmbs = Vector{Int} # type alias
 
-function deploymentLocalSearch!(sim::Simulation; outputFolder::String = "", deployments::Vector{Vector{Int}} = [])
+function deploymentLocalSearch!(sim::Simulation; outputFolder::String = "", deployments::Vector{Deployment} = [])
 
 isdir(outputFolder) || mkdir(outputFolder)
 @assert(isdir(outputFolder))
@@ -134,8 +134,8 @@ end
 
 # perform local search, starting at each of the deployments provided
 # mutates: sim
-function repeatedLocalSearch!(sim::Simulation)
-	global deployments, doPrint
+function repeatedLocalSearch!(sim::Simulation, deployments::Vector{Deployment})
+	global doPrint
 	
 	# open files for writing solution
 	global solFilename, logFilename
@@ -293,7 +293,7 @@ function localSearch!(sim::Simulation, stationsNumAmbs::StationsNumAmbs, logFile
 	end
 end
 
-repeatedLocalSearch!(sim)
+repeatedLocalSearch!(sim, deployments)
 
 end # deploymentLocalSearch!
 
