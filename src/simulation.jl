@@ -124,6 +124,8 @@ function setSimReps!(sim::Simulation, callSets::Vector{Vector{Call}})
 		rep.numCalls = length(calls)
 		push!(sim.reps, rep)
 	end
+	sim.numReps = length(sim.reps)
+	if isdefined(sim, :backup) sim.backup.numReps = sim.numReps end
 	
 	sim.writeOutput = false # have not yet handled writing output files for each replication
 end
