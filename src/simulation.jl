@@ -101,6 +101,7 @@ function simulateRep!(sim::Simulation, rep::Simulation)
 		setfield!(rep, fname, getfield(sim, fname))
 	end
 end
+simulateRep!(sim::Simulation, repIndex::Int) = simulateRep!(sim, sim.reps[repIndex])
 
 # run simulation replications
 function simulateReps!(sim::Simulation; repIndices::Vector{Int} = [1:sim.numReps;], doPrint::Bool = false)
