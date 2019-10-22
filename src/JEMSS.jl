@@ -59,7 +59,8 @@ using StatsFuns
 # simulation functions
 export
 	initSim, runConfig, # run_config
-	simulate!, simulateToTime!, simulateToEnd!, simulateRep!, simulateReps!, setSimReps!, backup!, reset!, simulateNextEvent!, # simulation
+	simulate!, simulateToTime!, simulateToEnd!, backup!, reset!, simulateNextEvent!, # simulation
+	setSimReps!, simulateRep!, simulateReps!, # replication
 	animate!, animate, # animation
 	backupSim!, resetSim! # compat
 
@@ -168,6 +169,7 @@ include("decision/move_up/zhang_ip.jl")
 include("resimulation.jl")
 include("run_config.jl")
 include("simulation.jl")
+include("replication.jl")
 include("statistics.jl")
 
 include("animation/animation.jl")
