@@ -453,6 +453,11 @@ function initSim(configFilename::String;
 	
 	sim.initialised = true # at this point, the simulation could be run
 	
+	# set sim replications
+	if sim.numReps >= 1
+		makeRepsRunnable!(sim) # need to do this last in sim init (but can do before backing up), as it copies fields from sim
+	end
+	
 	##################
 	# sim backup
 	

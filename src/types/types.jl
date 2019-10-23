@@ -1003,6 +1003,7 @@ mutable struct Simulation
 	
 	reps::Vector{Simulation} # simulation replications, should have calls and stats defined
 	numReps::Int # length(reps)
+	isRunnable::Bool # whether or not simulation object can be run / simulated
 	
 	# files/folders:
 	inputPath::String
@@ -1032,7 +1033,7 @@ mutable struct Simulation
 		Dict(), [],
 		Set(), Set(),
 		SimStats(),
-		[], 0,
+		[], 0, true,
 		"", "", Dict(), Dict(), IOStream(""),
 		false, false, false, false, false)
 end

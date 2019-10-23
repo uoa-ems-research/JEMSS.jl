@@ -100,9 +100,23 @@ end
 		runGenConfig("gen_config.xml", overwriteOutputPath = true, doPrint = false)
 		sim = initSim("sim_config.xml")
 		@assert(sim.numReps == 3)
-		simulateReps!(sim)
+		simulateReps!(sim.reps)
 		@assert(all(rep -> rep.complete, sim.reps))
 		writeStatsFiles(sim, sim.reps)
+		resetReps!(sim.reps)
+		@test true
+	end
+end
+
+@testset "sim replications parallel" begin
+	cd("data/regions/small/5") do
+		runGenConfig("gen_config.xml", overwriteOutputPath = true, doPrint = false)
+		sim = initSim("sim_config.xml")
+		@assert(sim.numReps == 3)
+		simulateReps!(sim.reps; parallel = true, numThreads = 2)
+		@assert(all(rep -> rep.complete, sim.reps))
+		writeStatsFiles(sim, sim.reps)
+		resetReps!(sim.reps; parallel = true, numThreads = 2)
 		@test true
 	end
 end

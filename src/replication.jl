@@ -15,6 +15,7 @@
 
 # simulation replications
 
+# set simulation replications, one rep per call set
 # mutates: sim, callSets
 function setSimReps!(sim::Simulation, callSets::Vector{Vector{Call}})
 	sim.reps = []
@@ -28,10 +29,13 @@ function setSimReps!(sim::Simulation, callSets::Vector{Vector{Call}})
 	sim.numReps = length(sim.reps)
 	if isdefined(sim, :backup) sim.backup.numReps = sim.numReps end
 	
-	sim.writeOutput = false # have not yet handled writing output files for each replication
+	# have not yet handled writing output files for each replication
+	sim.writeOutput = false 
+	if isdefined(sim, :backup) sim.backup.writeOutput = false end
 end
 
-# run single simulation replication
+# run single simulation replication on `sim`
+# need this function in case rep.isRunnable == false
 function simulateRep!(sim::Simulation, rep::Simulation)
 	sim.calls = Call[] # so calls will not be reset
 	reset!(sim)
@@ -41,16 +45,97 @@ function simulateRep!(sim::Simulation, rep::Simulation)
 		setfield!(rep, fname, getfield(sim, fname))
 	end
 end
-simulateRep!(sim::Simulation, repIndex::Int) = simulateRep!(sim, sim.reps[repIndex])
 
-# run simulation replications
-function simulateReps!(sim::Simulation; repIndices::Vector{Int} = [1:sim.numReps;], doPrint::Bool = false)
-	@assert(all(in(1:sim.numReps), repIndices))
-	reps = sim.reps[repIndices] # shorthand
+# run simulation replications on `sim`
+# need this function in case rep.isRunnable == false
+function simulateReps!(sim::Simulation, reps::Vector{Simulation} = sim.reps; doPrint::Bool = false)
 	numReps = length(reps)
 	for (i,rep) in enumerate(reps)
 		doPrint && print("\rSimulating replication $i of $numReps.")
 		simulateRep!(sim, rep)
 	end
 	doPrint && println()
+end
+
+function resetRep!(sim::Simulation, rep::Simulation)
+	if rep.isRunnable @warn("Given `rep` is runnable; use `resetRep!(rep)` instead.") end
+	reset!(rep.calls)
+	rep.startTime = rep.time = rep.endTime = nullTime
+	rep.stats = SimStats()
+	rep.used = rep.complete = false
+end
+
+function resetReps!(sim::Simulation, reps::Vector{Simulation})
+	for rep in reps resetRep!(sim, rep) end
+end
+
+# make sim replications runnable, e.g. in order to run simulate!(sim.reps[1])
+# for experiments, any changes made to `sim` may require the same change to be made to each replication
+# mutates: sim.reps
+function makeRepsRunnable!(sim::Simulation)
+	@assert(sim.initialised && !sim.used)
+	for rep in sim.reps
+		fnamesDontCopy = (:backup, :net, :travel, :grid, :resim, :calls, :demand, :demandCoverage, :reps)
+		for fname in setdiff(fieldnames(Simulation), fnamesDontCopy)
+			setfield!(rep, fname, deepcopy(getfield(sim, fname)))
+		end
+		
+		# have some fields in rep point to same data as sim
+		for fname in (:net, :grid, :demandCoverage)
+			setfield!(rep, fname, getfield(sim, fname))
+		end
+		
+		# travel and demand types have some fields that change value while simulating
+		# in particular: sim.travel.recentSetsStartTimesIndex (Int) and sim.demand.recentSetsStartTimesIndex (Int)
+		for fname in (:travel, :demand)
+			dst = getfield(rep, fname)
+			src = getfield(sim, fname)
+			for fname2 in fieldnames(typeof(dst))
+				setfield!(dst, fname2, getfield(src, fname2))
+			end
+		end
+		
+		backup!(rep)
+		setSimCalls!(rep, rep.calls) # requires rep.backup to be defined
+		
+		rep.isRunnable = rep.backup.isRunnable = true
+	end
+end
+
+function simulateRep!(rep::Simulation)
+	@assert(rep.isRunnable)
+	simulate!(rep)
+end
+
+# run simulation replications
+# requires replications to be 'runnable', see function makeRepsRunnable!()
+# if parallel=true, will use multi-threading
+# mutates: reps
+function simulateReps!(reps::Vector{Simulation}; parallel::Bool = false, numThreads::Int = maxNumThreads, doPrint::Bool = false)
+	@assert(all(rep -> rep.isRunnable, reps))
+	if parallel
+		doPrint = false # IO not thread safe
+		runParallel!(simulateRep!, reps...; numThreads = numThreads)
+	else
+		numReps = length(reps)
+		for (i,rep) in enumerate(reps)
+			doPrint && print("\rSimulating replication $i of $numReps.")
+			simulateRep!(rep)
+		end
+		doPrint && println()
+	end
+end
+
+function resetRep!(rep::Simulation)
+	@assert(rep.isRunnable)
+	reset!(rep)
+end
+
+function resetReps!(reps::Vector{Simulation}; parallel::Bool = false, numThreads::Int = maxNumThreads)
+	@assert(all(rep -> rep.isRunnable, reps))
+	if parallel
+		runParallel!(resetRep!, reps...; numThreads = numThreads)
+	else
+		for rep in reps resetRep!(rep) end
+	end
 end

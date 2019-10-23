@@ -42,6 +42,7 @@ using Hungarian
 using OffsetArrays
 using Base.Iterators: Stateful
 using Parameters
+using Base.Threads
 
 # optimisation
 using JuMP
@@ -60,7 +61,7 @@ using StatsFuns
 export
 	initSim, runConfig, # run_config
 	simulate!, simulateToTime!, simulateToEnd!, backup!, reset!, simulateNextEvent!, # simulation
-	setSimReps!, simulateRep!, simulateReps!, # replication
+	setSimReps!, simulateRep!, simulateReps!, resetRep!, resetReps!, makeRepsRunnable!, # replication
 	animate!, animate, # animation
 	backupSim!, resetSim! # compat
 
@@ -92,7 +93,8 @@ export
 	makeRandDeployment, makeRandDeployments, deploymentToStationsNumAmbs, stationsNumAmbsToDeployment, getDeployment, getStationsNumAmbs, setAmbStation!, applyDeployment!, applyStationsNumAmbs!, simulateDeployment!, simulateDeployments!, # deployment
 	checkPriorityList, makeRandPriorityList, # priority list
 	solveMexclp!, # mexclp
-	flatten # dict
+	flatten, # dict
+	runParallel! # parallel
 
 # types
 export
@@ -130,6 +132,7 @@ export
 include("defs.jl")
 
 include("misc/dict.jl")
+include("misc/parallel.jl")
 include("misc/rand.jl")
 include("misc/stream.jl")
 
