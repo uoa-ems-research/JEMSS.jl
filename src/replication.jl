@@ -57,18 +57,6 @@ function simulateReps!(sim::Simulation, reps::Vector{Simulation} = sim.reps; doP
 	doPrint && println()
 end
 
-function resetRep!(sim::Simulation, rep::Simulation)
-	if rep.isRunnable @warn("Given `rep` is runnable; use `resetRep!(rep)` instead.") end
-	reset!(rep.calls)
-	rep.startTime = rep.time = rep.endTime = nullTime
-	rep.stats = SimStats()
-	rep.used = rep.complete = false
-end
-
-function resetReps!(sim::Simulation, reps::Vector{Simulation})
-	for rep in reps resetRep!(sim, rep) end
-end
-
 # make sim replications runnable, e.g. in order to run simulate!(sim.reps[1])
 # for experiments, any changes made to `sim` may require the same change to be made to each replication
 # mutates: sim.reps
