@@ -25,8 +25,6 @@ using Statistics
 using StatsFuns
 using Base.Iterators: Stateful
 
-@info("Todo: use priorityListsOutputFilename.")
-
 function priorityListLocalSearch!(sim::Simulation; outputFolder::String = "", priorityLists::Vector{PriorityList} = [])
 
 isdir(outputFolder) || mkdir(outputFolder)
@@ -193,8 +191,8 @@ function repeatedLocalSearch!(sim::Simulation, priorityLists::Vector{PriorityLis
 		solFileDict = Dict("search" => i, "objVal" => objValMeanAndHalfWidth.mean, "objValHalfWidth" => objValMeanAndHalfWidth.halfWidth)
 		fileWriteDlmLine!(solFile, solFileHeader, solFileDict, priorityList)
 		
-		# global priorityListsOutputFilename
-		# writePriorityListsFile(priorityListsOutputFilename, priorityListSols)
+		global priorityListsOutputFilename
+		writePriorityListsFile(priorityListsOutputFilename, priorityListSols)
 	end
 	
 	# print out all results from each finished local search

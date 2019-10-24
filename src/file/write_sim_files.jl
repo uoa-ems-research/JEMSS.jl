@@ -154,6 +154,22 @@ function writePrioritiesFile(filename::String, targetResponseDurations::Vector{F
 	writeTablesToFile(filename, table)
 end
 
+function writePriorityListFile(filename::String, priorityList::PriorityList)
+	numAmbs = length(priorityList)
+	table = Table("priorityList", ["item", "stationIndex"];
+		cols = [collect(1:numAmbs), priorityList])
+	writeTablesToFile(filename, table)
+end
+
+function writePriorityListsFile(filename::String, priorityLists::Vector{PriorityList})
+	n = length(priorityLists)
+	numAmbs = length(priorityLists[1])
+	@assert(all(priorityList -> length(priorityList) == numAmbs, priorityLists))
+	table = Table("priorityLists", ["item", ["priorityList_$i stationIndex" for i = 1:n]...];
+		cols = [collect(1:numAmbs), priorityLists...])
+	writeTablesToFile(filename, table)
+end
+
 function writeStationsFile(filename::String, stations::Vector{Station})
 	table = Table("stations", ["index", "x", "y", "capacity"];
 		rows = [[s.index, s.location.x, s.location.y, s.capacity] for s in stations])
