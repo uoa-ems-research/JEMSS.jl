@@ -17,64 +17,88 @@
 # The local search is simple hill climbing, and the neighbourhood of a priority list
 # involves swapping or inserting items (station indices) within/into the list.
 # The local search stops when a local optimum (as evaluated by simulating) is found.
-# Ambulances are assumed to be identical, and station capacities are ignored.
+# Ambulances are assumed to be identical.
 
 using JEMSS
 using Random
 using Statistics
+using StatsFuns
+using Base.Iterators: Stateful
 
-# parameters:
-configFilename = "sim_config.xml"
-outputFolder = "output"
-solFilename = "$outputFolder/solutions.csv" # final solutions from each local search
-logFilename = "$outputFolder/log.csv" # log search progress to file
-ObjVal = Int # type alias, return type of objFn
-nullObjVal = -1 # depends on objective function, see objFn
-sense = :max # :min or :max; direction of optimisation for objective function
-priorityLists = [] # leave empty (and set numSearches) if generating random priority lists for random restarts
-numSearches = isempty(priorityLists) ? 1 : length(priorityLists) # number of local searches to perform
-priorityListRng = Random.MersenneTwister(0) # useful for reproducing results, if using random restarts
+@info("Todo: use priorityListsOutputFilename.")
+
+function priorityListLocalSearch!(sim::Simulation; outputFolder::String = "", priorityLists::Vector{PriorityList} = [])
+
+isdir(outputFolder) || mkdir(outputFolder)
+@assert(isdir(outputFolder))
+
+@assert(all(priorityList -> checkPriorityList(priorityList, sim), priorityLists))
+
+# parameters
+global solFilename = "$outputFolder/solutions.csv" # final solutions from each local search
+global priorityListsOutputFilename = "$outputFolder/priority_lists.csv" # save final priority lists from each search
+global logFilename = "$outputFolder/log.csv" # log search progress to file
+global sense = :max # :min or :max; direction of optimisation for objective function
+global conf = 0.95 # statistical confidence level
+global doPrint = true
 
 # some parameter checks
-@assert(isfile(configFilename))
-@assert(isdir(outputFolder))
-@assert(ObjVal <: Real)
-@assert(typeof(nullObjVal) <: ObjVal)
 @assert(sense == :min || sense == :max)
-@assert((isempty(priorityLists) && numSearches >= 1) || (length(priorityLists) == numSearches))
-@assert(all(priorityList -> checkPriorityList(priorityList), priorityLists))
+@assert(0 <= conf < 1) # should be between 0 and 1, but not equal to 1 otherwise confidence interval is infinite
 
-stationCapacities = [] # stationCapacities[i] gives ambulance holding capacity of station i; will populate after sim is initialised
-priorityListSols = Vector{PriorityList}() # solution of each complete local search
+global numSearches
+@assert(numSearches == length(priorityLists))
+
+global nullObjVal = MeanAndHalfWidth(NaN,NaN)
 
 # keep track of priority lists tried, and their objective values
-priorityListsObjVal = Dict{PriorityList, ObjVal}()
-function objValLookup(priorityList::PriorityList)::ObjVal
+global priorityListsObjVal = Dict{PriorityList, MeanAndHalfWidth}()
+global priorityListsStats = Dict{PriorityList, Dict{String, Any}}()
+function objValLookup(priorityList::PriorityList)::MeanAndHalfWidth
 	return get(priorityListsObjVal, priorityList, nullObjVal) # return objective value if found, otherwise nullObjVal
 end
 
-# for a completed simulation, calculate and return the objective function value
-function objFn(sim::Simulation)::ObjVal
-	@assert(sim.complete)
-	return countCallsReachedInTime(sim) # countCallsReachedInTime is from JEMSS
+function meanAndHalfWidth(x::Vector{T}; conf::Float = conf)::MeanAndHalfWidth where T <: Real
+	x = convert(Vector{Float}, x)
+	return MeanAndHalfWidth(mean(x), tDistrHalfWidth(x; conf = conf))
 end
 
-# get objective value for sim, applying priorityList
-# only use this if priorityListsObjVal does not already contain priorityList
+# Objective value for a single period
+function objFn(period::SimPeriodStats)::Float
+	return period.call.numResponsesInTime / period.call.numCalls # fraction of calls reached in time
+end
+
+# For completed simulation replications, calculate and return the objective function value mean and half-width of the mean.
+function objFn(sim::Simulation)::MeanAndHalfWidth
+	@assert(all(rep -> rep.complete, sim.reps))
+	periods = getRepsPeriodStatsList(sim.reps)
+	return meanAndHalfWidth([objFn(p) for p in periods])
+end
+
+# run sim replications with priorityList, and return objective value (and half-width) and whether lookup was used
+# uses look-up if possible
 # mutates: sim, priorityListsObjVal
-function simObjVal!(sim::Simulation, priorityList::PriorityList)::ObjVal
-	@assert(!haskey(priorityListsObjVal, priorityList))
-	reset!(sim)
-	for i = 1:sim.numAmbs
-		setAmbStation!(sim, sim.ambulances[i], sim.stations[priorityList[i]])
+function simObjVal!(sim::Simulation, priorityList::PriorityList)::Tuple{MeanAndHalfWidth,Bool}
+	global priorityListsObjVal
+	objVal = objValLookup(priorityList)
+	if objVal != nullObjVal return (objVal, true) end
+	for rep in sim.reps
+		reset!(sim)
+		for i = 1:sim.numAmbs
+			setAmbStation!(sim, sim.ambulances[i], sim.stations[priorityList[i]])
+		end
+		initPriorityList!(sim, priorityList)
+		simulateRep!(sim, rep)
 	end
-	initPriorityList!(sim, priorityList)
-	simulateToEnd!(sim)
 	objVal = objFn(sim)
 	priorityListsObjVal[priorityList] = objVal
-	# do not reset sim before returning, as other stats may needed after calling this function
-	return objVal
+	return (objVal, false)
 end
+
+# save the locally optimal station ambulance counts found for each search
+global priorityListSols = Vector{PriorityList}() # priorityListSols[i] is solution for priorityLists[i]
+
+global stationCapacities = Int[] # stationCapacities[i] gives ambulance holding capacity of station i; will populate after sim is initialised
 
 function printPriorityList(priorityList::PriorityList)
 	for i = 1:length(priorityList)
@@ -82,122 +106,130 @@ function printPriorityList(priorityList::PriorityList)
 	end
 end
 
-function simStats(sim::Simulation)
+function getSimStats(sim::Simulation)
 	# some sim statistics to write to log file
-	stats = Dict{String,Any}()
-	stats["totalAmbTravelDuration"] = ""
-	stats["totalAmbBusyDuration"] = ""
-	stats["avgResponseDurationMinutes"] = ""
-	stats["callsReachedInTime"] = ""
-	if sim.complete
-		stats["totalAmbTravelDuration"] = sum(amb -> amb.statusDurations[ambTravelling], sim.ambulances)
-		stats["totalAmbBusyDuration"] = sum(amb -> amb.statusDurations[ambBusy], sim.ambulances)
-		@assert(all(call -> call.responseDuration != nullTime, sim.calls))
-		stats["avgResponseDurationMinutes"] = mean(call -> call.responseDuration, sim.calls) * 24 * 60
-		stats["callsReachedInTime"] = sum(call -> call.responseDuration <= sim.targetResponseDurations[Int(call.priority)], sim.calls)
+	global periodDuration, simStatsKeys, simStatsEmpty
+	if all(r -> r.complete, sim.reps)
+		periods = getRepsPeriodStatsList(sim.reps)
+		@assert(all(p -> isapprox(p.duration, periodDuration), periods))
+		stats = flatten(statsDictFromPeriodStatsList(periods))
+		return merge(Dict(["$(key)_mean" => stats[key].mean for key in simStatsKeys]), Dict(["$(key)_halfWidth" => stats[key].halfWidth for key in simStatsKeys]))
 	end
-	return stats
+	return deepcopy(simStatsEmpty)
 end
 
-logFileHeader = ["search", "iter", "move", "i", "j", "usedLookup", "usedMove", "objVal", "bestObjVal", "totalAmbTravelDuration", "totalAmbBusyDuration", "avgResponseDurationMinutes", "callsReachedInTime", "iterTimeSeconds"] # ... and priority list
-logFileDict = Dict{String,Any}([s => "" for s in logFileHeader])
+global simStatsEmpty = flatten(statsDictFromPeriodStatsList(SimPeriodStats[]))
+global simStatsKeys = collect(keys(simStatsEmpty))
+global simStatsEmpty = merge(Dict(["$(key)_mean" => NaN for key in simStatsKeys]), Dict(["$(key)_halfWidth" => NaN for key in simStatsKeys]))
 
-function logFileWriteDlmLine!(logFile::IOStream, data::Dict{String,Any}, priorityList::PriorityList)
+global solFileHeader = ["search", "objVal", "objValHalfWidth"] # ... and priorityList
+global logFileHeader = vcat(["search", "iter", "move", "i", "j", "usedLookup", "usedMove", "searchDurationSeconds", "objVal", "objValHalfWidth", "bestObjVal"], sort(collect(keys(simStatsEmpty)))) # ... and priorityList
+global logFileDict = Dict{String,Any}([s => "" for s in logFileHeader])
+
+# mutates: file
+function fileWriteDlmLine!(file::IOStream, fileHeader::Vector{String}, data::Dict{String,T}, priorityList::PriorityList) where T <: Any
 	line = []
-	for header in logFileHeader
+	for header in fileHeader
 		push!(line, data[header])
 	end
 	line = vcat(line, priorityList)
-	writeDlmLine!(logFile, line...)
-	flush(logFile)
+	writeDlmLine!(file, line...)
+	flush(file)
 end
 
 # perform local search, starting at each of the priority lists provided
-function repeatedLocalSearch()
-	println("Initialising simulation from config: ", configFilename)
-	sim = initSim(configFilename; createBackup = false)
+# mutates: sim
+function repeatedLocalSearch!(sim::Simulation, priorityLists::Vector{PriorityList})
+	global doPrint
 	
-	# change move up module index to priority_list
-	sim.moveUpData.moveUpModule = priorityListModule
-	sim.moveUpData.useMoveUp = true
-	
-	backup!(sim)
-	
-	global stationCapacities = [station.capacity for station in sim.stations]
+	# check that sim is using priority list for move-up
+	@assert(sim.moveUpData.useMoveUp == true && sim.moveUpData.moveUpModule == priorityListModule)
 	
 	# open files for writing solution
+	global solFilename, logFilename
 	solFile = open(solFilename, "w")
 	logFile = open(logFilename, "w")
 	
+	# write misc data to files
+	global numSearches, warmUpDuration, periodDuration, conf
+	miscTable = Table("miscData", ["numAmbs", "numStations", "numSearches", "conf"];
+		rows = [[sim.numAmbs, sim.numStations, numSearches, conf]]) # note that numCalls may vary between sim replications
+	repsTable = Table("repsData", ["numReps", "warmUpDuration", "periodDuration"];
+		rows = [[sim.numReps, warmUpDuration, periodDuration]])
+	writeTablesToFile!(logFile, [miscTable, repsTable])
+	writeTablesToFile!(solFile, [miscTable, repsTable])
+	
 	# write file headers
-	writeDlmLine!(solFile, "search", "objVal", ["item_$i stationIndex" for i = 1:sim.numAmbs]...)
+	writeDlmLine!(solFile, "solutions")
+	writeDlmLine!(logFile, "log")
+	writeDlmLine!(solFile, solFileHeader..., ["item_$i stationIndex" for i = 1:sim.numAmbs]...)
 	writeDlmLine!(logFile, logFileHeader..., ["item_$i stationIndex" for i = 1:sim.numAmbs]...)
 	flush(solFile)
 	flush(logFile)
 	
-	global priorityLists, priorityListSols
-	if isempty(priorityLists)
-		println("generating $numSearches random priority list(s)")
-		for i = 1:numSearches
-			priorityList = makeRandPriorityList(sim.numAmbs, sim.numStations;
-				stationCapacities = stationCapacities, rng = priorityListRng)
-			push!(priorityLists, priorityList)
-		end
-	end
-	@assert(all(priorityList -> checkPriorityList(priorityList, sim), priorityLists))
+	global stationCapacities
+	stationCapacities = [station.capacity for station in sim.stations]
 	
 	for i = 1:numSearches
 		logFileDict["search"] = i
 		
-		# perform local search until no improvements can be made
-		println()
-		println("Search ", i, " (of ", numSearches, ")")
-		priorityList = localSearch!(sim, priorityLists[i], logFile)
+		# initial priority list
+		priorityList = priorityLists[i]
 		
-		# save best ambulance to station allocation found for this search iteration
+		# perform local search until no improvements can be made
+		doPrint && println()
+		doPrint && println("Search ", i, " (of ", numSearches, ")")
+		doPrint && printPriorityList(priorityList)
+		priorityList = localSearch!(sim, priorityList, logFile)
+		doPrint && println("Finished local search $i (of $numSearches); solution:")
+		doPrint && printPriorityList(priorityList)
+		
+		# save best priority list found for this search
+		global priorityListSols
 		push!(priorityListSols, priorityList)
 		
 		# write solution to file
-		writeDlmLine!(solFile, i, objValLookup(priorityList), priorityList...)
-		flush(solFile)
+		objValMeanAndHalfWidth = objValLookup(priorityList)
+		solFileDict = Dict("search" => i, "objVal" => objValMeanAndHalfWidth.mean, "objValHalfWidth" => objValMeanAndHalfWidth.halfWidth)
+		fileWriteDlmLine!(solFile, solFileHeader, solFileDict, priorityList)
+		
+		# global priorityListsOutputFilename
+		# writePriorityListsFile(priorityListsOutputFilename, priorityListSols)
 	end
 	
 	# print out all results from each finished local search
-	println()
-	println("Priority lists from completed local searches:")
+	doPrint && println()
+	doPrint && println("Priority lists from completed local searches:")
 	for i = 1:numSearches
-		println()
-		println("Iteration: ", i)
+		doPrint && println()
+		doPrint && println("Search: ", i)
 		priorityList = priorityListSols[i]
-		printPriorityList(priorityList)
-		println("objective value = ", objValLookup(priorityList))
+		doPrint && printPriorityList(priorityList)
+		doPrint && println("objective value = ", objValLookup(priorityList).mean)
 	end
 	
 	close(solFile)
 	close(logFile)
 end
 
-# Local search of priority list.
-# Move items in priority list, making changes that optimise
+# Local search of priority list, starting at priorityList.
+# Move ambulances between stations, making changes that optimise
 # the objective function (objFn) for the given sense (:min or :max).
 # Continue search until no improvement can be made.
 # Mutates: sim, logFile
-function localSearch!(sim::Simulation, priorityList::PriorityList, logFile::IOStream)
+function localSearch!(sim::Simulation, priorityList::PriorityList, logFile::IOStream)::PriorityList
 	
-	# shorthand
-	numAmbs = sim.numAmbs
-	numStations = sim.numStations
+	global logFileHeader, logFileDict, priorityListsStats, sense, doPrint
 	
-	# print starting point
-	println("Starting priority list:")
-	printPriorityList(priorityList)
+	# track iterations
+	iter = 1 # count iterations performed
+	startTime = time()
+	getSearchDuration() = round(time() - startTime, digits = 2)
 	
 	# calculate objective value for starting point
-	objVal = objValLookup(priorityList)
-	if objVal == nullObjVal
-		objVal = simObjVal!(sim, priorityList)
-	end
-	println("starting objective value: ", objVal)
+	objValMeanAndHalfWidth, usedLookup = simObjVal!(sim, priorityList)
+	(objVal, objValHalfWidth) = (objValMeanAndHalfWidth.mean, objValMeanAndHalfWidth.halfWidth)
+	doPrint && println("starting objective value: ", objVal)
 	bestObjVal = objVal # current best objective value
 	bestPriorityList = copy(priorityList)
 	
@@ -207,75 +239,71 @@ function localSearch!(sim::Simulation, priorityList::PriorityList, logFile::IOSt
 			logFileDict[key] = "" # reset value
 		end
 	end
-	logFileDict["iter"] = 0
-	logFileDict["objVal"] = objVal
-	logFileDict["bestObjVal"] = bestObjVal
-	logFileDict["iterTimeSeconds"] = 0
-	logFileWriteDlmLine!(logFile, logFileDict, priorityList)
+	stats = getSimStats(sim)
+	if !usedLookup priorityListsStats[priorityList] = stats end
+	merge!(logFileDict, stats)
+	merge!(logFileDict, Dict("iter" => iter, "usedLookup" => Int(usedLookup), "searchDurationSeconds" => getSearchDuration(),
+		"objVal" => objVal, "objValHalfWidth" => objValHalfWidth, "bestObjVal" => bestObjVal))
+	fileWriteDlmLine!(logFile, logFileHeader, logFileDict, priorityList)
 	
-	# local search - try re-inserting/swapping items in the
-	# priority list into different positions
-	println("starting local search")
+	# local search
+	doPrint && println("starting local search")
 	endPoint = nothing
-	iter = 1 # count iterations performed
-	startTime = time() # time each iteration
+	iter += 1
+	numStations = sim.numStations # shorthand
+	numAmbs = sim.numAmbs # shorthand
 	while true
 		for i = (numAmbs+numStations):-1:1, j = 1:numAmbs, move = ["insert", "swap"]
 			# starting with i > numAmbs will try insert/swap new items into priority list first (instead of only moving existing items within list); should help with speed
 			
-			i != j || continue # insert / swap will make no difference, skip
-			
 			# change priority list, using re-insertion / swapping
 			# if i <= numAmbs, move item in priorityList[i] to priorityList[j]
 			# if i > numAmbs, try move slot from station i-numAmbs (if num spare slots > 0)
-			print(move, ": i = ", i, ", j = ", j)
 			priorityList = copy(bestPriorityList)
 			if move == "insert"
-				insert!(priorityList, i, j) # || continue
+				insert!(priorityList, i, j)
 			elseif move == "swap"
-				swap!(priorityList, i, j) # || continue
+				swap!(priorityList, i, j)
 			end
 			
-			objVal = objValLookup(priorityList)
-			usedLookup = false
-			if objVal != nullObjVal
-				# priority list already tried
-				print("; done")
-				usedLookup = true
-			else
-				objVal = simObjVal!(sim, priorityList)
-			end
-			merge!(logFileDict, simStats(sim)) # need to do this before resetting sim
-			
-			println("; objective value: ", objVal, " (best: ", bestObjVal, ")")
-			
-			usedMove = false
-			if (sense == :max && bestObjVal < objVal) || (sense == :min && bestObjVal > objVal)
-				bestObjVal = objVal
-				bestPriorityList = priorityList
-				usedMove = true
+			newBestFound = false
+			if priorityList != bestPriorityList
+				doPrint && print(move, ": i = ", i, ", j = ", j)
 				
-				println("made ", move,": i = ", i, ", j = ", j, "; new objective value: ", bestObjVal)
+				objValMeanAndHalfWidth, usedLookup = simObjVal!(sim, priorityList)
+				(objVal, objValHalfWidth) = (objValMeanAndHalfWidth.mean, objValMeanAndHalfWidth.halfWidth)
+				if !usedLookup
+					stats = priorityListsStats[priorityList] = getSimStats(sim)
+					merge!(logFileDict, stats)
+				else
+					merge!(logFileDict, priorityListsStats[priorityList])
+					doPrint && print("; done")
+				end
+				
+				doPrint && println("; objective value: ", objVal, " (best: ", bestObjVal, ")")
+				
+				usedMove = false
+				if (sense == :max && bestObjVal < objVal) || (sense == :min && bestObjVal > objVal)
+					bestObjVal = objVal
+					# keep change (move ambulance from station i to j)
+					bestPriorityList = priorityList
+					usedMove = true
+					newBestFound = true
+					
+					doPrint && println("made ", move, ": i = ", i, ", j = ", j, "; new objective value: ", bestObjVal)
+				end
+				
+				merge!(logFileDict, Dict("iter" => iter, "move" => move, "i" => i, "j" => j, "usedLookup" => Int(usedLookup), "usedMove" => Int(usedMove),
+					"searchDurationSeconds" => getSearchDuration(), "objVal" => objVal, "objValHalfWidth" => objValHalfWidth, "bestObjVal" => bestObjVal))
+				fileWriteDlmLine!(logFile, logFileHeader, logFileDict, priorityList)
+				
+				iter += 1
 			end
 			
-			logFileDict["iter"] = iter
-			logFileDict["move"] = move
-			logFileDict["i"] = i
-			logFileDict["j"] = j
-			logFileDict["usedLookup"] = Int(usedLookup)
-			logFileDict["usedMove"] = Int(usedMove)
-			logFileDict["objVal"] = objVal
-			logFileDict["bestObjVal"] = bestObjVal
-			logFileDict["iterTimeSeconds"] = round(time() - startTime, digits = 2)
-			logFileWriteDlmLine!(logFile, logFileDict, priorityList)
-			
-			iter += 1
-			
-			if usedMove || endPoint == nothing
-				endPoint = (i,j,move) # set end point
+			if newBestFound || endPoint == nothing
+				endPoint = (i,j,move)
 			elseif endPoint == (i,j,move)
-				println("Finished local search ", logFileDict["search"], " (of ", numSearches, "); solution:")
-				printPriorityList(bestPriorityList)
+				doPrint && println("Found local optimum.")
 				return bestPriorityList
 			end
 		end
@@ -298,7 +326,7 @@ end
 # If i > numAmbs, insertion is done with station index i-numAmbs.
 # Return true if insertion completed, false otherwise.
 function insert!(priorityList::PriorityList, i::Int, j::Int)
-	@assert(i != j)
+	if i == j return false end
 	
 	# shorthand
 	numAmbs = length(priorityList)
@@ -342,7 +370,7 @@ end
 # If i > numAmbs, swap is done with station index i-numAmbs.
 # Return true if swap completed, false otherwise.
 function swap!(priorityList::PriorityList, i::Int, j::Int)
-	@assert(i != j)
+	if i == j return false end
 	
 	# shorthand
 	numAmbs = length(priorityList)
@@ -371,7 +399,60 @@ function swap!(priorityList::PriorityList, i::Int, j::Int)
 	return true
 end
 
-# run
+repeatedLocalSearch!(sim, priorityLists)
+
+end # priorityListLocalSearch!
+
+# mutates: sim
+function setSimStatsCapture!(sim::Simulation, periodDurationsIter::Stateful, warmUpDuration::Float)
+	stats = sim.stats = deepcopy(sim.backup.stats)
+	stats.doCapture = true
+	(stats.periodDurationsIter, stats.warmUpDuration) = (periodDurationsIter, warmUpDuration)
+	stats.nextCaptureTime = sim.startTime + (stats.warmUpDuration > 0 ? stats.warmUpDuration : first(stats.periodDurationsIter))
+	sim.backup.stats = deepcopy(sim.stats)
+end
+
+# parameters
+configFilename = "sim_config.xml"
+outputFolder = "output"
+numSearches = 1
+priorityListRng = Random.MersenneTwister(0) # useful for reproducing results, if using random restarts
+# replication parameters
+warmUpDuration = 0.1
+periodDuration = 1.0
+
+# parameter checks
+@assert(numSearches >= 1)
+@assert(warmUpDuration >= 0)
+@assert(periodDuration > 0)
+
+# initialise sim
 t = time()
-repeatedLocalSearch()
-println("Total runtime: ", round(time()-t, digits = 2), " seconds")
+@assert(isfile(configFilename))
+println("Initialising simulation from config: ", configFilename)
+sim = initSim(configFilename, createBackup = true)
+@assert(sim.numReps >= 2, "Need at least two simulation replications (sim.reps) for statistics.")
+
+# set sim stats capturing
+setSimStatsCapture!(sim, Stateful(periodDuration), warmUpDuration)
+periodEndTime = sim.startTime + warmUpDuration + periodDuration
+for rep in sim.reps
+	# statistics should stop collecting before last call arrives (if not earlier), to avoid cool-down period
+	@assert(periodEndTime <= rep.calls[end].arrivalTime)
+end
+
+# generate priority lists
+stationCapacities = [station.capacity for station in sim.stations]
+priorityLists = [makeRandPriorityList(sim.numAmbs, sim.numStations; stationCapacities = stationCapacities, rng = priorityListRng) for i = 1:numSearches]
+
+# set sim to use priority list for move up
+for tempSim in (sim, sim.backup)
+	moveUpData = getfield(tempSim, :moveUpData)
+	for (fname, val) in ((:useMoveUp, true), (:moveUpModule, priorityListModule))
+		setfield!(moveUpData, fname, val)
+	end
+end
+
+# run
+priorityListLocalSearch!(sim, outputFolder = outputFolder, priorityLists = priorityLists)
+println("total runtime: ", round(time()-t, digits = 2), " seconds")
