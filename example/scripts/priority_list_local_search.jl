@@ -25,40 +25,75 @@ using Statistics
 using StatsFuns
 using Base.Iterators: Stateful
 
+@info("Todo: Get getSimStats() working.")
+
+global ObjVal = Float
+
 function priorityListLocalSearch!(sim::Simulation; outputFolder::String = "", priorityLists::Vector{PriorityList} = [])
-
-isdir(outputFolder) || mkdir(outputFolder)
-@assert(isdir(outputFolder))
-
-@assert(all(priorityList -> checkPriorityList(priorityList, sim), priorityLists))
-
-# parameters
-global solFilename = "$outputFolder/solutions.csv" # final solutions from each local search
-global priorityListsOutputFilename = "$outputFolder/priority_lists.csv" # save final priority lists from each search
-global logFilename = "$outputFolder/log.csv" # log search progress to file
-global sense = :max # :min or :max; direction of optimisation for objective function
-global conf = 0.95 # statistical confidence level
-global doPrint = true
-
-# some parameter checks
-@assert(sense == :min || sense == :max)
-@assert(0 <= conf < 1) # should be between 0 and 1, but not equal to 1 otherwise confidence interval is infinite
-
-global numSearches
-@assert(numSearches == length(priorityLists))
-
-global nullObjVal = MeanAndHalfWidth(NaN,NaN)
-
-# keep track of priority lists tried, and their objective values
-global priorityListsObjVal = Dict{PriorityList, MeanAndHalfWidth}()
-global priorityListsStats = Dict{PriorityList, Dict{String, Any}}()
-function objValLookup(priorityList::PriorityList)::MeanAndHalfWidth
-	return get(priorityListsObjVal, priorityList, nullObjVal) # return objective value if found, otherwise nullObjVal
+	
+	isdir(outputFolder) || mkdir(outputFolder)
+	@assert(isdir(outputFolder))
+	
+	@assert(all(priorityList -> checkPriorityList(priorityList, sim), priorityLists))
+	
+	# parameters
+	global solFilename = "$outputFolder/solutions.csv" # final solutions from each local search
+	global priorityListsOutputFilename = "$outputFolder/priority_lists.csv" # save final priority lists from each search
+	global logFilename = "$outputFolder/log.csv" # log search progress to file
+	global sense = :max # :min or :max; direction of optimisation for objective function
+	global conf = 0.95 # statistical confidence level
+	global doPrint = true
+	# reps:
+	global minNumReps = 2 # min number of reps to simulate each priority list
+	global maxNumRepsList = [2,5] # = vcat(10 * 2 .^ [0:10;], Inf) # can start with a small maximum, and increase each time local optimum found
+	global maxNumRepsIncrease = 1 # = 20 # max number of reps to increase by at a time when comparing two priority lists
+	
+	# some parameter checks
+	@assert(sense == :min || sense == :max)
+	@assert(0 <= conf < 1) # should be between 0 and 1, but not equal to 1 otherwise confidence interval is infinite
+	@assert(minNumReps >= 2) # cannot calculate confidence interval for less than 2 reps
+	@assert(minNumReps <= sim.numReps)
+	@assert(all(maxNumRepsList .>= minNumReps))
+	@assert(issorted(maxNumRepsList, lt=<=)) # maxNumRepsList should be strictly increasing
+	@assert(maxNumRepsIncrease >= 1)
+	
+	global nullObjVal = sense == :max ? -Inf : Inf
+	
+	global numSearches
+	@assert(numSearches == length(priorityLists))
+	
+	repeatedLocalSearch!(sim, priorityLists)
 end
 
-function meanAndHalfWidth(x::Vector{T}; conf::Float = conf)::MeanAndHalfWidth where T <: Real
+# keep track of priority lists tried, and their objective values per replication
+global priorityListsObjVals = Dict{PriorityList, Vector{ObjVal}}() # priorityListsObjVals[priorityList][repIndex] gives sim replication objective value
+function objValLookup(priorityList::PriorityList, repIndex::Int)::ObjVal
+	global priorityListsObjVals
+	if haskey(priorityListsObjVals, priorityList) && length(priorityListsObjVals[priorityList]) >= repIndex
+		return priorityListsObjVals[priorityList][repIndex]
+	end
+	return nullObjVal
+end
+function objValsLookup(priorityList::PriorityList, repIndices::Vector{Int})::Vector{ObjVal}
+	return [objValLookup(priorityList, repIndex) for repIndex in repIndices]
+end
+function objValsLookup(priorityList::PriorityList)::Vector{ObjVal}
+	global priorityListsObjVals
+	return get(priorityListsObjVals, priorityList, [nullObjVal])
+end
+
+function setPriorityListObjVal!(priorityList::PriorityList, repIndex::Int, objVal::ObjVal)
+	global priorityListsObjVals
+	objVals = get!(priorityListsObjVals, priorityList, ObjVal[])
+	@assert(length(objVals) == repIndex - 1) # otherwise will overwrite existing value / will have missing values in objVals
+	push!(objVals, objVal)
+end
+
+# Return mean and half-width of mean of x.
+# Assumes that values in x are from population with normal distribution with unknown standard deviation.
+function calcMeanAndHalfWidth(x::Vector{T}; conf::Float = conf)::Tuple{Float,Float} where T <: Real
 	x = convert(Vector{Float}, x)
-	return MeanAndHalfWidth(mean(x), tDistrHalfWidth(x; conf = conf))
+	return mean(x), tDistrHalfWidth(x)
 end
 
 # Objective value for a single period
@@ -66,37 +101,49 @@ function objFn(period::SimPeriodStats)::Float
 	return period.call.numResponsesInTime / period.call.numCalls # fraction of calls reached in time
 end
 
-# For completed simulation replications, calculate and return the objective function value mean and half-width of the mean.
-function objFn(sim::Simulation)::MeanAndHalfWidth
-	@assert(all(rep -> rep.complete, sim.reps))
-	periods = getRepsPeriodStatsList(sim.reps)
-	return meanAndHalfWidth([objFn(p) for p in periods])
+# Objective value for a single replication
+function objFn(rep::Simulation)::Float
+	@assert(rep.complete)
+	period = getRepsPeriodStatsList([rep])[1]
+	return objFn(period)
 end
 
-# run sim replications with priorityList, and return objective value (and half-width) and whether lookup was used
-# uses look-up if possible
-# mutates: sim, priorityListsObjVal
-function simObjVal!(sim::Simulation, priorityList::PriorityList)::Tuple{MeanAndHalfWidth,Bool}
-	global priorityListsObjVal
-	objVal = objValLookup(priorityList)
-	if objVal != nullObjVal return (objVal, true) end
-	for rep in sim.reps
-		reset!(sim)
-		for i = 1:sim.numAmbs
-			setAmbStation!(sim, sim.ambulances[i], sim.stations[priorityList[i]])
-		end
-		initPriorityList!(sim, priorityList)
-		simulateRep!(sim, rep)
-	end
-	objVal = objFn(sim)
-	priorityListsObjVal[priorityList] = objVal
-	return (objVal, false)
+# Returns objective function value; should only be used for a single replication.
+# Uses look-up if possible.
+# Mutates: sim, priorityListsObjVals
+function simObjVal!(sim::Simulation, priorityList::PriorityList, repIndex::Int)::ObjVal
+	objVal = objValLookup(priorityList, repIndex)
+	if objVal != nullObjVal return objVal end
+	
+	rep = sim.reps[repIndex]
+	reset!(sim)
+	applyPriorityList!(sim, priorityList)
+	simulateRep!(sim, rep)
+	objVal = objFn(rep)
+	
+	setPriorityListObjVal!(priorityList, repIndex, objVal)
+	# do not reset sim before returning, as other stats may needed after calling this function
+	return objVal
+end
+
+# Return objective values from multiple replications (repIndices)
+# Mutates: sim, priorityListsObjVals
+function simObjVals!(sim::Simulation, priorityList::PriorityList, repIndices::Vector{Int})::Vector{ObjVal}
+	return [simObjVal!(sim, priorityList, repIndex) for repIndex in repIndices]
 end
 
 # save the locally optimal station ambulance counts found for each search
 global priorityListSols = Vector{PriorityList}() # priorityListSols[i] is solution for priorityLists[i]
 
 global stationCapacities = Int[] # stationCapacities[i] gives ambulance holding capacity of station i; will populate after sim is initialised
+
+function applyPriorityList!(sim::Simulation, priorityList::PriorityList)
+	@assert(!sim.used)
+	for i = 1:sim.numAmbs
+		setAmbStation!(sim, sim.ambulances[i], sim.stations[priorityList[i]])
+	end
+	initPriorityList!(sim, priorityList)
+end
 
 function printPriorityList(priorityList::PriorityList)
 	for i = 1:length(priorityList)
@@ -107,12 +154,12 @@ end
 function getSimStats(sim::Simulation)
 	# some sim statistics to write to log file
 	global periodDuration, simStatsKeys, simStatsEmpty
-	if all(r -> r.complete, sim.reps)
-		periods = getRepsPeriodStatsList(sim.reps)
-		@assert(all(p -> isapprox(p.duration, periodDuration), periods))
-		stats = flatten(statsDictFromPeriodStatsList(periods))
-		return merge(Dict(["$(key)_mean" => stats[key].mean for key in simStatsKeys]), Dict(["$(key)_halfWidth" => stats[key].halfWidth for key in simStatsKeys]))
-	end
+	# if all(r -> r.complete, sim.reps)
+		# periods = getRepsPeriodStatsList(sim.reps)
+		# @assert(all(p -> isapprox(p.duration, periodDuration), periods))
+		# stats = flatten(statsDictFromPeriodStatsList(periods))
+		# return merge(Dict(["$(key)_mean" => stats[key].mean for key in simStatsKeys]), Dict(["$(key)_halfWidth" => stats[key].halfWidth for key in simStatsKeys]))
+	# end
 	return deepcopy(simStatsEmpty)
 end
 
@@ -121,7 +168,7 @@ global simStatsKeys = collect(keys(simStatsEmpty))
 global simStatsEmpty = merge(Dict(["$(key)_mean" => NaN for key in simStatsKeys]), Dict(["$(key)_halfWidth" => NaN for key in simStatsKeys]))
 
 global solFileHeader = ["search", "objVal", "objValHalfWidth"] # ... and priorityList
-global logFileHeader = vcat(["search", "iter", "move", "i", "j", "usedLookup", "usedMove", "searchDurationSeconds", "objVal", "objValHalfWidth", "bestObjVal"], sort(collect(keys(simStatsEmpty)))) # ... and priorityList
+global logFileHeader = vcat(["search", "maxNumRepsListIndex", "maxNumReps", "iter", "move", "i", "j", "usedMove", "numReps", "searchDurationSeconds", "objVal", "objValHalfWidth", "bestObjVal", "objValDiff", "objValDiffHalfWidth"]) #, sort(collect(keys(simStatsEmpty)))) # ... and priorityList
 global logFileDict = Dict{String,Any}([s => "" for s in logFileHeader])
 
 # mutates: file
@@ -173,12 +220,23 @@ function repeatedLocalSearch!(sim::Simulation, priorityLists::Vector{PriorityLis
 		
 		# initial priority list
 		priorityList = priorityLists[i]
-		
-		# perform local search until no improvements can be made
-		doPrint && println()
-		doPrint && println("Search ", i, " (of ", numSearches, ")")
+		doPrint && println("Initial priority list $i (of $numSearches):")
 		doPrint && printPriorityList(priorityList)
-		priorityList = localSearch!(sim, priorityList, logFile)
+		
+		# perform local search until no improvements can be made, then increase max number of reps allowed
+		doPrint && println()
+		global minNumReps, maxNumRepsList
+		numReps = minNumReps # init
+		for j = 1:length(maxNumRepsList)
+			maxNumReps = maxNumRepsList[j] < sim.numReps ? Int(maxNumRepsList[j]) : sim.numReps
+			logFileDict["maxNumRepsListIndex"] = j
+			logFileDict["maxNumReps"] = maxNumReps
+			
+			doPrint && println("Search $i (of $numSearches)")
+			doPrint && println("Setting maximum number of reps to ", maxNumReps)
+			priorityList, numReps = localSearch!(sim, priorityList, numReps, maxNumReps, logFile)
+			if maxNumReps == sim.numReps break end # increasing max number of reps will not help
+		end
 		doPrint && println("Finished local search $i (of $numSearches); solution:")
 		doPrint && printPriorityList(priorityList)
 		
@@ -187,8 +245,8 @@ function repeatedLocalSearch!(sim::Simulation, priorityLists::Vector{PriorityLis
 		push!(priorityListSols, priorityList)
 		
 		# write solution to file
-		objValMeanAndHalfWidth = objValLookup(priorityList)
-		solFileDict = Dict("search" => i, "objVal" => objValMeanAndHalfWidth.mean, "objValHalfWidth" => objValMeanAndHalfWidth.halfWidth)
+		objVal, objValHalfWidth = calcMeanAndHalfWidth(objValsLookup(priorityList, [1:numReps;]))
+		solFileDict = Dict("search" => i, "objVal" => objVal, "objValHalfWidth" => objValHalfWidth)
 		fileWriteDlmLine!(solFile, solFileHeader, solFileDict, priorityList)
 		
 		global priorityListsOutputFilename
@@ -203,7 +261,7 @@ function repeatedLocalSearch!(sim::Simulation, priorityLists::Vector{PriorityLis
 		doPrint && println("Search: ", i)
 		priorityList = priorityListSols[i]
 		doPrint && printPriorityList(priorityList)
-		doPrint && println("objective value = ", objValLookup(priorityList).mean)
+		doPrint && println("objective value = ", mean(objValsLookup(priorityList)))
 	end
 	
 	close(solFile)
@@ -211,13 +269,17 @@ function repeatedLocalSearch!(sim::Simulation, priorityLists::Vector{PriorityLis
 end
 
 # Local search of priority list, starting at priorityList.
-# Move ambulances between stations, making changes that optimise
-# the objective function (objFn) for the given sense (:min or :max).
+# Move items in priority list, making changes that optimise the
+# objective function (objFn) value for the given sense (:min or :max).
 # Continue search until no improvement can be made.
 # Mutates: sim, logFile
-function localSearch!(sim::Simulation, priorityList::PriorityList, logFile::IOStream)::PriorityList
+function localSearch!(sim::Simulation, priorityList::PriorityList, priorityListNumReps::Int, maxNumReps::Int, logFile::IOStream)::Tuple{PriorityList,Int}
 	
-	global logFileHeader, logFileDict, priorityListsStats, sense, doPrint
+	global minNumReps, maxNumRepsIncrease, logFileHeader, logFileDict, sense, doPrint
+	
+	# shorthand
+	numAmbs = sim.numAmbs
+	numStations = sim.numStations
 	
 	# track iterations
 	iter = 1 # count iterations performed
@@ -225,31 +287,38 @@ function localSearch!(sim::Simulation, priorityList::PriorityList, logFile::IOSt
 	getSearchDuration() = round(time() - startTime, digits = 2)
 	
 	# calculate objective value for starting point
-	objValMeanAndHalfWidth, usedLookup = simObjVal!(sim, priorityList)
-	(objVal, objValHalfWidth) = (objValMeanAndHalfWidth.mean, objValMeanAndHalfWidth.halfWidth)
+	numReps = priorityListNumReps # do not just use minNumReps, as priorityList may have already been simulated a number of reps
+	objVals = simObjVals!(sim, priorityList, [1:numReps;])
+	(objVal, objValHalfWidth) = calcMeanAndHalfWidth(objVals)
 	doPrint && println("starting objective value: ", objVal)
-	bestObjVal = objVal # current best objective value
+	
+	# starting solution is current best
 	bestPriorityList = copy(priorityList)
+	bestObjVals = objVals
+	bestObjVal = objVal
 	
 	# write starting point
 	for (key, value) in logFileDict
-		if key != "search"
+		if !in(key, ("search", "maxNumRepsListIndex", "maxNumReps"))
 			logFileDict[key] = "" # reset value
 		end
 	end
-	stats = getSimStats(sim)
-	if !usedLookup priorityListsStats[priorityList] = stats end
-	merge!(logFileDict, stats)
-	merge!(logFileDict, Dict("iter" => iter, "usedLookup" => Int(usedLookup), "searchDurationSeconds" => getSearchDuration(),
-		"objVal" => objVal, "objValHalfWidth" => objValHalfWidth, "bestObjVal" => bestObjVal))
+	# stats = getSimStats(sim) # todo: uncomment once getSimStats() is working
+	# merge!(logFileDict, stats)
+	merge!(logFileDict, Dict("iter" => iter, "numReps" => numReps, "searchDurationSeconds" => getSearchDuration(),
+		"objVal" => objVal, "objValHalfWidth" => objValHalfWidth, "bestObjVal" => bestObjVal, "objValDiff" => 0, "objValDiffHalfWidth" => 0))
 	fileWriteDlmLine!(logFile, logFileHeader, logFileDict, priorityList)
+	
+	# keep track of how many reps were simulated for each priority list
+	priorityListsRepsDone = Dict{PriorityList, Int}()
+	getPriorityListRepsDone!(priorityList::PriorityList) = get!(priorityListsRepsDone, priorityList, 0)
+	updatePriorityListsRepsDone!(priorityList::PriorityList, n::Int) =
+		(priorityListsRepsDone[priorityList] = max(n, getPriorityListRepsDone!(priorityList)))
 	
 	# local search
 	doPrint && println("starting local search")
 	endPoint = nothing
 	iter += 1
-	numStations = sim.numStations # shorthand
-	numAmbs = sim.numAmbs # shorthand
 	while true
 		for i = (numAmbs+numStations):-1:1, j = 1:numAmbs, move = ["insert", "swap"]
 			# starting with i > numAmbs will try insert/swap new items into priority list first (instead of only moving existing items within list); should help with speed
@@ -268,31 +337,62 @@ function localSearch!(sim::Simulation, priorityList::PriorityList, logFile::IOSt
 			if priorityList != bestPriorityList
 				doPrint && print(move, ": i = ", i, ", j = ", j)
 				
-				objValMeanAndHalfWidth, usedLookup = simObjVal!(sim, priorityList)
-				(objVal, objValHalfWidth) = (objValMeanAndHalfWidth.mean, objValMeanAndHalfWidth.halfWidth)
-				if !usedLookup
-					stats = priorityListsStats[priorityList] = getSimStats(sim)
-					merge!(logFileDict, stats)
-				else
-					merge!(logFileDict, priorityListsStats[priorityList])
-					doPrint && print("; done")
+				# simulate until there is a significant difference in objective value between priorityList and bestPriorityList,
+				# or until running out of replications to simulate
+				numReps = minNumReps
+				meanDiff = halfWidth = 0.0 # init
+				while numReps <= maxNumReps
+					objVals = simObjVals!(sim, priorityList, [1:numReps;])
+					updatePriorityListsRepsDone!(priorityList, numReps)
+					if length(bestObjVals) < length(objVals)
+						bestObjVals = simObjVals!(sim, bestPriorityList, [1:numReps;])
+						updatePriorityListsRepsDone!(bestPriorityList, numReps)
+					end
+					meanDiff, halfWidth = calcMeanAndHalfWidth(objVals[1:numReps] - bestObjVals[1:numReps])
+					if numReps == maxNumReps
+						break # ran out of reps, will have to guess which priority list is better based on mean
+					elseif (sense == :max && meanDiff < -halfWidth) || (sense == :min && meanDiff > halfWidth)
+						break # bestPriorityList is better, stop
+					elseif (sense == :max && meanDiff > halfWidth) || (sense == :min && meanDiff < -halfWidth)
+						# priorityList may be better
+						# need to simulate priorityList up to much as bestPriorityList, to avoid possibility of infinite loop
+						newNumReps = getPriorityListRepsDone!(bestPriorityList)
+						if numReps < newNumReps
+							numReps = min(maxNumReps, newNumReps)
+						elseif numReps == newNumReps
+							break # done, no need to simulate priorityList further
+						else
+							error("numReps > newNumReps, this should not happen.")
+						end
+					else # not sure which priority list is better, simulate more reps
+						newNumReps = numReps * (halfWidth / meanDiff) ^ 2 # since standard error is roughly proportional to 1/sqrt(n) for n samples
+						if isnan(newNumReps) newNumReps = maxNumReps end # meanDiff was zero, just use all reps
+						numReps = ceil(Int, max(numReps + 1, min(newNumReps, numReps + maxNumRepsIncrease, maxNumReps))) # bound newNumReps
+					end
 				end
 				
+				objVal, objValHalfWidth = calcMeanAndHalfWidth(objVals)
+				bestObjVal = mean(bestObjVals)
+				# note that length(objVals) <= length(bestObjVals), as the priority lists may have been simulated different amounts (reps)
 				doPrint && println("; objective value: ", objVal, " (best: ", bestObjVal, ")")
 				
 				usedMove = false
-				if (sense == :max && bestObjVal < objVal) || (sense == :min && bestObjVal > objVal)
-					bestObjVal = objVal
-					# keep change (move ambulance from station i to j)
+				if (sense == :max && meanDiff > 0) || (sense == :min && meanDiff < 0) # do not compare objVals and bestObjVals (or their means) as lengths may differ
+					# keep change
 					bestPriorityList = priorityList
+					bestObjVals = objVals
+					bestObjVal = objVal
 					usedMove = true
 					newBestFound = true
 					
 					doPrint && println("made ", move, ": i = ", i, ", j = ", j, "; new objective value: ", bestObjVal)
 				end
 				
-				merge!(logFileDict, Dict("iter" => iter, "move" => move, "i" => i, "j" => j, "usedLookup" => Int(usedLookup), "usedMove" => Int(usedMove),
-					"searchDurationSeconds" => getSearchDuration(), "objVal" => objVal, "objValHalfWidth" => objValHalfWidth, "bestObjVal" => bestObjVal))
+				# todo: get stats for bestPriorityList, merge into logFileDict
+				
+				merge!(logFileDict, Dict("iter" => iter, "move" => move, "i" => i, "j" => j, "numReps" => numReps, "usedMove" => Int(usedMove),
+					"searchDurationSeconds" => getSearchDuration(), "objVal" => objVal, "objValHalfWidth" => objValHalfWidth, "bestObjVal" => bestObjVal,
+					"objValDiff" => meanDiff, "objValDiffHalfWidth" => halfWidth))
 				fileWriteDlmLine!(logFile, logFileHeader, logFileDict, priorityList)
 				
 				iter += 1
@@ -302,7 +402,7 @@ function localSearch!(sim::Simulation, priorityList::PriorityList, logFile::IOSt
 				endPoint = (i,j,move)
 			elseif endPoint == (i,j,move)
 				doPrint && println("Found local optimum.")
-				return bestPriorityList
+				return bestPriorityList, getPriorityListRepsDone!(bestPriorityList)
 			end
 		end
 	end
@@ -397,10 +497,6 @@ function swap!(priorityList::PriorityList, i::Int, j::Int)
 	return true
 end
 
-repeatedLocalSearch!(sim, priorityLists)
-
-end # priorityListLocalSearch!
-
 # mutates: sim
 function setSimStatsCapture!(sim::Simulation, periodDurationsIter::Stateful, warmUpDuration::Float)
 	stats = sim.stats = deepcopy(sim.backup.stats)
@@ -452,5 +548,6 @@ for tempSim in (sim, sim.backup)
 end
 
 # run
+println("Starting local search(es).")
 priorityListLocalSearch!(sim, outputFolder = outputFolder, priorityLists = priorityLists)
-println("total runtime: ", round(time()-t, digits = 2), " seconds")
+println("Total runtime: ", round(time()-t, digits = 2), " seconds")
