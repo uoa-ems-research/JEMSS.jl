@@ -132,7 +132,7 @@ function simObjVals!(sim::Simulation, priorityList::PriorityList, repIndices::Ve
 	return [simObjVal!(sim, priorityList, repIndex) for repIndex in repIndices]
 end
 
-# save the locally optimal station ambulance counts found for each search
+# save the locally optimal priority lists found for each search
 global priorityListSols = Vector{PriorityList}() # priorityListSols[i] is solution for priorityLists[i]
 
 global stationCapacities = Int[] # stationCapacities[i] gives ambulance holding capacity of station i; will populate after sim is initialised
@@ -286,10 +286,17 @@ function localSearch!(sim::Simulation, priorityList::PriorityList, priorityListN
 	startTime = time()
 	getSearchDuration() = round(time() - startTime, digits = 2)
 	
+	# keep track of how many reps were simulated for each priority list
+	priorityListsRepsDone = Dict{PriorityList, Int}()
+	getPriorityListRepsDone!(priorityList::PriorityList) = get!(priorityListsRepsDone, priorityList, 0)
+	updatePriorityListsRepsDone!(priorityList::PriorityList, n::Int) =
+		(priorityListsRepsDone[priorityList] = max(n, getPriorityListRepsDone!(priorityList)))
+	
 	# calculate objective value for starting point
 	numReps = priorityListNumReps # do not just use minNumReps, as priorityList may have already been simulated a number of reps
 	objVals = simObjVals!(sim, priorityList, [1:numReps;])
 	(objVal, objValHalfWidth) = calcMeanAndHalfWidth(objVals)
+	updatePriorityListsRepsDone!(priorityList, numReps)
 	doPrint && println("starting objective value: ", objVal)
 	
 	# starting solution is current best
@@ -308,12 +315,6 @@ function localSearch!(sim::Simulation, priorityList::PriorityList, priorityListN
 	merge!(logFileDict, Dict("iter" => iter, "numReps" => numReps, "searchDurationSeconds" => getSearchDuration(),
 		"objVal" => objVal, "objValHalfWidth" => objValHalfWidth, "bestObjVal" => bestObjVal, "objValDiff" => 0, "objValDiffHalfWidth" => 0))
 	fileWriteDlmLine!(logFile, logFileHeader, logFileDict, priorityList)
-	
-	# keep track of how many reps were simulated for each priority list
-	priorityListsRepsDone = Dict{PriorityList, Int}()
-	getPriorityListRepsDone!(priorityList::PriorityList) = get!(priorityListsRepsDone, priorityList, 0)
-	updatePriorityListsRepsDone!(priorityList::PriorityList, n::Int) =
-		(priorityListsRepsDone[priorityList] = max(n, getPriorityListRepsDone!(priorityList)))
 	
 	# local search
 	doPrint && println("starting local search")
