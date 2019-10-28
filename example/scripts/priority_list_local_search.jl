@@ -45,6 +45,9 @@ function priorityListLocalSearch!(sim::Simulation; outputFolder::String = "", pr
 	global minNumReps = 2 # min number of reps to simulate each priority list
 	global maxNumRepsList = [2,5] # = vcat(10 * 2 .^ [0:10;], Inf) # can start with a small maximum, and increase each time local optimum found
 	global maxNumRepsIncrease = 1 # = 20 # max number of reps to increase by at a time when comparing two priority lists
+	# parallel (multi-threading):
+	global parallel = false
+	global numThreads = 1
 	
 	# some parameter checks
 	@assert(sense == :min || sense == :max)
@@ -54,6 +57,8 @@ function priorityListLocalSearch!(sim::Simulation; outputFolder::String = "", pr
 	@assert(all(maxNumRepsList .>= minNumReps))
 	@assert(issorted(maxNumRepsList, lt=<=)) # maxNumRepsList should be strictly increasing
 	@assert(maxNumRepsIncrease >= 1)
+	@assert(isa(parallel, Bool))
+	@assert(numThreads >= 1)
 	
 	global nullObjVal = sense == :max ? -Inf : Inf
 	
@@ -99,31 +104,21 @@ function objFn(period::SimPeriodStats)::Float
 	return period.call.numResponsesInTime / period.call.numCalls # fraction of calls reached in time
 end
 
-# Returns objective function value; should only be used for a single replication.
-# Mutates: sim, priorityListsObjVals
-function simObjVal!(sim::Simulation, priorityList::PriorityList, repIndex::Int)::Tuple{ObjVal, SimPeriodStats}
-	rep = sim.reps[repIndex]
-	reset!(sim)
-	applyPriorityList!(sim, priorityList)
-	simulateRep!(sim, rep)
-	period = getRepPeriodStats(rep)
-	objVal = objFn(period)
-	if objValLookup(priorityList, repIndex) == nullObjVal
-		setPriorityListObjVal!(priorityList, repIndex, objVal)
-	end
-	
-	return objVal, period
-end
-
-# Return objective values from multiple replications (repIndices)
-# Mutates: sim, priorityListsObjVals
+# Return objective values from multiple replications (repIndices).
+# Mutates: sim.reps, priorityListsObjVals
 function simObjVals!(sim::Simulation, priorityList::PriorityList, repIndices::Vector{Int})::Tuple{Vector{ObjVal}, Vector{SimPeriodStats}}
-	objVals = ObjVal[]
-	periods = SimPeriodStats[]
-	for repIndex in repIndices
-		objVal, period = simObjVal!(sim, priorityList, repIndex)
-		push!(objVals, objVal)
-		push!(periods, period)
+	@assert(allunique(repIndices))
+	global parallel, numThreads
+	reps = sim.reps[repIndices]
+	resetReps!(reps; parallel = parallel, numThreads = numThreads)
+	for rep in reps applyPriorityList!(rep, priorityList) end
+	simulateReps!(reps; parallel = parallel, numThreads = numThreads)
+	periods = getRepsPeriodStatsList(reps)
+	objVals = [objFn(period) for period in periods]
+	for (i,repIndex) in enumerate(repIndices)
+		if objValLookup(priorityList, repIndex) == nullObjVal
+			setPriorityListObjVal!(priorityList, repIndex, objVals[i])
+		end
 	end
 	return objVals, periods
 end
@@ -545,6 +540,8 @@ for tempSim in (sim, sim.backup)
 		setfield!(moveUpData, fname, val)
 	end
 end
+
+makeRepsRunnable!(sim) # copy changes to sim (stats, priority list) to sim.reps
 
 # run
 println("Starting local search(es).")

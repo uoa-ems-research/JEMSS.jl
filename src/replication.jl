@@ -30,7 +30,7 @@ function setSimReps!(sim::Simulation, callSets::Vector{Vector{Call}})
 	if isdefined(sim, :backup) sim.backup.numReps = sim.numReps end
 	
 	# have not yet handled writing output files for each replication
-	sim.writeOutput = false 
+	sim.writeOutput = false
 	if isdefined(sim, :backup) sim.backup.writeOutput = false end
 end
 
@@ -100,6 +100,7 @@ end
 # if parallel=true, will use multi-threading
 # mutates: reps
 function simulateReps!(reps::Vector{Simulation}; parallel::Bool = false, numThreads::Int = maxNumThreads, doPrint::Bool = false)
+	@assert(allunique(reps))
 	@assert(all(rep -> rep.isRunnable, reps))
 	if parallel
 		doPrint = false # IO not thread safe
@@ -120,6 +121,7 @@ function resetRep!(rep::Simulation)
 end
 
 function resetReps!(reps::Vector{Simulation}; parallel::Bool = false, numThreads::Int = maxNumThreads)
+	@assert(allunique(reps))
 	@assert(all(rep -> rep.isRunnable, reps))
 	if parallel
 		runParallel!(resetRep!, reps...; numThreads = numThreads)
