@@ -298,6 +298,11 @@ function getRepsPeriodStatsList(reps::Vector{Simulation}; periodIndex::Int = nul
 	return periods
 end
 
+# given a sim replication, return the main stats period
+function getRepPeriodStats(rep::Simulation; periodIndex::Int = nullIndex)::SimPeriodStats
+	return getRepsPeriodStatsList([rep], periodIndex = periodIndex)[1]
+end
+
 # Return a dictionary of statistics from a list of period statistics.
 # Periods should be the same duration.
 # Confidence intervals assume that samples obtained from periods are IID, and are from a population with a normal distribution and unknown standard deviation.

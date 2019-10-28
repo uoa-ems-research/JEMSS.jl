@@ -25,8 +25,6 @@ using Statistics
 using StatsFuns
 using Base.Iterators: Stateful
 
-@info("Todo: Get getSimStats() working.")
-
 global ObjVal = Float
 
 function priorityListLocalSearch!(sim::Simulation; outputFolder::String = "", priorityLists::Vector{PriorityList} = [])
@@ -101,35 +99,33 @@ function objFn(period::SimPeriodStats)::Float
 	return period.call.numResponsesInTime / period.call.numCalls # fraction of calls reached in time
 end
 
-# Objective value for a single replication
-function objFn(rep::Simulation)::Float
-	@assert(rep.complete)
-	period = getRepsPeriodStatsList([rep])[1]
-	return objFn(period)
-end
-
 # Returns objective function value; should only be used for a single replication.
-# Uses look-up if possible.
 # Mutates: sim, priorityListsObjVals
-function simObjVal!(sim::Simulation, priorityList::PriorityList, repIndex::Int)::ObjVal
-	objVal = objValLookup(priorityList, repIndex)
-	if objVal != nullObjVal return objVal end
-	
+function simObjVal!(sim::Simulation, priorityList::PriorityList, repIndex::Int)::Tuple{ObjVal, SimPeriodStats}
 	rep = sim.reps[repIndex]
 	reset!(sim)
 	applyPriorityList!(sim, priorityList)
 	simulateRep!(sim, rep)
-	objVal = objFn(rep)
+	period = getRepPeriodStats(rep)
+	objVal = objFn(period)
+	if objValLookup(priorityList, repIndex) == nullObjVal
+		setPriorityListObjVal!(priorityList, repIndex, objVal)
+	end
 	
-	setPriorityListObjVal!(priorityList, repIndex, objVal)
-	# do not reset sim before returning, as other stats may needed after calling this function
-	return objVal
+	return objVal, period
 end
 
 # Return objective values from multiple replications (repIndices)
 # Mutates: sim, priorityListsObjVals
-function simObjVals!(sim::Simulation, priorityList::PriorityList, repIndices::Vector{Int})::Vector{ObjVal}
-	return [simObjVal!(sim, priorityList, repIndex) for repIndex in repIndices]
+function simObjVals!(sim::Simulation, priorityList::PriorityList, repIndices::Vector{Int})::Tuple{Vector{ObjVal}, Vector{SimPeriodStats}}
+	objVals = ObjVal[]
+	periods = SimPeriodStats[]
+	for repIndex in repIndices
+		objVal, period = simObjVal!(sim, priorityList, repIndex)
+		push!(objVals, objVal)
+		push!(periods, period)
+	end
+	return objVals, periods
 end
 
 # save the locally optimal priority lists found for each search
@@ -151,16 +147,11 @@ function printPriorityList(priorityList::PriorityList)
 	end
 end
 
-function getSimStats(sim::Simulation)
-	# some sim statistics to write to log file
+function getPeriodsStatsDict(periods::Vector{SimPeriodStats})::Dict{String,Any}
 	global periodDuration, simStatsKeys, simStatsEmpty
-	# if all(r -> r.complete, sim.reps)
-		# periods = getRepsPeriodStatsList(sim.reps)
-		# @assert(all(p -> isapprox(p.duration, periodDuration), periods))
-		# stats = flatten(statsDictFromPeriodStatsList(periods))
-		# return merge(Dict(["$(key)_mean" => stats[key].mean for key in simStatsKeys]), Dict(["$(key)_halfWidth" => stats[key].halfWidth for key in simStatsKeys]))
-	# end
-	return deepcopy(simStatsEmpty)
+	@assert(all(p -> isapprox(p.duration, periodDuration), periods))
+	stats = flatten(statsDictFromPeriodStatsList(periods))
+	return merge(Dict(["$(key)_mean" => stats[key].mean for key in simStatsKeys]), Dict(["$(key)_halfWidth" => stats[key].halfWidth for key in simStatsKeys]))
 end
 
 global simStatsEmpty = flatten(statsDictFromPeriodStatsList(SimPeriodStats[]))
@@ -168,7 +159,7 @@ global simStatsKeys = collect(keys(simStatsEmpty))
 global simStatsEmpty = merge(Dict(["$(key)_mean" => NaN for key in simStatsKeys]), Dict(["$(key)_halfWidth" => NaN for key in simStatsKeys]))
 
 global solFileHeader = ["search", "objVal", "objValHalfWidth"] # ... and priorityList
-global logFileHeader = vcat(["search", "maxNumRepsListIndex", "maxNumReps", "iter", "move", "i", "j", "usedMove", "numReps", "searchDurationSeconds", "objVal", "objValHalfWidth", "bestObjVal", "objValDiff", "objValDiffHalfWidth"]) #, sort(collect(keys(simStatsEmpty)))) # ... and priorityList
+global logFileHeader = vcat(["search", "maxNumRepsListIndex", "maxNumReps", "iter", "move", "i", "j", "usedMove", "numReps", "searchDurationSeconds", "objVal", "objValHalfWidth", "bestObjVal", "objValDiff", "objValDiffHalfWidth"], sort(collect(keys(simStatsEmpty)))) # ... and priorityList
 global logFileDict = Dict{String,Any}([s => "" for s in logFileHeader])
 
 # mutates: file
@@ -286,6 +277,9 @@ function localSearch!(sim::Simulation, priorityList::PriorityList, priorityListN
 	startTime = time()
 	getSearchDuration() = round(time() - startTime, digits = 2)
 	
+	# track priority lists tried
+	priorityListsTried = Set{PriorityList}()
+	
 	# keep track of how many reps were simulated for each priority list
 	priorityListsRepsDone = Dict{PriorityList, Int}()
 	getPriorityListRepsDone!(priorityList::PriorityList) = get!(priorityListsRepsDone, priorityList, 0)
@@ -294,9 +288,10 @@ function localSearch!(sim::Simulation, priorityList::PriorityList, priorityListN
 	
 	# calculate objective value for starting point
 	numReps = priorityListNumReps # do not just use minNumReps, as priorityList may have already been simulated a number of reps
-	objVals = simObjVals!(sim, priorityList, [1:numReps;])
+	objVals, periods = simObjVals!(sim, priorityList, [1:numReps;])
 	(objVal, objValHalfWidth) = calcMeanAndHalfWidth(objVals)
 	updatePriorityListsRepsDone!(priorityList, numReps)
+	push!(priorityListsTried, priorityList)
 	doPrint && println("starting objective value: ", objVal)
 	
 	# starting solution is current best
@@ -310,8 +305,7 @@ function localSearch!(sim::Simulation, priorityList::PriorityList, priorityListN
 			logFileDict[key] = "" # reset value
 		end
 	end
-	# stats = getSimStats(sim) # todo: uncomment once getSimStats() is working
-	# merge!(logFileDict, stats)
+	merge!(logFileDict, getPeriodsStatsDict(periods))
 	merge!(logFileDict, Dict("iter" => iter, "numReps" => numReps, "searchDurationSeconds" => getSearchDuration(),
 		"objVal" => objVal, "objValHalfWidth" => objValHalfWidth, "bestObjVal" => bestObjVal, "objValDiff" => 0, "objValDiffHalfWidth" => 0))
 	fileWriteDlmLine!(logFile, logFileHeader, logFileDict, priorityList)
@@ -335,18 +329,23 @@ function localSearch!(sim::Simulation, priorityList::PriorityList, priorityListN
 			end
 			
 			newBestFound = false
-			if priorityList != bestPriorityList
+			if !in(priorityList, priorityListsTried)
 				doPrint && print(move, ": i = ", i, ", j = ", j)
 				
 				# simulate until there is a significant difference in objective value between priorityList and bestPriorityList,
 				# or until running out of replications to simulate
 				numReps = minNumReps
 				meanDiff = halfWidth = 0.0 # init
+				objVals = ObjVal[] # for priorityList
+				periods = SimPeriodStats[] # for priorityList
 				while numReps <= maxNumReps
-					objVals = simObjVals!(sim, priorityList, [1:numReps;])
+					newObjVals, newPeriods = simObjVals!(sim, priorityList, [(length(objVals)+1):numReps;])
+					push!(priorityListsTried, priorityList)
+					push!(objVals, newObjVals...)
+					push!(periods, newPeriods...)
 					updatePriorityListsRepsDone!(priorityList, numReps)
 					if length(bestObjVals) < length(objVals)
-						bestObjVals = simObjVals!(sim, bestPriorityList, [1:numReps;])
+						push!(bestObjVals, simObjVals!(sim, bestPriorityList, [(length(bestObjVals)+1):numReps;])[1]...)
 						updatePriorityListsRepsDone!(bestPriorityList, numReps)
 					end
 					meanDiff, halfWidth = calcMeanAndHalfWidth(objVals[1:numReps] - bestObjVals[1:numReps])
@@ -389,8 +388,7 @@ function localSearch!(sim::Simulation, priorityList::PriorityList, priorityListN
 					doPrint && println("made ", move, ": i = ", i, ", j = ", j, "; new objective value: ", bestObjVal)
 				end
 				
-				# todo: get stats for bestPriorityList, merge into logFileDict
-				
+				merge!(logFileDict, getPeriodsStatsDict(periods))
 				merge!(logFileDict, Dict("iter" => iter, "move" => move, "i" => i, "j" => j, "numReps" => numReps, "usedMove" => Int(usedMove),
 					"searchDurationSeconds" => getSearchDuration(), "objVal" => objVal, "objValHalfWidth" => objValHalfWidth, "bestObjVal" => bestObjVal,
 					"objValDiff" => meanDiff, "objValDiffHalfWidth" => halfWidth))
