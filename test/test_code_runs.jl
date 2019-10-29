@@ -51,11 +51,12 @@ else
 		cd("data/regions/small/2") do
 			runGenConfig("gen_config.xml", overwriteOutputPath = true, doPrint = false)
 			isdir("output") || mkdir("output")
-			script = "nested_comp_table_local_search.jl"
-			@info(string("Running script: ", script))
-			include(joinpath(scriptsFolder, script))
-			@test true
-			println()
+			for script in ("nested_comp_table_local_search.jl", "transient.jl")
+				@info(string("Running script: ", script))
+				include(joinpath(scriptsFolder, script))
+				@test true
+				println()
+			end
 			rm("output", recursive = true)
 		end
 		
