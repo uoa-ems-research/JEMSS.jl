@@ -120,18 +120,17 @@ end
 function getCallSetsAvgResponseDurations(sim, callSetsNumCallBatches::Vector{Int})::Vector{Vector{Float}}
 	numCallSets = length(callSetsNumCallBatches)
 	callSetsAvgResponseDurations = []
+	calls = sim.calls # shorthand
 	for (callSetIndex, numCallBatches) in enumerate(callSetsNumCallBatches)
 		println("Call set ", callSetIndex, " of ", numCallSets)
 		
 		# create batches (for current set), simulate for each, calculate average response durations
 		reset!(sim)
-		callBatches = createCallBatchesByCount!(sim.calls, sim.startTime; numCallBatches = numCallBatches)
+		callBatches = createCallBatchesByCount!(calls, sim.startTime; numCallBatches = numCallBatches)
 		simulateCallBatches!(sim, callBatches)
 		push!(callSetsAvgResponseDurations, calcAvgResponseDurations(callBatches))
 		
-		# reset calls
-		calls = vcat(callBatches...) # recombine batches
-		# undo changes from createCallBatchesByCount!
+		# undo changes from createCallBatchesByCount!(), and reset calls
 		for (i,c) in enumerate(calls)
 			c.index = i
 			c.arrivalTime = callArrivalTimes[i]
@@ -194,9 +193,9 @@ filename = joinpath(outputPath, "transient.csv")
 writeCallSetsAvgResponseDurationsFile(filename, callSetsAvgResponseDurations, callSetsNumCallBatches, movingWindowSizes)
 
 if displayPlots
+	println("Plotting")
 	import Plots
 	Plots.plotly()
-	println("Plotting")
 	plots = plotMovingAvgResponseDurations(callSetsAvgResponseDurations, callSetsNumCallBatches, movingWindowSizes)
 	for plot in plots display(plot) end
 end
