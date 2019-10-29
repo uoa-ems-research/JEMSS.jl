@@ -27,11 +27,10 @@ using Base.Iterators: Stateful
 
 global ObjVal = Float
 
-function priorityListLocalSearch!(sim::Simulation; outputFolder::String = "", priorityLists::Vector{PriorityList} = [])
-	
+function priorityListLocalSearch!(sim::Simulation, priorityLists::Vector{PriorityList}; outputFolder::String = "")
 	isdir(outputFolder) || mkdir(outputFolder)
 	@assert(isdir(outputFolder))
-	
+	@assert(!isempty(priorityLists))
 	@assert(all(priorityList -> checkPriorityList(priorityList, sim), priorityLists))
 	
 	# parameters
@@ -61,9 +60,6 @@ function priorityListLocalSearch!(sim::Simulation; outputFolder::String = "", pr
 	@assert(numThreads >= 1)
 	
 	global nullObjVal = sense == :max ? -Inf : Inf
-	
-	global numSearches
-	@assert(numSearches == length(priorityLists))
 	
 	repeatedLocalSearch!(sim, priorityLists)
 end
@@ -182,7 +178,8 @@ function repeatedLocalSearch!(sim::Simulation, priorityLists::Vector{PriorityLis
 	logFile = open(logFilename, "w")
 	
 	# write misc data to files
-	global numSearches, warmUpDuration, periodDuration, conf
+	global warmUpDuration, periodDuration, conf
+	numSearches = length(priorityLists)
 	miscTable = Table("miscData", ["numAmbs", "numStations", "numSearches", "conf"];
 		rows = [[sim.numAmbs, sim.numStations, numSearches, conf]]) # note that numCalls may vary between sim replications
 	repsTable = Table("repsData", ["numReps", "warmUpDuration", "periodDuration"];
@@ -545,5 +542,5 @@ makeRepsRunnable!(sim) # copy changes to sim (stats, priority list) to sim.reps
 
 # run
 println("Starting local search(es).")
-priorityListLocalSearch!(sim, outputFolder = outputFolder, priorityLists = priorityLists)
+priorityListLocalSearch!(sim, priorityLists, outputFolder = outputFolder)
 println("Total runtime: ", round(time()-t, digits = 2), " seconds")
