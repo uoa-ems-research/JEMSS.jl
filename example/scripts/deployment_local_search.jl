@@ -39,10 +39,15 @@ function deploymentLocalSearch!(sim::Simulation, deployments::Vector{Deployment}
 	global sense = :max # :min or :max; direction of optimisation for objective function
 	global conf = 0.95 # statistical confidence level
 	global doPrint = true
+	# parallel (multi-threading):
+	global parallel = false
+	global numThreads = 1
 	
 	# some parameter checks
 	@assert(sense == :min || sense == :max)
 	@assert(0 <= conf < 1) # should be between 0 and 1, but not equal to 1 otherwise confidence interval is infinite
+	@assert(isa(parallel, Bool))
+	@assert(numThreads >= 1)
 	
 	global nullObjVal = MeanAndHalfWidth(NaN,NaN)
 	
@@ -77,14 +82,19 @@ end
 # uses look-up if possible
 # mutates: sim, stationsNumAmbsObjVal
 function simObjVal!(sim::Simulation, stationsNumAmbs::StationsNumAmbs)::Tuple{MeanAndHalfWidth,Bool}
-	global stationsNumAmbsObjVal
+	global stationsNumAmbsObjVal, parallel, numThreads
 	objVal = objValLookup(stationsNumAmbs)
 	if objVal != nullObjVal return (objVal, true) end
-	for rep in sim.reps
-		reset!(sim)
-		applyStationsNumAmbs!(sim, stationsNumAmbs)
-		simulateRep!(sim, rep)
-		@assert(getStationsNumAmbs(sim) == stationsNumAmbs) # check that sim had the current deployment applied
+	function runRep!(rep::Simulation)
+		resetRep!(rep)
+		applyStationsNumAmbs!(rep, stationsNumAmbs)
+		simulateRep!(rep)
+		@assert(getStationsNumAmbs(rep) == stationsNumAmbs) # check that rep had the current deployment applied
+	end
+	if parallel == true
+		runParallel!(runRep!, sim.reps...; numThreads = numThreads)
+	else
+		for rep in sim.reps runRep!(rep) end
 	end
 	objVal = objFn(sim)
 	stationsNumAmbsObjVal[stationsNumAmbs] = objVal
@@ -331,6 +341,8 @@ for rep in sim.reps
 	# statistics should stop collecting before last call arrives (if not earlier), to avoid cool-down period
 	@assert(periodEndTime <= rep.calls[end].arrivalTime)
 end
+
+makeRepsRunnable!(sim) # copy changes to sim (stats) to sim.reps
 
 # generate deployments
 deployments = makeRandDeployments(sim, numSearches; rng = deploymentRng)
