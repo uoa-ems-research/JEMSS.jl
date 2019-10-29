@@ -27,27 +27,27 @@ using Base.Iterators: Stateful
 
 const StationsNumAmbs = Vector{Int} # type alias
 
-function deploymentLocalSearch!(sim::Simulation; outputFolder::String = "", deployments::Vector{Deployment} = [])
-
-isdir(outputFolder) || mkdir(outputFolder)
-@assert(isdir(outputFolder))
-
-# parameters
-global solFilename = "$outputFolder/solutions.csv" # final solutions from each local search
-global deploymentsOutputFilename = "$outputFolder/deployments.csv" # solutions, stored as deployments
-global logFilename = "$outputFolder/log.csv" # log search progress to file
-global sense = :max # :min or :max; direction of optimisation for objective function
-global conf = 0.95 # statistical confidence level
-global doPrint = true
-
-# some parameter checks
-@assert(sense == :min || sense == :max)
-@assert(0 <= conf < 1) # should be between 0 and 1, but not equal to 1 otherwise confidence interval is infinite
-
-global numSearches
-@assert(numSearches == length(deployments))
-
-global nullObjVal = MeanAndHalfWidth(NaN,NaN)
+function deploymentLocalSearch!(sim::Simulation, deployments::Vector{Deployment}; outputFolder::String = "")
+	isdir(outputFolder) || mkdir(outputFolder)
+	@assert(isdir(outputFolder))
+	@assert(!isempty(deployments))
+	
+	# parameters
+	global solFilename = "$outputFolder/solutions.csv" # final solutions from each local search
+	global deploymentsOutputFilename = "$outputFolder/deployments.csv" # solutions, stored as deployments
+	global logFilename = "$outputFolder/log.csv" # log search progress to file
+	global sense = :max # :min or :max; direction of optimisation for objective function
+	global conf = 0.95 # statistical confidence level
+	global doPrint = true
+	
+	# some parameter checks
+	@assert(sense == :min || sense == :max)
+	@assert(0 <= conf < 1) # should be between 0 and 1, but not equal to 1 otherwise confidence interval is infinite
+	
+	global nullObjVal = MeanAndHalfWidth(NaN,NaN)
+	
+	repeatedLocalSearch!(sim, deployments)
+end
 
 # keep track of station ambulance counts tried, and their objective values
 global stationsNumAmbsObjVal = Dict{StationsNumAmbs, MeanAndHalfWidth}()
@@ -66,7 +66,7 @@ function objFn(period::SimPeriodStats)::Float
 	return period.call.numResponsesInTime / period.call.numCalls # fraction of calls reached in time
 end
 
-# For completed simulation replications, calculate and return the objective function value meand and half-width of the mean.
+# For completed simulation replications, calculate and return the objective function value mean and half-width of the mean.
 function objFn(sim::Simulation)::MeanAndHalfWidth
 	@assert(all(rep -> rep.complete, sim.reps))
 	periods = getRepsPeriodStatsList(sim.reps)
@@ -143,7 +143,8 @@ function repeatedLocalSearch!(sim::Simulation, deployments::Vector{Deployment})
 	logFile = open(logFilename, "w")
 	
 	# write misc data to files
-	global numSearches, warmUpDuration, periodDuration, conf
+	global warmUpDuration, periodDuration, conf
+	numSearches = length(deployments)
 	miscTable = Table("miscData", ["numAmbs", "numStations", "numSearches", "conf"];
 		rows = [[sim.numAmbs, sim.numStations, numSearches, conf]]) # note that numCalls may vary between sim replications
 	repsTable = Table("repsData", ["numReps", "warmUpDuration", "periodDuration"];
@@ -293,10 +294,6 @@ function localSearch!(sim::Simulation, stationsNumAmbs::StationsNumAmbs, logFile
 	end
 end
 
-repeatedLocalSearch!(sim, deployments)
-
-end # deploymentLocalSearch!
-
 # mutates: sim
 function setSimStatsCapture!(sim::Simulation, periodDurationsIter::Stateful, warmUpDuration::Float)
 	stats = sim.stats = deepcopy(sim.backup.stats)
@@ -339,5 +336,5 @@ end
 deployments = makeRandDeployments(sim, numSearches; rng = deploymentRng)
 
 # run
-deploymentLocalSearch!(sim, outputFolder = outputFolder, deployments = deployments)
+deploymentLocalSearch!(sim, deployments, outputFolder = outputFolder)
 println("total runtime: ", round(time()-t, digits = 2), " seconds")
