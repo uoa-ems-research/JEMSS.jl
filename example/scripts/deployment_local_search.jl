@@ -51,12 +51,16 @@ function deploymentLocalSearch!(sim::Simulation, deployments::Vector{Deployment}
 	
 	global nullObjVal = MeanAndHalfWidth(NaN,NaN)
 	
+	# keep track of station ambulance counts tried, and their objective values
+	global stationsNumAmbsObjVal = Dict{StationsNumAmbs, MeanAndHalfWidth}()
+	global stationsNumAmbsStats = Dict{StationsNumAmbs, Dict{String, Any}}()
+	
+	# save the locally optimal station ambulance counts found for each search
+	global stationsNumAmbsSols = Vector{StationsNumAmbs}() # stationsNumAmbsSols[i] is solution for deployments[i]
+	
 	repeatedLocalSearch!(sim, deployments)
 end
 
-# keep track of station ambulance counts tried, and their objective values
-global stationsNumAmbsObjVal = Dict{StationsNumAmbs, MeanAndHalfWidth}()
-global stationsNumAmbsStats = Dict{StationsNumAmbs, Dict{String, Any}}()
 function objValLookup(stationsNumAmbs::StationsNumAmbs)::MeanAndHalfWidth
 	return get(stationsNumAmbsObjVal, stationsNumAmbs, nullObjVal) # return objective value if found, otherwise nullObjVal
 end
@@ -100,9 +104,6 @@ function simObjVal!(sim::Simulation, stationsNumAmbs::StationsNumAmbs)::Tuple{Me
 	stationsNumAmbsObjVal[stationsNumAmbs] = objVal
 	return (objVal, false)
 end
-
-# save the locally optimal station ambulance counts found for each search
-global stationsNumAmbsSols = Vector{StationsNumAmbs}() # stationsNumAmbsSols[i] is solution for deployments[i]
 
 # print number of ambulances at each station
 function printStationsNumAmbs(stationsNumAmbs::StationsNumAmbs)

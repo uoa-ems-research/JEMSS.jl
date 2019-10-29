@@ -61,11 +61,17 @@ function priorityListLocalSearch!(sim::Simulation, priorityLists::Vector{Priorit
 	
 	global nullObjVal = sense == :max ? -Inf : Inf
 	
+	# keep track of priority lists tried, and their objective values per replication
+	global priorityListsObjVals = Dict{PriorityList, Vector{ObjVal}}() # priorityListsObjVals[priorityList][repIndex] gives sim replication objective value
+	
+	# save the locally optimal priority lists found for each search
+	global priorityListSols = Vector{PriorityList}() # priorityListSols[i] is solution for priorityLists[i]
+	
+	global stationCapacities = [station.capacity for station in sim.stations] # stationCapacities[i] gives ambulance holding capacity of station i
+	
 	repeatedLocalSearch!(sim, priorityLists)
 end
 
-# keep track of priority lists tried, and their objective values per replication
-global priorityListsObjVals = Dict{PriorityList, Vector{ObjVal}}() # priorityListsObjVals[priorityList][repIndex] gives sim replication objective value
 function objValLookup(priorityList::PriorityList, repIndex::Int)::ObjVal
 	global priorityListsObjVals
 	if haskey(priorityListsObjVals, priorityList) && length(priorityListsObjVals[priorityList]) >= repIndex
@@ -118,11 +124,6 @@ function simObjVals!(sim::Simulation, priorityList::PriorityList, repIndices::Ve
 	end
 	return objVals, periods
 end
-
-# save the locally optimal priority lists found for each search
-global priorityListSols = Vector{PriorityList}() # priorityListSols[i] is solution for priorityLists[i]
-
-global stationCapacities = Int[] # stationCapacities[i] gives ambulance holding capacity of station i; will populate after sim is initialised
 
 function applyPriorityList!(sim::Simulation, priorityList::PriorityList)
 	@assert(!sim.used)
@@ -194,9 +195,6 @@ function repeatedLocalSearch!(sim::Simulation, priorityLists::Vector{PriorityLis
 	writeDlmLine!(logFile, logFileHeader..., ["item_$i stationIndex" for i = 1:sim.numAmbs]...)
 	flush(solFile)
 	flush(logFile)
-	
-	global stationCapacities
-	stationCapacities = [station.capacity for station in sim.stations]
 	
 	for i = 1:numSearches
 		logFileDict["search"] = i
