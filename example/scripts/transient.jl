@@ -5,9 +5,6 @@
 
 using JEMSS
 using Statistics
-import Plots
-
-Plots.plotly()
 
 # parameters
 configFilename = "sim_config.xml"
@@ -197,6 +194,8 @@ filename = joinpath(outputPath, "transient.csv")
 writeCallSetsAvgResponseDurationsFile(filename, callSetsAvgResponseDurations, callSetsNumCallBatches, movingWindowSizes)
 
 if displayPlots
+	import Plots
+	Plots.plotly()
 	println("Plotting")
 	plots = plotMovingAvgResponseDurations(callSetsAvgResponseDurations, callSetsNumCallBatches, movingWindowSizes)
 	for plot in plots display(plot) end
