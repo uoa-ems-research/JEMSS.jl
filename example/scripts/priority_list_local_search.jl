@@ -191,7 +191,7 @@ global simStatsEmpty = flatten(statsDictFromPeriodStatsList(SimPeriodStats[]))
 global simStatsKeys = collect(keys(simStatsEmpty))
 global simStatsEmpty = merge(Dict(["$(key)_mean" => NaN for key in simStatsKeys]), Dict(["$(key)_halfWidth" => NaN for key in simStatsKeys]))
 
-global solFileHeader = ["search", "objVal", "objValHalfWidth"] # ... and priorityList
+global solFileHeader = vcat(["search", "numReps", "objVal", "objValHalfWidth"], sort(collect(keys(simStatsEmpty)))) # ... and priorityList
 global logFileHeader = vcat(["search", "maxNumRepsListIndex", "maxNumReps", "iter", "move", "i", "j", "usedMove", "numReps", "numLookups", "searchDurationSeconds", "objVal", "objValHalfWidth", "bestObjVal", "objValDiff", "objValDiffHalfWidth"], sort(collect(keys(simStatsEmpty)))) # ... and priorityList
 global logFileDict = Dict{String,Any}([s => "" for s in logFileHeader])
 
@@ -269,7 +269,8 @@ function repeatedLocalSearch!(sim::Simulation, priorityLists::Vector{PriorityLis
 		
 		# write solution to file
 		objVal, objValHalfWidth = calcMeanAndHalfWidth(objValsLookup(priorityList, [1:numReps;]))
-		solFileDict = Dict("search" => i, "objVal" => objVal, "objValHalfWidth" => objValHalfWidth)
+		solFileDict = Dict("search" => i, "numReps" => numReps, "objVal" => objVal, "objValHalfWidth" => objValHalfWidth)
+		merge!(solFileDict, getPeriodsStatsDict(periodStatsListLookup(priorityList)[1:numReps]))
 		fileWriteDlmLine!(solFile, solFileHeader, solFileDict, priorityList)
 		
 		global priorityListsOutputFilename
