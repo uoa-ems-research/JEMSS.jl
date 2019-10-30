@@ -64,6 +64,8 @@ function priorityListLocalSearch!(sim::Simulation, priorityLists::Vector{Priorit
 	# keep track of priority lists tried, and their objective values per replication
 	global priorityListsObjVals = Dict{PriorityList, Vector{ObjVal}}() # priorityListsObjVals[priorityList][repIndex] gives sim replication objective value
 	
+	global priorityListsPeriodStatsList = Dict{PriorityList, Vector{SimPeriodStats}}() # priorityListsPeriodStatsList[priorityList][repIndex] gives sim replication period stats
+	
 	# save the locally optimal priority lists found for each search
 	global priorityListSols = Vector{PriorityList}() # priorityListSols[i] is solution for priorityLists[i]
 	
@@ -84,7 +86,7 @@ function objValsLookup(priorityList::PriorityList, repIndices::Vector{Int})::Vec
 end
 function objValsLookup(priorityList::PriorityList)::Vector{ObjVal}
 	global priorityListsObjVals
-	return get(priorityListsObjVals, priorityList, [nullObjVal])
+	return get(priorityListsObjVals, priorityList, ObjVal[])
 end
 
 function setPriorityListObjVal!(priorityList::PriorityList, repIndex::Int, objVal::ObjVal)
@@ -92,6 +94,28 @@ function setPriorityListObjVal!(priorityList::PriorityList, repIndex::Int, objVa
 	objVals = get!(priorityListsObjVals, priorityList, ObjVal[])
 	@assert(length(objVals) == repIndex - 1) # otherwise will overwrite existing value / will have missing values in objVals
 	push!(objVals, objVal)
+end
+
+function periodStatsListLookup(priorityList::PriorityList)::Vector{SimPeriodStats}
+	global priorityListsPeriodStatsList
+	return get(priorityListsPeriodStatsList, priorityList, SimPeriodStats[])
+end
+
+function setPriorityListPeriodStats!(priorityList::PriorityList, repIndex::Int, period::SimPeriodStats)
+	global priorityListsPeriodStatsList
+	periods = get!(priorityListsPeriodStatsList, priorityList, SimPeriodStats[])
+	@assert(length(periods) == repIndex - 1) # otherwise will overwrite existing value / will have missing values in periods
+	push!(periods, period)
+end
+function setPriorityListPeriodStatsList!(priorityList::PriorityList, repIndices::UnitRange{Int}, periods::Vector{SimPeriodStats})
+	for (repIndex, period) in zip(repIndices, periods)
+		setPriorityListPeriodStats!(priorityList, repIndex, period)
+	end
+end
+
+function resetPriorityListsPeriodStatsList!()
+	global priorityListsPeriodStatsList
+	empty!(priorityListsPeriodStatsList)
 end
 
 # Return mean and half-width of mean of x.
@@ -107,22 +131,39 @@ function objFn(period::SimPeriodStats)::Float
 end
 
 # Return objective values from multiple replications (repIndices).
+# Uses look-up if possible.
 # Mutates: sim.reps, priorityListsObjVals
-function simObjVals!(sim::Simulation, priorityList::PriorityList, repIndices::Vector{Int})::Tuple{Vector{ObjVal}, Vector{SimPeriodStats}}
-	@assert(allunique(repIndices))
-	global parallel, numThreads
-	reps = sim.reps[repIndices]
-	resetReps!(reps; parallel = parallel, numThreads = numThreads)
-	for rep in reps applyPriorityList!(rep, priorityList) end
-	simulateReps!(reps; parallel = parallel, numThreads = numThreads)
-	periods = getRepsPeriodStatsList(reps)
-	objVals = [objFn(period) for period in periods]
-	for (i,repIndex) in enumerate(repIndices)
-		if objValLookup(priorityList, repIndex) == nullObjVal
-			setPriorityListObjVal!(priorityList, repIndex, objVals[i])
+function simObjVals!(sim::Simulation, priorityList::PriorityList, repIndices::UnitRange{Int})::Tuple{Vector{ObjVal}, Vector{SimPeriodStats}, Int}
+	# look-up any saved data
+	objValsFound = objValsLookup(priorityList)
+	periodsFound = periodStatsListLookup(priorityList)
+	n = min(length(objValsFound), length(periodsFound))
+	lookupIndices= intersect(1:n, repIndices)
+	simRepIndices = setdiff(repIndices, lookupIndices)
+	
+	objVals = ObjVal[]
+	periods = SimPeriodStats[]
+	if !isempty(simRepIndices)
+		# need to simulate for simRepIndices
+		global parallel, numThreads
+		reps = sim.reps[simRepIndices]
+		resetReps!(reps; parallel = parallel, numThreads = numThreads)
+		for rep in reps applyPriorityList!(rep, priorityList) end
+		simulateReps!(reps; parallel = parallel, numThreads = numThreads)
+		periods = getRepsPeriodStatsList(reps)
+		objVals = [objFn(period) for period in periods]
+		for (i,repIndex) in enumerate(simRepIndices)
+			if length(objValsFound) < repIndex setPriorityListObjVal!(priorityList, repIndex, objVals[i]) end
+			if length(periodsFound) < repIndex setPriorityListPeriodStats!(priorityList, repIndex, periods[i]) end
 		end
 	end
-	return objVals, periods
+	
+	objVals = vcat(objValsFound[lookupIndices], objVals)
+	periods = vcat(periodsFound[lookupIndices], periods)
+	@assert(length(objVals) == length(repIndices))
+	@assert(length(periods) == length(repIndices))
+	
+	return objVals, periods, length(lookupIndices)
 end
 
 function applyPriorityList!(sim::Simulation, priorityList::PriorityList)
@@ -151,7 +192,7 @@ global simStatsKeys = collect(keys(simStatsEmpty))
 global simStatsEmpty = merge(Dict(["$(key)_mean" => NaN for key in simStatsKeys]), Dict(["$(key)_halfWidth" => NaN for key in simStatsKeys]))
 
 global solFileHeader = ["search", "objVal", "objValHalfWidth"] # ... and priorityList
-global logFileHeader = vcat(["search", "maxNumRepsListIndex", "maxNumReps", "iter", "move", "i", "j", "usedMove", "numReps", "searchDurationSeconds", "objVal", "objValHalfWidth", "bestObjVal", "objValDiff", "objValDiffHalfWidth"], sort(collect(keys(simStatsEmpty)))) # ... and priorityList
+global logFileHeader = vcat(["search", "maxNumRepsListIndex", "maxNumReps", "iter", "move", "i", "j", "usedMove", "numReps", "numLookups", "searchDurationSeconds", "objVal", "objValHalfWidth", "bestObjVal", "objValDiff", "objValDiffHalfWidth"], sort(collect(keys(simStatsEmpty)))) # ... and priorityList
 global logFileDict = Dict{String,Any}([s => "" for s in logFileHeader])
 
 # mutates: file
@@ -208,6 +249,7 @@ function repeatedLocalSearch!(sim::Simulation, priorityLists::Vector{PriorityLis
 		doPrint && println()
 		global minNumReps, maxNumRepsList
 		numReps = minNumReps # init
+		resetPriorityListsPeriodStatsList!()
 		for j = 1:length(maxNumRepsList)
 			maxNumReps = maxNumRepsList[j] < sim.numReps ? Int(maxNumRepsList[j]) : sim.numReps
 			logFileDict["maxNumRepsListIndex"] = j
@@ -278,7 +320,7 @@ function localSearch!(sim::Simulation, priorityList::PriorityList, priorityListN
 	
 	# calculate objective value for starting point
 	numReps = priorityListNumReps # do not just use minNumReps, as priorityList may have already been simulated a number of reps
-	objVals, periods = simObjVals!(sim, priorityList, [1:numReps;])
+	objVals, periods, numLookups = simObjVals!(sim, priorityList, 1:numReps)
 	(objVal, objValHalfWidth) = calcMeanAndHalfWidth(objVals)
 	updatePriorityListsRepsDone!(priorityList, numReps)
 	push!(priorityListsTried, priorityList)
@@ -296,7 +338,7 @@ function localSearch!(sim::Simulation, priorityList::PriorityList, priorityListN
 		end
 	end
 	merge!(logFileDict, getPeriodsStatsDict(periods))
-	merge!(logFileDict, Dict("iter" => iter, "numReps" => numReps, "searchDurationSeconds" => getSearchDuration(),
+	merge!(logFileDict, Dict("iter" => iter, "numReps" => numReps, "numLookups" => numLookups, "searchDurationSeconds" => getSearchDuration(),
 		"objVal" => objVal, "objValHalfWidth" => objValHalfWidth, "bestObjVal" => bestObjVal, "objValDiff" => 0, "objValDiffHalfWidth" => 0))
 	fileWriteDlmLine!(logFile, logFileHeader, logFileDict, priorityList)
 	
@@ -328,14 +370,16 @@ function localSearch!(sim::Simulation, priorityList::PriorityList, priorityListN
 				meanDiff = halfWidth = 0.0 # init
 				objVals = ObjVal[] # for priorityList
 				periods = SimPeriodStats[] # for priorityList
+				numLookups = 0
 				while numReps <= maxNumReps
-					newObjVals, newPeriods = simObjVals!(sim, priorityList, [(length(objVals)+1):numReps;])
+					newObjVals, newPeriods, newNumLookups = simObjVals!(sim, priorityList, (length(objVals)+1):numReps)
 					push!(priorityListsTried, priorityList)
 					push!(objVals, newObjVals...)
 					push!(periods, newPeriods...)
+					numLookups += newNumLookups
 					updatePriorityListsRepsDone!(priorityList, numReps)
 					if length(bestObjVals) < length(objVals)
-						push!(bestObjVals, simObjVals!(sim, bestPriorityList, [(length(bestObjVals)+1):numReps;])[1]...)
+						push!(bestObjVals, simObjVals!(sim, bestPriorityList, (length(bestObjVals)+1):numReps)[1]...)
 						updatePriorityListsRepsDone!(bestPriorityList, numReps)
 					end
 					meanDiff, halfWidth = calcMeanAndHalfWidth(objVals[1:numReps] - bestObjVals[1:numReps])
@@ -375,11 +419,14 @@ function localSearch!(sim::Simulation, priorityList::PriorityList, priorityListN
 					usedMove = true
 					newBestFound = true
 					
+					resetPriorityListsPeriodStatsList!() # remove periods to save on memory; new solution has almost completely new neighbourhood
+					setPriorityListPeriodStatsList!(priorityList, 1:length(periods), periods)
+					
 					doPrint && println("made ", move, ": i = ", i, ", j = ", j, "; new objective value: ", bestObjVal)
 				end
 				
 				merge!(logFileDict, getPeriodsStatsDict(periods))
-				merge!(logFileDict, Dict("iter" => iter, "move" => move, "i" => i, "j" => j, "numReps" => numReps, "usedMove" => Int(usedMove),
+				merge!(logFileDict, Dict("iter" => iter, "move" => move, "i" => i, "j" => j, "numReps" => numReps, "numLookups" => numLookups, "usedMove" => Int(usedMove),
 					"searchDurationSeconds" => getSearchDuration(), "objVal" => objVal, "objValHalfWidth" => objValHalfWidth, "bestObjVal" => bestObjVal,
 					"objValDiff" => meanDiff, "objValDiffHalfWidth" => halfWidth))
 				fileWriteDlmLine!(logFile, logFileHeader, logFileDict, priorityList)
