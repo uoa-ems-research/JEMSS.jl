@@ -128,7 +128,7 @@ global simStatsEmpty = flatten(statsDictFromPeriodStatsList(SimPeriodStats[]))
 global simStatsKeys = collect(keys(simStatsEmpty))
 global simStatsEmpty = merge(Dict(["$(key)_mean" => NaN for key in simStatsKeys]), Dict(["$(key)_halfWidth" => NaN for key in simStatsKeys]))
 
-global solFileHeader = ["search", "objVal", "objValHalfWidth"] # ... and stationsNumAmbs
+global solFileHeader = vcat(["search", "objVal", "objValHalfWidth"], sort(collect(keys(simStatsEmpty)))) # ... and stationsNumAmbs
 global logFileHeader = vcat(["search", "iter", "i", "j", "usedLookup", "usedMove", "searchDurationSeconds", "objVal", "objValHalfWidth", "bestObjVal"], sort(collect(keys(simStatsEmpty)))) # ... and stationsNumAmbs
 global logFileDict = Dict{String,Any}([s => "" for s in logFileHeader])
 
@@ -192,6 +192,7 @@ function repeatedLocalSearch!(sim::Simulation, deployments::Vector{Deployment})
 		# write solution to file
 		objValMeanAndHalfWidth = objValLookup(stationsNumAmbs)
 		solFileDict = Dict("search" => i, "objVal" => objValMeanAndHalfWidth.mean, "objValHalfWidth" => objValMeanAndHalfWidth.halfWidth)
+		merge!(solFileDict, stationsNumAmbsStats[stationsNumAmbs])
 		fileWriteDlmLine!(solFile, solFileHeader, solFileDict, stationsNumAmbs)
 		
 		global deploymentsOutputFilename
