@@ -393,9 +393,12 @@ function statsDictFromPeriodStatsList(periods::Vector{SimPeriodStats}; conf = 0.
 		d1 = d["calls"][name] = Dict{String,Any}()
 		
 		callStatsList = priority == nullPriority ? [p.call for p in periods] : [p.callPriorities[priority] for p in periods]
-		function getCallsStat(statName::Symbol)
-			x = [getfield(callStats, statName) / callStats.numCalls for callStats in callStatsList]
-			return meanAndHalfWidth(x)
+		function getCallsStat(dividendName::Symbol, divisorName::Symbol = :numCalls)
+			x = [getfield(callStats, dividendName) for callStats in callStatsList]
+			y = [getfield(callStats, divisorName) for callStats in callStatsList]
+			i = findall(y)
+			# if isempty(i) return MeanAndHalfWidth(0,0) end # do not do this; lack of samples doesn't imply mean of zero
+			return meanAndHalfWidth(x[i]./y[i])
 		end
 		
 		# fractions (between 0 and 1); don't need to write "avgFrac", as fraction is already an average
@@ -407,13 +410,13 @@ function statsDictFromPeriodStatsList(periods::Vector{SimPeriodStats}; conf = 0.
 		# durations
 		d1["avgDispatchDelayMinutes"] = getCallsStat(:totalDispatchDelay) * (24*60)
 		d1["avgOnSceneDurationMinutes"] = getCallsStat(:totalOnSceneDuration) * (24*60)
-		d1["avgHandoverDurationMinutes"] = getCallsStat(:totalHandoverDuration) * (24*60)
-		d1["avgQueuedDurationMinutes"] = getCallsStat(:totalQueuedDuration) * (24*60)
-		d1["avgBumpedDurationMinutes"] = getCallsStat(:totalBumpedDuration) * (24*60)
+		d1["avgHandoverDurationMinutes"] = getCallsStat(:totalHandoverDuration, :numTransports) * (24*60)
+		d1["avgQueuedDurationMinutes"] = getCallsStat(:totalQueuedDuration, :numQueued) * (24*60)
+		d1["avgBumpedDurationMinutes"] = getCallsStat(:totalBumpedDuration, :numBumped) * (24*60)
 		d1["avgWaitingForAmbDurationMinutes"] = getCallsStat(:totalWaitingForAmbDuration) * (24*60)
 		d1["avgResponseDurationMinutes"] = getCallsStat(:totalResponseDuration) * (24*60)
 		d1["avgAmbGoingToCallDurationMinutes"] = getCallsStat(:totalAmbGoingToCallDuration) * (24*60)
-		d1["avgTransportDurationMinutes"] = getCallsStat(:totalTransportDuration) * (24*60)
+		d1["avgTransportDurationMinutes"] = getCallsStat(:totalTransportDuration, :numTransports) * (24*60)
 		d1["avgServiceDurationMinutes"] = getCallsStat(:totalServiceDuration) * (24*60)
 		
 		# misc
