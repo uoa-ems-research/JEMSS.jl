@@ -396,7 +396,7 @@ function statsDictFromPeriodStatsList(periods::Vector{SimPeriodStats}; conf = 0.
 		function getCallsStat(dividendName::Symbol, divisorName::Symbol = :numCalls)
 			x = [getfield(callStats, dividendName) for callStats in callStatsList]
 			y = [getfield(callStats, divisorName) for callStats in callStatsList]
-			i = findall(y)
+			i = findall(x -> x != 0, y)
 			# if isempty(i) return MeanAndHalfWidth(0,0) end # do not do this; lack of samples doesn't imply mean of zero
 			return meanAndHalfWidth(x[i]./y[i])
 		end
