@@ -152,7 +152,7 @@ function simObjVals!(sim::Simulation, nestedCompTable::NestedCompTable, repIndic
 		end
 		reps = sim.reps[simRepIndices]
 		if parallel == true
-			runParallel!(runRep!, reps...; parallel = parallel, numThreads = numThreads)
+			runParallel!(runRep!, reps...; numThreads = numThreads)
 		else
 			for rep in reps runRep!(rep) end
 		end
