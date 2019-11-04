@@ -38,7 +38,7 @@ else
 		cd("data/regions/small/6") do
 			runGenConfig("gen_config.xml", overwriteOutputPath = true, doPrint = false)
 			isdir("output") || mkdir("output")
-			for script in ("deployment_local_search.jl", "priority_list_local_search.jl")
+			for script in ("deployment_local_search.jl", "priority_list_local_search.jl", "nested_comp_table_local_search.jl")
 				@info(string("Running script: ", script))
 				include(joinpath(scriptsFolder, script))
 				@test true
@@ -47,16 +47,14 @@ else
 			rm("output", recursive = true)
 		end
 		
-		# nested compliance table local search script
+		# transient.jl
 		cd("data/regions/small/2") do
 			runGenConfig("gen_config.xml", overwriteOutputPath = true, doPrint = false)
 			isdir("output") || mkdir("output")
-			for script in ("nested_comp_table_local_search.jl", "transient.jl")
-				@info(string("Running script: ", script))
-				include(joinpath(scriptsFolder, script))
-				@test true
-				println()
-			end
+			@info(string("Running script: transient.jl"))
+			include(joinpath(scriptsFolder, "transient.jl"))
+			@test true
+			println()
 			rm("output", recursive = true)
 		end
 		
