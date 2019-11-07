@@ -15,16 +15,16 @@
 
 # load the resimulation data from the events file
 # changes sim.resim.use to be false unless all checks are passed
-function initResim!(sim::Simulation)
+function initResim!(sim::Simulation; doPrint::Bool = false)
 	resim = sim.resim # shorthand
 	@assert(resim.use)
 	resim.use = false # until checks have passed
 	
 	eventsFilename = sim.outputFiles["events"].path
-	println("resimulating, based on events from file: ", eventsFilename)
+	doPrint && println("resimulating, based on events from file: ", eventsFilename)
 	
 	if !isfile(eventsFilename)
-		println("cannot resimulate, events file not found")
+		doPrint && println("cannot resimulate, events file not found")
 		return
 	end
 	
@@ -32,7 +32,7 @@ function initResim!(sim::Simulation)
 	(events, eventsChildren, fileEnded, inputFiles, fileChecksums) = readEventsFile(eventsFilename)
 	
 	if !fileEnded
-		println("cannot resimulate, events file closed before end")
+		doPrint && println("cannot resimulate, events file closed before end")
 		return
 	end
 	
@@ -41,12 +41,12 @@ function initResim!(sim::Simulation)
 	for i = 1:length(inputFiles)
 		if inputFiles[i] == "statsControl" continue end # allow this file to change, should not affect sim events
 		if fileChecksums[i] != sim.inputFiles[inputFiles[i]].checksum
-			println(" checksum mismatch for file: ", inputFiles[i])
+			doPrint && println(" checksum mismatch for file: ", inputFiles[i])
 			allMatch = false
 		end
 	end
 	if !allMatch
-		println("cannot resimulate, input file checksums do not match those in events file")
+		doPrint && println("cannot resimulate, input file checksums do not match those in events file")
 		return
 	end
 	

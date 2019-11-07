@@ -201,7 +201,6 @@ end
 function openOutputFiles!(sim::Simulation)
 	if !sim.writeOutput; return; end
 	
-	println("output path: ", sim.outputPath)
 	outputFilePath(name::String) = sim.outputFiles[name].path
 	
 	# create output path if it does not already exist

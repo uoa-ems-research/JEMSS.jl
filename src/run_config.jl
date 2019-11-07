@@ -436,7 +436,7 @@ function initSim(configFilename::String;
 		sim.resim.use = eltContentVal(rootElt, "resim")
 		if sim.resim.use
 			printInitMsg("")
-			initResim!(sim)
+			initResim!(sim, doPrint = doPrint)
 			doPrint && print("initialised resimulation")
 			printInitTime()
 		end
