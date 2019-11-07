@@ -16,12 +16,18 @@
 # run configuration xml file
 function runConfig(configFilename::String; doPrint::Bool = false)
 	sim = initSim(configFilename; allowResim = true, allowWriteOutput = true, doPrint = doPrint)
-	openOutputFiles!(sim)
-	simulate!(sim)
-	doPrint && printSimStats(sim)
-	writeOutputFiles(sim)
-	closeOutputFiles!(sim)
-	sim.writeOutput = sim.backup.writeOutput = false # needed in order to re-run the simulation
+	if !isempty(sim.reps)
+		simulateReps!(sim)
+	else
+		openOutputFiles!(sim)
+		simulate!(sim)
+		closeOutputFiles!(sim)
+		doPrint && printSimStats(sim)
+	end
+	if sim.writeOutput
+		writeOutputFiles(sim)
+		sim.writeOutput = sim.backup.writeOutput = false # need to switch off in order to re-run the simulation
+	end
 	return sim
 end
 

@@ -33,6 +33,7 @@
 		<callsStats>calls_stats.csv</callsStats>
 		<hospitalsStats>hospitals_stats.csv</hospitalsStats>
 		<stationsStats>stations_stats.csv</stationsStats>
+		<statsDict>stats_dict.csv</statsDict>
 	</outputFiles>
 	
 	<!-- resim = true will resimulate events from outputPath/events file, if possible -->

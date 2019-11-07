@@ -285,6 +285,26 @@ function confInterval(mhw::MeanAndHalfWidth)
 	return (mhw.mean - mhw.halfWidth, mhw.mean + mhw.halfWidth)
 end
 
+# Return a list of the main stats periods.
+# Assumes that the first period (after any warm-up) is the main period.
+# Can only return multiple periods if `sim.stats.periodDurationsIter` is cyclical.
+# Useful for batches in a single simulation replication.
+function getPeriodStatsList(sim::Simulation; rmPeriodsEndingAfterTime::Float = sim.calls[end].arrivalTime)::Vector{SimPeriodStats}
+	@assert(sim.complete)
+	stats = sim.stats # shorthand
+	i = stats.warmUpDuration == 0 ? 1 : 2 # ignore first period if it is for warm-up
+	itr = stats.periodDurationsIter.itr # can be empty if stats control not set
+	k = isa(itr, Array) ? length(itr) : length(itr.xs) # gap between period indices
+	periods = stats.periods[i:k:end]
+	if rmPeriodsEndingAfterTime != nullTime
+		# remove periods that end after the given time (rmPeriodsEndingAfterTime)
+		while (!isempty(periods) && periods[end].endTime > rmPeriodsEndingAfterTime) pop!(periods) end
+	end
+	if isempty(periods) return periods end
+	@assert(all(p -> isapprox(p.duration, periods[1].duration), periods))
+	return periods
+end
+
 # given the sim replications, return a list with the main stats period for each rep
 function getRepsPeriodStatsList(reps::Vector{Simulation}; periodIndex::Int = nullIndex)::Vector{SimPeriodStats}
 	@assert(all(rep -> rep.complete, reps))

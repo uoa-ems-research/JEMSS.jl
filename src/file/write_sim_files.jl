@@ -234,7 +234,11 @@ end
 
 function writeOutputFiles(sim::Simulation)
 	writeMiscOutputFiles(sim)
-	writeStatsFiles(sim)
+	if !isempty(sim.reps)
+		writeStatsFiles(sim, sim.reps)
+	else
+		writeStatsFiles(sim)
+	end
 end
 
 function writeMiscOutputFiles(sim::Simulation)
@@ -302,17 +306,20 @@ function writeStatsFiles(sim::Simulation)
 	if in("callsStats", outputFileKeys) writeCallsStatsFile(outputFilePath("callsStats"), stats) end
 	if in("hospitalsStats", outputFileKeys) writeHospitalsStatsFile(outputFilePath("hospitalsStats"), stats) end
 	if in("stationsStats", outputFileKeys) writeStationsStatsFile(outputFilePath("stationsStats"), stats) end
+	if in("statsDict", outputFileKeys) writeStatsDictFile(outputFilePath("statsDict"), getPeriodStatsList(sim)) end
 end
 
 # for independent simulation replications
 function writeStatsFiles(sim::Simulation, reps::Vector{Simulation}; periodIndex::Int = nullIndex)
 	outputFileKeys = keys(sim.outputFiles)
 	outputFilePath(name::String) = sim.outputFiles[name].path
-	periods = getRepsPeriodStatsList(reps, periodIndex = periodIndex)
+	periods = periodIndex == nullIndex ? getRepsPeriodStatsList(reps) : getRepsPeriodStatsList(reps, periodIndex = periodIndex)
+	@assert(!isempty(periods))
 	if in("ambulancesStats", outputFileKeys) writeAmbsStatsFile(outputFilePath("ambulancesStats"), periods) end
 	if in("callsStats", outputFileKeys) writeCallsStatsFile(outputFilePath("callsStats"), periods) end
 	if in("hospitalsStats", outputFileKeys) writeHospitalsStatsFile(outputFilePath("hospitalsStats"), periods) end
 	if in("stationsStats", outputFileKeys) writeStationsStatsFile(outputFilePath("stationsStats"), periods) end
+	if in("statsDict", outputFileKeys) writeStatsDictFile(outputFilePath("statsDict"), periods) end
 end
 
 function simStatsTimestampsTable(stats::SimStats)::Table
@@ -497,4 +504,25 @@ function writeStationsStatsFile(filename::String, periods::Vector{SimPeriodStats
 	periodTable = simStatsPeriodTable(periods)
 	stationsTables = makeStationsStatsTables(periods)
 	writeTablesToFile(filename, [miscTable, periodTable, stationsTables...])
+end
+
+# stats dict values into table
+function makeStatsDictTable(statsDict::Dict{String,Any})
+	statsDictFlat = flatten(statsDict)
+	@assert(all(v -> isa(v, MeanAndHalfWidth), values(statsDictFlat))) # check that statsDictFlat really is flat
+	statsDictTable = Table("statsDict", ["stat", "mean", "halfWidth"];
+		rows = [[k, statsDictFlat[k].mean, statsDictFlat[k].halfWidth] for k in sort(collect(keys(statsDictFlat)))])
+	return statsDictTable
+end
+
+function writeStatsDictFile(filename::String, periods::Vector{SimPeriodStats}; conf::Float = 0.95)
+	periodDuration = 0.0
+	if !isempty(periods)
+		periodDuration = periods[1].duration
+		@assert(all(p -> isapprox(p.duration, periodDuration), periods))
+	end
+	statsDictFlat = statsDictFromPeriodStatsList(periods, conf = conf) |> flatten
+	statsDictTable = makeStatsDictTable(statsDictFlat)
+	miscTable = Table("misc", ["conf", "numPeriods", "periodDuration"], rows = [[conf, length(periods), periodDuration]])
+	writeTablesToFile(filename, [miscTable, statsDictTable])
 end
