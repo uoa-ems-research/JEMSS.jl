@@ -289,19 +289,17 @@ end
 # Assumes that the first period (after any warm-up) is the main period.
 # Can only return multiple periods if `sim.stats.periodDurationsIter` is cyclical.
 # Useful for batches in a single simulation replication.
-function getPeriodStatsList(sim::Simulation; rmPeriodsEndingAfterTime::Float = sim.calls[end].arrivalTime)::Vector{SimPeriodStats}
+function getPeriodStatsList(sim::Simulation)::Vector{SimPeriodStats}
 	@assert(sim.complete)
 	stats = sim.stats # shorthand
 	i = stats.warmUpDuration == 0 ? 1 : 2 # ignore first period if it is for warm-up
 	itr = stats.periodDurationsIter.itr # can be empty if stats control not set
-	k = isa(itr, Array) ? length(itr) : length(itr.xs) # gap between period indices
+	k = isa(itr, Iterators.Cycle) ? length(itr.xs) : length(itr) # gap between period indices
 	periods = stats.periods[i:k:end]
-	if rmPeriodsEndingAfterTime != nullTime
-		# remove periods that end after the given time (rmPeriodsEndingAfterTime)
-		while (!isempty(periods) && periods[end].endTime > rmPeriodsEndingAfterTime) pop!(periods) end
-	end
 	if isempty(periods) return periods end
-	@assert(all(p -> isapprox(p.duration, periods[1].duration), periods))
+	periodDuration = periods[1].duration
+	if !isapprox(periods[end].duration, periodDuration) pop!(periods) end
+	@assert(all(p -> isapprox(p.duration, periodDuration), periods))
 	return periods
 end
 
