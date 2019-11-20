@@ -76,7 +76,7 @@ export
 # move up
 export
 	initCompTable!, initDmexclp!, initPriorityList!, initZhangIp!, initTemp0!, initTemp1!, initTemp2!,
-	setMoveUpModule
+	setMoveUpModule!
 
 # misc functions
 export
