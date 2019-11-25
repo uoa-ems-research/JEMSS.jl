@@ -36,6 +36,7 @@ end
 
 # run single simulation replication on `sim`
 # need this function in case rep.isRunnable == false
+# mutates: sim, rep
 function simulateRep!(sim::Simulation, rep::Simulation)
 	sim.calls = Call[] # so calls will not be reset
 	reset!(sim)
@@ -48,6 +49,7 @@ end
 
 # run simulation replications on `sim`
 # need this function in case rep.isRunnable == false
+# mutates: sim, reps
 function simulateReps!(sim::Simulation, reps::Vector{Simulation} = sim.reps; doPrint::Bool = false)
 	numReps = length(reps)
 	for (i,rep) in enumerate(reps)
