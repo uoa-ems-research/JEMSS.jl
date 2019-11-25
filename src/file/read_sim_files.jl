@@ -486,7 +486,7 @@ function readPrioritiesFile(filename::String)
 	return targetResponseDurations, responseTravelPriorities
 end
 
-function readPriorityListFile(filename::String)
+function readPriorityListFile(filename::String)::PriorityList
 	tables = readTablesFromFile(filename)
 	
 	table = tables["priorityList"]
@@ -495,9 +495,10 @@ function readPriorityListFile(filename::String)
 	
 	# create priority list from data in table
 	columns = table.columns # shorthand
+	itemCol = haskey(columns, "item") ? columns["item"] : columns["numAmbs"] # allow old column name "numAmbs"
 	priorityList = PriorityList(undef,n)
 	for i = 1:n
-		@assert(columns["numAmbs"][i] == i)
+		@assert(itemCol[i] == i)
 		priorityList[i] = columns["stationIndex"][i]
 	end
 	
@@ -506,6 +507,36 @@ function readPriorityListFile(filename::String)
 	
 	return priorityList
 end
+
+function readPriorityListsFile(filename::String)::Vector{PriorityList}
+	tables = readTablesFromFile(filename)
+	
+	table = tables["priorityLists"]
+	(numAmbs, n) = size(table.data)
+	@assert(numAmbs >= 1)
+	numPriorityLists = n - 1
+	@assert(numPriorityLists >= 1) # number of priority lists
+	
+	# create priority list from data in table
+	columns = table.columns # shorthand
+	itemCol = haskey(columns, "item") ? columns["item"] : columns["numAmbs"] # allow old column name "numAmbs"
+	priorityLists = PriorityList[]
+	for i = 1:numPriorityLists
+		priorityList = PriorityList(undef,numAmbs)
+		for j = 1:numAmbs
+			@assert(itemCol[j] == j)
+			priorityList[j] = columns["priorityList_$i stationIndex"][j]
+		end
+		
+		# station indices should be positive
+		@assert(all(priorityList .>= 1))
+		
+		push!(priorityLists, priorityList)
+	end
+	
+	return priorityLists
+end
+
 
 # read raster file using ArchGDAL package, return as custom Raster type
 function readRasterFile(rasterFilename::String)

@@ -15,34 +15,6 @@
 
 using Random
 
-# find nearest node by evaluating distances to all nodes from given location (brute-force)
-# should not be used except for asserting results of faster algorithms
-# can set offRoadAccessRequired in order to search nodes with off-road access, or all nodes
-function findNearestNodeBruteForce(map::Map, nodes::Vector{Node}, location::Location;
-	offRoadAccessRequired::Bool = true)
-	
-	numNodes = length(nodes)
-	
-	# compare square distances
-	bestSqrDist = Inf
-	chosenNode = nullIndex
-	sqrDist = 0.0 # init
-	for i = 1:numNodes
-		node = nodes[i]
-		if offRoadAccessRequired && !node.offRoadAccess
-			continue
-		end
-		sqrDist = squareDist(map, node.location, location)
-		if sqrDist < bestSqrDist
-			bestSqrDist = sqrDist
-			chosenNode = i
-		end
-	end
-	dist = sqrt(bestSqrDist)
-	
-	return chosenNode, dist
-end
-
 @testset "grid" begin
 	# create map
 	mp = Map(0, 1, 0, 1, 10, 10) # Map(xMin, xMax, yMin, yMax, xScale, yScale)
@@ -83,8 +55,8 @@ end
 	grid1pass = grid2pass = true
 	for x = range(0; length = 10*nx+1, stop = 1), y = range(0; length = 10*ny+1, stop = 1)
 		location = Location(x,y)
-		grid1pass &= findNearestNode(mp, grid1, nodes, location) == findNearestNodeBruteForce(mp, nodes, location; offRoadAccessRequired = true)
-		grid2pass &= findNearestNode(mp, grid2, nodes, location) == findNearestNodeBruteForce(mp, nodes, location; offRoadAccessRequired = false)
+		grid1pass &= findNearestNode(mp, grid1, nodes, location) == findNearestNode(mp, nodes, location; offRoadAccessRequired = true)
+		grid2pass &= findNearestNode(mp, grid2, nodes, location) == findNearestNode(mp, nodes, location; offRoadAccessRequired = false)
 	end
 	@test grid1pass
 	@test grid2pass

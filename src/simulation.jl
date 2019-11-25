@@ -96,7 +96,7 @@ end
 function backup!(sim::Simulation)
 	@assert(!sim.used)
 	if !isdefined(sim, :backup) sim.backup = Simulation() end
-	fnamesDontCopy = (:backup, :net, :travel, :grid, :resim, :calls, :demand, :demandCoverage)
+	fnamesDontCopy = (:backup, :net, :travel, :grid, :resim, :calls, :demand, :demandCoverage, :reps)
 	for fname in setdiff(fieldnames(Simulation), fnamesDontCopy)
 		setfield!(sim.backup, fname, deepcopy(getfield(sim, fname)))
 	end
@@ -109,7 +109,7 @@ function reset!(sim::Simulation)
 	@assert(!sim.backup.used)
 	
 	if sim.used
-		fnamesDontCopy = (:backup, :net, :travel, :grid, :resim, :calls, :demand, :demandCoverage, :animating)
+		fnamesDontCopy = (:backup, :net, :travel, :grid, :resim, :calls, :demand, :demandCoverage, :reps, :animating)
 		# fnamesDontCopy lists fields that are not backed up in sim.backup, or will be reset by another method
 		for fname in setdiff(fieldnames(Simulation), fnamesDontCopy)
 			setfield!(sim, fname, deepcopy(getfield(sim.backup, fname)))

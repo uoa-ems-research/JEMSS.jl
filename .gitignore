@@ -3,4 +3,6 @@
 *.jl.mem
 /example/output
 /example/input
+/example/scripts/output
 /test/data/regions/small/*/generated
+/test/data/regions/small/*/output

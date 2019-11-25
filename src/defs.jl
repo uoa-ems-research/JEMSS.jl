@@ -37,6 +37,8 @@ const CompTable = Array{Int,2} # compTable[i,j] gives number of ambulances to pl
 const NestedCompTable = Vector{Int} # nested compliance table can be represented as a list of station indices; nestedCompTable[1:i] gives indices of stations that i free ambulances should be placed at
 const PriorityList = Vector{Int} # a priority list gives the order of preference for which ambulances should be redeployed (moved up) to stations; priorityList[1] has the index of the station with highest priority
 
+const maxNumThreads = nthreads() # value set by environment variable JULIA_NUM_THREADS
+
 # run modes
 const checkMode = true # for data checking, e.g. assertions that are checked frequently
 

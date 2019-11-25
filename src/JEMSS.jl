@@ -42,6 +42,7 @@ using Hungarian
 using OffsetArrays
 using Base.Iterators: Stateful
 using Parameters
+using Base.Threads
 
 # optimisation
 using JuMP
@@ -60,24 +61,27 @@ using StatsFuns
 export
 	initSim, runConfig, # run_config
 	simulate!, simulateToTime!, simulateToEnd!, backup!, reset!, simulateNextEvent!, # simulation
+	setSimReps!, simulateRep!, simulateReps!, resetRep!, resetReps!, makeRepsRunnable!, # replication
 	animate!, animate, # animation
 	backupSim!, resetSim! # compat
 
 # file functions
 export
 	readDlmFileNextLine!, readDlmFile, openNewFile, writeDlmLine!, arrayDict, writeTablesToFile!, writeTablesToFile, readTablesFromFile, readTablesFromData, tableRowsFieldDicts, fileChecksum, serializeToFile, deserializeFile, joinPathIfNotAbs, interpolateString, xmlFileRoot, findElt, eltContent, eltContentVal, eltContentInterpVal, childrenNodeNames, selectXmlFile, # file_io
-	runGenConfig, # gen_sim_files
-	readAmbsFile, readArcsFile, readCallsFile, readCompTableFile, readDemandFile, readDemandCoverageFile, readEventsFile, readGeoFile, readHospitalsFile, readMapFile, readNodesFile, readPrioritiesFile, readPriorityListFile, readRasterFile, readRedispatchFile, readRNetTravelsFile, readStationsFile, readStatsControlFile, readTravelFile, readDeploymentsFile, readZhangIpParamsFile, # read_sim_files
-	writeAmbsFile, writeArcsFile, writeCallsFile, writeDemandFile, writeDemandCoverageFile, writeHospitalsFile, writeMapFile, writeNodesFile, writePrioritiesFile, writeRedispatchFile, writeRNetTravelsFile, writeStationsFile, writeTravelFile, openOutputFiles!, writeOutputFiles, writeMiscOutputFiles, closeOutputFiles!, writeEventToFile!, writeDeploymentsFile, writeBatchMeanResponseDurationsFile, # write_sim_files
-	writeStatsFiles, writeAmbsStatsFile, writeCallsStatsFile, writeHospitalsStatsFile, writeStationsStatsFile # write_sim_files - stats
+	readGenConfig, runGenConfig, runGenConfigCalls, makeCalls, # gen_sim_files
+	readAmbsFile, readArcsFile, readCallsFile, readCompTableFile, readDemandFile, readDemandCoverageFile, readEventsFile, readGeoFile, readHospitalsFile, readMapFile, readNodesFile, readPrioritiesFile, readPriorityListFile, readPriorityListsFile, readRasterFile, readRedispatchFile, readRNetTravelsFile, readStationsFile, readStatsControlFile, readTravelFile, readDeploymentsFile, readZhangIpParamsFile, # read_sim_files
+	writeAmbsFile, writeArcsFile, writeCallsFile, writeDemandFile, writeDemandCoverageFile, writeHospitalsFile, writeMapFile, writeNodesFile, writePrioritiesFile, writePriorityListFile, writePriorityListsFile, writeRedispatchFile, writeRNetTravelsFile, writeStationsFile, writeTravelFile, openOutputFiles!, writeOutputFiles, writeMiscOutputFiles, closeOutputFiles!, writeEventToFile!, writeDeploymentsFile, writeBatchMeanResponseDurationsFile, # write_sim_files
+	writeStatsFiles, writeAmbsStatsFile, writeCallsStatsFile, writeHospitalsStatsFile, writeStationsStatsFile, writeStatsDictFile # write_sim_files - stats
 
-# move up initialisation functions
+# move up
 export
-	initCompTable!, initDmexclp!, initPriorityList!, initZhangIp!, initTemp0!, initTemp1!, initTemp2!
+	initCompTable!, initDmexclp!, initPriorityList!, initZhangIp!, initTemp0!, initTemp1!, initTemp2!,
+	setMoveUpModule!
 
 # misc functions
 export
 	isBusy, isFree, isWorking, isGoingToStation, isTravelling, # ambulance
+	setSimCalls!, # call
 	initDemand!, initDemandCoverage!, # demand
 	printEvent, # event
 	findNearestNode, # grid
@@ -85,12 +89,13 @@ export
 	isFNodeInRGraph, shortestPathNextRNode, shortestPathNextRArc, shortestPathData, shortestPathTravelTime, shortestPathDistance, shortestPath, findRArcFromFNodeToFNode, # network
 	rasterRandLocations, printRasterSize, # raster
 	shortestRouteTravelTime!, # route
-	getCallResponseDurations, getAvgCallResponseDuration, getCallsReachedInTime, countCallsReachedInTime, printSimStats, printAmbsStats, printCallsStats, printHospitalsStats, calcBatchMeans, calcBatchMeanResponseDurations, meanErrorPlot, calcAR0DurbinWatsonTestPValue, tDistrHalfWidth, confInterval, statsDictFromPeriodStatsList, # statistics
+	getCallResponseDurations, getAvgCallResponseDuration, getCallsReachedInTime, countCallsReachedInTime, printSimStats, printAmbsStats, printCallsStats, printHospitalsStats, calcBatchMeans, calcBatchMeanResponseDurations, meanErrorPlot, calcAR0DurbinWatsonTestPValue, tDistrHalfWidth, confInterval, getPeriodStatsList, getRepsPeriodStatsList, getRepPeriodStats, statsDictFromPeriodStatsList, # statistics
 	checkCompTable, checkCompTableIsNested, nestCompTable, unnestCompTable, makeRandNestedCompTable, # compliance table
 	makeRandDeployment, makeRandDeployments, deploymentToStationsNumAmbs, stationsNumAmbsToDeployment, getDeployment, getStationsNumAmbs, setAmbStation!, applyDeployment!, applyStationsNumAmbs!, simulateDeployment!, simulateDeployments!, # deployment
 	checkPriorityList, makeRandPriorityList, # priority list
 	solveMexclp!, # mexclp
-	flatten # dict
+	flatten, # dict
+	runParallel! # parallel
 
 # types
 export
@@ -104,7 +109,7 @@ export
 
 # defs - consts
 export
-	Float, FloatSpTime, IntRNode, IntFadj, # type alias
+	Float, FloatSpTime, FloatSpDist, IntRNode, IntFadj, # type alias
 	nullIndex, nullX, nullY, nullTime, nullDist, # nulls
 	priorities, numPriorities, # priorities
 	Deployment, CompTable, NestedCompTable, PriorityList
@@ -128,6 +133,7 @@ export
 include("defs.jl")
 
 include("misc/dict.jl")
+include("misc/parallel.jl")
 include("misc/rand.jl")
 include("misc/stream.jl")
 
@@ -167,6 +173,7 @@ include("decision/move_up/zhang_ip.jl")
 include("resimulation.jl")
 include("run_config.jl")
 include("simulation.jl")
+include("replication.jl")
 include("statistics.jl")
 
 include("animation/animation.jl")

@@ -17,11 +17,8 @@
 # From thesis: "Simulation optimisation and Markov models for dynamic ambulance redeployment"
 
 # initialise data relevant to move up
-function initZhangIp!(sim::Simulation;
-	paramsFilename::String = "")
-	
-	# read parameters from file
-	zid = sim.moveUpData.zhangIpData = readZhangIpParamsFile(paramsFilename)
+function initZhangIp!(sim::Simulation, zhangIpData::ZhangIpData)
+	zid = sim.moveUpData.zhangIpData = zhangIpData # shorthand
 	
 	# check number of stations
 	numStations = sim.numStations
@@ -48,6 +45,10 @@ function initZhangIp!(sim::Simulation;
 	end
 	
 	@assert(sim.travel.numSets == 1) # otherwise, need to be careful in calculating the regret travel time for move up of on-road ambulances
+end
+function initZhangIp!(sim::Simulation; paramsFilename::String = "")
+	zid = readZhangIpParamsFile(paramsFilename)
+	initZhangIp!(sim, zid)
 end
 
 # determine move ups to make at current time

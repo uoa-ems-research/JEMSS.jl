@@ -99,10 +99,10 @@ end
 # set ambulance to be located at given station
 # this is hacky, expects ambulance will only need changing, this may not always be true
 # mutates: ambulance
-function setAmbStation!(ambulance::Ambulance, station::Station)
+function setAmbStation!(sim::Simulation, ambulance::Ambulance, station::Station)
 	ambulance.stationIndex = station.index
-	copy!(ambulance.route.endLoc, station.location)
-	ambulance.route.endFNode = station.nearestNodeIndex
+	ambulance.route = Route()
+	initRoute!(sim, ambulance.route; startLoc = station.location, startFNode = station.nearestNodeIndex, startFNodeDist = station.nearestNodeDist)
 end
 
 # apply deployment 'deployment' for sim.ambulances and sim.stations
@@ -113,7 +113,7 @@ function applyDeployment!(sim::Simulation, deployment::Deployment)
 	@assert(all(d -> in(d, 1:sim.numStations), deployment))
 	# @assert(all(1 .<= deployment .<= sim.numStations))
 	for i = 1:n
-		setAmbStation!(sim.ambulances[i], sim.stations[deployment[i]])
+		setAmbStation!(sim, sim.ambulances[i], sim.stations[deployment[i]])
 	end
 end
 

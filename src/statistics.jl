@@ -285,6 +285,42 @@ function confInterval(mhw::MeanAndHalfWidth)
 	return (mhw.mean - mhw.halfWidth, mhw.mean + mhw.halfWidth)
 end
 
+# Return a list of the main stats periods.
+# Assumes that the first period (after any warm-up) is the main period.
+# Can only return multiple periods if `sim.stats.periodDurationsIter` is cyclical.
+# Useful for batches in a single simulation replication.
+function getPeriodStatsList(sim::Simulation)::Vector{SimPeriodStats}
+	@assert(sim.complete)
+	stats = sim.stats # shorthand
+	i = stats.warmUpDuration == 0 ? 1 : 2 # ignore first period if it is for warm-up
+	itr = stats.periodDurationsIter.itr # can be empty if stats control not set
+	k = isa(itr, Iterators.Cycle) ? length(itr.xs) : length(itr) # gap between period indices
+	periods = stats.periods[i:k:end]
+	if isempty(periods) return periods end
+	periodDuration = periods[1].duration
+	if !isapprox(periods[end].duration, periodDuration) pop!(periods) end
+	@assert(all(p -> isapprox(p.duration, periodDuration), periods))
+	return periods
+end
+
+# given the sim replications, return a list with the main stats period for each rep
+function getRepsPeriodStatsList(reps::Vector{Simulation}; periodIndex::Int = nullIndex)::Vector{SimPeriodStats}
+	@assert(all(rep -> rep.complete, reps))
+	if periodIndex == nullIndex
+		warmUpDuration = reps[1].stats.warmUpDuration
+		@assert(all(rep -> rep.stats.warmUpDuration == warmUpDuration, reps))
+		periodIndex = warmUpDuration == 0 ? 1 : 2
+	end
+	periods = [rep.stats.periods[periodIndex] for rep in reps]
+	@assert(all(p -> isapprox(p.duration, periods[1].duration), periods))
+	return periods
+end
+
+# given a sim replication, return the main stats period
+function getRepPeriodStats(rep::Simulation; periodIndex::Int = nullIndex)::SimPeriodStats
+	return getRepsPeriodStatsList([rep], periodIndex = periodIndex)[1]
+end
+
 # Return a dictionary of statistics from a list of period statistics.
 # Periods should be the same duration.
 # Confidence intervals assume that samples obtained from periods are IID, and are from a population with a normal distribution and unknown standard deviation.
@@ -303,7 +339,7 @@ function statsDictFromPeriodStatsList(periods::Vector{SimPeriodStats}; conf = 0.
 	
 	duration = periods[1].duration
 	ambDays = length(periods[1].ambulances) * duration
-	@assert(all(p -> p.duration == duration, periods))
+	@assert(all(p -> isapprox(p.duration, duration), periods))
 	
 	d = statsDict = Dict{String,Any}()
 	
@@ -375,9 +411,12 @@ function statsDictFromPeriodStatsList(periods::Vector{SimPeriodStats}; conf = 0.
 		d1 = d["calls"][name] = Dict{String,Any}()
 		
 		callStatsList = priority == nullPriority ? [p.call for p in periods] : [p.callPriorities[priority] for p in periods]
-		function getCallsStat(statName::Symbol)
-			x = [getfield(callStats, statName) / callStats.numCalls for callStats in callStatsList]
-			return meanAndHalfWidth(x)
+		function getCallsStat(dividendName::Symbol, divisorName::Symbol = :numCalls)
+			x = [getfield(callStats, dividendName) for callStats in callStatsList]
+			y = [getfield(callStats, divisorName) for callStats in callStatsList]
+			i = findall(x -> x != 0, y)
+			# if isempty(i) return MeanAndHalfWidth(0,0) end # do not do this; lack of samples doesn't imply mean of zero
+			return meanAndHalfWidth(x[i]./y[i])
 		end
 		
 		# fractions (between 0 and 1); don't need to write "avgFrac", as fraction is already an average
@@ -389,13 +428,13 @@ function statsDictFromPeriodStatsList(periods::Vector{SimPeriodStats}; conf = 0.
 		# durations
 		d1["avgDispatchDelayMinutes"] = getCallsStat(:totalDispatchDelay) * (24*60)
 		d1["avgOnSceneDurationMinutes"] = getCallsStat(:totalOnSceneDuration) * (24*60)
-		d1["avgHandoverDurationMinutes"] = getCallsStat(:totalHandoverDuration) * (24*60)
-		d1["avgQueuedDurationMinutes"] = getCallsStat(:totalQueuedDuration) * (24*60)
-		d1["avgBumpedDurationMinutes"] = getCallsStat(:totalBumpedDuration) * (24*60)
+		d1["avgHandoverDurationMinutes"] = getCallsStat(:totalHandoverDuration, :numTransports) * (24*60)
+		d1["avgQueuedDurationMinutes"] = getCallsStat(:totalQueuedDuration, :numQueued) * (24*60)
+		d1["avgBumpedDurationMinutes"] = getCallsStat(:totalBumpedDuration, :numBumped) * (24*60)
 		d1["avgWaitingForAmbDurationMinutes"] = getCallsStat(:totalWaitingForAmbDuration) * (24*60)
 		d1["avgResponseDurationMinutes"] = getCallsStat(:totalResponseDuration) * (24*60)
 		d1["avgAmbGoingToCallDurationMinutes"] = getCallsStat(:totalAmbGoingToCallDuration) * (24*60)
-		d1["avgTransportDurationMinutes"] = getCallsStat(:totalTransportDuration) * (24*60)
+		d1["avgTransportDurationMinutes"] = getCallsStat(:totalTransportDuration, :numTransports) * (24*60)
 		d1["avgServiceDurationMinutes"] = getCallsStat(:totalServiceDuration) * (24*60)
 		
 		# misc

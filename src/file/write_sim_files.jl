@@ -154,6 +154,22 @@ function writePrioritiesFile(filename::String, targetResponseDurations::Vector{F
 	writeTablesToFile(filename, table)
 end
 
+function writePriorityListFile(filename::String, priorityList::PriorityList)
+	numAmbs = length(priorityList)
+	table = Table("priorityList", ["item", "stationIndex"];
+		cols = [collect(1:numAmbs), priorityList])
+	writeTablesToFile(filename, table)
+end
+
+function writePriorityListsFile(filename::String, priorityLists::Vector{PriorityList})
+	n = length(priorityLists)
+	numAmbs = length(priorityLists[1])
+	@assert(all(priorityList -> length(priorityList) == numAmbs, priorityLists))
+	table = Table("priorityLists", ["item", ["priorityList_$i stationIndex" for i = 1:n]...];
+		cols = [collect(1:numAmbs), priorityLists...])
+	writeTablesToFile(filename, table)
+end
+
 function writeStationsFile(filename::String, stations::Vector{Station})
 	table = Table("stations", ["index", "x", "y", "capacity"];
 		rows = [[s.index, s.location.x, s.location.y, s.capacity] for s in stations])
@@ -185,7 +201,6 @@ end
 function openOutputFiles!(sim::Simulation)
 	if !sim.writeOutput; return; end
 	
-	println("output path: ", sim.outputPath)
 	outputFilePath(name::String) = sim.outputFiles[name].path
 	
 	# create output path if it does not already exist
@@ -218,7 +233,11 @@ end
 
 function writeOutputFiles(sim::Simulation)
 	writeMiscOutputFiles(sim)
-	writeStatsFiles(sim)
+	if !isempty(sim.reps)
+		writeStatsFiles(sim, sim.reps)
+	else
+		writeStatsFiles(sim)
+	end
 end
 
 function writeMiscOutputFiles(sim::Simulation)
@@ -277,6 +296,7 @@ function writeBatchMeanResponseDurationsFile(filename::String, batchMeanResponse
 	writeTablesToFile(filename, [miscTable, avgBatchMeansTable, batchMeansTable])
 end
 
+# for batches in a single simulation replication
 function writeStatsFiles(sim::Simulation)
 	outputFileKeys = keys(sim.outputFiles)
 	outputFilePath(name::String) = sim.outputFiles[name].path
@@ -285,11 +305,38 @@ function writeStatsFiles(sim::Simulation)
 	if in("callsStats", outputFileKeys) writeCallsStatsFile(outputFilePath("callsStats"), stats) end
 	if in("hospitalsStats", outputFileKeys) writeHospitalsStatsFile(outputFilePath("hospitalsStats"), stats) end
 	if in("stationsStats", outputFileKeys) writeStationsStatsFile(outputFilePath("stationsStats"), stats) end
+	if in("statsDict", outputFileKeys) writeStatsDictFile(outputFilePath("statsDict"), getPeriodStatsList(sim)) end
+end
+
+# for independent simulation replications
+function writeStatsFiles(sim::Simulation, reps::Vector{Simulation}; periodIndex::Int = nullIndex)
+	outputFileKeys = keys(sim.outputFiles)
+	outputFilePath(name::String) = sim.outputFiles[name].path
+	periods = periodIndex == nullIndex ? getRepsPeriodStatsList(reps) : getRepsPeriodStatsList(reps, periodIndex = periodIndex)
+	@assert(!isempty(periods))
+	if in("ambulancesStats", outputFileKeys) writeAmbsStatsFile(outputFilePath("ambulancesStats"), periods) end
+	if in("callsStats", outputFileKeys) writeCallsStatsFile(outputFilePath("callsStats"), periods) end
+	if in("hospitalsStats", outputFileKeys) writeHospitalsStatsFile(outputFilePath("hospitalsStats"), periods) end
+	if in("stationsStats", outputFileKeys) writeStationsStatsFile(outputFilePath("stationsStats"), periods) end
+	if in("statsDict", outputFileKeys) writeStatsDictFile(outputFilePath("statsDict"), periods) end
 end
 
 function simStatsTimestampsTable(stats::SimStats)::Table
 	return Table("timestamps", ["simStartTime", "warmUpEndTime", "lastCallArrivalTime", "simEndTime"];
 		rows = [[stats.simStartTime, stats.warmUpEndTime, stats.lastCallArrivalTime, stats.simEndTime]])
+end
+
+function simStatsPeriodTable(period::SimPeriodStats)::Table
+	return Table("period", ["startTime", "endTime", "duration"];
+		rows = [[period.startTime, period.endTime, period.duration]])
+end
+function simStatsPeriodTable(periods::Vector{SimPeriodStats})::Table
+	@assert(length(periods) >= 1)
+	@unpack startTime, endTime, duration = periods[1]
+	@assert(all(p -> isapprox(p.startTime, startTime), periods))
+	@assert(all(p -> isapprox(p.endTime, endTime), periods))
+	@assert(all(p -> isapprox(p.duration, duration), periods))
+	return simStatsPeriodTable(periods[1])
 end
 
 function simStatsPeriodsTable(periods::Vector{SimPeriodStats})::Table
@@ -298,15 +345,9 @@ function simStatsPeriodsTable(periods::Vector{SimPeriodStats})::Table
 	return periodsTable
 end
 
-function writeAmbsStatsFile(filename::String, stats::SimStats)
-	# shorthand
-	periods = stats.periods
-	numAmbs = length(periods[1].ambulances)
-	
-	miscTable = Table("miscData", ["numAmbs"]; rows = [[numAmbs]])
-	
-	timestampsTable = simStatsTimestampsTable(stats)
-	periodsTable = simStatsPeriodsTable(periods)
+function makeAmbsStatsTables(periods::Vector{SimPeriodStats})::Vector{Table}
+	numAmbs = length(periods[1].ambulances) # shorthand
+	@assert(all(p -> length(p.ambulances) == numAmbs, periods))
 	
 	ambulanceTables = Table[]
 	counts = (:numCallsTreated, :numCallsTransported, :numDispatches, :numDispatchesFromStation, :numDispatchesOnRoad, :numDispatchesOnFree, :numRedispatches, :numMoveUps, :numMoveUpsFromStation, :numMoveUpsOnRoad, :numMoveUpsOnFree, :numMoveUpsReturnToPrevStation)
@@ -326,18 +367,34 @@ function writeAmbsStatsFile(filename::String, stats::SimStats)
 		push!(ambulanceTables, ambulanceTable)
 	end
 	
+	return ambulanceTables
+end
+
+# for batches in a single simulation replication
+function writeAmbsStatsFile(filename::String, stats::SimStats)
+	# shorthand
+	periods = stats.periods
+	numAmbs = length(periods[1].ambulances)
+	
+	miscTable = Table("miscData", ["mode", "numAmbs"]; rows = [["batch", numAmbs]])
+	timestampsTable = simStatsTimestampsTable(stats)
+	periodsTable = simStatsPeriodsTable(periods)
+	ambulanceTables = makeAmbsStatsTables(periods)
 	writeTablesToFile(filename, [miscTable, timestampsTable, periodsTable, ambulanceTables...])
 end
 
-function writeCallsStatsFile(filename::String, stats::SimStats)
-	periods = stats.periods # shorthand
+# for independent simulation replications
+function writeAmbsStatsFile(filename::String, periods::Vector{SimPeriodStats})
+	numAmbs = length(periods[1].ambulances) # shorthand
+	@assert(all(p -> length(p.ambulances) == numAmbs, periods))
 	
-	numCalls = stats.captures[end].call.numCalls
-	miscTable = Table("miscData", ["numCalls"]; rows = [[numCalls]])
-	
-	timestampsTable = simStatsTimestampsTable(stats)
-	periodsTable = simStatsPeriodsTable(periods)
-	
+	miscTable = Table("miscData", ["mode", "numAmbs"]; rows = [["replication", numAmbs]])
+	periodTable = simStatsPeriodTable(periods)
+	ambulanceTables = makeAmbsStatsTables(periods)
+	writeTablesToFile(filename, [miscTable, periodTable, ambulanceTables...])
+end
+
+function makeCallsStatsTables(periods::Vector{SimPeriodStats})::Vector{Table}
 	fnames = setdiff(fieldnames(CallStats), (:callIndex,))
 	callTable = Table("call", vcat("periodIndex", collect(string.(fnames)));
 		rows = [vcat(i, [getfield(p.call, fname) for fname in fnames]) for (i,p) in enumerate(periods)])
@@ -349,45 +406,122 @@ function writeCallsStatsFile(filename::String, stats::SimStats)
 		push!(callPrioritiesTables, table)
 	end
 	
-	writeTablesToFile(filename, [miscTable, timestampsTable, periodsTable, callTable, callPrioritiesTables...])
+	return [callTable, callPrioritiesTables...]
 end
 
-function writeHospitalsStatsFile(filename::String, stats::SimStats)
+# for batches in a single simulation replication
+function writeCallsStatsFile(filename::String, stats::SimStats)
 	# shorthand
 	periods = stats.periods
-	numHospitals = length(periods[1].hospitals)
+	numCalls = stats.captures[end].call.numCalls
 	
-	miscTable = Table("miscData", ["numHospitals"]; rows = [[numHospitals]])
-	
+	miscTable = Table("miscData", ["mode", "numCalls"]; rows = [["batch", numCalls]])
 	timestampsTable = simStatsTimestampsTable(stats)
 	periodsTable = simStatsPeriodsTable(periods)
+	callsTables = makeCallsStatsTables(periods)
+	writeTablesToFile(filename, [miscTable, timestampsTable, periodsTable, callsTables...])
+end
+
+# for independent simulation replications
+function writeCallsStatsFile(filename::String, periods::Vector{SimPeriodStats})
+	miscTable = Table("miscData", ["mode"]; rows = [["replication"]]) # note that number of calls may vary between replications
+	periodTable = simStatsPeriodTable(periods)
+	callsTables = makeCallsStatsTables(periods)
+	writeTablesToFile(filename, [miscTable, periodTable, callsTables...])
+end
+
+function makeHospitalsStatsTables(periods::Vector{SimPeriodStats})::Vector{Table}
+	numHospitals = length(periods[1].hospitals) # shorthand
+	@assert(all(p -> length(p.hospitals) == numHospitals, periods))
 	
-	hospitalTables = Table[]
+	hospitalsTables = Table[]
 	fnames = setdiff(fieldnames(HospitalStats), (:hospitalIndex,))
 	getHospital(period::SimPeriodStats, hospitalIndex::Int) = hospitalIndex == 0 ? period.hospital : period.hospitals[hospitalIndex]
 	for i = 0:numHospitals
 		name = i == 0 ? "hospital" : "hospitals[$i]"
 		hospitalTable = Table(name, vcat("periodIndex", collect(string.(fnames)));
 			rows = [vcat(j, [getfield(getHospital(p,i), fname) for fname in fnames]) for (j,p) in enumerate(periods)])
-		push!(hospitalTables, hospitalTable)
+		push!(hospitalsTables, hospitalTable)
 	end
 	
-	writeTablesToFile(filename, [miscTable, timestampsTable, periodsTable, hospitalTables...])
+	return hospitalsTables
 end
 
+# for batches in a single simulation replication
+function writeHospitalsStatsFile(filename::String, stats::SimStats)
+	# shorthand
+	periods = stats.periods
+	numHospitals = length(periods[1].hospitals)
+	
+	miscTable = Table("miscData", ["mode", "numHospitals"]; rows = [["batch", numHospitals]])
+	timestampsTable = simStatsTimestampsTable(stats)
+	periodsTable = simStatsPeriodsTable(periods)
+	hospitalsTables = makeHospitalsStatsTables(periods)
+	writeTablesToFile(filename, [miscTable, timestampsTable, periodsTable, hospitalsTables...])
+end
+
+# for independent simulation replications
+function writeHospitalsStatsFile(filename::String, periods::Vector{SimPeriodStats})
+	numHospitals = length(periods[1].hospitals) # shorthand
+	@assert(all(p -> length(p.hospitals) == numHospitals, periods))
+	
+	miscTable = Table("miscData", ["mode", "numHospitals"]; rows = [["replication", numHospitals]])
+	periodTable = simStatsPeriodTable(periods)
+	hospitalsTables = makeHospitalsStatsTables(periods)
+	writeTablesToFile(filename, [miscTable, periodTable, hospitalsTables...])
+end
+
+function makeStationsStatsTables(periods::Vector{SimPeriodStats})::Vector{Table}
+	numStations = length(periods[1].stations) # shorthand
+	@assert(all(p -> length(p.stations) == numStations, periods))
+	
+	getStation(period::SimPeriodStats, stationIndex::Int) = stationIndex == 0 ? period.station : period.stations[stationIndex]
+	stationsNumIdleAmbsTotalDurationTable = Table("stations_numIdleAmbsTotalDuration", vcat("periodIndex", "station", ["stations[$i]" for i = 1:numStations]);
+		rows = [vcat(j, [string(getStation(p,i).numIdleAmbsTotalDuration) for i = 0:numStations]) for (j,p) in enumerate(periods)])
+	return [stationsNumIdleAmbsTotalDurationTable]
+end
+
+# for batches in a single simulation replication
 function writeStationsStatsFile(filename::String, stats::SimStats)
 	# shorthand
 	periods = stats.periods
 	numStations = length(periods[1].stations)
 	
-	miscTable = Table("miscData", ["numStations"]; rows = [[numStations]])
-	
+	miscTable = Table("miscData", ["mode", "numStations"]; rows = [["batch", numStations]])
 	timestampsTable = simStatsTimestampsTable(stats)
 	periodsTable = simStatsPeriodsTable(periods)
+	stationsTables = makeStationsStatsTables(periods)
+	writeTablesToFile(filename, [miscTable, timestampsTable, periodsTable, stationsTables...])
+end
+
+# for independent simulation replications
+function writeStationsStatsFile(filename::String, periods::Vector{SimPeriodStats})
+	numStations = length(periods[1].stations) # shorthand
+	@assert(all(p -> length(p.stations) == numStations, periods))
 	
-	getStation(period::SimPeriodStats, stationIndex::Int) = stationIndex == 0 ? period.station : period.stations[stationIndex]
-	stationsNumIdleAmbsTotalDurationTable = Table("stations_numIdleAmbsTotalDuration", vcat("periodIndex", "station", ["stations[$i]" for i = 1:numStations]);
-		rows = [vcat(j, [string(getStation(p,i).numIdleAmbsTotalDuration) for i = 0:numStations]) for (j,p) in enumerate(periods)])
-	
-	writeTablesToFile(filename, [miscTable, timestampsTable, periodsTable, stationsNumIdleAmbsTotalDurationTable])
+	miscTable = Table("miscData", ["mode", "numStations"]; rows = [["replication", numStations]])
+	periodTable = simStatsPeriodTable(periods)
+	stationsTables = makeStationsStatsTables(periods)
+	writeTablesToFile(filename, [miscTable, periodTable, stationsTables...])
+end
+
+# stats dict values into table
+function makeStatsDictTable(statsDict::Dict{String,Any})
+	statsDictFlat = flatten(statsDict)
+	@assert(all(v -> isa(v, MeanAndHalfWidth), values(statsDictFlat))) # check that statsDictFlat really is flat
+	statsDictTable = Table("statsDict", ["stat", "mean", "halfWidth"];
+		rows = [[k, statsDictFlat[k].mean, statsDictFlat[k].halfWidth] for k in sort(collect(keys(statsDictFlat)))])
+	return statsDictTable
+end
+
+function writeStatsDictFile(filename::String, periods::Vector{SimPeriodStats}; conf::Float = 0.95)
+	periodDuration = 0.0
+	if !isempty(periods)
+		periodDuration = periods[1].duration
+		@assert(all(p -> isapprox(p.duration, periodDuration), periods))
+	end
+	statsDictFlat = statsDictFromPeriodStatsList(periods, conf = conf) |> flatten
+	statsDictTable = makeStatsDictTable(statsDictFlat)
+	miscTable = Table("misc", ["conf", "numPeriods", "periodDuration"], rows = [[conf, length(periods), periodDuration]])
+	writeTablesToFile(filename, [miscTable, statsDictTable])
 end

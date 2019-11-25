@@ -13,10 +13,10 @@
 # limitations under the License.
 ##########################################################################
 
-# Run a local search algorithm to optimise ambulance deployment, given some objective function (objFn).
-# The local search is simple hill climbing, and the neighbourhood of a solution
-# (deployment) involves moving one ambulance from its station to another station.
-# The local search stops when a local optimum (as evaluated by simulating) is found.
+# Run a search algorithm to optimise ambulance deployment, given some objective function (objFn).
+# Given an initial deployment, an ambulance is added where it provides the
+# greatest benefit, then an ambulance that provides the least benefit is removed.
+# The search stops when no further improvements can be made.
 # Ambulances are assumed to be identical, and station capacities are ignored.
 
 using JEMSS
@@ -27,13 +27,13 @@ using Base.Iterators: Stateful
 
 const StationsNumAmbs = Vector{Int} # type alias
 
-function deploymentLocalSearch!(sim::Simulation, deployments::Vector{Deployment}; outputFolder::String = "")
+function deploymentSearch!(sim::Simulation, deployments::Vector{Deployment}; outputFolder::String = "")
 	isdir(outputFolder) || mkdir(outputFolder)
 	@assert(isdir(outputFolder))
 	@assert(!isempty(deployments))
 	
 	# parameters
-	global solFilename = "$outputFolder/solutions.csv" # final solutions from each local search
+	global solFilename = "$outputFolder/solutions.csv" # final solutions from each search
 	global deploymentsOutputFilename = "$outputFolder/deployments.csv" # solutions, stored as deployments
 	global logFilename = "$outputFolder/log.csv" # log search progress to file
 	global sense = :max # :min or :max; direction of optimisation for objective function
@@ -55,10 +55,10 @@ function deploymentLocalSearch!(sim::Simulation, deployments::Vector{Deployment}
 	global stationsNumAmbsObjVal = Dict{StationsNumAmbs, MeanAndHalfWidth}()
 	global stationsNumAmbsStats = Dict{StationsNumAmbs, Dict{String, Any}}()
 	
-	# save the locally optimal station ambulance counts found for each search
+	# save the station ambulance counts found for each search
 	global stationsNumAmbsSols = Vector{StationsNumAmbs}() # stationsNumAmbsSols[i] is solution for deployments[i]
 	
-	repeatedLocalSearch!(sim, deployments)
+	repeatedSearch!(sim, deployments)
 end
 
 function objValLookup(stationsNumAmbs::StationsNumAmbs)::MeanAndHalfWidth
@@ -82,15 +82,40 @@ function objFn(sim::Simulation)::MeanAndHalfWidth
 	return meanAndHalfWidth([objFn(p) for p in periods])
 end
 
+# add ambulance to sim at given station (but not from sim.backup)
+function addAmb!(sim::Simulation; stationIndex::Int = 1)
+	@assert(!sim.used)
+	amb = Ambulance() # deepcopy(sim.ambulances[1])
+	amb.index = sim.numAmbs + 1
+	amb.stationIndex = stationIndex
+	JEMSS.initAmbulance!(sim, amb)
+	
+	push!(sim.ambulances, amb)
+	sim.numAmbs += 1
+end
+
+# remove ambulance from sim (but not from sim.backup)
+function removeAmb!(sim::Simulation; ambIndex::Int = sim.numAmbs)
+	@assert(!sim.used)
+	deleteat!(sim.ambulances, ambIndex)
+	sim.numAmbs -= 1
+	for event in filter(e -> e.ambIndex == ambIndex, sim.eventList)
+		JEMSS.deleteEvent!(sim.eventList, event)
+	end
+end
+
 # apply stationsNumAmbs to sim replications, and return objective value (and half-width) and whether lookup was used
 # uses look-up if possible
 # mutates: sim, stationsNumAmbsObjVal
-function simObjVal!(sim::Simulation, stationsNumAmbs::StationsNumAmbs)::Tuple{MeanAndHalfWidth,Bool}
+function simObjVal!(sim::Simulation, stationsNumAmbs::StationsNumAmbs)::Tuple{Tuple{Float,Float},Bool}
 	global stationsNumAmbsObjVal, parallel, numThreads
 	objVal = objValLookup(stationsNumAmbs)
-	if objVal != nullObjVal return (objVal, true) end
+	if objVal != nullObjVal return ((objVal.mean, objVal.halfWidth), true) end
+	numAmbsDiff = sum(stationsNumAmbs) - sim.numAmbs # number of ambulances to add to sim
 	function runRep!(rep::Simulation)
 		resetRep!(rep)
+		for i = 1:numAmbsDiff addAmb!(rep) end
+		for i = 1:-numAmbsDiff removeAmb!(rep) end
 		applyStationsNumAmbs!(rep, stationsNumAmbs)
 		simulateRep!(rep)
 		@assert(getStationsNumAmbs(rep) == stationsNumAmbs) # check that rep had the current deployment applied
@@ -102,7 +127,7 @@ function simObjVal!(sim::Simulation, stationsNumAmbs::StationsNumAmbs)::Tuple{Me
 	end
 	objVal = objFn(sim)
 	stationsNumAmbsObjVal[stationsNumAmbs] = objVal
-	return (objVal, false)
+	return ((objVal.mean, objVal.halfWidth), false)
 end
 
 # print number of ambulances at each station
@@ -129,7 +154,7 @@ global simStatsKeys = collect(keys(simStatsEmpty))
 global simStatsEmpty = merge(Dict(["$(key)_mean" => NaN for key in simStatsKeys]), Dict(["$(key)_halfWidth" => NaN for key in simStatsKeys]))
 
 global solFileHeader = vcat(["search", "objVal", "objValHalfWidth"], sort(collect(keys(simStatsEmpty)))) # ... and stationsNumAmbs
-global logFileHeader = vcat(["search", "iter", "i", "j", "usedLookup", "usedMove", "searchDurationSeconds", "objVal", "objValHalfWidth", "bestObjVal"], sort(collect(keys(simStatsEmpty)))) # ... and stationsNumAmbs
+global logFileHeader = vcat(["search", "iter", "oper", "stationIndex", "usedLookup", "searchDurationSeconds", "objVal", "objValHalfWidth", "bestObjVal"], sort(collect(keys(simStatsEmpty)))) # ... and stationsNumAmbs
 global logFileDict = Dict{String,Any}([s => "" for s in logFileHeader])
 
 # mutates: file
@@ -143,9 +168,9 @@ function fileWriteDlmLine!(file::IOStream, fileHeader::Vector{String}, data::Dic
 	flush(file)
 end
 
-# perform local search, starting at each of the deployments provided
+# perform search, starting at each of the deployments provided
 # mutates: sim
-function repeatedLocalSearch!(sim::Simulation, deployments::Vector{Deployment})
+function repeatedSearch!(sim::Simulation, deployments::Vector{Deployment})
 	global doPrint
 	
 	# open files for writing solution
@@ -177,12 +202,12 @@ function repeatedLocalSearch!(sim::Simulation, deployments::Vector{Deployment})
 		# initial deployment
 		stationsNumAmbs = deploymentToStationsNumAmbs(deployments[i], sim.numStations)
 		
-		# perform local search until no improvements can be made
+		# perform search until no improvements can be made
 		doPrint && println()
 		doPrint && println("Search ", i, " (of ", numSearches, ")")
 		doPrint && printStationsNumAmbs(stationsNumAmbs)
-		stationsNumAmbs = localSearch!(sim, stationsNumAmbs, logFile)
-		doPrint && println("Finished local search $i (of $numSearches); solution:")
+		stationsNumAmbs = search!(sim, stationsNumAmbs, logFile)
+		doPrint && println("Finished search $i (of $numSearches); solution:")
 		doPrint && printStationsNumAmbs(stationsNumAmbs)
 		
 		# save best station ambulance count found for this search
@@ -199,9 +224,9 @@ function repeatedLocalSearch!(sim::Simulation, deployments::Vector{Deployment})
 		writeDeploymentsFile(deploymentsOutputFilename, map(stationsNumAmbsToDeployment, stationsNumAmbsSols), sim.numStations)
 	end
 	
-	# print out all results from each finished local search
+	# print out all results from each finished search
 	doPrint && println()
-	doPrint && println("Station ambulance counts from completed local searches:")
+	doPrint && println("Station ambulance counts from completed searches:")
 	for i = 1:numSearches
 		doPrint && println()
 		doPrint && println("Search: ", i)
@@ -214,12 +239,12 @@ function repeatedLocalSearch!(sim::Simulation, deployments::Vector{Deployment})
 	close(logFile)
 end
 
-# Local search of ambulance deployment, starting at stationsNumAmbs.
-# Move ambulances between stations, making changes that optimise
-# the objective function (objFn) for the given sense (:min or :max).
+# Search of ambulance deployment, starting at stationsNumAmbs.
+# Given an initial deployment, an ambulance is added where it provides the
+# greatest benefit, then an ambulance that provides the least benefit is removed.
 # Continue search until no improvement can be made.
 # mutates: sim, logFile
-function localSearch!(sim::Simulation, stationsNumAmbs::StationsNumAmbs, logFile::IOStream)::StationsNumAmbs
+function search!(sim::Simulation, stationsNumAmbs::StationsNumAmbs, logFile::IOStream)::StationsNumAmbs
 	
 	global logFileHeader, logFileDict, stationsNumAmbsStats, sense, doPrint
 	
@@ -229,8 +254,7 @@ function localSearch!(sim::Simulation, stationsNumAmbs::StationsNumAmbs, logFile
 	getSearchDuration() = round(time() - startTime, digits = 2)
 	
 	# calculate objective value for starting point
-	objValMeanAndHalfWidth, usedLookup = simObjVal!(sim, stationsNumAmbs)
-	(objVal, objValHalfWidth) = (objValMeanAndHalfWidth.mean, objValMeanAndHalfWidth.halfWidth)
+	(objVal, objValHalfWidth), usedLookup = simObjVal!(sim, stationsNumAmbs)
 	doPrint && println("starting objective value: ", objVal)
 	bestObjVal = objVal # current best objective value
 	bestStationsNumAmbs = copy(stationsNumAmbs)
@@ -248,60 +272,79 @@ function localSearch!(sim::Simulation, stationsNumAmbs::StationsNumAmbs, logFile
 		"objVal" => objVal, "objValHalfWidth" => objValHalfWidth, "bestObjVal" => bestObjVal))
 	fileWriteDlmLine!(logFile, logFileHeader, logFileDict, stationsNumAmbs)
 	
-	# local search
-	doPrint && println("starting local search")
+	# search
+	doPrint && println("Starting search.")
 	endPoint = nothing
 	iter += 1
 	numStations = sim.numStations # shorthand
 	while true
-		for i = 1:numStations, j = [i+1:numStations; 1:i-1;]
-			newBestFound = false
-			if bestStationsNumAmbs[i] > 0
-				# test moving an ambulance from station i to j
-				
-				doPrint && print("move: i = ", i, ", j = ", j)
-				
-				# change station ambulance counts, later keep if improvement made
-				stationsNumAmbs = copy(bestStationsNumAmbs)
-				stationsNumAmbs[i] -= 1
-				stationsNumAmbs[j] += 1
-				
-				objValMeanAndHalfWidth, usedLookup = simObjVal!(sim, stationsNumAmbs)
-				(objVal, objValHalfWidth) = (objValMeanAndHalfWidth.mean, objValMeanAndHalfWidth.halfWidth)
-				if !usedLookup
-					stats = stationsNumAmbsStats[stationsNumAmbs] = getSimStats(sim)
-					merge!(logFileDict, stats)
-				else
-					merge!(logFileDict, stationsNumAmbsStats[stationsNumAmbs])
-					doPrint && print("; done")
-				end
-				
-				doPrint && println("; objective value: ", objVal, " (best: ", bestObjVal, ")")
-				
-				usedMove = false
-				if (sense == :max && bestObjVal < objVal) || (sense == :min && bestObjVal > objVal)
-					bestObjVal = objVal
-					# keep change (move ambulance from station i to j)
-					bestStationsNumAmbs = stationsNumAmbs
-					usedMove = true
-					newBestFound = true
-					
-					doPrint && println("moved: i = ", i, ", j = ", j, "; new objective value: ", bestObjVal)
-				end
-				
-				merge!(logFileDict, Dict("iter" => iter, "i" => i, "j" => j, "usedLookup" => Int(usedLookup), "usedMove" => Int(usedMove),
-					"searchDurationSeconds" => getSearchDuration(), "objVal" => objVal, "objValHalfWidth" => objValHalfWidth, "bestObjVal" => bestObjVal))
-				fileWriteDlmLine!(logFile, logFileHeader, logFileDict, stationsNumAmbs)
-				
-				iter += 1
+		bestTempStationsNumAmbs = nothing # will hold new deployment for one more ambulance
+		bestTempObjVal = 0
+		addStationIndex = 0
+		for i = 1:numStations
+			# test addition of ambulance to station i
+			stationsNumAmbs = copy(bestStationsNumAmbs)
+			stationsNumAmbs[i] += 1
+			doPrint && print("add: i = $i")
+			
+			(objVal, objValHalfWidth), usedLookup = simObjVal!(sim, stationsNumAmbs)
+			if !usedLookup
+				stats = stationsNumAmbsStats[stationsNumAmbs] = getSimStats(sim)
+				merge!(logFileDict, stats)
+			else
+				merge!(logFileDict, stationsNumAmbsStats[stationsNumAmbs])
+				doPrint && print("; done")
+			end
+			doPrint && println("; objective value: $objVal")
+			
+			if i == 1 || (sense == :max && bestTempObjVal < objVal) || (sense == :min && bestTempObjVal > objVal)
+				bestTempObjVal = objVal
+				bestTempStationsNumAmbs = stationsNumAmbs
+				addStationIndex = i
 			end
 			
-			if newBestFound || endPoint == nothing
-				endPoint = (i,j)
-			elseif endPoint == (i,j)
-				doPrint && println("Found local optimum.")
-				return bestStationsNumAmbs
+			merge!(logFileDict, Dict("iter" => iter, "oper" => "+", "stationIndex" => i, "usedLookup" => Int(usedLookup),
+				"searchDurationSeconds" => getSearchDuration(), "objVal" => objVal, "objValHalfWidth" => objValHalfWidth, "bestObjVal" => bestObjVal))
+			fileWriteDlmLine!(logFile, logFileHeader, logFileDict, stationsNumAmbs)
+		end
+		doPrint && println("added ambulance to station: $addStationIndex")
+		
+		rmStationIndex = 0
+		for i = 1:numStations
+			# test removal of ambulance from station i
+			stationsNumAmbs = copy(bestTempStationsNumAmbs)
+			stationsNumAmbs[i] -= 1
+			if stationsNumAmbs[i] < 0 continue end
+			doPrint && print("rm: i = $i")
+			
+			(objVal, objValHalfWidth), usedLookup = simObjVal!(sim, stationsNumAmbs)
+			if !usedLookup
+				stats = stationsNumAmbsStats[stationsNumAmbs] = getSimStats(sim)
+				merge!(logFileDict, stats)
+			else
+				merge!(logFileDict, stationsNumAmbsStats[stationsNumAmbs])
+				doPrint && print("; done")
 			end
+			doPrint && println("; objective value: $objVal")
+			
+			if (sense == :max && bestObjVal < objVal) || (sense == :min && bestObjVal > objVal)
+				bestObjVal = objVal
+				bestStationsNumAmbs = stationsNumAmbs
+				rmStationIndex = i
+			end
+			
+			merge!(logFileDict, Dict("iter" => iter, "oper" => "-", "stationIndex" => i, "usedLookup" => Int(usedLookup),
+				"searchDurationSeconds" => getSearchDuration(), "objVal" => objVal, "objValHalfWidth" => objValHalfWidth, "bestObjVal" => bestObjVal))
+			fileWriteDlmLine!(logFile, logFileHeader, logFileDict, stationsNumAmbs)
+		end
+		
+		if rmStationIndex == 0
+			# no improvement to deployment, search is complete
+			doPrint && println("Finished search.")
+			return bestStationsNumAmbs
+		else
+			doPrint && println("removed ambulance from station: $rmStationIndex")
+			iter += 1
 		end
 	end
 end
@@ -350,5 +393,5 @@ makeRepsRunnable!(sim) # copy changes to sim (stats) to sim.reps
 deployments = makeRandDeployments(sim, numSearches; rng = deploymentRng)
 
 # run
-deploymentLocalSearch!(sim, deployments, outputFolder = outputFolder)
+deploymentSearch!(sim, deployments, outputFolder = outputFolder)
 println("total runtime: ", round(time()-t, digits = 2), " seconds")

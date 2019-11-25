@@ -15,6 +15,14 @@
 
 # common move-up functions
 
+function setMoveUpModule!(sim::Simulation, moveUpModule::MoveUpModule)
+	sim.moveUpData.moveUpModule = moveUpModule
+	sim.moveUpData.useMoveUp = moveUpModule != nullMoveUpModule
+	if isdefined(sim, :backup)
+		setMoveUpModule!(sim.backup, moveUpModule)
+	end
+end
+
 function isAmbMovable(ambulance::Ambulance)
 	return isFree(ambulance.status)
 end

@@ -21,7 +21,7 @@
 	simConfigFolder = "data/regions/small/1/sim_configs"
 	for configFilename in readdir(simConfigFolder)
 		filename = joinpath(pwd(), simConfigFolder, configFilename)
-		sim = initSim(filename, doPrint = false);
+		sim = initSim(filename);
 		simulate!(sim)
 		@test true
 	end
@@ -35,25 +35,28 @@ else
 		scriptsFolder = joinpath(dirname(pathof(JEMSS)), "..", "example", "scripts")
 		
 		# local search scripts, tested with a very small sim for speed
-		cd("data/regions/small/2") do
+		cd("data/regions/small/6") do
 			runGenConfig("gen_config.xml", overwriteOutputPath = true, doPrint = false)
 			isdir("output") || mkdir("output")
-			for script in ["deployment_local_search.jl", "nested_comp_table_local_search.jl", "priority_list_local_search.jl"]
+			for script in ("deployment_local_search.jl", "deployment_search.jl", "deployment_test.jl",
+					"priority_list_local_search.jl", "nested_comp_table_local_search.jl")
 				@info(string("Running script: ", script))
 				include(joinpath(scriptsFolder, script))
 				@test true
+				println()
 			end
-			println()
 			rm("output", recursive = true)
 		end
 		
-		# deployment_ranking.jl
-		cd("data/regions/small/1") do
+		# transient.jl
+		cd("data/regions/small/2") do
+			runGenConfig("gen_config.xml", overwriteOutputPath = true, doPrint = false)
 			isdir("output") || mkdir("output")
-			@info("Running script: deployment_ranking.jl")
-			include(joinpath(scriptsFolder, "deployment_ranking.jl"))
-			rm("output", recursive = true)
+			@info(string("Running script: transient.jl"))
+			include(joinpath(scriptsFolder, "transient.jl"))
 			@test true
+			println()
+			rm("output", recursive = true)
 		end
 	end
 end
@@ -61,8 +64,51 @@ end
 @testset "generate calls" begin
 	cd("data/regions/small/3") do
 		runGenConfig("gen_config_calls.xml", overwriteOutputPath = true, doPrint = false) # single calls file, limit calls by count
-		runGenConfig("gen_config_calls_2.xml", overwriteOutputPath = true, doPrint = false) # single calls file, limit calls by time
-		runGenConfig("gen_config_calls_multiple.xml", overwriteOutputPath = true, doPrint = false) # multiple calls files
+		runGenConfig("gen_config_calls_2.xml", overwriteOutputPath = true, doPrint = false) # single calls file, with maximum arrival time for last call
+		runGenConfig("gen_config_calls_3.xml", overwriteOutputPath = true, doPrint = false) # single calls file, with minimum arrival time for last call
+		genConfig = runGenConfig("gen_config_calls_multiple.xml", overwriteOutputPath = true, doPrint = false) # multiple calls files
+		callSets = runGenConfigCalls(genConfig, doPrint = false, writeFile = false)
+		@assert(isa(callSets, Vector{Vector{Call}}) && length(callSets) == genConfig.numCallsFiles)
+		@test true
+	end
+end
+
+@testset "set sim calls" begin
+	sim = initSim("data/regions/small/1/sim_config.xml")
+	genConfig = readGenConfig("data/regions/small/1/gen_config.xml")
+	callSets = [makeCalls(genConfig) for i = 1:3]
+	for calls in callSets
+		for call in calls call.index = 0 end # test that setSimCalls! can handle this
+		@assert(calls[1].nearestNodeIndex == nullIndex) # test that setSimCalls! can handle this
+		setSimCalls!(sim, calls)
+		@assert(sim.calls[1].index == 1)
+		simulate!(sim)
+	end
+	@test true
+end
+
+@testset "sim replications" begin
+	cd("data/regions/small/5") do
+		runGenConfig("gen_config.xml", overwriteOutputPath = true, doPrint = false)
+		sim = initSim("sim_config.xml")
+		@assert(sim.numReps == 3)
+		simulateReps!(sim.reps)
+		@assert(all(rep -> rep.complete, sim.reps))
+		writeStatsFiles(sim, sim.reps)
+		resetReps!(sim.reps)
+		@test true
+	end
+end
+
+@testset "sim replications parallel" begin
+	cd("data/regions/small/5") do
+		runGenConfig("gen_config.xml", overwriteOutputPath = true, doPrint = false)
+		sim = initSim("sim_config.xml")
+		@assert(sim.numReps == 3)
+		simulateReps!(sim.reps; parallel = true, numThreads = 2)
+		@assert(all(rep -> rep.complete, sim.reps))
+		writeStatsFiles(sim, sim.reps)
+		resetReps!(sim.reps; parallel = true, numThreads = 2)
 		@test true
 	end
 end
@@ -71,7 +117,7 @@ end
 @testset "mexclp" begin
 	@assert(isdir("data/regions/small/1/generated"))
 	filename = joinpath(pwd(), "data/regions/small/1/mexclp/sim_config.xml")
-	sim = initSim(filename, doPrint = false);
+	sim = initSim(filename);
 	# solve mexclp with various kwarg values
 	demandWeights = Dict([p => 1.0 for p in priorities])
 	demandWeights[lowPriority] = 0
