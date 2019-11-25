@@ -38,7 +38,8 @@ else
 		cd("data/regions/small/6") do
 			runGenConfig("gen_config.xml", overwriteOutputPath = true, doPrint = false)
 			isdir("output") || mkdir("output")
-			for script in ("deployment_local_search.jl", "deployment_search.jl", "priority_list_local_search.jl", "nested_comp_table_local_search.jl")
+			for script in ("deployment_local_search.jl", "deployment_search.jl", "deployment_test.jl",
+					"priority_list_local_search.jl", "nested_comp_table_local_search.jl")
 				@info(string("Running script: ", script))
 				include(joinpath(scriptsFolder, script))
 				@test true
@@ -56,15 +57,6 @@ else
 			@test true
 			println()
 			rm("output", recursive = true)
-		end
-		
-		# deployment_ranking.jl
-		cd("data/regions/small/1") do
-			isdir("output") || mkdir("output")
-			@info("Running script: deployment_ranking.jl")
-			include(joinpath(scriptsFolder, "deployment_ranking.jl"))
-			rm("output", recursive = true)
-			@test true
 		end
 	end
 end
