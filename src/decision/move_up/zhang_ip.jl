@@ -30,6 +30,8 @@ function initZhangIp!(sim::Simulation, zhangIpData::ZhangIpData)
 		@assert(zid.stationCapacities[i] <= sim.stations[i].capacity)
 	end
 	
+	zid.stationSlots = []
+	zid.benefitSlots = []
 	for i = 1:numStations
 		for j = 1:zid.stationCapacities[i]
 			push!(zid.stationSlots, i)
