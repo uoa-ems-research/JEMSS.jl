@@ -196,6 +196,31 @@ function writeTravelFile(filename::String, travel::Travel)
 	writeTablesToFile(filename, [travelModesTable, travelSetsTable, travelSetsTimingTable])
 end
 
+function writeZhangIpParamsFile(filename::String, zhangIpData::ZhangIpData)
+	# shorthand
+	zid = zhangIpData
+	@unpack marginalBenefits, stationCapacities = zid
+	numStations = length(marginalBenefits)
+	@assert(numStations == length(stationCapacities))
+	
+	miscTable = Table("miscParams", ["travelTimeCost", "onRoadMoveUpDiscountFactor", "regretTravelTimeThreshold", "expectedHospitalHandoverDuration"];
+		rows = [[zid.travelTimeCost, zid.onRoadMoveUpDiscountFactor, zid.regretTravelTimeThreshold, zid.expectedHospitalHandoverDuration]])
+	
+	stationCapacitiesTable = Table("stationCapacities", ["stationIndex", "capacity"];
+		rows = [[i, stationCapacities[i]] for i = 1:numStations])
+	
+	maxNumSlots = maximum(stationCapacities)
+	mb = Array{Any,2}(undef, numStations, maxNumSlots)
+	mb[:] .= ""
+	for i = 1:numStations, j = 1:length(marginalBenefits[i])
+		mb[i,j] = marginalBenefits[i][j]
+	end
+	marginalBenefitsTable = Table("stationMarginalBenefits", ["stationIndex", ["slot_$i" for i = 1:maxNumSlots]...];
+		rows = [[i, mb[i,:]...] for i = 1:numStations])
+	
+	writeTablesToFile(filename, [miscTable, stationCapacitiesTable, marginalBenefitsTable])
+end
+
 # opens output files for writing during simulation
 # note: should have field sim.resim.use set/fixed before calling this function
 function openOutputFiles!(sim::Simulation)
