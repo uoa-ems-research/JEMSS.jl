@@ -1,6 +1,7 @@
 *.jl.cov
 *.jl.*.cov
 *.jl.mem
+/data/cities/local
 /example/output
 /example/input
 /example/scripts/output

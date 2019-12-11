@@ -1,0 +1,6 @@
+hospitals,,,"Hospitals used in thesis 'Simulation optimisation and Markov models for dynamic ambulance redeployment', see fig 6.1. Locations from google maps."
+index,x,y,name
+1,174.769128,-36.860454,Auckland Hospital
+2,174.839639,-36.962819,Middlemore Hospital
+3,174.757402,-36.781164,Northshore Hospital
+4,174.769852,-36.873441,Mercy Hospital
