@@ -39,7 +39,7 @@ stationsFilename = joinpath(folder, "stations/1/stations_1.csv")
 mapFilename = joinpath(folder, "maps/1/map_1.csv")
 
 # shapefile of region border
-borderFilename = joinpath(jemssDir, "data/cities/auckland/data/border/urban/auckland_urban_border.shp")
+borderFilename = joinpath(jemssDir, "data/cities/auckland/data/border/urban/1/auckland_urban_border.shp")
 
 # divide arcs that are long into multiple arcs, according to maxArcTravelTime value
 maxArcTravelTime = 10/60/60/24 # convert seconds to days
