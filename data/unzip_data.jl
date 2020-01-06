@@ -1,8 +1,6 @@
 using BinaryProvider
 
-cd(@__DIR__)
-
-@info("Zip files should have been created using BinaryProvider.package, otherwise unzipping may result in an error.")
+# Zip files should have been created using BinaryProvider.package(), otherwise unzipping may result in an error.
 
 function pathrecursion(path::String, f::Function = x->x)
 	if isfile(path)
@@ -19,11 +17,13 @@ function unzip(path::String)
 	end
 end
 
-# filenames = pathrecursion(pwd())
-# dirnames = unique(dirname.(filenames)) # or unique(pathrecursion(pwd(), dirname))
-
-# unpack all zip files
-for folder in ("auckland",)
-	path = joinpath(pwd(), "cities", folder)
-	pathrecursion(path, unzip)
+cd(@__DIR__) do
+	# unpack all zip files
+	for folder in ("auckland",)
+		path = joinpath(pwd(), "cities", folder)
+		pathrecursion(path, unzip)
+	end
+	
+	# filenames = pathrecursion(pwd())
+	# dirnames = unique(dirname.(filenames)) # or unique(pathrecursion(pwd(), dirname))
 end
