@@ -11,7 +11,7 @@ function pathrecursion(path::String, f::Function = x->x)
 end
 
 function unzip(path::String)
-	if isfile(path) && endswith(path, ".7z")
+	if isfile(path) && endswith(path, ".gz")
 		println("Unzipping: ", path)
 		unpack(path, dirname(path))
 	end
