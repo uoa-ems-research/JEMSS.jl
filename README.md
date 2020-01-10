@@ -52,7 +52,7 @@ Notes on animation:
 ## Misc
 See readme files in subfolders of JEMSS/data/cities/*/data for data sources and license details of files in the respective folder.
 
-Backslashes are special characters in Julia strings and so if a path includes backslashes (e.g. `"path\to\file.txt"`), it needs to be handled as a raw string (e.g. `string(raw"path\to\file.txt")`, or `string(s"path\to\file.txt")` for the same effect).
+Backslashes are special characters in Julia strings and so if a path includes backslashes (e.g. `"path\to\file.txt"`), it needs to be handled as a raw string (e.g. `raw"path\to\file.txt"`, or `String(s"path\to\file.txt")` for a similar effect).
 
 ## License
 This project is licensed under the Apache License 2.0 - see the [LICENSE.md](LICENSE.md) file for details.
