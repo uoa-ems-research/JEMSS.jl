@@ -10,4 +10,4 @@ println("Writing stats files.")
 writeStatsFiles(sim)
 
 # # Animate, if you like:
-# animate(sim)
+# animate!(sim)
