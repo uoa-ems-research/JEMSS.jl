@@ -12,7 +12,7 @@ pkg> build JEMSS
 ```
 The build script unpacks files in JEMSS/data.
 
-## Example
+## Simulation example
 To run an example script that loads and runs a simulation and then writes statistics to files:
 ```julia
 using JEMSS
