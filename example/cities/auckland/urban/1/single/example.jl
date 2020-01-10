@@ -1,8 +1,7 @@
 using JEMSS
-cd(@__DIR__)
 
 println("Loading sim.")
-sim = initSim("input/sim_config.xml")
+sim = initSim(joinpath(@__DIR__, "input/sim_config.xml"))
 
 println("Simulating.")
 simulate!(sim)
