@@ -4,46 +4,41 @@
 [![Coverage Status](https://coveralls.io/repos/github/uoa-ems-research/JEMSS.jl/badge.svg?branch=master)](https://coveralls.io/github/uoa-ems-research/JEMSS.jl?branch=master)
 [![codecov.io](http://codecov.io/github/uoa-ems-research/JEMSS.jl/coverage.svg?branch=master)](http://codecov.io/github/uoa-ems-research/JEMSS.jl?branch=master)
 
-## Warning
-This package is currently being developed.
-Expect bugs, and backward compatibility issues between commits.
-
 ## Installation
-To install this package, run the following command in the Pkg REPL mode:
+To install and build this package, run the following commands in the Pkg REPL mode:
 ```julia
 pkg> add https://github.com/uoa-ems-research/JEMSS.jl
+pkg> build JEMSS
 ```
+The build script unpacks files in JEMSS/data.
 
-## Usage
-
-### Simulation
+## Example
+To run an example script that loads and runs a simulation and then writes statistics to files:
 ```julia
 using JEMSS
-
-filename = selectXmlFile()
-sim = initSim(filename);
-
-simulate!(sim) # run the simulation
-printSimStats(sim) # some basic statistics
+include(joinpath(JEMSS.jemssDir, "example/example.jl"))
 ```
-For a Windows OS, the function `selectXmlFile()` will open a file selection dialog using powershell, for other operating systems a prompt will be given to enter the filename string.
-The simulation is initialised from an xml configuration file which contains a list of input files (files for ambulances, calls, stations, etc.), and other parameters.
+This [example](example/example.jl) is for Auckland city, focusing on the urban area.
+The simulation is initialised from a configuration file ([sim_config.xml](example/input/sim_config.xml)) which contains a list of input files (files for ambulances, calls, stations, road network, etc.) and other parameters.
+The output files will be written to the folder example/output.
+The first time that this script is run it will take an additional minute or so to compute and serialise the all-pairs shortest-path data for the road network; subsequent runs will be faster as they read the serialised data.
+After this script has been run, the simulation can be animated with `animate!(sim)`.
 
-### Animation
+A list of further example scripts that may be useful can be found in [example/other_examples.jl](example/other_examples.jl).
+
+## Animation
+To animate a simulation:
 ```julia
 using JEMSS
-animate(configFilename = filename, port = 8001)
-# alternative:
-sim = initSim(filename);
-animate!(sim) # will use same port as before (8001)
+sim = initSim("config_filename");
+animate!(sim; port = 8001)
 ```
-The call to `animate` will open a web browser window to `localhost:8001` (other port numbers may be used) and load the simulation for the given configuration file.
-If a simulation is already loaded beforehand then `animate!(sim)` can be used instead.
+The call to `animate!` will open a web browser window to `localhost:8001` (other port numbers may be used).
 The connection may take a few seconds to be established.
-Once the simulation has been initialised, the browser window, using [Mapbox](https://www.mapbox.com/), will show a map of the region of interest, the ambulances, hospitals, stations, and road arcs.
+The browser window, using [Mapbox](https://www.mapbox.com/), will show a map containing the `sim` region, the ambulances, hospitals, stations, and roads.
 Controlling the animation is done with buttons and text input in a box at the bottom right of the window.
 To have lines drawn between each ambulance and its destination, check the 'Show routes' box.
-The 'Show arcs' check-box is provided so that the road arcs can be hidden, which is useful for reducing computation of drawing while the animation is running.
+The 'Show arcs' check-box is provided so that the arcs that make up the road network can be hidden, which is useful for reducing computation of drawing while the animation is running.
 
 ![animation_frame](https://i.imgur.com/UsUnPIw.png)
 
@@ -51,13 +46,13 @@ Notes on animation:
 
 - Firefox and Chrome work, Edge does not work well, other browsers have not been tested.
 - Multiple browser windows may use the same port.
-- If you do not specify a simulation or configuration filename, then you will be prompted for a configuration filename from Julia (not the browser window).
 - For the timing control, 'Sim speed' is the ratio of simulation time to real time; speed of 1 gives real-time (real slow) simulation. This requires the input files to have time units in days.
 - Input files should have (latitude, longitude) coordinates, these correspond with the y and x fields in the input files.
 
-### Examples
+## Misc
+See readme files in subfolders of JEMSS/data/cities/*/data for data sources and license details of files in the respective folder.
 
-The example folder contains example.jl, run this using `include("example.jl")` (run from the containing directory). This will generate some artificial data and save it to files, which can then be used as input to simulate with (example.jl script shows some cases of this) or animate with.
+Backslashes are special characters in Julia strings and so if a path includes backslashes (e.g. `"path\to\file.txt"`), it needs to be handled as a raw string (e.g. `string(raw"path\to\file.txt")`, or `string(s"path\to\file.txt")` for the same effect).
 
 ## License
 This project is licensed under the Apache License 2.0 - see the [LICENSE.md](LICENSE.md) file for details.
