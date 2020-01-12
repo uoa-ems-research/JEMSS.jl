@@ -88,7 +88,7 @@ mutable struct GenConfig
 		"", false, nullIndex, nullIndex)
 end
 
-function readGenConfig(genConfigFilename::String)
+function readGenConfig(genConfigFilename::String)::GenConfig
 	# read gen config xml file
 	genConfigFilename = genConfigFilename |> interpolateString |> abspath
 	global genConfigFileDir = dirname(genConfigFilename)
@@ -100,39 +100,82 @@ function readGenConfig(genConfigFilename::String)
 	genConfig.inputPath = containsElt(rootElt, "inputPath") ? joinPathIfNotAbs(genConfigFileDir, eltContentInterpVal(rootElt, "inputPath")) : genConfigFileDir
 	genConfig.outputPath = joinPathIfNotAbs(genConfigFileDir, eltContentInterpVal(rootElt, "outputPath")) # output path can be absolute, or relative to genConfigFileDir
 	genConfig.mode = eltContent(rootElt, "mode")
-	genConfig.numCallsFiles = containsElt(rootElt, "numCallsFiles") ? eltContentVal(rootElt, "numCallsFiles") : 1
-	@assert(genConfig.numCallsFiles >= 1)
+	@assert(in(genConfig.mode, ("all", "calls")))
+	
+	if genConfig.mode == "all"
+		readGenConfigAll!(genConfig, rootElt)
+	elseif genConfig.mode == "calls"
+		readGenConfigCalls!(genConfig, rootElt)
+	end
+	
+	return genConfig
+end
+
+# read xml rootElt to set fields of genConfig for generation mode 'all'
+# mutates: genConfig
+function readGenConfigAll!(genConfig::GenConfig, rootElt::XMLElement)
+	readGenConfigMap!(genConfig, rootElt)
+	readGenConfigCalls!(genConfig, rootElt)
 	
 	# output filenames
 	simFilesElt = findElt(rootElt, "simFiles")
 	simFilePath(filename::String) = joinPathIfNotAbs(genConfig.outputPath, eltContentInterpVal(simFilesElt, filename)) # filename can be absolute, or relative to output path
 	genConfig.ambsFilename = simFilePath("ambulances")
 	genConfig.arcsFilename = simFilePath("arcs")
-	genConfig.callsFilename = simFilePath("calls")
 	genConfig.hospitalsFilename = simFilePath("hospitals")
 	genConfig.mapFilename = simFilePath("map")
 	genConfig.nodesFilename = simFilePath("nodes")
 	genConfig.prioritiesFilename = simFilePath("priorities")
 	genConfig.stationsFilename = simFilePath("stations")
 	genConfig.travelFilename = simFilePath("travel")
+	@assert(genConfig.callsFilename != "") # should already be set in readGenConfigCalls!()
 	
 	# read sim parameters
 	simElt = findElt(rootElt, "sim")
 	
-	# create map
-	# map is needed before generating random locations
-	mapElt = findElt(simElt, "map")
-	map = Map()
-	map.xMin = eltContentVal(mapElt, "xMin")
-	map.xMax = eltContentVal(mapElt, "xMax")
-	map.xScale = eltContentVal(mapElt, "xScale")
-	map.xRange = map.xMax - map.xMin
-	map.yMin = eltContentVal(mapElt, "yMin")
-	map.yMax = eltContentVal(mapElt, "yMax")
-	map.yScale = eltContentVal(mapElt, "yScale")
-	map.yRange = map.yMax - map.yMin
-	@assert(map.xRange > 0 && map.yRange > 0)
-	genConfig.map = map
+	# number of ambulances, hospitals, stations
+	genConfig.numAmbs = eltContentVal(simElt, "numAmbs")
+	genConfig.numHospitals = eltContentVal(simElt, "numHospitals")
+	genConfig.numStations = eltContentVal(simElt, "numStations")
+	
+	# number of nodes in x and y direction for grid shaped graph
+	graphElt = findElt(simElt, "graph")
+	genConfig.xNodes = eltContentVal(graphElt, "xNodes")
+	genConfig.yNodes = eltContentVal(graphElt, "yNodes")
+	
+	# misc values
+	targetResponseDurationString = containsElt(simElt, "targetResponseDuration") ? "targetResponseDuration" : "targetResponseTime" # compat for "targetResponseTime"
+	genConfig.targetResponseDuration = eltContentVal(simElt, targetResponseDurationString)
+	genConfig.offRoadSpeed = eltContentVal(simElt, "offRoadSpeed") # km / day
+	genConfig.stationCapacity = eltContentVal(simElt, "stationCapacity")
+	travelModeSpeedsElt = findElt(simElt, "travelModeSpeeds")
+	genConfig.travelModeSpeeds = (travelModeSpeedsElt == nothing ? [1.5 * genConfig.offRoadSpeed] : eltContentVal(travelModeSpeedsElt))
+	
+	# some defaults - should move to config file sometime
+	genConfig.ambStationRng = MersenneTwister(0)
+	genConfig.hospitalLocRng = MersenneTwister(4)
+	genConfig.stationLocRng = MersenneTwister(5)
+	genConfig.travelTimeFactorDistrRng = DistrRng(Uniform(1.0, 1.1); seed = 99)
+end
+
+# read xml rootElt to set fields of genConfig for generation mode 'calls'
+# mutates: genConfig
+function readGenConfigCalls!(genConfig::GenConfig, rootElt::XMLElement)
+	genConfig.numCallsFiles = containsElt(rootElt, "numCallsFiles") ? eltContentVal(rootElt, "numCallsFiles") : 1
+	@assert(genConfig.numCallsFiles >= 1)
+	
+	# output filename
+	callsFilename = "calls.csv"
+	if containsElt(rootElt, "simFiles")
+		simFilesElt = findElt(rootElt, "simFiles")
+		if containsElt(simFilesElt, "calls")
+			callsFilename = eltContentInterpVal(simFilesElt, "calls")
+		end
+	end
+	genConfig.callsFilename = joinPathIfNotAbs(genConfig.outputPath, callsFilename) # filename can be absolute, or relative to output path
+	
+	# read sim call parameters
+	simElt = findElt(rootElt, "sim")
 	
 	# call distributions and random number generators
 	callDistrsElt = findElt(simElt, "callDistributions")
@@ -157,37 +200,20 @@ function readGenConfig(genConfigFilename::String)
 		genConfig.handoverDurationDistrRng = callDistrsEltContent("transferDuration")
 	end
 	
-	# number of ambulances, calls, hospitals, stations
-	genConfig.numAmbs = eltContentVal(simElt, "numAmbs")
-	genConfig.numCalls = containsElt(simElt, "numCalls") ? eltContentVal(simElt, "numCalls") : nullIndex # can alternatively specify maxCallArrivalTime or minLastCallArrivalTime
-	genConfig.numHospitals = eltContentVal(simElt, "numHospitals")
-	genConfig.numStations = eltContentVal(simElt, "numStations")
-	
-	# number of nodes in x and y direction for grid shaped graph
-	graphElt = findElt(simElt, "graph")
-	genConfig.xNodes = eltContentVal(graphElt, "xNodes")
-	genConfig.yNodes = eltContentVal(graphElt, "yNodes")
-	
-	# misc values
+	# call gen duration / count
 	genConfig.startTime = eltContentVal(simElt, "startTime")
 	@assert(genConfig.startTime >= 0)
+	genConfig.numCalls = containsElt(simElt, "numCalls") ? eltContentVal(simElt, "numCalls") : nullIndex # can alternatively specify maxCallArrivalTime or minLastCallArrivalTime
 	genConfig.maxCallArrivalTime = containsElt(simElt, "maxCallArrivalTime") ? eltContentVal(simElt, "maxCallArrivalTime") : nullTime
 	genConfig.minLastCallArrivalTime = containsElt(simElt, "minLastCallArrivalTime") ? eltContentVal(simElt, "minLastCallArrivalTime") : nullTime
 	@assert((genConfig.numCalls != nullIndex) + (genConfig.maxCallArrivalTime != nullTime) + (genConfig.minLastCallArrivalTime != nullTime) == 1, "Need exactly one of these values: numCalls, maxCallArrivalTime, minLastCallArrivalTime.")
 	@assert(genConfig.startTime <= genConfig.maxCallArrivalTime || genConfig.maxCallArrivalTime == nullTime)
 	@assert(genConfig.startTime <= genConfig.minLastCallArrivalTime || genConfig.minLastCallArrivalTime == nullTime)
-	targetResponseDurationString = containsElt(simElt, "targetResponseDuration") ? "targetResponseDuration" : "targetResponseTime" # compat for "targetResponseTime"
-	genConfig.targetResponseDuration = eltContentVal(simElt, targetResponseDurationString)
-	genConfig.offRoadSpeed = eltContentVal(simElt, "offRoadSpeed") # km / day
-	genConfig.stationCapacity = eltContentVal(simElt, "stationCapacity")
-	travelModeSpeedsElt = findElt(simElt, "travelModeSpeeds")
-	genConfig.travelModeSpeeds = (travelModeSpeedsElt == nothing ? [1.5 * genConfig.offRoadSpeed] : eltContentVal(travelModeSpeedsElt))
 	
-	# call gen parameters
 	# call density raster
 	callDensityRasterElt = findElt(simElt, "callDensityRaster")
 	genConfig.callDensityRasterFilename = joinPathIfNotAbs(genConfig.inputPath, eltContentInterpVal(callDensityRasterElt, "filename"))
-	genConfig.cropRaster = eltContentVal(callDensityRasterElt, "cropRaster")
+	genConfig.cropRaster = containsElt(callDensityRasterElt, "cropRaster") ? eltContentVal(callDensityRasterElt, "cropRaster") : false
 	# seeds
 	function callRasterSeedVal(seedName::String)
 		seedAttr = attribute(callDensityRasterElt, seedName)
@@ -195,10 +221,12 @@ function readGenConfig(genConfigFilename::String)
 	end
 	genConfig.callRasterCellSeed = callRasterSeedVal("cellSeed")
 	genConfig.callRasterCellLocSeed = callRasterSeedVal("cellLocSeed")
+	if containsElt(simElt, "map") readGenConfigMap!(genConfig, rootElt) end
 	if isfile(genConfig.callDensityRasterFilename)
 		raster = readRasterFile(genConfig.callDensityRasterFilename)
 		if genConfig.cropRaster
 			# crop raster to be within genConfig.map
+			@assert(genConfig.map.xRange != nullDist) # fails if map has not been set
 			mapTrimmed = trimmedMap(genConfig.map, genConfig.mapTrim)
 			cropRaster!(raster, mapTrimmed)
 		end
@@ -206,13 +234,25 @@ function readGenConfig(genConfigFilename::String)
 	end
 	
 	# some defaults - should move to config file sometime
-	genConfig.ambStationRng = MersenneTwister(0)
 	genConfig.callLocRng = MersenneTwister(1)
-	genConfig.hospitalLocRng = MersenneTwister(4)
-	genConfig.stationLocRng = MersenneTwister(5)
-	genConfig.travelTimeFactorDistrRng = DistrRng(Uniform(1.0, 1.1); seed = 99)
-	
-	return genConfig
+end
+
+# mutates: genConfig.map
+function readGenConfigMap!(genConfig::GenConfig, rootElt::XMLElement)
+	simElt = findElt(rootElt, "sim")
+	@assert(containsElt(simElt, "map"))
+	mapElt = findElt(simElt, "map")
+	map = Map()
+	map.xMin = eltContentVal(mapElt, "xMin")
+	map.xMax = eltContentVal(mapElt, "xMax")
+	map.xScale = eltContentVal(mapElt, "xScale")
+	map.xRange = map.xMax - map.xMin
+	map.yMin = eltContentVal(mapElt, "yMin")
+	map.yMax = eltContentVal(mapElt, "yMax")
+	map.yScale = eltContentVal(mapElt, "yScale")
+	map.yRange = map.yMax - map.yMin
+	@assert(map.xRange > 0 && map.yRange > 0)
+	genConfig.map = map
 end
 
 function runGenConfig(genConfig::GenConfig; overwriteOutputPath::Bool = false, doPrint::Bool = true)

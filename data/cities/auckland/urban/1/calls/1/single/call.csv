@@ -1,0 +1,7 @@
+miscData,,,,,,,,,
+startTime,,,,,,,,,
+0,,,,,,,,,
+,,,,,,,,,
+calls,,,,,,,,,
+index,priority,x,y,arrivalTime,dispatchDelay,onSceneDuration,transport,hospitalIndex,handoverDuration
+1,1,175,-37,0,0,0,0,-1,0

@@ -1,8 +1,9 @@
 *.jl.cov
 *.jl.*.cov
 *.jl.mem
+*.jls
+/data/cities/local
 /example/output
-/example/input
 /example/scripts/output
 /test/data/regions/small/*/generated
 /test/data/regions/small/*/output

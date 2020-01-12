@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<genConfig>
+	<outputPath>output</outputPath>
+	
+	<mode>calls</mode>
+	<numCallsFiles>40</numCallsFiles>
+	
+	<sim>
+		<startTime>0.0</startTime>
+		<!-- <numCalls></numCalls> -->
+		<!-- <maxCallArrivalTime></maxCallArrivalTime> -->
+		<minLastCallArrivalTime>1 + 250 + 0.1</minLastCallArrivalTime>
+		
+		<!-- seeds test 1.1: [689824638 2965649135 2322657568 3215048128 3201753069 561770759 2268950370 2721971364] -->
+		<callDistributions>
+			<interarrivalTime seed="689824638">Exponential(1/280)</interarrivalTime>
+			<priority seed="2965649135">Categorical([0.57, 0.245, 0.185])</priority>
+			<dispatchDelay seed="2322657568">Normal(50/60/60/24, 0)</dispatchDelay>
+			<onSceneDuration seed="3215048128">Exponential(12/60/24)</onSceneDuration>
+			<transport seed="3201753069">Bernoulli(0.8)</transport>
+			<handoverDuration seed="561770759">Exponential(12/60/24)</handoverDuration>
+		</callDistributions>
+		
+		<callDensityRaster cellSeed="2268950370" cellLocSeed="2721971364">
+			<filename>$jemssDir/data/cities/auckland/data/population density/census 2013/rasters/urban/1/auckland-urban-pop-densit-40m.tif</filename>
+		</callDensityRaster>
+	</sim>
+</genConfig>

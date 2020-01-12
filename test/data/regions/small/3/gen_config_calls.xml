@@ -3,26 +3,15 @@
 	<inputPath/>
 	<outputPath>generated</outputPath>
 	
-	<!-- modes: all, calls -->
 	<mode>calls</mode>
 	
 	<simFiles>
-		<ambulances>ambulances.csv</ambulances>
-		<arcs>arcs.csv</arcs>
 		<calls>calls.csv</calls>
-		<hospitals>hospitals.csv</hospitals>
-		<map>map.csv</map>
-		<nodes>nodes.csv</nodes>
-		<priorities>priorities.csv</priorities>
-		<stations>stations.csv</stations>
-		<travel>travel.csv</travel>
 	</simFiles>
 	
 	<sim>
-		<numAmbs>5</numAmbs>
+		<startTime>0.0</startTime>
 		<numCalls>100</numCalls>
-		<numHospitals>2</numHospitals>
-		<numStations>3</numStations>
 		
 		<callDistributions>
 			<interarrivalTime seed="0">Exponential(1/200)</interarrivalTime>
@@ -39,11 +28,6 @@
 			<cropRaster>true</cropRaster> <!-- crop raster to be within map -->
 		</callDensityRaster>
 		
-		<graph>
-			<xNodes>5</xNodes>
-			<yNodes>5</yNodes>
-		</graph>
-		
 		<map>
 			<xMin>-0.01</xMin>
 			<xMax>0.21</xMax>
@@ -52,12 +36,6 @@
 			<yMax>0.21</yMax>
 			<yScale>111.32</yScale>
 		</map>
-		
-		<!-- misc: -->
-		<targetResponseDuration>20/60/24</targetResponseDuration>
-		<startTime>0.0</startTime>
-		<stationCapacity>2</stationCapacity>
-		<offRoadSpeed>1200</offRoadSpeed>
 	</sim>
 	
 </genConfig>
