@@ -377,7 +377,7 @@ function makeAmbsStatsTables(periods::Vector{SimPeriodStats})::Vector{Table}
 	ambulanceTables = Table[]
 	counts = (:numCallsTreated, :numCallsTransported, :numDispatches, :numDispatchesFromStation, :numDispatchesOnRoad, :numDispatchesOnFree, :numRedispatches, :numMoveUps, :numMoveUpsFromStation, :numMoveUpsOnRoad, :numMoveUpsOnFree, :numMoveUpsReturnToPrevStation)
 	statuses = (setdiff(instances(AmbStatus), (ambNullStatus,))..., instances(AmbStatusSet)...)
-	travelStatuses = (ambStatusSets[ambTravelling]..., instances(AmbStatusSet)...)
+	travelStatuses = (sort(collect(ambStatusSets[ambTravelling]))..., instances(AmbStatusSet)...)
 	countHeaders = [string(c) for c in counts]
 	statusDurationHeaders = [string("duration_", string(s)) for s in statuses]
 	statusDistanceHeaders = [string("distance_", string(s)) for s in travelStatuses]
