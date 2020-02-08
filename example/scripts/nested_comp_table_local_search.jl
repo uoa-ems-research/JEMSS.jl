@@ -121,7 +121,7 @@ end
 # Assumes that values in x are from population with normal distribution with unknown standard deviation.
 function calcMeanAndHalfWidth(x::Vector{T}; conf::Float = conf)::Tuple{Float,Float} where T <: Real
 	x = convert(Vector{Float}, x)
-	return mean(x), tDistrHalfWidth(x)
+	return mean(x), tDistrHalfWidth(x; conf = conf)
 end
 
 # Objective value for a single period
@@ -584,12 +584,7 @@ stationCapacities = [station.capacity for station in sim.stations]
 nestedCompTables = [makeRandNestedCompTable(sim.numAmbs, sim.numStations; stationCapacities = stationCapacities, rng = nestedCompTableRng) for i = 1:numSearches]
 
 # set sim to use nested compliance table for move up
-for tempSim in (sim, sim.backup)
-	moveUpData = getfield(tempSim, :moveUpData)
-	for (fname, val) in ((:useMoveUp, true), (:moveUpModule, compTableModule))
-		setfield!(moveUpData, fname, val)
-	end
-end
+setMoveUpModule!(sim, compTableModule)
 
 makeRepsRunnable!(sim) # copy changes to sim (stats, nested compliance table) to sim.reps
 
