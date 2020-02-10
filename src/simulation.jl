@@ -237,7 +237,7 @@ function simulateEventConsiderDispatch!(sim::Simulation, event::Event)
 	@assert(call.status == callScreening || call.status == callWaitingForAmb) # callWaitingForAmb if call bumped
 	
 	# find ambulance to respond
-	if sim.resim.use
+	if sim.resim.use && sim.resim.doDispatch
 		ambIndex = resimFindAmbToDispatch(sim, call)
 	else
 		ambIndex = sim.findAmbToDispatch!(sim, call)
@@ -442,7 +442,7 @@ function simulateEventConsiderMoveUp!(sim::Simulation, event::Event)
 	movableAmbs = [] # init
 	ambStations = [] # init
 	
-	if sim.resim.use
+	if sim.resim.use && sim.resim.doMoveUp
 		(movableAmbs, ambStations) = resimMoveUp(sim)
 	else
 		if mud.moveUpModule == compTableModule

@@ -799,12 +799,17 @@ mutable struct Resimulation
 	use::Bool # true if resimulating (will follow event trace), false otherwise
 	timeTolerance::Float
 	
-	events::Vector{Event}
-	eventsChildren::Vector{Vector{Event}} # eventsChildren[i] gives events that are children of event i
+	events::Vector{Event} # note that events[i].index may not necessarily equal i (events[i].index >= i)
+	eventsChildren::Vector{Vector{Event}} # eventsChildren[i] gives events that are children of sim event i; length(eventsChildren) may be less than number of events if events file does not include all events
 	prevEventIndex::Int # index of previous event in events field
 	
+	eventFilter::Set{EventForm}
+	doDispatch::Bool # true if can resimulate dispatch decisions, i.e. if in(ambDispatched, eventFilter) == true
+	doMoveUp::Bool # true if can resimulate move-up decisions, i.e. if in(ambMoveUpToStation, eventFilter) == true
+	
 	Resimulation() = new(false, 0.0,
-		[], [], nullIndex)
+		[], [], nullIndex,
+		Set(), false, false)
 end
 
 # Mean and half the width of the confidence interval of the mean.
