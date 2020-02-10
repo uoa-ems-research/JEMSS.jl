@@ -794,6 +794,13 @@ mutable struct File
 	File() = new("", "", IOStream(""), 0)
 end
 
+mutable struct EventsFile
+	io::IOStream # write simulation trace of events to this file
+	eventFilter::Dict{EventForm,Bool} # eventFilter[eventForm] = true if saving events of eventForm to file, false otherwise
+	
+	EventsFile() = new(IOStream(""), Dict([e => true for e in instances(EventForm)]))
+end
+
 mutable struct Resimulation
 	# parameters:
 	use::Bool # true if resimulating (will follow event trace), false otherwise
@@ -1015,7 +1022,8 @@ mutable struct Simulation
 	outputPath::String
 	inputFiles::Dict{String,File} # given input file name (e.g. "ambulances"), returns file information
 	outputFiles::Dict{String,File}
-	eventsFileIO::IOStream # write simulation trace of events to this file
+	
+	eventsFile::EventsFile
 	
 	writeOutput::Bool # true if writing output files during simulation (e.g. events file), false otherwise (e.g. animating)
 	initialised::Bool # true if simulation has been initialised and so can be run, false otherwise
@@ -1039,6 +1047,7 @@ mutable struct Simulation
 		Set(), Set(),
 		SimStats(),
 		[], 0, true,
-		"", "", Dict(), Dict(), IOStream(""),
+		"", "", Dict(), Dict(),
+		EventsFile(),
 		false, false, false, false, false)
 end
