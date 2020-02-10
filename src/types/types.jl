@@ -803,9 +803,9 @@ mutable struct Resimulation
 	eventsChildren::Vector{Vector{Event}} # eventsChildren[i] gives events that are children of sim event i; length(eventsChildren) may be less than number of events if events file does not include all events
 	prevEventIndex::Int # index of previous event in events field
 	
-	eventFilter::Set{EventForm}
-	doDispatch::Bool # true if can resimulate dispatch decisions, i.e. if in(ambDispatched, eventFilter) == true
-	doMoveUp::Bool # true if can resimulate move-up decisions, i.e. if in(ambMoveUpToStation, eventFilter) == true
+	eventFilter::Dict{EventForm,Bool} # eventFilter[eventForm] = true if resimulating with events of eventForm
+	doDispatch::Bool # true if can resimulate dispatch decisions, i.e. eventFilter[ambDispatched] == true
+	doMoveUp::Bool # true if can resimulate move-up decisions, i.e. eventFilter[ambMoveUpToStation] == true
 	
 	Resimulation() = new(false, 0.0,
 		[], [], nullIndex,

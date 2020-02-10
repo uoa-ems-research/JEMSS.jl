@@ -55,8 +55,8 @@ function initResim!(sim::Simulation; doPrint::Bool = false)
 	resim.events = events
 	resim.eventsChildren = eventsChildren
 	resim.eventFilter = eventFilter
-	resim.doDispatch = in(ambDispatched, eventFilter)
-	resim.doMoveUp = in(ambMoveUpToStation, eventFilter)
+	resim.doDispatch = eventFilter[ambDispatched]
+	resim.doMoveUp = eventFilter[ambMoveUpToStation]
 	resim.prevEventIndex = 0
 	resim.timeTolerance = 1e-5 / 2
 end

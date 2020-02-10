@@ -335,11 +335,11 @@ function readEventsFile(filename::String)
 	@assert(allunique(eventNames))
 	@assert(allunique(eventKeys))
 	eventDict = Dict{Int,EventForm}()
-	eventFilter = Set{EventForm}() # in(eventForm, eventFilter) = true if events of eventForm are included in file, false otherwise
+	eventFilter = Dict([e => true for e in instances(EventForm)]) # eventFilter[eventForm] = true if events of eventForm are included in file, false otherwise
 	for i = 1:n
 		eventForm = eval(Meta.parse(eventNames[i]))
 		eventDict[eventKeys[i]] = eventForm
-		if filter[i] push!(eventFilter, eventForm) end
+		eventFilter[eventForm] = filter[i]
 	end
 	
 	# create events from data in events table
