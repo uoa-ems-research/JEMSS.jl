@@ -104,11 +104,13 @@ function resimFindAmbToDispatch(sim::Simulation, call::Call)
 	@assert(resim.use && resim.doDispatch)
 	eventIndex = sim.eventIndex # shorthand
 	
-	resimEvent = resim.events[resim.prevEventIndex]
-	if resimEvent.index == eventIndex
-		# check that previous event was to dispatch for this call
-		@assert(resimEvent.form == considerDispatch)
-		@assert(resimEvent.callIndex == call.index)
+	if resim.prevEventIndex > 0
+		resimEvent = resim.events[resim.prevEventIndex]
+		if resimEvent.index == eventIndex
+			# check that previous event was to dispatch for this call
+			@assert(resimEvent.form == considerDispatch)
+			@assert(resimEvent.callIndex == call.index)
+		end
 	end
 	
 	# find child event for dispatch
@@ -131,10 +133,12 @@ function resimMoveUp(sim::Simulation)
 	@assert(resim.use && resim.doMoveUp)
 	eventIndex = sim.eventIndex # shorthand
 	
-	resimEvent = resim.events[resim.prevEventIndex]
-	if resimEvent.index == eventIndex
-		# check that previous event was to consider move up
-		@assert(resimEvent.form == considerMoveUp)
+	if resim.prevEventIndex > 0
+		resimEvent = resim.events[resim.prevEventIndex]
+		if resimEvent.index == eventIndex
+			# check that previous event was to consider move up
+			@assert(resimEvent.form == considerMoveUp)
+		end
 	end
 	
 	# find all ambulances to move up
