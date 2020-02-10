@@ -369,7 +369,7 @@ function readEventsFile(filename::String)
 	end
 	
 	# set eventsChildren; eventsChildren[i] gives events that are children of the ith event that occurred
-	maxEventIndex = any(events) ? events[end].index : 0
+	maxEventIndex = isempty(events) ? 0 : events[end].index
 	eventsChildren = [Vector{Event}() for i = 1:maxEventIndex]
 	for event in events
 		j = event.parentIndex
