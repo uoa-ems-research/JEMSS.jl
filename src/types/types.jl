@@ -809,7 +809,7 @@ mutable struct Resimulation
 	
 	Resimulation() = new(false, 0.0,
 		[], [], nullIndex,
-		Set(), false, false)
+		Dict(), false, false)
 end
 
 # Mean and half the width of the confidence interval of the mean.
