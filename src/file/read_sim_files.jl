@@ -363,6 +363,7 @@ function readEventsFile(filename::String)
 		@assert(event.index > event.parentIndex)
 		if i > 1 @assert(event.index > events[i-1].index) end
 		@assert(event.form != nullEvent)
+		@assert(eventFilter[event.form])
 		@assert(event.time > nullTime)
 		@assert(event.ambIndex != nullIndex || event.callIndex != nullIndex)
 	end
