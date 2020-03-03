@@ -124,6 +124,8 @@ function reset!(sim::Simulation)
 		sim.travel.recentSetsStartTimesIndex = 1
 		sim.demand.recentSetsStartTimesIndex = 1
 	end
+	
+	return nothing
 end
 resetSim!(sim::Simulation) = reset!(sim) # compat
 
