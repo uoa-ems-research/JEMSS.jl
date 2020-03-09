@@ -244,7 +244,7 @@ limitations under the License.
 			}
 		});
 		
-		show_arcs.checked = true
+		show_arcs.checked = false
 		$('#show_arcs').change(function() {
 			if (this.checked) {
 				showArcs()
@@ -692,7 +692,14 @@ limitations under the License.
 			).addTo(map).bringToBack();
 		}
 		
+		function getArcs() {
+			if (arcs.length == 0) {
+				connection.send("get_arcs")
+			}
+		}
+		
 		function showArcs() {
+			getArcs()
 			for (i in arcs) {
 				map.addLayer(arcs[i].marker);
 				arcs[i].marker.bringToBack();

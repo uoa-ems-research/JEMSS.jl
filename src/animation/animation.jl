@@ -249,9 +249,6 @@ function animateClient(client::Client)
 	animSetIcons(client) # set icons before adding items to map
 	animAddBuildings(client, sim)
 	animAddAmbs!(client, sim)
-	animAddNodes(client, sim.net.fGraph.nodes)
-	animAddArcs(client, sim.net)
-	animSetArcSpeeds(client, sim.map, sim.net)
 	
 	if sim.time > sim.startTime
 		# set animation to current sim state
@@ -302,6 +299,11 @@ function animateClient(client::Client)
 				@warn("Could not update animation icons")
 				@warn(e)
 			end
+			
+		elseif msgType == "get_arcs"
+			animAddNodes(client, sim.net.fGraph.nodes)
+			animAddArcs(client, sim.net)
+			animSetArcSpeeds(client, sim.map, sim.net)
 			
 		elseif msgType == "disconnect"
 			sim.animating = false
