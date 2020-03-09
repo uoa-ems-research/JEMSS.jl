@@ -227,9 +227,9 @@ function nestCompTable(compTable::CompTable)::NestedCompTable
 	checkCompTableIsNested(compTable) # check if nesting is possible
 	(m,n) = size(compTable)
 	nestedCompTable = NestedCompTable(undef,m)
-	nestedCompTable[1] = findfirst(compTable[1,:])
+	nestedCompTable[1] = findfirst(x -> x != 0, compTable[1,:])
 	for i = 2:m
-		nestedCompTable[i] = findfirst(compTable[i,:] - compTable[i-1,:])
+		nestedCompTable[i] = findfirst(x -> x != 0, compTable[i,:] - compTable[i-1,:])
 	end
 	return nestedCompTable
 end
