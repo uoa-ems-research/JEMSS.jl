@@ -47,15 +47,19 @@ end
 # Base.rand(::AbstractRNG, ::Distribution) does not exist for all distributions, so have to use
 # Base.rand(::Distribution) and after setting GLOBAL_RNG.
 function Base.rand(distrRng::DistrRng, n::Int)
-	rng = distrRng.rng # shorthand
-	# store GLOBAL_RNG state in backup, set GLOBAL_RNG to rng
-	copyRng!(GlobalRngBackup, GLOBAL_RNG)
-	copyRng!(GLOBAL_RNG, rng)
-	value = rand(distrRng.d, n)
-	# set rng to state of GLOBAL_RNG, restore GLOBAL_RNG from backup
-	copyRng!(rng, GLOBAL_RNG)
-	copyRng!(GLOBAL_RNG, GlobalRngBackup) # for safety, so rng is no longer tied to GLOBAL_RNG
-	return value
+	if isa(GLOBAL_RNG, MersenneTwister) # julia <= v1.2
+		rng = distrRng.rng # shorthand
+		# store GLOBAL_RNG state in backup, set GLOBAL_RNG to rng
+		copyRng!(GlobalRngBackup, GLOBAL_RNG)
+		copyRng!(GLOBAL_RNG, rng)
+		value = rand(distrRng.d, n)
+		# set rng to state of GLOBAL_RNG, restore GLOBAL_RNG from backup
+		copyRng!(rng, GLOBAL_RNG)
+		copyRng!(GLOBAL_RNG, GlobalRngBackup) # for safety, so rng is no longer tied to GLOBAL_RNG
+		return value
+	else # julia v1.3
+		return rand(distrRng.rng, distrRng.d, n)
+	end
 end
 function Base.rand(distrRng::DistrRng)
 	return rand(distrRng, 1)[1]
