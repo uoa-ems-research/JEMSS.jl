@@ -33,7 +33,7 @@
 	
 	<decision>
 		<callQueueing>addCallToQueueSortPriorityThenTime!</callQueueing>
-		<dispatch>findNearestFreeAmbToCall!</dispatch>
+		<dispatch>findNearestDispatchableAmb!</dispatch>
 		<moveUp>
 			<module>none</module>
 			<!-- module: none / comp_table / dmexclp / priority_list / zhang_ip / temp0 / temp1 / temp2 -->
