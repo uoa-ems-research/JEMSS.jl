@@ -236,7 +236,7 @@ function simulateEventConsiderDispatch!(sim::Simulation, event::Event)
 	@assert(event.form == considerDispatch)
 	@assert(event.ambIndex == nullIndex) # no ambulance should be assigned yet
 	call = sim.calls[event.callIndex]
-	@assert(call.status == callScreening || call.status == callWaitingForAmb) # callWaitingForAmb if call bumped
+	@assert(in(call.status, (callScreening, callWaitingForAmb))) # callWaitingForAmb if call bumped
 	
 	# find ambulance to respond
 	if sim.resim.use && sim.resim.doDispatch
@@ -279,7 +279,7 @@ function simulateEventAmbDispatched!(sim::Simulation, event::Event)
 	status = ambulance.status # shorthand
 	@assert(isFree(status) || status == ambGoingToCall)
 	call = sim.calls[event.callIndex]
-	@assert(call.status == callScreening || call.status == callQueued || call.status == callWaitingForAmb) # callWaitingForAmb if call bumped
+	@assert(in(call.status, (callScreening, callQueued, callWaitingForAmb))) # callWaitingForAmb if call bumped
 	
 	setAmbStatus!(sim, ambulance, ambGoingToCall, sim.time)
 	ambulance.callIndex = call.index
@@ -302,8 +302,7 @@ function simulateEventAmbDispatched!(sim::Simulation, event::Event)
 	addEvent!(sim.eventList; parentEvent = event, form = ambReachesCall, time = ambulance.route.endTime, ambulance = ambulance, call = call)
 	
 	if sim.moveUpData.useMoveUp
-		m = sim.moveUpData.moveUpModule # shorthand
-		if m == compTableModule || m == ddsmModule || m == zhangIpModule || m == temp0Module || m == temp1Module || m == temp2Module
+		if in(sim.moveUpData.moveUpModule, (compTableModule, ddsmModule, zhangIpModule, temp0Module, temp1Module, temp2Module))
 			addEvent!(sim.eventList; parentEvent = event, form = considerMoveUp, time = sim.time, ambulance = ambulance, addEventToAmb = false)
 		end
 	end
@@ -374,9 +373,9 @@ end
 function simulateEventAmbBecomesFree!(sim::Simulation, event::Event)
 	@assert(event.form == ambBecomesFree)
 	ambulance = sim.ambulances[event.ambIndex]
-	@assert(ambulance.status == ambAtCall || ambulance.status == ambAtHospital)
+	@assert(in(ambulance.status, (ambAtCall, ambAtHospital)))
 	call = sim.calls[event.callIndex]
-	@assert(call.status == callOnSceneTreatment || call.status == callAtHospital)
+	@assert(in(call.status, (callOnSceneTreatment, callAtHospital)))
 	
 	# remove call, processing is finished
 	delete!(sim.currentCalls, call)
@@ -400,8 +399,7 @@ function simulateEventAmbBecomesFree!(sim::Simulation, event::Event)
 		# consider move up
 		# note that this event is created after above ambReturnsToStation event, so that it will happen first and can delete the ambReturnsToStation event if needed
 		if sim.moveUpData.useMoveUp
-			m = sim.moveUpData.moveUpModule # shorthand
-			if m == compTableModule || m == dmexclpModule || m == priorityListModule || m == zhangIpModule || m == temp0Module || m == temp1Module || m == temp2Module
+			if in(sim.moveUpData.moveUpModule, (compTableModule, dmexclpModule, priorityListModule, zhangIpModule, temp0Module, temp1Module, temp2Module))
 				addEvent!(sim.eventList; parentEvent = event, form = considerMoveUp, time = sim.time, ambulance = ambulance, addEventToAmb = false)
 			end
 		end
