@@ -90,7 +90,7 @@ export
 	rasterRandLocations, printRasterSize, # raster
 	shortestRouteTravelTime!, # route
 	getCallResponseDurations, getAvgCallResponseDuration, getCallsReachedInTime, countCallsReachedInTime, printSimStats, printAmbsStats, printCallsStats, printHospitalsStats, calcBatchMeans, calcBatchMeanResponseDurations, meanErrorPlot, calcAR0DurbinWatsonTestPValue, tDistrHalfWidth, confInterval, getPeriodStatsList, getRepsPeriodStatsList, getRepPeriodStats, statsDictFromPeriodStatsList, # statistics
-	checkCompTable, checkCompTableIsNested, nestCompTable, unnestCompTable, makeRandNestedCompTable, # compliance table
+	checkCompTable, isCompTableNested, nestCompTable, unnestCompTable, makeRandNestedCompTable, # compliance table
 	makeRandDeployment, makeRandDeployments, deploymentToStationsNumAmbs, stationsNumAmbsToDeployment, getDeployment, getStationsNumAmbs, setAmbStation!, applyDeployment!, applyStationsNumAmbs!, simulateDeployment!, simulateDeployments!, # deployment
 	checkPriorityList, makeRandPriorityList, # priority list
 	solveMexclp!, # mexclp

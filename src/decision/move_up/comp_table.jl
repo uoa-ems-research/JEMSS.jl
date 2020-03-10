@@ -214,22 +214,24 @@ function checkCompTable(compTable::CompTable, sim::Simulation)
 	return checkCompTable(compTable; numAmbs = sim.numAmbs, numStations = sim.numStations, stationCapacities = [s.capacity for s in sim.stations])
 end
 
-function checkCompTableIsNested(compTable::CompTable)
+function isCompTableNested(compTable::CompTable)
 	checkCompTable(compTable)
 	for i = 2:size(compTable,1)
-		@assert(length(findall(!iszero, compTable[i,:] - compTable[i-1,:])) == 1) # should only have one change between rows
+		if count(!iszero, compTable[i,:] - compTable[i-1,:]) != 1 # should only have one change between rows
+			return false
+		end
 	end
 	return true
 end
 
 # take a compliance table and return the nested form, if possible
 function nestCompTable(compTable::CompTable)::NestedCompTable
-	checkCompTableIsNested(compTable) # check if nesting is possible
+	@assert(isCompTableNested(compTable)) # check if nesting is possible
 	(m,n) = size(compTable)
 	nestedCompTable = NestedCompTable(undef,m)
-	nestedCompTable[1] = findfirst(x -> x != 0, compTable[1,:])
+	nestedCompTable[1] = findfirst(!iszero, compTable[1,:])
 	for i = 2:m
-		nestedCompTable[i] = findfirst(x -> x != 0, compTable[i,:] - compTable[i-1,:])
+		nestedCompTable[i] = findfirst(!iszero, compTable[i,:] - compTable[i-1,:])
 	end
 	return nestedCompTable
 end
