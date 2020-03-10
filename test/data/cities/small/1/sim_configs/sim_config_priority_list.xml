@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <simConfig>
 	<!-- paths: -->
-	<inputPath>$jemssDir/test/data/regions/small/1/generated</inputPath>
+	<inputPath>$jemssDir/test/data/cities/small/1/generated</inputPath>
 	<outputPath/>
 	
 	<simFiles>
