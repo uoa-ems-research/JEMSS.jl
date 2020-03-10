@@ -194,7 +194,9 @@ limitations under the License.
 					prepareNextFrame()
 					break;
 				case "got_last_frame":
-					console.log("finished sim")
+					if (doLogState) {
+						console.log("finished sim")
+					}
 					pauseAnimation()
 					nextSimTime = simTime;
 					break;
@@ -256,9 +258,16 @@ limitations under the License.
 		////////////////////////////////////////////////////////////////
 		// sim/animation states
 		
+		doLogState = false
+		function logState() {
+			if (doLogState) {
+				console.log(state)
+			}
+		}
+		
 		function runAnimation() {
 			state = "running"
-			console.log(state)
+			logState()
 			lastFrameTime = getCurrentTime()
 			prepareNextFrame()
 			document.getElementById("run_pause_button").value = "Pause";
@@ -266,14 +275,14 @@ limitations under the License.
 		
 		function pauseAnimation() {
 			state = "paused"
-			console.log(state)
+			logState()
 			connection.send("pause");
 			document.getElementById("run_pause_button").value = "Run";
 		}
 		
 		function stopAnimation() {
 			state = "stopped"
-			console.log(state)
+			logState()
 			removeAmbs();
 			removeCalls();
 			updateSimTime(simStartTime);
@@ -289,7 +298,7 @@ limitations under the License.
 			}
 			nextSimTime = newSimTime
 			state = "jumping"
-			console.log(state)
+			logState()
 			// temporarily reduce frameTime
 			tempFrameTime = frameTime
 			frameTime = 0
