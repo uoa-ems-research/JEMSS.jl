@@ -359,7 +359,7 @@ function runAnimServer(port::Int)
 	end
 	try
 		socket = Sockets.connect(port)
-		if socket.status == 3 # = open
+		if socket.status == Base.StatusOpen
 			println("port $port is already in use, try another")
 			return false
 		end
