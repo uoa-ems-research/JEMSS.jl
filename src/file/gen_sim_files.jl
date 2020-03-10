@@ -256,24 +256,16 @@ function readGenConfigMap!(genConfig::GenConfig, rootElt::XMLElement)
 end
 
 function runGenConfig(genConfig::GenConfig; overwriteOutputPath::Bool = false, doPrint::Bool = true)
-	if isdir(genConfig.outputPath) && !overwriteOutputPath
-		doPrint && println("Output path already exists: ", genConfig.outputPath)
-		doPrint && print("Delete folder contents and continue anyway? (y = yes): ")
-		response = chomp(readline())
-		if response != "y"
-			doPrint && println("stopping")
-			return
+	outputPath = genConfig.outputPath # shorthand
+	if isdir(outputPath) && !isempty(readdir(outputPath))
+		if overwriteOutputPath
+			doPrint && println("Deleting directory: ", outputPath)
+			rm(outputPath; recursive=true)
 		else
-			overwriteOutputPath = true
+			error("Directory is not empty: ", outputPath)
 		end
 	end
-	if isdir(genConfig.outputPath) && overwriteOutputPath
-		doPrint && println("Deleting folder contents: ", genConfig.outputPath)
-		rm(genConfig.outputPath; recursive=true)
-	end
-	if !isdir(genConfig.outputPath)
-		mkdir(genConfig.outputPath)
-	end
+	isdir(outputPath) || mkdir(outputPath)
 	
 	doPrint && println("Generation mode: ", genConfig.mode)
 	if genConfig.mode == "all"
@@ -289,7 +281,7 @@ function runGenConfig(genConfig::GenConfig; overwriteOutputPath::Bool = false, d
 		(arcs, travelTimes) = makeArcs(genConfig, graph, nodes)
 		
 		# save all
-		doPrint && println("Saving output to: ", genConfig.outputPath)
+		doPrint && println("Saving output to: ", outputPath)
 		writeAmbsFile(genConfig.ambsFilename, ambulances)
 		writeArcsFile(genConfig.arcsFilename, arcs, travelTimes, "undirected")
 		writeCallsFile(genConfig.callsFilename, genConfig.startTime, calls)
