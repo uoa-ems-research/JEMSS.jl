@@ -14,7 +14,7 @@
 ##########################################################################
 
 # For determining transient period duration at start and end of simulation, based on call response durations.
-# Useful for deciding how duration of simulation warm-up and cool-down periods.
+# Useful for deciding duration of simulation warm-up and cool-down periods.
 # Loads sim from config, splits calls into batches, runs simulation for each batch,
 # then saves and plots the moving average of response durations.
 

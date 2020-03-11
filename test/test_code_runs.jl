@@ -17,8 +17,8 @@
 
 # check that different sim configs can be opened, and sim can run
 @testset "sim configs" begin
-	@assert(isdir("data/regions/small/1/generated"))
-	simConfigFolder = "data/regions/small/1/sim_configs"
+	@assert(isdir("data/cities/small/1/generated"))
+	simConfigFolder = "data/cities/small/1/sim_configs"
 	for configFilename in readdir(simConfigFolder)
 		filename = joinpath(pwd(), simConfigFolder, configFilename)
 		sim = initSim(filename);
@@ -35,7 +35,7 @@ else
 		scriptsFolder = joinpath(dirname(pathof(JEMSS)), "..", "example", "scripts")
 		
 		# local search scripts, tested with a very small sim for speed
-		cd("data/regions/small/6") do
+		cd("data/cities/small/6") do
 			runGenConfig("gen_config.xml", overwriteOutputPath = true, doPrint = false)
 			isdir("output") || mkdir("output")
 			for script in ("deployment_local_search.jl", "deployment_search.jl", "deployment_test.jl",
@@ -49,7 +49,7 @@ else
 		end
 		
 		# transient.jl
-		cd("data/regions/small/2") do
+		cd("data/cities/small/2") do
 			runGenConfig("gen_config.xml", overwriteOutputPath = true, doPrint = false)
 			isdir("output") || mkdir("output")
 			@info(string("Running script: transient.jl"))
@@ -62,7 +62,7 @@ else
 end
 
 @testset "generate calls" begin
-	cd("data/regions/small/3") do
+	cd("data/cities/small/3") do
 		runGenConfig("gen_config_calls.xml", overwriteOutputPath = true, doPrint = false) # single calls file, limit calls by count
 		runGenConfig("gen_config_calls_2.xml", overwriteOutputPath = true, doPrint = false) # single calls file, with maximum arrival time for last call
 		runGenConfig("gen_config_calls_3.xml", overwriteOutputPath = true, doPrint = false) # single calls file, with minimum arrival time for last call
@@ -74,8 +74,8 @@ end
 end
 
 @testset "set sim calls" begin
-	sim = initSim("data/regions/small/1/sim_config.xml")
-	genConfig = readGenConfig("data/regions/small/1/gen_config.xml")
+	sim = initSim("data/cities/small/1/sim_config.xml")
+	genConfig = readGenConfig("data/cities/small/1/gen_config.xml")
 	callSets = [makeCalls(genConfig) for i = 1:3]
 	for calls in callSets
 		for call in calls call.index = 0 end # test that setSimCalls! can handle this
@@ -88,7 +88,7 @@ end
 end
 
 @testset "sim replications" begin
-	cd("data/regions/small/5") do
+	cd("data/cities/small/5") do
 		runGenConfig("gen_config.xml", overwriteOutputPath = true, doPrint = false)
 		sim = initSim("sim_config.xml")
 		@assert(sim.numReps == 3)
@@ -101,7 +101,7 @@ end
 end
 
 @testset "sim replications parallel" begin
-	cd("data/regions/small/5") do
+	cd("data/cities/small/5") do
 		runGenConfig("gen_config.xml", overwriteOutputPath = true, doPrint = false)
 		sim = initSim("sim_config.xml")
 		@assert(sim.numReps == 3)
@@ -115,8 +115,8 @@ end
 
 # test that mexclp can be solved, but not solution correctness
 @testset "mexclp" begin
-	@assert(isdir("data/regions/small/1/generated"))
-	filename = joinpath(pwd(), "data/regions/small/1/mexclp/sim_config.xml")
+	@assert(isdir("data/cities/small/1/generated"))
+	filename = joinpath(pwd(), "data/cities/small/1/mexclp/sim_config.xml")
 	sim = initSim(filename);
 	# solve mexclp with various kwarg values
 	demandWeights = Dict([p => 1.0 for p in priorities])

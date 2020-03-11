@@ -13,14 +13,14 @@
 # limitations under the License.
 ##########################################################################
 
-runGenConfig("data/regions/small/4/gen_config.xml", overwriteOutputPath = true, doPrint = false)
+runGenConfig("data/cities/small/4/gen_config.xml", overwriteOutputPath = true, doPrint = false)
 
 @testset "route update" begin
 	# Test updating of route with updateRouteToTime! function.
 	# In particular, tests updating a route to a time at which it will be very close to a node.
 	# Passes if assertions in routing code all pass.
 	
-	sim = initSim("data/regions/small/4/sim_config.xml")
+	sim = initSim("data/cities/small/4/sim_config.xml")
 	
 	# shorthand
 	net = sim.net
@@ -61,7 +61,7 @@ end
 	# Compare against a calculation that relies on each arc distance being equal to the calculated distance between the arc's nodes.
 	# Assumes that shortestPathDistance function is correct (this is tested in test_network.jl).
 	
-	sim = initSim("data/regions/small/1/sim_config.xml")
+	sim = initSim("data/cities/small/1/sim_config.xml")
 	
 	# shorthand
 	net = sim.net

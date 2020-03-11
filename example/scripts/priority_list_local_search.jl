@@ -122,7 +122,7 @@ end
 # Assumes that values in x are from population with normal distribution with unknown standard deviation.
 function calcMeanAndHalfWidth(x::Vector{T}; conf::Float = conf)::Tuple{Float,Float} where T <: Real
 	x = convert(Vector{Float}, x)
-	return mean(x), tDistrHalfWidth(x)
+	return mean(x), tDistrHalfWidth(x; conf = conf)
 end
 
 # Objective value for a single period
@@ -577,12 +577,7 @@ stationCapacities = [station.capacity for station in sim.stations]
 priorityLists = [makeRandPriorityList(sim.numAmbs, sim.numStations; stationCapacities = stationCapacities, rng = priorityListRng) for i = 1:numSearches]
 
 # set sim to use priority list for move up
-for tempSim in (sim, sim.backup)
-	moveUpData = getfield(tempSim, :moveUpData)
-	for (fname, val) in ((:useMoveUp, true), (:moveUpModule, priorityListModule))
-		setfield!(moveUpData, fname, val)
-	end
-end
+setMoveUpModule!(sim, priorityListModule)
 
 makeRepsRunnable!(sim) # copy changes to sim (stats, priority list) to sim.reps
 

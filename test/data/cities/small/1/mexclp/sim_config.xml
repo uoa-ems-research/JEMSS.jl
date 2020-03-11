@@ -1,20 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <simConfig>
 	<!-- paths: -->
-	<inputPath>$jemssDir/test/data/regions/small/1/generated</inputPath>
+	<inputPath>$jemssDir/test/data/cities/small/1/generated</inputPath>
 	<outputPath/>
 	
 	<simFiles>
 		<!-- <path>inputPath</path> -->
 		<ambulances>ambulances.csv</ambulances>
-		<arcs>arcs.csv</arcs>
+		<arcs>../mexclp/arcs.csv</arcs>
 		<calls>calls.csv</calls>
+		<demand>../mexclp/demand.csv</demand>
+		<demandCoverage>../demand/demand_coverage.csv</demandCoverage>
 		<hospitals>hospitals.csv</hospitals>
 		<map>map.csv</map>
 		<nodes>nodes.csv</nodes>
 		<priorities>priorities.csv</priorities>
 		<stations>stations.csv</stations>
-		<travel>../travel.csv</travel>
+		<travel>../mexclp/travel.csv</travel>
 	</simFiles>
 	
 	<writeOutput>false</writeOutput>
@@ -24,12 +26,9 @@
 	
 	<decision>
 		<callQueueing>addCallToQueueSortPriorityThenTime!</callQueueing>
-		<dispatch>findNearestFreeAmbToCall!</dispatch>
+		<dispatch>findNearestDispatchableAmb!</dispatch>
 		<moveUp>
-			<module>comp_table</module>
-			<compTable>
-				<filename>../move_up/nested_comp_table.csv</filename>
-			</compTable>
+			<module>none</module>
 		</moveUp>
 	</decision>
 	

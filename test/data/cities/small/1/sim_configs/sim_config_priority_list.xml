@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <simConfig>
 	<!-- paths: -->
-	<inputPath>$jemssDir/test/data/regions/small/1/generated</inputPath>
+	<inputPath>$jemssDir/test/data/cities/small/1/generated</inputPath>
 	<outputPath/>
 	
 	<simFiles>
@@ -9,8 +9,6 @@
 		<ambulances>ambulances.csv</ambulances>
 		<arcs>arcs.csv</arcs>
 		<calls>calls.csv</calls>
-		<demand>../demand/demand_2.csv</demand>
-		<demandCoverage>../demand/demand_coverage.csv</demandCoverage>
 		<hospitals>hospitals.csv</hospitals>
 		<map>map.csv</map>
 		<nodes>nodes.csv</nodes>
@@ -26,16 +24,12 @@
 	
 	<decision>
 		<callQueueing>addCallToQueueSortPriorityThenTime!</callQueueing>
-		<dispatch>findNearestFreeAmbToCall!</dispatch>
+		<dispatch>findNearestDispatchableAmb!</dispatch>
 		<moveUp>
-			<module>ddsm</module>
-			<ddsm>
-				<coverFractionTargetT1>0.5</coverFractionTargetT1>
-				<travelTimeCost>50.0</travelTimeCost>
-				<slackWeight>1000.0</slackWeight>
-				<coverTimeDemandPriorities>[highPriority, lowPriority]</coverTimeDemandPriorities>
-				<options>[:solver => "glpk", :solver_kwargs => [:presolve => true], :v => v"2"]</options>
-			</ddsm>
+			<module>priority_list</module>
+			<priorityList>
+				<filename>../move_up/priority_list.csv</filename>
+			</priorityList>
 		</moveUp>
 	</decision>
 	

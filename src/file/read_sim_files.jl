@@ -325,17 +325,21 @@ function readEventsFile(filename::String)
 	inputFiles = table.columns["name"]
 	fileChecksums = [parse(UInt, checksumString[2:end-1]) for checksumString in table.columns["checksum"]] # remove quote chars around number, convert to UInt
 	
-	# event dictionary
+	# event dictionary and filter
 	table = tables["eventDict"]
 	eventNames = table.columns["name"]
 	eventKeys = table.columns["key"]
 	n = length(eventKeys) # number of event types
+	filter = haskey(table.columns, "filter") ? Bool.(table.columns["filter"]) : fill(true,n)
 	@assert(length(eventNames) == n)
 	@assert(allunique(eventNames))
 	@assert(allunique(eventKeys))
 	eventDict = Dict{Int,EventForm}()
+	eventFilter = Dict([e => true for e in instances(EventForm)]) # eventFilter[eventForm] = true if events of eventForm are included in file, false otherwise
 	for i = 1:n
-		eventDict[eventKeys[i]] = eval(Meta.parse(eventNames[i]))
+		eventForm = eval(Meta.parse(eventNames[i]))
+		eventDict[eventKeys[i]] = eventForm
+		eventFilter[eventForm] = filter[i]
 	end
 	
 	# create events from data in events table
@@ -344,33 +348,37 @@ function readEventsFile(filename::String)
 	(eventIndexCol = c["index"]); (parentIndexCol = c["parentIndex"]); (eventKeyCol = c["eventKey"]); (timeCol = c["time"]); (ambIndexCol = c["ambIndex"]); (callIndexCol = c["callIndex"]); (stationIndexCol = c["stationIndex"]) # shorthand, to avoid repeated dict lookups
 	data = table.data # shorthand
 	fileEnded = (data[end,1] == "end") # true if writing all events to file ended before file was closed
-	n = size(data,1) - fileEnded # number of events
+	n = size(data,1) - fileEnded # number of events in events table, can be less than actual number of events simulated
 	events = Vector{Event}(undef, n)
 	for i = 1:n
-		events[i] = Event()
-		events[i].index = eventIndexCol[i]
-		events[i].parentIndex = parentIndexCol[i]
-		events[i].form = eventDict[eventKeyCol[i]]
-		events[i].time = timeCol[i]
-		events[i].ambIndex = ambIndexCol[i]
-		events[i].callIndex = callIndexCol[i]
-		events[i].stationIndex = stationIndexCol[i]
+		event = events[i] = Event()
+		event.index = eventIndexCol[i]
+		event.parentIndex = parentIndexCol[i]
+		event.form = eventDict[eventKeyCol[i]]
+		event.time = timeCol[i]
+		event.ambIndex = ambIndexCol[i]
+		event.callIndex = callIndexCol[i]
+		event.stationIndex = stationIndexCol[i]
 		
-		@assert(events[i].form != nullEvent)
-		@assert(events[i].time > nullTime)
-		@assert(events[i].ambIndex != nullIndex || events[i].callIndex != nullIndex)
+		@assert(event.index > event.parentIndex)
+		if i > 1 @assert(event.index > events[i-1].index) end
+		@assert(event.form != nullEvent)
+		@assert(eventFilter[event.form])
+		@assert(event.time > nullTime)
+		@assert(event.ambIndex != nullIndex || event.callIndex != nullIndex)
 	end
 	
 	# set eventsChildren; eventsChildren[i] gives events that are children of the ith event that occurred
-	eventsChildren = [Vector{Event}() for i = 1:n]
-	for i = 1:n
-		j = events[i].parentIndex
+	maxEventIndex = isempty(events) ? 0 : events[end].index
+	eventsChildren = [Vector{Event}() for i = 1:maxEventIndex]
+	for event in events
+		j = event.parentIndex
 		if j != nullIndex
-			push!(eventsChildren[j], events[i])
+			push!(eventsChildren[j], event)
 		end
 	end
 	
-	return events, eventsChildren, fileEnded, inputFiles, fileChecksums
+	return events, eventsChildren, eventFilter, fileEnded, inputFiles, fileChecksums
 end
 
 # read geographic data from file and apply f to data

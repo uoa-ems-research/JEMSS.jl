@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <simConfig>
 	<!-- paths: -->
-	<inputPath>$jemssDir/test/data/regions/small/1/generated</inputPath>
+	<inputPath>$jemssDir/test/data/cities/small/1/generated</inputPath>
 	<outputPath/>
 	
 	<simFiles>
@@ -24,9 +24,12 @@
 	
 	<decision>
 		<callQueueing>addCallToQueueSortPriorityThenTime!</callQueueing>
-		<dispatch>findNearestFreeAmbToCall!</dispatch>
+		<dispatch>findNearestDispatchableAmb!</dispatch>
 		<moveUp>
-			<module>none</module>
+			<module>zhang_ip</module>
+			<zhangIp>
+				<paramsFilename>../move_up/zhang_ip.csv</paramsFilename>
+			</zhangIp>
 		</moveUp>
 	</decision>
 	

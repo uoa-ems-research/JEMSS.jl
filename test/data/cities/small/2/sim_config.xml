@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <simConfig>
 	<!-- paths: -->
-	<inputPath>generated</inputPath>
+	<inputPath>$jemssDir/test/data/cities/small/2/generated</inputPath>
 	<outputPath></outputPath>
 	
 	<simFiles>
 		<!-- <path>inputPath</path> -->
 		<ambulances>ambulances.csv</ambulances>
-		<arcs>../misc/arcs.csv</arcs>
+		<arcs>arcs.csv</arcs>
 		<calls>calls.csv</calls>
 		<hospitals>hospitals.csv</hospitals>
 		<map>map.csv</map>
-		<nodes>../misc/nodes.csv</nodes>
+		<nodes>nodes.csv</nodes>
 		<priorities>priorities.csv</priorities>
 		<stations>stations.csv</stations>
 		<travel>travel.csv</travel>
@@ -31,7 +31,7 @@
 	
 	<decision>
 		<callQueueing>addCallToQueueSortPriorityThenTime!</callQueueing>
-		<dispatch>findNearestFreeAmbToCall!</dispatch>
+		<dispatch>findNearestDispatchableAmb!</dispatch>
 		<moveUp>
 			<module>none</module>
 			<!-- module: none / comp_table / dmexclp / priority_list / zhang_ip / temp0 / temp1 / temp2 -->

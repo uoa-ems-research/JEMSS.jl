@@ -19,7 +19,7 @@
 const Client = HTTP.WebSockets.WebSocket{HTTP.ConnectionPool.Transaction{Sockets.TCPSocket}}
 global animClients = [] # store open connections
 global animSimQueue = Vector{Union{Simulation,String}}() # to store sims and sim filenames between animation request and start
-global animPort = nullIndex # localhost port for animation, to be set
+global animPorts = Set{Int}() # localhost ports for animation, to be set
 
 function decodeMessage(msg)
 	return String(msg)
@@ -249,9 +249,6 @@ function animateClient(client::Client)
 	animSetIcons(client) # set icons before adding items to map
 	animAddBuildings(client, sim)
 	animAddAmbs!(client, sim)
-	animAddNodes(client, sim.net.fGraph.nodes)
-	animAddArcs(client, sim.net)
-	animSetArcSpeeds(client, sim.map, sim.net)
 	
 	if sim.time > sim.startTime
 		# set animation to current sim state
@@ -303,6 +300,11 @@ function animateClient(client::Client)
 				@warn(e)
 			end
 			
+		elseif msgType == "get_arcs"
+			animAddNodes(client, sim.net.fGraph.nodes)
+			animAddArcs(client, sim.net)
+			animSetArcSpeeds(client, sim.map, sim.net)
+			
 		elseif msgType == "disconnect"
 			sim.animating = false
 			close(client)
@@ -348,17 +350,16 @@ end
 # creates and runs server for given port
 # returns true if server is running, false otherwise
 function runAnimServer(port::Int)
+	@assert(port >= 0)
+	
 	# check if port already in use
-	global animPort
-	if port == animPort && port != nullIndex
+	global animPorts
+	if in(port, animPorts)
 		return true # port already used for animation
-	elseif animPort != nullIndex
-		println("use port $animPort instead")
-		return false
 	end
 	try
 		socket = Sockets.connect(port)
-		if socket.status == 3 # = open
+		if socket.status == Base.StatusOpen
 			println("port $port is already in use, try another")
 			return false
 		end
@@ -379,8 +380,7 @@ function runAnimServer(port::Int)
 			HTTP.Handlers.handle(h, http)
 		end
 	end
-	animPort = port
-	println("opened port $animPort, use this for subsequent animation windows")
+	push!(animPorts, port)
 	
 	return true
 end

@@ -41,7 +41,7 @@
 	
 	<decision>
 		<callQueueing>addCallToQueueSortPriorityThenTime!</callQueueing>
-		<dispatch>findNearestFreeAmbToCall!</dispatch>
+		<dispatch>findNearestDispatchableAmb!</dispatch>
 		<moveUp>
 			<module>none</module>
 		</moveUp>

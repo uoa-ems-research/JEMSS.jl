@@ -83,6 +83,15 @@ function initSim(configFilename::String;
 		sim.outputFiles[outputFile] = file
 	end
 	
+	# events file filter
+	if containsElt(rootElt, "eventsFileFilter")
+		eventsFiltered = eltContentVal(rootElt, "eventsFileFilter")
+		@assert(isa(eventsFiltered, Vector{EventForm}))
+		for eventForm in setdiff(instances(EventForm), eventsFiltered)
+			sim.eventsFile.eventFilter[eventForm] = false
+		end
+	end
+	
 	printInitTime()
 	
 	##################

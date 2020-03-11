@@ -2,38 +2,28 @@
 <simConfig>
 	<!-- paths: -->
 	<inputPath>generated</inputPath>
-	<outputPath>output</outputPath>
+	<outputPath></outputPath>
 	
 	<simFiles>
 		<!-- <path>inputPath</path> -->
 		<ambulances>ambulances.csv</ambulances>
-		<callGenConfig>$configFileDir/gen_config.xml</callGenConfig>
+		<arcs>../misc/arcs.csv</arcs>
+		<calls>calls.csv</calls>
 		<hospitals>hospitals.csv</hospitals>
 		<map>map.csv</map>
+		<nodes>../misc/nodes.csv</nodes>
 		<priorities>priorities.csv</priorities>
 		<stations>stations.csv</stations>
-		
-		<arcs>arcs.csv</arcs>
-		<nodes>nodes.csv</nodes>
 		<travel>travel.csv</travel>
-		
-		<statsControl>$configFileDir/stats_control.csv</statsControl>
 	</simFiles>
 	
 	<writeOutput>false</writeOutput>
 	<outputFiles>
 		<!-- <path>outputPath</path> -->
-		<events>events.csv</events>
-		
 		<ambulances>ambulances.csv</ambulances>
 		<calls>calls.csv</calls>
+		<events>events.csv</events>
 		<hospitals>hospitals.csv</hospitals>
-		
-		<ambulancesStats>ambulances_stats.csv</ambulancesStats>
-		<callsStats>calls_stats.csv</callsStats>
-		<hospitalsStats>hospitals_stats.csv</hospitalsStats>
-		<stationsStats>stations_stats.csv</stationsStats>
-		<statsDict>stats_dict.csv</statsDict>
 	</outputFiles>
 	
 	<!-- resim = true will resimulate events from outputPath/events file, if possible -->
@@ -41,7 +31,7 @@
 	
 	<decision>
 		<callQueueing>addCallToQueueSortPriorityThenTime!</callQueueing>
-		<dispatch>findNearestFreeAmbToCall!</dispatch>
+		<dispatch>findNearestDispatchableAmb!</dispatch>
 		<moveUp>
 			<module>none</module>
 			<!-- module: none / comp_table / dmexclp / priority_list / zhang_ip / temp0 / temp1 / temp2 -->

@@ -196,6 +196,31 @@ function writeTravelFile(filename::String, travel::Travel)
 	writeTablesToFile(filename, [travelModesTable, travelSetsTable, travelSetsTimingTable])
 end
 
+function writeZhangIpParamsFile(filename::String, zhangIpData::ZhangIpData)
+	# shorthand
+	zid = zhangIpData
+	@unpack marginalBenefits, stationCapacities = zid
+	numStations = length(marginalBenefits)
+	@assert(numStations == length(stationCapacities))
+	
+	miscTable = Table("miscParams", ["travelTimeCost", "onRoadMoveUpDiscountFactor", "regretTravelTimeThreshold", "expectedHospitalHandoverDuration"];
+		rows = [[zid.travelTimeCost, zid.onRoadMoveUpDiscountFactor, zid.regretTravelTimeThreshold, zid.expectedHospitalHandoverDuration]])
+	
+	stationCapacitiesTable = Table("stationCapacities", ["stationIndex", "capacity"];
+		rows = [[i, stationCapacities[i]] for i = 1:numStations])
+	
+	maxNumSlots = maximum(stationCapacities)
+	mb = Array{Any,2}(undef, numStations, maxNumSlots)
+	mb[:] .= ""
+	for i = 1:numStations, j = 1:length(marginalBenefits[i])
+		mb[i,j] = marginalBenefits[i][j]
+	end
+	marginalBenefitsTable = Table("stationMarginalBenefits", ["stationIndex", ["slot_$i" for i = 1:maxNumSlots]...];
+		rows = [[i, mb[i,:]...] for i = 1:numStations])
+	
+	writeTablesToFile(filename, [miscTable, stationCapacitiesTable, marginalBenefitsTable])
+end
+
 # opens output files for writing during simulation
 # note: should have field sim.resim.use set/fixed before calling this function
 function openOutputFiles!(sim::Simulation)
@@ -212,22 +237,23 @@ function openOutputFiles!(sim::Simulation)
 	# currently, only need to open events file
 	if !sim.resim.use # otherwise, existing events file is used for resimulation
 		sim.outputFiles["events"].iostream = open(outputFilePath("events"), "w")
-		sim.eventsFileIO = sim.outputFiles["events"].iostream # shorthand
+		sim.eventsFile.io = sim.outputFiles["events"].iostream # shorthand
 		
 		# save checksum of input files
 		inputFiles = sort([name for (name, file) in sim.inputFiles])
 		fileChecksumStrings = [string("'", sim.inputFiles[name].checksum, "'") for name in inputFiles]
-		writeTablesToFile!(sim.eventsFileIO, Table("inputFiles", ["name", "checksum"]; cols = [inputFiles, fileChecksumStrings]))
+		writeTablesToFile!(sim.eventsFile.io, Table("inputFiles", ["name", "checksum"]; cols = [inputFiles, fileChecksumStrings]))
 		
 		# save events with a key, to reduce file size
 		eventForms = instances(EventForm)
 		eventKeys = [Int(eventForm) for eventForm in eventForms]
 		eventNames = [string(eventForm) for eventForm in eventForms]
-		writeTablesToFile!(sim.eventsFileIO, Table("eventDict", ["key", "name"]; cols = [eventKeys, eventNames]))
+		eventFilterValues = [Int(sim.eventsFile.eventFilter[eventForm]) for eventForm in eventForms]
+		writeTablesToFile!(sim.eventsFile.io, Table("eventDict", ["key", "name", "filter"]; cols = [eventKeys, eventNames, eventFilterValues]))
 		
 		# write events table name and header
-		writeDlmLine!(sim.eventsFileIO, "events")
-		writeDlmLine!(sim.eventsFileIO, "index", "parentIndex", "time", "eventKey", "ambIndex", "callIndex", "stationIndex")
+		writeDlmLine!(sim.eventsFile.io, "events")
+		writeDlmLine!(sim.eventsFile.io, "index", "parentIndex", "time", "eventKey", "ambIndex", "callIndex", "stationIndex")
 	end
 end
 
@@ -252,17 +278,17 @@ function closeOutputFiles!(sim::Simulation)
 	if !sim.writeOutput; return; end
 	
 	if !sim.resim.use
-		writeDlmLine!(sim.eventsFileIO, "end")
-		close(sim.eventsFileIO)
+		writeDlmLine!(sim.eventsFile.io, "end")
+		close(sim.eventsFile.io)
 	end
 end
 
 function writeEventToFile!(sim::Simulation, event::Event)
 	if !sim.writeOutput || sim.resim.use; return; end
-	
-	writeDlmLine!(sim.eventsFileIO, event.index, event.parentIndex, @sprintf("%0.5f", event.time), Int(event.form), event.ambIndex, event.callIndex, event.stationIndex)
-	
-	# flush(sim.eventsFileIO)
+	if sim.eventsFile.eventFilter[event.form]
+		writeDlmLine!(sim.eventsFile.io, event.index, event.parentIndex, @sprintf("%0.5f", event.time), Int(event.form), event.ambIndex, event.callIndex, event.stationIndex)
+		# flush(sim.eventsFile.io)
+	end
 end
 
 # write deployments to file
@@ -352,7 +378,7 @@ function makeAmbsStatsTables(periods::Vector{SimPeriodStats})::Vector{Table}
 	ambulanceTables = Table[]
 	counts = (:numCallsTreated, :numCallsTransported, :numDispatches, :numDispatchesFromStation, :numDispatchesOnRoad, :numDispatchesOnFree, :numRedispatches, :numMoveUps, :numMoveUpsFromStation, :numMoveUpsOnRoad, :numMoveUpsOnFree, :numMoveUpsReturnToPrevStation)
 	statuses = (setdiff(instances(AmbStatus), (ambNullStatus,))..., instances(AmbStatusSet)...)
-	travelStatuses = (ambStatusSets[ambTravelling]..., instances(AmbStatusSet)...)
+	travelStatuses = (sort(collect(ambStatusSets[ambTravelling]))..., instances(AmbStatusSet)...)
 	countHeaders = [string(c) for c in counts]
 	statusDurationHeaders = [string("duration_", string(s)) for s in statuses]
 	statusDistanceHeaders = [string("distance_", string(s)) for s in travelStatuses]

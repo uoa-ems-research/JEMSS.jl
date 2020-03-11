@@ -16,11 +16,11 @@
 using Parameters
 
 # initialise sim
-testRegionDataFolder = "data/regions/small/1"
-global simDemandCoverage = initSim(joinpath(testRegionDataFolder, "sim_config.xml"));
+testCityDataFolder = "data/cities/small/1"
+global simDemandCoverage = initSim(joinpath(testCityDataFolder, "sim_config.xml"));
 
 # initialise demand and demand coverage
-initDemand!(simDemandCoverage, demandFilename = joinpath(testRegionDataFolder, "demand", "demand.csv"))
+initDemand!(simDemandCoverage, demandFilename = joinpath(testCityDataFolder, "demand", "demand.csv"))
 coverTimes = Dict([p => 20/60/24 for p in priorities])
 coverTimes[highPriority] = 12/60/24
 initDemandCoverage!(simDemandCoverage, coverTimes = coverTimes, rasterCellNumRows = 2, rasterCellNumCols = 2)

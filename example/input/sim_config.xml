@@ -20,6 +20,9 @@
 		<map>maps/1/map_1.csv</map>
 		<priorities>misc/call priorities/1/priorities_1.csv</priorities>
 		<redispatch>misc/redispatch/1/redispatch_lower_to_high.csv</redispatch>
+		
+		<demand>demand/1/demand_1.csv</demand>
+		<demandCoverage>demand/coverage/1/demand_coverage_1.csv</demandCoverage>
 	</simFiles>
 	
 	<writeOutput>false</writeOutput>
@@ -41,7 +44,7 @@
 	
 	<decision>
 		<callQueueing>addCallToQueueSortPriorityThenTime!</callQueueing>
-		<dispatch>findNearestFreeAmbToCall!</dispatch>
+		<dispatch>findNearestDispatchableAmb!</dispatch>
 		<moveUp>
 			<module>none</module>
 		</moveUp>

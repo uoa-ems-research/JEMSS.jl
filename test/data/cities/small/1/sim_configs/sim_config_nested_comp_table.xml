@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <simConfig>
 	<!-- paths: -->
-	<inputPath>$jemssDir/test/data/regions/small/1/generated</inputPath>
+	<inputPath>$jemssDir/test/data/cities/small/1/generated</inputPath>
 	<outputPath/>
 	
 	<simFiles>
@@ -24,12 +24,12 @@
 	
 	<decision>
 		<callQueueing>addCallToQueueSortPriorityThenTime!</callQueueing>
-		<dispatch>findNearestFreeAmbToCall!</dispatch>
+		<dispatch>findNearestDispatchableAmb!</dispatch>
 		<moveUp>
-			<module>priority_list</module>
-			<priorityList>
-				<filename>../move_up/priority_list.csv</filename>
-			</priorityList>
+			<module>comp_table</module>
+			<compTable>
+				<filename>../move_up/nested_comp_table.csv</filename>
+			</compTable>
 		</moveUp>
 	</decision>
 	
