@@ -43,15 +43,7 @@ function calcCoverBound!(sim::Simulation;
 	
 	calcServiceDurationLowerBoundDistrs!(cb) # create service duration distributions
 	
-	# set length of numAmbsMaxCoverageFrac (set in initCoverBound function) to match maximum(numAmbs, numStations)
-	x = cb.numAmbsMaxCoverageFrac # shorthand
-	n = cbs.numAmbs # shorthand
-	numAmbsMaxCoverageFrac = n <= length(x) ? x[1:n] : vcat(x, fill(x[end], n - length(x)))
-	
-	# simulate
-	repsNumFreeAmbsFrac = simulateCoverBound!(cb)
-	v = [sum(numAmbsMaxCoverageFrac .* fracs) for fracs in repsNumFreeAmbsFrac]
-	cbs.bound = MeanAndHalfWidth(mean(v), tDistrHalfWidth(v)) # cover bound result
+	simulateCoverBound!(cb)
 	
 	return coverBound
 end
@@ -562,5 +554,20 @@ function simulateCoverBound!(coverBound::CoverBound)
 	for rep in coverBound.sim.reps
 		rep.numFreeAmbsFrac = simulateRepCoverBound!(coverBound)
 	end
-	return [rep.numFreeAmbsFrac for rep in coverBound.sim.reps]
+	calcCoverBound!(coverBound)
+	return coverBound.sim.bound
 end
+
+# mutates: coverBound.sim.bound
+function calcCoverBound!(coverBound::CoverBound)
+	# set length of numAmbsMaxCoverageFrac to match maximum(numAmbs, numStations)
+	x = coverBound.numAmbsMaxCoverageFrac # shorthand
+	n = coverBound.sim.numAmbs # shorthand
+	numAmbsMaxCoverageFrac = n <= length(x) ? x[1:n] : vcat(x, fill(x[end], n - length(x)))
+	
+	v = [sum(rep.numFreeAmbsFrac .* numAmbsMaxCoverageFrac) for rep in coverBound.sim.reps]
+	coverBound.sim.bound = MeanAndHalfWidth(mean(v), tDistrHalfWidth(v)) # cover bound result
+	
+	return coverBound.sim.bound
+end
+
