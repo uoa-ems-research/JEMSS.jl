@@ -21,7 +21,8 @@
 		numAmbs::Int = sim.numAmbs,
 		busyFraction::Float = 0.5,
 		demandWeights::Dict{Priority,Float} = Dict([p => 1.0 for p in priorities]),
-		stationCapacities::Vector{Int} = [station.capacity for station in sim.stations])
+		stationCapacities::Vector{Int} = [station.capacity for station in sim.stations],
+		results::Dict = Dict())
 Solves the Maximum Expected Coverage Location Problem (MEXCLP) for `sim` and returns the number of ambulances to assign to each station, also the converse is returned - a station index for each ambulance.
 The problem assumes that all ambulances are equivalent.
 
@@ -30,12 +31,14 @@ The problem assumes that all ambulances are equivalent.
 - `busyFraction` is the fraction of time that ambulances are busy; should be within [0,1] though this is not enforced
 - `demandWeights` is the weight to apply to each demand priority for the objective function
 - `stationCapacities` is the maximum number of ambulances that each station can hold
+- `results` will store results of mexclp such as the objective value and decision variable values.
 """
 function solveMexclp!(sim::Simulation;
 	numAmbs::Int = sim.numAmbs,
 	busyFraction::Float = 0.5,
 	demandWeights::Dict{Priority,Float} = Dict([p => 1.0 for p in priorities]),
-	stationCapacities::Vector{Int} = [station.capacity for station in sim.stations])
+	stationCapacities::Vector{Int} = [station.capacity for station in sim.stations],
+	results::Dict = Dict())
 	
 	@assert(numAmbs >= 1, "need at least 1 ambulance for mexclp")
 	@assert(sim.travel.numSets == 1) # otherwise need to solve mexclp for each travel set?
@@ -145,11 +148,17 @@ function solveMexclp!(sim::Simulation;
 		optimize!(model)
 		@assert(termination_status(model) == MOI.OPTIMAL)
 		xValue = JuMP.value.(x); yValue = JuMP.value.(y) # JuMP and LightXML both export value()
+		objVal = JuMP.value(expectedCoverage)
 	else
 		@objective(model, :Max, expectedCoverage)
 		solve(model)
 		xValue = getvalue(x); yValue = getvalue(y)
+		objVal = getvalue(expectedCoverage)
 	end
+	
+	results[:x] = xValue
+	results[:y] = yValue
+	results[:objVal] = objVal
 	
 	# extract solution
 	stationsNumAmbs = convert(Vector{Int}, round.(xValue)) # solution; stationsNumAmbs[i] gives number of ambulances to allocate to station i

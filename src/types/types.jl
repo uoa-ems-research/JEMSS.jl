@@ -640,6 +640,94 @@ mutable struct DemandCoverage
 	end
 end
 
+# Mean and half the width of the confidence interval of the mean.
+# Half-width is also known as half-length, or margin of error.
+struct MeanAndHalfWidth
+	mean::Float
+	halfWidth::Float
+	MeanAndHalfWidth(m, hw) = new(convert(Float,m), convert(Float,hw))
+end
+
+# cover bound simulation replication
+mutable struct CoverBoundSimRep
+	numFreeAmbsFrac::Vector{Float} # numFreeAmbsFrac[i] = fraction of times that calls arrived while there were i free ambs
+	# numFreeAmbsCount::Vector{Float} # numFreeAmbsCount[i] = number of times that calls arrived while there were i free ambs
+	# callArrivalTimes::Vector{Float} # callArrivalTimes[i] = arrival time of call i; generated from: minLastCallArrivalTime, interarrivalTimeDistrRng
+	# queuedCallDurations::Vector{Float} # for calls that arrived when there were 0 free ambs, record how long each call was queued
+	
+	CoverBoundSimRep() = new([])
+end
+
+# cover bound simulation
+mutable struct CoverBoundSim
+	numReps::Int
+	numAmbs::Int
+	
+	warmUpDuration::Float
+	minLastCallArrivalTime::Float
+	
+	reps::Vector{CoverBoundSimRep}
+	bound::MeanAndHalfWidth # upper bound on fraction of in time responses
+	
+	interarrivalTimeDistrRng::DistrRng
+	serviceDurationRng::AbstractRNG
+	
+	CoverBoundSim() = new(0, 0,
+		nullTime, nullTime,
+		[], MeanAndHalfWidth(0,0))
+end
+
+# cover bound data for a single combination of conditions (e.g. single demand mode and single travel mode)
+mutable struct CoverBoundMode
+	# parameters
+	index::Int
+	responseTravelMode::TravelMode # travel mode for ambulance response
+	# demandPriorities::Vector{Priority} # all demand priorities that use this cover bound mode
+	
+	# travel times
+	stationsToNodesTimes::Array{Float,2} # stationsToNodesTimes[i,j] = travel time from station i to node j
+	stationsToPointsTimes::Array{Float,2} # stationsToPointsTimes[i,j] = travel time from station i to demand point j
+	pointsToHospitalTimes::Vector{Float} # pointsToHospitalTimes[i] = travel time from point i to nearest hospital
+	
+	# group demand into sets
+	# use in conjunction with demandCoverage, e.g. demandCoverage.nodesPoints
+	nodeSets::Vector{Vector{Int}} # nodeSets[i] gives node indices that have same order in which ambulances can reach from each station
+	nodeSetsStationList::Vector{Vector{Int}} # nodeSetsStationList[i] has list of stations ordered (from closest in time to furthest) from nodeSets[i]
+	
+	# distributions related to service
+	distrs::Dict{String,Distribution} # distrs[name] gives distribution; name from Set("dispatchDelay", "onSceneDuration", "handoverDuration")
+	approxDistrs::Dict{String,Distribution} # approxDistrs[name] gives lower bound approximation (discrete, non-parametric distribution) of distrs[name]
+	# cdfs::Dict{String,Vector{Float}} # to add? for "d1" and "d2"
+	transportProb::Float # probability that call requires transport to hospital; assume call is taken to nearest hospital
+	
+	CoverBoundMode() = new(nullIndex, TravelMode(),
+		Array{Float,2}(undef,0,0), Array{Float,2}(undef,0,0), [],
+		[], [],
+		Dict(), Dict(), 1.0)
+end
+
+# cover bound - a bound on optimal move-up performance
+mutable struct CoverBound
+	modes::Vector{CoverBoundMode}
+	modeLookup::Vector{Int} # modeLookup[i] gives index of mode (in modes) to use for travel mode i. Will assume for now that there is only one demand set (demand is static) and one travel set (i.e travel times are static).
+	
+	# parameters
+	serviceDurationsToSample::Vector{Float} # will find upper bound on probability of service within each service duration in this list
+	
+	serviceProbUpperBounds::Array{Float,2} # serviceProbUpperBounds[i,j] = upper bound on probability of serving next call within serviceDurationsToSample[i] for j free ambulances
+	serviceDurationLowerBoundDistrs::Vector{Sampleable} # serviceDurationLowerBoundDistrs[i] is sampleable distribution of service duration for i free ambs
+	
+	sim::CoverBoundSim
+	
+	numAmbsMaxCoverageFrac::Vector{Float} # numAmbsMaxCoverageFrac[i] gives maximum fraction of demand that can be covered with i free ambulances (from 1:numStations), from solving MCLP
+	
+	CoverBound() = new([], [],
+		[],
+		Array{Float,2}(undef,0,0), [],
+		CoverBoundSim(),
+		[])
+end
+
 # move up data types
 abstract type MoveUpDataType end
 mutable struct EmptyMoveUpData <: MoveUpDataType end
@@ -817,14 +905,6 @@ mutable struct Resimulation
 	Resimulation() = new(false, 0.0,
 		[], [], nullIndex,
 		Dict(), false, false)
-end
-
-# Mean and half the width of the confidence interval of the mean.
-# Half-width is also known as half-length, or margin of error.
-struct MeanAndHalfWidth
-	mean::Float
-	halfWidth::Float
-	MeanAndHalfWidth(m, hw) = new(convert(Float,m), convert(Float,hw))
 end
 
 # statistics for a single ambulance, or multiple ambulances

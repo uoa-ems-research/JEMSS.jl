@@ -82,6 +82,7 @@ export
 export
 	isBusy, isFree, isWorking, isGoingToStation, isTravelling, # ambulance
 	setSimCalls!, # call
+	calcCoverBound!, initCoverBound, approxDistr, convolute, makeCdf, binarySearch, calcServiceProbUpperBounds, calcServiceDurationLowerBoundDistrs!, calcNumAmbsMaxCoverageFrac, initCoverBoundSim, simulateCoverBound!, # cover bound
 	initDemand!, initDemandCoverage!, # demand
 	printEvent, # event
 	findNearestNode, # grid
@@ -94,6 +95,7 @@ export
 	makeRandDeployment, makeRandDeployments, deploymentToStationsNumAmbs, stationsNumAmbsToDeployment, getDeployment, getStationsNumAmbs, setAmbStation!, applyDeployment!, applyStationsNumAmbs!, simulateDeployment!, simulateDeployments!, # deployment
 	checkPriorityList, makeRandPriorityList, # priority list
 	solveMexclp!, # mexclp
+	solvePMedian, # p-median
 	flatten, # dict
 	runParallel! # parallel
 
@@ -102,6 +104,7 @@ export
 	Location, Point, Node, Arc, Graph, NetTravel, Network, TravelMode, Travel, Route,
 	Event, Ambulance, Call, Hospital, Station, Redispatch,
 	Map, GridSearchRect, GridRect, Grid, Raster, RasterSampler, DemandMode, Demand, PointsCoverageMode, DemandCoverage,
+	CoverBoundSimRep, CoverBoundSim, CoverBoundMode, CoverBound,
 	CompTableData, DdsmData, DmexclpData, PriorityListData, ZhangIpData, Temp0Data, Temp1Data, Temp2Data, MoveUpData,
 	MeanAndHalfWidth, AmbulanceStats, CallStats, HospitalStats, StationStats, SimPeriodStats, SimStats,
 	File, Table, Resimulation, Simulation,
@@ -181,6 +184,8 @@ include("animation/animation.jl")
 include("misc/deployment.jl")
 
 include("optim/mexclp.jl")
+include("optim/p_median.jl")
+include("optim/cover_bound.jl")
 
 include("deprecated.jl")
 
