@@ -1,0 +1,9 @@
+coverTimes,,
+demandPriority,coverTime,note
+highPriority,0.004861111,(8-1)/60/24
+medPriority,0.004861111,(8-1)/60/24
+lowPriority,0.013194444,(20-1)/60/24
+,,
+demandRasterCellNumPoints,,
+rows,cols,
+5,5,

@@ -1,0 +1,5 @@
+priorities,,
+priority,name,targetResponseDuration
+1,highPriority,0.005555556
+2,medPriority,0.005555556
+3,lowPriority,0.013888889

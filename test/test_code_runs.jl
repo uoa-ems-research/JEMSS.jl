@@ -128,3 +128,15 @@ end
 	applyDeployment!(sim, deployment)
 	@test true
 end
+
+@testset "cover bound" begin
+	runGenConfig("data/cities/small/7/gen_config.xml", overwriteOutputPath = true, doPrint = false)
+	sim = initSim("data/cities/small/7/sim_config.xml")
+	genConfig = readGenConfig(sim.inputFiles["callGenConfig"].path)
+	coverBoundSim = initCoverBoundSim(numReps = 30, numAmbs = sim.numAmbs, warmUpDuration = 0.1, minLastCallArrivalTime = 0.1 + 10,
+		interarrivalTimeDistrRng = genConfig.interarrivalTimeDistrRng, serviceDurationSeed = 1)
+	serviceDurationsToSample = [1:60;]/60/24 # 1 minute intervals, up to 1 hour
+	coverBound = calcCoverBound!(sim; coverBoundSim = coverBoundSim, serviceDurationsToSample = serviceDurationsToSample)
+	# @show coverBound.sim.bound # cover bound result
+	@test true
+end
