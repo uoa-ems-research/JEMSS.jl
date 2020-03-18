@@ -386,6 +386,9 @@ function calcServiceProbUpperBounds(sim, coverBound::CoverBound;
 		serviceDurationsToSample::Vector{Float} = coverBound.serviceDurationsToSample,
 		numAmbsList::Vector{Int} = collect(1:sim.numStations), pMedianRelax::Bool = true, doPrint::Bool = false)
 	
+	@assert(issorted(serviceDurationsToSample))
+	@assert(issorted(numAmbsList))
+	
 	pMedianOptions = copy(pMedianDefaultOptions)
 	pMedianOptions[:x_bin] = !pMedianRelax
 	
@@ -418,6 +421,16 @@ function calcServiceProbUpperBounds(sim, coverBound::CoverBound;
 		end
 	end
 	doPrint && println()
+	
+	# fix any values in serviceProbUpperBounds that are incorrectly larger than they should be (not sure why this happens),
+	# can have cases where decreasing the number of ambulances or target service duration can (incorrectly) slightly increase the value from p-median problem.
+	p = serviceProbUpperBounds # shorthand
+	# should have p[i,j] <= p[i+1,j] and p[i,j] <= p[i,j+1]
+	m, n = size(p)
+	for i = m:-1:1, j = n:-1:1
+		if i < m p[i,j] = min(p[i,j], p[i+1,j]) end
+		if j < n p[i,j] = min(p[i,j], p[i,j+1]) end
+	end
 	
 	return serviceProbUpperBounds
 end
