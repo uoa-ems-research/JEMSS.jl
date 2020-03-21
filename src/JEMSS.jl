@@ -96,6 +96,7 @@ export
 	checkPriorityList, makeRandPriorityList, # priority list
 	solveMclp!, solveMclp, # mclp
 	solveMexclp!, # mexclp
+	solveNestedMclp!, solveNestedMclp, # nested mclp
 	solvePMedian, # p-median
 	flatten, # dict
 	runParallel! # parallel
@@ -188,6 +189,7 @@ include("optim/mclp.jl")
 include("optim/mexclp.jl")
 include("optim/p_median.jl")
 include("optim/cover_bound.jl")
+include("optim/nested_mclp.jl")
 
 include("deprecated.jl")
 
