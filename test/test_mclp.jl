@@ -20,8 +20,8 @@
 	pointDemands = [1.0]
 	coverMatrix = fill(true, 1, 1)
 	results = Dict()
-	@test solveMclp!(0, pointDemands, coverMatrix, results = results) == [0]
-	@test solveMclp!(1, pointDemands, coverMatrix, results = results) == [1]
+	@test solveMclp(0, pointDemands, coverMatrix, results = results) == [0]
+	@test solveMclp(1, pointDemands, coverMatrix, results = results) == [1]
 	
 	## small
 	pointDemands = Float[2, 2, 1, 1]
@@ -31,15 +31,15 @@
 		1 0 0 1
 	])
 	
-	@test solveMclp!(0, pointDemands, coverMatrix, results = results) == [0, 0, 0]
+	@test solveMclp(0, pointDemands, coverMatrix, results = results) == [0, 0, 0]
 	@test results[:objVal] == 0
 	
-	@test solveMclp!(1, pointDemands, coverMatrix, results = results) == [1, 0, 0]
+	@test solveMclp(1, pointDemands, coverMatrix, results = results) == [1, 0, 0]
 	@test results[:objVal] == 4
 	
-	@test solveMclp!(2, pointDemands, coverMatrix, results = results) == [0, 1, 1]
+	@test solveMclp(2, pointDemands, coverMatrix, results = results) == [0, 1, 1]
 	@test results[:objVal] == 6
 	
-	@test solveMclp!(3, pointDemands, coverMatrix, results = results) == [1, 1, 1]
+	@test solveMclp(3, pointDemands, coverMatrix, results = results) == [1, 1, 1]
 	@test results[:objVal] == 6
 end

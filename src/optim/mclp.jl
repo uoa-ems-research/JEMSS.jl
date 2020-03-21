@@ -63,19 +63,19 @@ function solveMclp!(sim::Simulation;
 	pointDemands = collect(values(pointData))
 	# point j has demand pointDemands[j] and is covered by stations pointStations[j]
 	
-	stationsNumAmbs = solveMclp!(numAmbs, pointDemands, pointStations; results = results)
+	stationsNumAmbs = solveMclp(numAmbs, pointDemands, pointStations; results = results)
 	deployment = stationsNumAmbsToDeployment(stationsNumAmbs) # convert to a deployment
 	
 	return stationsNumAmbs, deployment
 end
 
 """
-	solveMclp!(n::Int, pointDemands::Vector{Float}, coverMatrix::Array{Bool,2}; results::Dict = Dict())
+	solveMclp(n::Int, pointDemands::Vector{Float}, coverMatrix::Array{Bool,2}; results::Dict = Dict())
 Solves the Maximal Covering Location Problem (MCLP) to locate `n` facilities, where `pointDemands[j]` is the demand at point `j` and `coverMatrix[i,j] = true` if facility location `i` can cover point `j`.
 
 `results` will store results of mclp such as the objective value and decision variable values (though the decision variables may have changed from the given problem as duplicate columns in `coverMatrix` are removed).
 """
-function solveMclp!(n::Int, pointDemands::Vector{Float}, coverMatrix::Array{Bool,2}; results::Dict = Dict())
+function solveMclp(n::Int, pointDemands::Vector{Float}, coverMatrix::Array{Bool,2}; results::Dict = Dict())
 	l = size(coverMatrix,1) # number of potential facility locations
 	@assert(all(x -> x >= 0, pointDemands))
 	@assert(0 <= n <= l, "mclp requires that n be between 0 and the number of potential facility locations ($l).")
@@ -113,7 +113,7 @@ function solveMclp!(n::Int, pointDemands::Vector{Float}, coverMatrix::Array{Bool
 		# deleteat!(pointSetDemands, i)
 	# end
 	
-	solution = solveMclp!(n, pointSetDemands, pointSetFacilities, results = results)
+	solution = solveMclp(n, pointSetDemands, pointSetFacilities, results = results)
 	solution = vcat(solution, zeros(Int, size(coverMatrix,1) - length(solution))) # right-pad with zeros if needed
 	
 	# # change results dict to be for values given from function args instead of modified problem (that will be same size as given, or smaller)
@@ -125,12 +125,12 @@ function solveMclp!(n::Int, pointDemands::Vector{Float}, coverMatrix::Array{Bool
 end
 
 """
-	solveMclp!(n::Int, pointDemands::Vector{Float}, pointFacilities::Vector{Vector{Int}}; results::Dict = Dict())
+	solveMclp(n::Int, pointDemands::Vector{Float}, pointFacilities::Vector{Vector{Int}}; results::Dict = Dict())
 Solves the Maximal Covering Location Problem (MCLP) to locate `n` facilities, where `pointDemands[i]` is the demand at point `i` and `pointFacilities[i]` are the indices of facility locations that cover point `i`.
 
 `results` will store results of mclp such as the objective value and decision variable values.
 """
-function solveMclp!(n::Int, pointDemands::Vector{Float}, pointFacilities::Vector{Vector{Int}}; results::Dict = Dict())
+function solveMclp(n::Int, pointDemands::Vector{Float}, pointFacilities::Vector{Vector{Int}}; results::Dict = Dict())
 	p = length(pointDemands) # number of demand points
 	@assert(all(x -> x >= 0, pointDemands))
 	l = maximum([isempty(v) ? 0 : maximum(v) for v in pointFacilities]) # number of potential facility locations

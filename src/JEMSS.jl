@@ -94,7 +94,7 @@ export
 	checkCompTable, isCompTableNested, nestCompTable, unnestCompTable, makeRandNestedCompTable, # compliance table
 	makeRandDeployment, makeRandDeployments, deploymentToStationsNumAmbs, stationsNumAmbsToDeployment, getDeployment, getStationsNumAmbs, setAmbStation!, applyDeployment!, applyStationsNumAmbs!, simulateDeployment!, simulateDeployments!, # deployment
 	checkPriorityList, makeRandPriorityList, # priority list
-	solveMclp!, # mclp
+	solveMclp!, solveMclp, # mclp
 	solveMexclp!, # mexclp
 	solvePMedian, # p-median
 	flatten, # dict
