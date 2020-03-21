@@ -94,6 +94,7 @@ export
 	checkCompTable, isCompTableNested, nestCompTable, unnestCompTable, makeRandNestedCompTable, # compliance table
 	makeRandDeployment, makeRandDeployments, deploymentToStationsNumAmbs, stationsNumAmbsToDeployment, getDeployment, getStationsNumAmbs, setAmbStation!, applyDeployment!, applyStationsNumAmbs!, simulateDeployment!, simulateDeployments!, # deployment
 	checkPriorityList, makeRandPriorityList, # priority list
+	solveMclp!, # mclp
 	solveMexclp!, # mexclp
 	solvePMedian, # p-median
 	flatten, # dict
@@ -183,6 +184,7 @@ include("animation/animation.jl")
 
 include("misc/deployment.jl")
 
+include("optim/mclp.jl")
 include("optim/mexclp.jl")
 include("optim/p_median.jl")
 include("optim/cover_bound.jl")

@@ -25,5 +25,6 @@ cd(@__DIR__) do
 	include("test_demand.jl")
 	include("test_demand_coverage.jl")
 	include("test_zhang_ip.jl")
+	include("test_mclp.jl")
 	include("test_code_runs.jl")
 end

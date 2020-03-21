@@ -459,7 +459,7 @@ function calcNumAmbsMaxCoverageFrac(sim::Simulation)
 	arrivalRate = sum([mode.arrivalRate for mode in sim.demand.modes]) # assumes demand.numSets == 1
 	results = Dict() # for MCLP results
 	for i = 1:sim.numStations
-		solveMexclp!(sim; numAmbs = i, busyFraction = 0.0, results = results) # MEXCLP with busyFraction = 0 is same as MCLP
+		solveMclp!(sim; numAmbs = i, results = results)
 		numAmbsMaxCoverageFrac[i] = results[:objVal] / arrivalRate
 	end
 	
