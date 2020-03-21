@@ -19,13 +19,13 @@ pMedianDefaultOptions = Dict([:x_bin => true, :y_bin => false, :solver => "gurob
 try Gurobi catch; pMedianDefaultOptions[:solver] = "cbc" end
 
 """
-	solvePMedian(c::Array{Float,2}, n::Int; options::Dict{Symbol,T} = pMedianOptions)
-Solves the p-median problem for costs `c` and `n` facilities. `c[i,j]` is the cost of serving demand point `j` from facility location `i`.
+	solvePMedian(n::Int, c::Array{Float,2}; options::Dict{Symbol,T} = pMedianDefaultOptions, results::Dict = Dict()) where T <: Any
+Solves the p-median problem for `n` facilities and costs `c` where `c[i,j]` is the cost of serving demand point `j` from facility location `i`.
 The p-median problem is to locate facilities in order to minimise the total cost of serving demand, where each demand point is served by the facility which can serve the point at lowest cost.
-
-Returns a dictionary with the objective value and decision variable values.
+Returns a vector indicating which facility locations to use.
+`results` will store results such as the objective value and decision variable values.
 """
-function solvePMedian(c::Array{Float,2}, n::Int; options::Dict{Symbol,T} = pMedianDefaultOptions) where T <: Any
+function solvePMedian(n::Int, c::Array{Float,2}; options::Dict{Symbol,T} = pMedianDefaultOptions, results::Dict = Dict()) where T <: Any
 	@assert(n >= 1)
 	s, d = size(c) # number of potential facilities, number of demand points
 	
@@ -77,12 +77,11 @@ function solvePMedian(c::Array{Float,2}, n::Int; options::Dict{Symbol,T} = pMedi
 		@assert(status == :Optimal)
 	end
 	
-	# get solution
-	results = Dict()
 	results[:cost] = jump_ge_0_19 ? JuMP.value.(cost) : getvalue(cost)
 	results[:x] = jump_ge_0_19 ? JuMP.value.(x) : getvalue(x)
 	results[:y] = jump_ge_0_19 ? JuMP.value.(y) : getvalue(y)
 	results[:model] = model
 	
-	return results
+	solution = convert(Vector{Int}, round.(results[:x])) # solution[i] = 1 if facility location i should be used, 0 otherwise
+	return solution
 end

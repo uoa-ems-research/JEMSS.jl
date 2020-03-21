@@ -404,7 +404,8 @@ function calcServiceProbUpperBounds(sim, coverBound::CoverBound;
 		for (j,a) in enumerate(numAmbsList)
 			doPrint && print("\rTarget service duration $i of $numTargets, $j ambulances of $n ")
 			
-			results = solvePMedian(-stationsP, a; options = pMedianOptions)
+			results = Dict()
+			solvePMedian(a, -stationsP; options = pMedianOptions, results = results)
 			serviceProbUpperBounds[i,j] = -results[:cost]
 			
 			# # Testing: group node sets further, as we can assume that each station will have at least its a^th-to-last preferred station selected.
@@ -416,7 +417,8 @@ function calcServiceProbUpperBounds(sim, coverBound::CoverBound;
 				# x .+= nodeSetsP
 			# end
 			# stationsReducedP = hcat(values(stationsReducedNodeSetsP)...)
-			# results = solvePMedian(-stationsReducedP, a; options = pMedianOptions)
+			# results = Dict()
+			# solvePMedian(a, -stationsReducedP; options = pMedianOptions, results = results)
 			# serviceProbUpperBounds[i,j] = -results[:cost]
 		end
 	end
