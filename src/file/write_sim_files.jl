@@ -170,6 +170,16 @@ function writePriorityListsFile(filename::String, priorityLists::Vector{Priority
 	writeTablesToFile(filename, table)
 end
 
+# note that this writes the raster to file in xyz format (plain text)
+function writeRasterFile(filename::String, raster::Raster)
+	open(filename, "w") do file
+		for iy = 1:raster.ny, ix = 1:raster.nx
+			x, y, z = raster.x[ix], raster.y[iy], raster.z[ix,iy]
+			write(file, "$x $y $z", newline)
+		end
+	end
+end
+
 function writeStationsFile(filename::String, stations::Vector{Station})
 	table = Table("stations", ["index", "x", "y", "capacity"];
 		rows = [[s.index, s.location.x, s.location.y, s.capacity] for s in stations])
