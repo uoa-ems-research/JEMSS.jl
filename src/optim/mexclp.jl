@@ -31,7 +31,7 @@ The problem assumes that all ambulances are equivalent.
 - `busyFraction` is the fraction of time that ambulances are busy; should be within [0,1] though this is not enforced
 - `demandWeights` is the weight to apply to each demand priority for the objective function
 - `stationCapacities` is the maximum number of ambulances that each station can hold
-- `results` will store results of mexclp such as the objective value and decision variable values.
+- `results` will store results of mexclp such as the objective value and decision variable values
 """
 function solveMexclp!(sim::Simulation;
 	numAmbs::Int = sim.numAmbs,

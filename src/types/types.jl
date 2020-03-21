@@ -709,7 +709,7 @@ end
 # cover bound - a bound on optimal move-up performance
 mutable struct CoverBound
 	modes::Vector{CoverBoundMode}
-	modeLookup::Vector{Int} # modeLookup[i] gives index of mode (in modes) to use for travel mode i. Will assume for now that there is only one demand set (demand is static) and one travel set (i.e travel times are static).
+	modeLookup::Vector{Int} # modeLookup[i] gives index of mode (in modes) to use for travel mode i. Will assume for now that there is only one demand set (demand is static) and one travel set (i.e. travel times are static).
 	
 	# parameters
 	serviceDurationsToSample::Vector{Float} # will find upper bound on probability of service within each service duration in this list
