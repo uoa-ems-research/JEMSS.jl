@@ -19,11 +19,11 @@
 function calcCoverBound!(sim::Simulation;
 		coverBound::Union{CoverBound,Nothing} = nothing,
 		coverBoundSim::Union{CoverBoundSim,Nothing} = nothing, # need this if coverBound.sim is not set
-		serviceDurationsToSample::Vector{Float} = [],
+		ambBusyDurationsToSample::Vector{Float} = [],
 		doPrint::Bool = false)
 	
-	@assert(serviceDurationsToSample != [] && all(serviceDurationsToSample .> 0))
-	@assert(issorted(serviceDurationsToSample))
+	@assert(ambBusyDurationsToSample != [] && all(ambBusyDurationsToSample .> 0))
+	@assert(issorted(ambBusyDurationsToSample))
 	
 	if coverBound == nothing
 		coverBound = initCoverBound(sim, doPrint = doPrint)
@@ -33,15 +33,15 @@ function calcCoverBound!(sim::Simulation;
 	cb = coverBound # shorthand
 	cbs = coverBoundSim = coverBound.sim # shorthand
 	
-	if cb.serviceDurationsToSample != serviceDurationsToSample || length(cb.serviceDurationsToSample) != size(cb.serviceProbUpperBounds, 1)
-		cb.serviceDurationsToSample = serviceDurationsToSample
-		cb.serviceProbUpperBounds = calcServiceProbUpperBounds(sim, cb, doPrint = doPrint)
+	if cb.ambBusyDurationsToSample != ambBusyDurationsToSample || length(cb.ambBusyDurationsToSample) != size(cb.ambBusyDurationProbUpperBounds, 1)
+		cb.ambBusyDurationsToSample = ambBusyDurationsToSample
+		cb.ambBusyDurationProbUpperBounds = calcAmbBusyDurationProbUpperBounds(sim, cb, doPrint = doPrint)
 	else
-		# user should ensure that serviceProbUpperBounds are for serviceDurationsToSample
-		doPrint && println("Using existing coverBound.serviceProbUpperBounds.")
+		# user should ensure that ambBusyDurationProbUpperBounds are for ambBusyDurationsToSample
+		doPrint && println("Using existing coverBound.ambBusyDurationProbUpperBounds.")
 	end
 	
-	calcServiceDurationLowerBoundDistrs!(cb) # create service duration distributions
+	calcAmbBusyDurationLowerBoundDistrs!(cb) # create amb busy duration distributions
 	
 	simulateCoverBound!(cb)
 	
@@ -60,6 +60,7 @@ function initCoverBound(sim::Simulation; pMedianRelax::Bool = true, doPrint::Boo
 	@assert(sim.travel.numSets == 1) # otherwise would have to calculate cover bound for each travel set
 	
 	genConfig = readGenConfig(sim.inputFiles["callGenConfig"].path) # used for service time related distributions
+	# will assume that all demand priorities have the same distributions
 	
 	coverBound.modeLookup = fill(nullIndex, sim.travel.numModes)
 	
@@ -82,6 +83,15 @@ function initCoverBound(sim::Simulation; pMedianRelax::Bool = true, doPrint::Boo
 		setCoverBoundModeDistrs!(coverBoundMode, genConfig)
 		calcApproxDistrs!(coverBoundMode) # pMax::Float = 0.999, dt::Float = 1/60/60/24
 	end
+	
+	# will use deterministic dispatch delay, to simplify implementation
+	dispatchDelayDistr = genConfig.dispatchDelayDistrRng.d
+	if var(dispatchDelayDistr) != 0
+		@warn("Have changed input dispatch delay distribution, as this implementation of the cover bound assumes deterministic dispatch delay.")
+		dispatchDelayDistr = Normal(mean(dispatchDelayDistr), 0)
+	end
+	coverBound.dispatchDelay = mean(dispatchDelayDistr)
+	@assert(coverBound.dispatchDelay >= 0)
 	
 	coverBound.numAmbsMaxCoverageFrac = calcNumAmbsMaxCoverageFrac(sim)
 	
@@ -166,7 +176,6 @@ end
 # mutates: coverBoundMode.distrs, coverBoundMode.transportProb
 function setCoverBoundModeDistrs!(coverBoundMode::CoverBoundMode, genConfig::GenConfig)
 	distrs = coverBoundMode.distrs # shorthand
-	distrs["dispatchDelay"] = genConfig.dispatchDelayDistrRng.d
 	distrs["onSceneDuration"] = genConfig.onSceneDurationDistrRng.d
 	distrs["transport"] = genConfig.transportDistrRng.d
 	distrs["handoverDuration"] = genConfig.handoverDurationDistrRng.d
@@ -243,7 +252,7 @@ function convolute(d1::DiscreteNonParametric, d2::DiscreteNonParametric)
 	return DiscreteNonParametric(x,p)
 end
 
-# Calculate distributions needed for lower bound on service time distrubution.
+# Calculate distributions needed for lower bound on amb busy duration distribution.
 # Mutates: coverBoundMode.approxDistrs
 function calcApproxDistrs!(coverBoundMode::CoverBoundMode; pMax::Float = 0.999, dt::Float = 1/60/60/24)
 	@assert(0 <= pMax < 1)
@@ -265,9 +274,9 @@ function calcApproxDistrs!(coverBoundMode::CoverBoundMode; pMax::Float = 0.999, 
 		approxDistrs[name] = approxDistr2(distr, pMax, dt; kwargs...)
 	end
 	
-	approxDistrs["d1"] = convolute(approxDistrs["dispatchDelay"], approxDistrs["onSceneDuration"]) # lower bound approximation of dispatch delay and on-scene duration
+	approxDistrs["d1"] = deepcopy(approxDistrs["onSceneDuration"]) # approximation of on-scene duration
 	approxDistrs["d2"] = convolute(approxDistrs["d1"], approxDistrs["handoverDuration"]) # lower bound approximation of d1 and handover duration
-	# Could create a weighted sum of distributions d1 and d2 so that there is only one service duration distribution to sample from,
+	# Could create a weighted sum of distributions d1 and d2 so that there is only one amb busy duration distribution to sample from,
 	# but that is more work (for me) than just having the two distributions and accounting for the relative probability of using each.
 	
 	return nothing
@@ -308,8 +317,8 @@ function binarySearch(d::DiscreteNonParametric, cdf::Vector{Float}, x::Float; xM
 	return cdf[i]
 end
 
-function calcNodeSetsServiceProbs(sim::Simulation, coverBound::CoverBound, targetServiceDuration::Float)
-	@assert(targetServiceDuration >= 0)
+function calcNodeSetsAmbBusyDurationProbs(sim::Simulation, coverBound::CoverBound, targetAmbBusyDuration::Float)
+	@assert(targetAmbBusyDuration >= 0)
 	
 	# shorthand:
 	@unpack stations, numStations = sim
@@ -321,7 +330,7 @@ function calcNodeSetsServiceProbs(sim::Simulation, coverBound::CoverBound, targe
 	@assert(sim.demand.numSets == 1) # otherwise would have to calculate cover bound for each demand set
 	totalDemand = sum(mode -> mode.arrivalRate, sim.demand.modes) # assumes sim.demand.numSets == 1
 	
-	stationsNodeSetsP = Dict{Vector{Int}, Vector{Float}}() # stationsNodeSetsP[i][j] = fraction of total demand that can be served within targetServiceDuration by assigning station j to serve node set that has stationList == i
+	stationsNodeSetsP = Dict{Vector{Int}, Vector{Float}}() # stationsNodeSetsP[i][j] = fraction of total demand that can be served by an ambulance that is busy for duration <= targetAmbBusyDuration, by assigning station j to serve node set that has stationList == i
 	for coverBoundMode in coverBound.modes, stationList in coverBoundMode.nodeSetsStationList
 		get!(stationsNodeSetsP, stationList, zeros(Float, sim.numStations))
 	end
@@ -337,17 +346,17 @@ function calcNodeSetsServiceProbs(sim::Simulation, coverBound::CoverBound, targe
 		cdf1 = makeCdf(d1)
 		cdf2 = makeCdf(d2)
 		
-		# calculate probability of station serving demand point in time, for each pair of station and point
-		stationsPointsP = zeros(Float, numStations, numPoints) # stationsPointsP[i,j] = probability of serving point j within targetServiceDuration from station i
+		# calculate probabilities for amb being busy for <= targetAmbBusyDuration, for each pair of station and point
+		stationsPointsP = zeros(Float, numStations, numPoints) # stationsPointsP[i,j] = probability of amb busy duration (to serve point j) <= targetAmbBusyDuration from station i
 		for i = 1:numStations, j = 1:numPoints
-			# need to calculate probability of serving point within targetServiceDuration based on two possible outcomes:
-			# - no transport to hospital, look at probability of targetServiceDuration >= durations: dispatch delay + response travel + on-scene.
-			# - transport to hospital, look at probability of targetServiceDuration >= durations: dispatch delay + response travel + on-scene + transport + at-hospital.
-			# calculate the above probabilities and multiply by the probability of that outcome, sum for total probability of service within targetServiceDuration.
+			# need to calculate probability that amb will be busy for <= targetAmbBusyDuration while serving point, based on two possible outcomes:
+			# - no transport to hospital, look at probability of targetAmbBusyDuration >= durations: response travel + on-scene.
+			# - transport to hospital, look at probability of targetAmbBusyDuration >= durations: response travel + on-scene + transport + at-hospital.
+			# calculate the above probabilities and multiply by the probability of that outcome, sum for total probability of amb being busy for time <= targetAmbBusyDuration.
 			t1 = stationsToPointsTimes[i,j]
 			t2 = t1 + pointsToHospitalTimes[j]
-			p1 = binarySearch(d1, cdf1, targetServiceDuration - t1) # probability of serving point within targetServiceDuration, assuming no transport to hospital
-			p2 = binarySearch(d2, cdf2, targetServiceDuration - t2) # probability of serving point within targetServiceDuration, assuming transport to hospital
+			p1 = binarySearch(d1, cdf1, targetAmbBusyDuration - t1) # probability of amb busy duration <= targetAmbBusyDuration, assuming no transport to hospital
+			p2 = binarySearch(d2, cdf2, targetAmbBusyDuration - t2) # probability of amb busy duration <= targetAmbBusyDuration, assuming transport to hospital
 			stationsPointsP[i,j] = (1-transportProb) * p1 + (transportProb) * p2
 		end
 		
@@ -380,33 +389,33 @@ function calcNodeSetsServiceProbs(sim::Simulation, coverBound::CoverBound, targe
 	return stationsNodeSetsP
 end
 
-# Get an upper bound on service duration distribution for each
-# combination of service duration and number of free ambulances.
-function calcServiceProbUpperBounds(sim, coverBound::CoverBound;
-		serviceDurationsToSample::Vector{Float} = coverBound.serviceDurationsToSample,
+# Get an upper bound on amb busy duration distribution for each
+# combination of amb busy duration and number of free ambulances.
+function calcAmbBusyDurationProbUpperBounds(sim, coverBound::CoverBound;
+		ambBusyDurationsToSample::Vector{Float} = coverBound.ambBusyDurationsToSample,
 		numAmbsList::Vector{Int} = collect(1:sim.numStations), pMedianRelax::Bool = true, doPrint::Bool = false)
 	
-	@assert(issorted(serviceDurationsToSample))
+	@assert(issorted(ambBusyDurationsToSample))
 	@assert(issorted(numAmbsList))
 	
 	pMedianOptions = copy(pMedianDefaultOptions)
 	pMedianOptions[:x_bin] = !pMedianRelax
 	
-	numTargets = length(serviceDurationsToSample) # shorthand
+	numTargets = length(ambBusyDurationsToSample) # shorthand
 	n = length(numAmbsList) # shorthand
-	serviceProbUpperBounds = zeros(Float, numTargets, length(numAmbsList)) # serviceProbUpperBounds[i,j] = upper bound on probability of serving next call within serviceDurationsToSample[i] for numAmbsList[j] free ambulances
-	for (i,t) in enumerate(serviceDurationsToSample)
-		doPrint && print("\rTarget service duration $i of $numTargets, 0 ambulances of $n ")
+	ambBusyDurationProbUpperBounds = zeros(Float, numTargets, length(numAmbsList)) # ambBusyDurationProbUpperBounds[i,j] = upper bound on probability of dispatched amb being busy for duration <= ambBusyDurationsToSample[i] for j free ambulances
+	for (i,t) in enumerate(ambBusyDurationsToSample)
+		doPrint && print("\rTarget amb busy duration $i of $numTargets, 0 ambulances of $n ")
 		
-		stationsNodeSetsP = calcNodeSetsServiceProbs(sim, coverBound, t)
+		stationsNodeSetsP = calcNodeSetsAmbBusyDurationProbs(sim, coverBound, t)
 		stationsP = hcat(values(stationsNodeSetsP)...)
 		
 		for (j,a) in enumerate(numAmbsList)
-			doPrint && print("\rTarget service duration $i of $numTargets, $j ambulances of $n ")
+			doPrint && print("\rTarget amb busy duration $i of $numTargets, $j ambulances of $n ")
 			
 			results = Dict()
 			solvePMedian(a, -stationsP; options = pMedianOptions, results = results)
-			serviceProbUpperBounds[i,j] = -results[:cost]
+			ambBusyDurationProbUpperBounds[i,j] = -results[:cost]
 			
 			# # Testing: group node sets further, as we can assume that each station will have at least its a^th-to-last preferred station selected.
 			# # Maybe only do this if pMedianRelax = false? Otherwise could lead to weaker upper bounds.
@@ -419,14 +428,14 @@ function calcServiceProbUpperBounds(sim, coverBound::CoverBound;
 			# stationsReducedP = hcat(values(stationsReducedNodeSetsP)...)
 			# results = Dict()
 			# solvePMedian(a, -stationsReducedP; options = pMedianOptions, results = results)
-			# serviceProbUpperBounds[i,j] = -results[:cost]
+			# ambBusyDurationProbUpperBounds[i,j] = -results[:cost]
 		end
 	end
 	doPrint && println()
 	
-	# fix any values in serviceProbUpperBounds that are incorrectly larger than they should be (not sure why this happens),
-	# can have cases where decreasing the number of ambulances or target service duration can (incorrectly) slightly increase the value from p-median problem.
-	p = serviceProbUpperBounds # shorthand
+	# fix any values in ambBusyDurationProbUpperBounds that are incorrectly larger than they should be (not sure why this happens),
+	# can have cases where decreasing the number of ambulances or target amb busy duration can (incorrectly) slightly increase the value from p-median problem.
+	p = ambBusyDurationProbUpperBounds # shorthand
 	# should have p[i,j] <= p[i+1,j] and p[i,j] <= p[i,j+1]
 	m, n = size(p)
 	for i = m:-1:1, j = n:-1:1
@@ -434,19 +443,19 @@ function calcServiceProbUpperBounds(sim, coverBound::CoverBound;
 		if j < n p[i,j] = min(p[i,j], p[i,j+1]) end
 	end
 	
-	return serviceProbUpperBounds
+	return ambBusyDurationProbUpperBounds
 end
 
-# create service duration distribution
-# requires fields of coverBound to already be populated: serviceDurationsToSample, serviceProbUpperBounds
-function calcServiceDurationLowerBoundDistrs!(coverBound::CoverBound)
-	coverBound.serviceDurationLowerBoundDistrs = Sampleable[]
-	serviceDurations = vcat(0, coverBound.serviceDurationsToSample)
-	for j = 1:size(coverBound.serviceProbUpperBounds,2)
-		p1 = Float.(vcat(0, coverBound.serviceProbUpperBounds[:,j], 1))
+# create amb busy duration distribution
+# requires fields of coverBound to already be populated: ambBusyDurationsToSample, ambBusyDurationProbUpperBounds
+function calcAmbBusyDurationLowerBoundDistrs!(coverBound::CoverBound)
+	coverBound.ambBusyDurationLowerBoundDistrs = Sampleable[]
+	ambBusyDurations = vcat(0, coverBound.ambBusyDurationsToSample)
+	for j = 1:size(coverBound.ambBusyDurationProbUpperBounds,2)
+		p1 = Float.(vcat(0, coverBound.ambBusyDurationProbUpperBounds[:,j], 1))
 		p2 = p1[2:end] - p1[1:end-1]
-		distr = DiscreteNonParametric(serviceDurations, p2)
-		push!(coverBound.serviceDurationLowerBoundDistrs, sampler(distr))
+		distr = DiscreteNonParametric(ambBusyDurations, p2)
+		push!(coverBound.ambBusyDurationLowerBoundDistrs, sampler(distr))
 	end
 end
 
@@ -471,7 +480,7 @@ end
 function initCoverBoundSim(; numReps::Int = 1, numAmbs::Int = 0, warmUpDuration::Float = 0.0, minLastCallArrivalTime::Float = nullTime,
 		interarrivalTimeDistrRng::Union{DistrRng,Nothing} = nothing,
 		arrivalRate::Float = 0.0, interarrivalTimeSeed::Int = 0, # use these if interarrivalTimeDistrRng == nothing
-		serviceDurationSeed::Int = 1)
+		ambBusyDurationSeed::Int = 1)
 	
 	@assert(numReps >= 1)
 	@assert(numAmbs >= 1)
@@ -486,15 +495,15 @@ function initCoverBoundSim(; numReps::Int = 1, numAmbs::Int = 0, warmUpDuration:
 		@assert(mean(interarrivalTimeDistrRng.d) != Inf)
 	end
 	
-	serviceDurationRng = MersenneTwister(serviceDurationSeed)
+	ambBusyDurationRng = MersenneTwister(ambBusyDurationSeed)
 	
 	coverBoundSim = CoverBoundSim()
-	@pack! coverBoundSim = numReps, numAmbs, warmUpDuration, minLastCallArrivalTime, interarrivalTimeDistrRng, serviceDurationRng
+	@pack! coverBoundSim = numReps, numAmbs, warmUpDuration, minLastCallArrivalTime, interarrivalTimeDistrRng, ambBusyDurationRng
 	
 	return coverBoundSim
 end
 
-# mutates: coverBoundSim.interarrivalTimeDistrRng, coverBoundSim.serviceDurationRng
+# mutates: coverBoundSim.interarrivalTimeDistrRng, coverBoundSim.ambBusyDurationRng
 function simulateRepCoverBound!(coverBound::CoverBound)
 	cbs = coverBound.sim # shorthand
 	@assert(cbs.warmUpDuration > 0)
@@ -502,7 +511,7 @@ function simulateRepCoverBound!(coverBound::CoverBound)
 	@assert(cbs.numAmbs >= 1)
 	@assert(0 <= cbs.warmUpDuration < cbs.minLastCallArrivalTime)
 	
-	numStations = length(coverBound.serviceDurationLowerBoundDistrs)
+	numStations = length(coverBound.ambBusyDurationLowerBoundDistrs)
 	@assert(numStations >= 1)
 	
 	# generate call arrival times
@@ -516,7 +525,7 @@ function simulateRepCoverBound!(coverBound::CoverBound)
 	numCalls = length(callArrivalTimes)
 	@assert(numCalls >= 1)
 	
-	# run simple sim, count number of free ambulances at moment of each call arrival
+	# run simple sim, count number of free ambulances at moment of each dispatch
 	currentTime = 0.0
 	eventList = Event[]
 	addEvent!(eventList, form = callArrives, time = callArrivalTimes[1])
@@ -528,22 +537,26 @@ function simulateRepCoverBound!(coverBound::CoverBound)
 		event = getNextEvent!(eventList)
 		currentTime = event.time
 		if event.form == callArrives
+			addEvent!(eventList, form = considerDispatch, time = callArrivalTimes[callIndex] + coverBound.dispatchDelay)
+			callIndex += 1
+			if callIndex <= numCalls
+				event = addEvent!(eventList, form = callArrives, time = callArrivalTimes[callIndex])
+			end
+			
+		elseif event.form == considerDispatch
 			if numFreeAmbs == 0
 				numQueuedCalls += 1
 			else
 				addEvent!(eventList; form = ambDispatched, time = currentTime)
 			end
-			callIndex += 1
-			if callIndex <= numCalls
-				event = addEvent!(eventList, form = callArrives, time = callArrivalTimes[callIndex])
-			end
+			
 		elseif event.form == ambDispatched
 			if event.time >= cbs.warmUpDuration
-				numFreeAmbsCounts[numFreeAmbs] += 1 # use this if cover bound assumes at least one amb available at call arrival (whether queued or not)
+				numFreeAmbsCounts[numFreeAmbs] += 1 # use this if cover bound assumes at least one amb available at dispatch moment (whether queued or not)
 			end
 			
-			# generate service duration
-			t = rand(cbs.serviceDurationRng, coverBound.serviceDurationLowerBoundDistrs[min(numFreeAmbs, numStations)])
+			# generate amb busy duration
+			t = rand(cbs.ambBusyDurationRng, coverBound.ambBusyDurationLowerBoundDistrs[min(numFreeAmbs, numStations)])
 			addEvent!(eventList; form = ambBecomesFree, time = currentTime + t)
 			
 			numFreeAmbs -= 1
@@ -585,4 +598,3 @@ function calcCoverBound!(coverBound::CoverBound)
 	
 	return coverBound.sim.bound
 end
-

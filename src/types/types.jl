@@ -670,7 +670,7 @@ mutable struct CoverBoundSim
 	bound::MeanAndHalfWidth # upper bound on fraction of in time responses
 	
 	interarrivalTimeDistrRng::DistrRng
-	serviceDurationRng::AbstractRNG
+	ambBusyDurationRng::AbstractRNG
 	
 	CoverBoundSim() = new(0, 0,
 		nullTime, nullTime,
@@ -695,7 +695,7 @@ mutable struct CoverBoundMode
 	nodeSetsStationList::Vector{Vector{Int}} # nodeSetsStationList[i] has list of stations ordered (from closest in time to furthest) from nodeSets[i]
 	
 	# distributions related to service
-	distrs::Dict{String,Distribution} # distrs[name] gives distribution; name from Set("dispatchDelay", "onSceneDuration", "handoverDuration")
+	distrs::Dict{String,Distribution} # distrs[name] gives distribution; name from Set("onSceneDuration", "handoverDuration")
 	approxDistrs::Dict{String,Distribution} # approxDistrs[name] gives lower bound approximation (discrete, non-parametric distribution) of distrs[name]
 	# cdfs::Dict{String,Vector{Float}} # to add? for "d1" and "d2"
 	transportProb::Float # probability that call requires transport to hospital; assume call is taken to nearest hospital
@@ -712,10 +712,12 @@ mutable struct CoverBound
 	modeLookup::Vector{Int} # modeLookup[i] gives index of mode (in modes) to use for travel mode i. Will assume for now that there is only one demand set (demand is static) and one travel set (i.e. travel times are static).
 	
 	# parameters
-	serviceDurationsToSample::Vector{Float} # will find upper bound on probability of service within each service duration in this list
+	ambBusyDurationsToSample::Vector{Float} # will find upper bound on probability of amb being busy for each duration in this list
 	
-	serviceProbUpperBounds::Array{Float,2} # serviceProbUpperBounds[i,j] = upper bound on probability of serving next call within serviceDurationsToSample[i] for j free ambulances
-	serviceDurationLowerBoundDistrs::Vector{Sampleable} # serviceDurationLowerBoundDistrs[i] is sampleable distribution of service duration for i free ambs
+	dispatchDelay::Float
+	
+	ambBusyDurationProbUpperBounds::Array{Float,2} # ambBusyDurationProbUpperBounds[i,j] = upper bound on probability of dispatched amb being busy for duration <= ambBusyDurationsToSample[i] for j free ambulances
+	ambBusyDurationLowerBoundDistrs::Vector{Sampleable} # ambBusyDurationLowerBoundDistrs[i] is sampleable distribution of amb busy duration for i free ambs
 	
 	sim::CoverBoundSim
 	
@@ -723,6 +725,7 @@ mutable struct CoverBound
 	
 	CoverBound() = new([], [],
 		[],
+		0.0,
 		Array{Float,2}(undef,0,0), [],
 		CoverBoundSim(),
 		[])

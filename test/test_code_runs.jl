@@ -134,9 +134,9 @@ end
 	sim = initSim("data/cities/small/7/sim_config.xml")
 	genConfig = readGenConfig(sim.inputFiles["callGenConfig"].path)
 	coverBoundSim = initCoverBoundSim(numReps = 30, numAmbs = sim.numAmbs, warmUpDuration = 0.1, minLastCallArrivalTime = 0.1 + 10,
-		interarrivalTimeDistrRng = genConfig.interarrivalTimeDistrRng, serviceDurationSeed = 1)
-	serviceDurationsToSample = [1:60;]/60/24 # 1 minute intervals, up to 1 hour
-	coverBound = calcCoverBound!(sim; coverBoundSim = coverBoundSim, serviceDurationsToSample = serviceDurationsToSample)
+		interarrivalTimeDistrRng = genConfig.interarrivalTimeDistrRng, ambBusyDurationSeed = 1)
+	ambBusyDurationsToSample = [1:60;]/60/24 # 1 minute intervals, up to 1 hour
+	coverBound = calcCoverBound!(sim; coverBoundSim = coverBoundSim, ambBusyDurationsToSample = ambBusyDurationsToSample)
 	# @show coverBound.sim.bound # cover bound result
 	@test true
 end
