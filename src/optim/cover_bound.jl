@@ -690,13 +690,13 @@ function simulateCoverBound!(coverBound::CoverBound)
 end
 
 # mutates: coverBound.sim.bound, rep.bound for rep in coverBound.sim.reps
-function calcCoverBound!(coverBound::CoverBound)
+function calcCoverBound!(coverBound::CoverBound; accountForQueuedDurations::Bool = coverBound.accountForQueuedDurations)
 	cb = coverBound # shorthand
 	for (i,rep) in enumerate(cb.sim.reps)
 		@unpack numCalls, numFreeAmbsCount, queuedCallDurations = rep
 		n = min(length(cb.numAmbsMaxCoverageFrac), length(numFreeAmbsCount))
 		coverageFracTotal = sum(cb.numAmbsMaxCoverageFrac[1:n] .* numFreeAmbsCount[1:n]) + cb.numAmbsMaxCoverageFrac[end] * sum(numFreeAmbsCount[n+1:end])
-		if cb.accountForQueuedDurations
+		if accountForQueuedDurations
 			# account for duration that calls were queued
 			for queuedCallDuration in queuedCallDurations
 				j = binarySearch(cb.queuedDurationsToSample, queuedCallDuration)

@@ -138,11 +138,7 @@ end
 	ambBusyDurationsToSample = [1:60;]/60/24 # 1 minute intervals, up to 1 hour
 	queuedDurationsToSample = [0:maximum(sim.targetResponseDurations)*24*60;]/60/24 # 1 minute intervals
 	coverBound = calcCoverBound!(sim; coverBoundSim = coverBoundSim, ambBusyDurationsToSample = ambBusyDurationsToSample, queuedDurationsToSample = queuedDurationsToSample)
-	
-	# also calculate bound without accounting for call queueing durations (original cover bound)
-	coverBound.accountForQueuedDurations = false
-	calcCoverBound!(coverBound)
-	
+	calcCoverBound!(coverBound; accountForQueuedDurations = false) # also calculate bound without accounting for call queueing durations (original cover bound)
 	# @show coverBound.sim.bound # cover bound result
 	@test true
 end
