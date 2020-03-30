@@ -650,12 +650,12 @@ end
 
 # cover bound simulation replication
 mutable struct CoverBoundSimRep
-	numFreeAmbsFrac::Vector{Float} # numFreeAmbsFrac[i] = fraction of times that calls arrived while there were i free ambs
-	# numFreeAmbsCount::Vector{Float} # numFreeAmbsCount[i] = number of times that calls arrived while there were i free ambs
-	# callArrivalTimes::Vector{Float} # callArrivalTimes[i] = arrival time of call i; generated from: minLastCallArrivalTime, interarrivalTimeDistrRng
-	# queuedCallDurations::Vector{Float} # for calls that arrived when there were 0 free ambs, record how long each call was queued
+	numCalls::Int
+	numFreeAmbsCount::Vector{Int} # numFreeAmbsCount[i] = number of times that calls arrived while there were i free ambs
+	queuedCallDurations::Vector{Float} # for calls that arrived when there were no free ambs, record how long each call was queued
+	bound::Float # upper bound on fraction of in time responses
 	
-	CoverBoundSimRep() = new([])
+	CoverBoundSimRep() = new(0, [], [], 0)
 end
 
 # cover bound simulation
@@ -713,22 +713,27 @@ mutable struct CoverBound
 	
 	# parameters
 	ambBusyDurationsToSample::Vector{Float} # will find upper bound on probability of amb being busy for each duration in this list
+	accountForQueuedDurations::Bool # for queued calls, calculate maximum coverage according to time remaining to reach call on time; set to false for original cover bound which calculates coverage of queued calls as if the call was queued for no time
+	queuedDurationsToSample::Vector{Float} # will solve MCLP for different coverage times based on how long the calls were queued; use if accountForQueuedDurations == true
 	
 	dispatchDelay::Float
 	
+	# amb busy duration
 	ambBusyDurationProbUpperBounds::Array{Float,2} # ambBusyDurationProbUpperBounds[i,j] = upper bound on probability of dispatched amb being busy for duration <= ambBusyDurationsToSample[i] for j free ambulances
 	ambBusyDurationLowerBoundDistrs::Vector{Sampleable} # ambBusyDurationLowerBoundDistrs[i] is sampleable distribution of amb busy duration for i free ambs
 	
+	# coverage
+	numAmbsMaxCoverageFrac::Vector{Float} # numAmbsMaxCoverageFrac[i] gives maximum fraction of demand that can be covered with i free ambulances (from 1:numStations), from solving MCLP
+	queuedDurationsMaxCoverageFrac::Vector{Float} # queuedDurationsMaxCoverageFrac[i] = maximum coverage for call that was queued for a duration of queuedDurationsToSample[i]; use if accountForQueuedDurations == true
+	
 	sim::CoverBoundSim
 	
-	numAmbsMaxCoverageFrac::Vector{Float} # numAmbsMaxCoverageFrac[i] gives maximum fraction of demand that can be covered with i free ambulances (from 1:numStations), from solving MCLP
-	
 	CoverBound() = new([], [],
-		[],
+		[], false, [],
 		0.0,
 		Array{Float,2}(undef,0,0), [],
-		CoverBoundSim(),
-		[])
+		[], [],
+		CoverBoundSim())
 end
 
 # move up data types

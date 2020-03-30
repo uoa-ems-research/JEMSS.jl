@@ -16,10 +16,12 @@
 # Cover bound - an upper bound on the fraction of responses in time for optimal move-up.
 # From paper: "A bound on the performance of an optimal ambulance redeployment policy".
 
+# mutates: coverBound, coverBoundSim
 function calcCoverBound!(sim::Simulation;
 		coverBound::Union{CoverBound,Nothing} = nothing,
 		coverBoundSim::Union{CoverBoundSim,Nothing} = nothing, # need this if coverBound.sim is not set
-		ambBusyDurationsToSample::Vector{Float} = [],
+		ambBusyDurationsToSample::Vector{Float} = Float[],
+		queuedDurationsToSample::Vector{Float} = Float[],
 		doPrint::Bool = false)
 	
 	@assert(ambBusyDurationsToSample != [] && all(ambBusyDurationsToSample .> 0))
@@ -42,6 +44,17 @@ function calcCoverBound!(sim::Simulation;
 	end
 	
 	calcAmbBusyDurationLowerBoundDistrs!(cb) # create amb busy duration distributions
+	
+	cb.accountForQueuedDurations = !isempty(queuedDurationsToSample)
+	if cb.accountForQueuedDurations
+		if cb.queuedDurationsToSample != queuedDurationsToSample || length(cb.queuedDurationsToSample) != length(cb.queuedDurationsMaxCoverageFrac)
+			cb.queuedDurationsToSample = queuedDurationsToSample
+			cb.queuedDurationsMaxCoverageFrac = calcQueuedDurationsMaxCoverageFrac(sim, cb, doPrint = doPrint)
+		else
+			# user should ensure that queuedDurationsMaxCoverageFrac are for queuedDurationsToSample
+			doPrint && println("Using existing coverBound.queuedDurationsMaxCoverageFrac.")
+		end
+	end
 	
 	simulateCoverBound!(cb)
 	
@@ -477,6 +490,86 @@ function calcNumAmbsMaxCoverageFrac(sim::Simulation)
 	return numAmbsMaxCoverageFrac
 end
 
+function calcQueuedDurationsMaxCoverageFrac(sim::Simulation, coverBound::CoverBound;
+	queuedDurationsToSample::Vector{Float} = coverBound.queuedDurationsToSample,
+	demandWeights::Dict{Priority,Float} = Dict([p => 1.0 for p in priorities]),
+	doPrint::Bool = false)
+	
+	@assert(queuedDurationsToSample != [])
+	@assert(issorted(queuedDurationsToSample))
+	@assert(queuedDurationsToSample[1] >= 0)
+	
+	@assert(all(x -> x >= 0, values(demandWeights)))
+	@assert(sum(values(demandWeights)) > 0)
+	for p in keys(demandWeights)
+		if demandWeights[p] == 0
+			delete!(demandWeights, p)
+		end
+	end
+	demandPriorities = collect(keys(demandWeights))
+	
+	@assert(sim.demand.numSets == 1)
+	@assert(sim.travel.numSets == 1)
+	
+	numStations = sim.numStations
+	numPoints = length(sim.demandCoverage.points)
+	arrivalRate = sum(mode -> mode.arrivalRate, sim.demand.modes) # assumes demand.numSets == 1
+	
+	# get data for each demand priority
+	# cannot necessarily combine these (e.g. combine by common travel modes), as different demand priorities may have different target response times
+	demandPrioritiesData = Dict()
+	currentTime = sim.startTime
+	for demandPriority in demandPriorities
+		responseTravelPriority = sim.responseTravelPriorities[demandPriority]
+		demandMode = getDemandMode!(sim.demand, demandPriority, currentTime) # assumes demand.numSets == 1
+		travelMode = getTravelMode!(sim.travel, responseTravelPriority, sim.startTime) # assumes sim.travel.numSets == 1
+		demandPriorityData = Dict()
+		demandPriorityData[:coverBoundMode] = coverBound.modes[coverBound.modeLookup[travelMode.index]]
+		demandPriorityData[:rasterPointDemands] = sim.demandCoverage.rastersPointDemands[demandMode.rasterIndex] * demandMode.rasterMultiplier * demandWeights[demandPriority]
+		demandPrioritiesData[demandPriority] = demandPriorityData
+	end
+	
+	maxCoverageFracs = zeros(Float, length(queuedDurationsToSample)) # maxCoverageFracs[i] = mclp value for queuedDurationsToSample[i]
+	# stationsNumAmbsList = []
+	for (i,queuedDuration) in enumerate(queuedDurationsToSample)
+		doPrint && print("\rqueuedDuration $i of $(length(queuedDurationsToSample))")
+		
+		# calculate demand covered by different station sets
+		pointData = Dict{Vector{Bool}, Float}() # pointData[stationsCoverPoint] = pointDemand
+		for demandPriority in demandPriorities
+			coverTime = sim.targetResponseDurations[Int(demandPriority)] - (coverBound.dispatchDelay + queuedDuration)
+			if coverTime > 0
+				demandPriorityData = demandPrioritiesData[demandPriority]
+				rasterPointDemands = demandPriorityData[:rasterPointDemands]
+				stationsCoverPoints = demandPriorityData[:coverBoundMode].stationsToPointsTimes .<= coverTime # would need to change this if dispatch delay is not deterministic
+				for j = 1:numPoints
+					stationsCoverPoint = stationsCoverPoints[:,j] # stationSet[i] = true if station i covers point j
+					get!(pointData, stationsCoverPoint, 0.0)
+					pointData[stationsCoverPoint] += rasterPointDemands[j]
+				end
+			end
+		end
+		pointStations = findall.(collect(keys(pointData)))
+		pointDemands = collect(values(pointData))
+		# point j has demand pointDemands[j] and is covered by stations pointStations[j]
+		
+		if isempty(pointStations) || (length(pointStations) == 1 && !any(pointStations[1]))
+			break # cannot reach any points in time
+		end
+		
+		# solve mclp
+		results = Dict()
+		stationsNumAmbs = solveMclp(1, pointDemands, pointStations, results = results)
+		maxCoverageFracs[i] = results[:objVal] / arrivalRate
+		# push!(stationsNumAmbsList, stationsNumAmbs)
+	end
+	
+	# # if call was queued for no time, coverage should match that of MCLP for one amb and full target response time (minus dispatch delay)
+	# if queuedDurationsToSample[1] == 0 @assert(isapprox(maxCoverageFracs[1], coverBound.numAmbsMaxCoverageFrac[1])) end
+	
+	return maxCoverageFracs # max probability of covering call that has been queued for queuedDurationsToSample[i] is maxCoverageFracs[i]
+end
+
 function initCoverBoundSim(; numReps::Int = 1, numAmbs::Int = 0, warmUpDuration::Float = 0.0, minLastCallArrivalTime::Float = nullTime,
 		interarrivalTimeDistrRng::Union{DistrRng,Nothing} = nothing,
 		arrivalRate::Float = 0.0, interarrivalTimeSeed::Int = 0, # use these if interarrivalTimeDistrRng == nothing
@@ -530,14 +623,17 @@ function simulateRepCoverBound!(coverBound::CoverBound)
 	eventList = Event[]
 	addEvent!(eventList, form = callArrives, time = callArrivalTimes[1])
 	numFreeAmbs = cbs.numAmbs
-	numFreeAmbsCounts = zeros(Int, cbs.numAmbs) # numFreeAmbsCounts[i] = how many times calls arrive when there are i free ambulances
+	numFreeAmbsCount = zeros(Int, cbs.numAmbs) # numFreeAmbsCount[i] = how many times calls arrive when there are i free ambulances
 	numQueuedCalls = 0
+	earliestQueuedCallIndex = nullIndex # of the currently queued calls, index of the call that arrived earliest
+	queuedCallDurations = Float[] # duration for which calls (past and present) were queued
 	callIndex = 1
 	while !isempty(eventList)
 		event = getNextEvent!(eventList)
 		currentTime = event.time
 		if event.form == callArrives
-			addEvent!(eventList, form = considerDispatch, time = callArrivalTimes[callIndex] + coverBound.dispatchDelay)
+			event = addEvent!(eventList, form = considerDispatch, time = callArrivalTimes[callIndex] + coverBound.dispatchDelay)
+			event.callIndex = callIndex
 			callIndex += 1
 			if callIndex <= numCalls
 				event = addEvent!(eventList, form = callArrives, time = callArrivalTimes[callIndex])
@@ -546,13 +642,23 @@ function simulateRepCoverBound!(coverBound::CoverBound)
 		elseif event.form == considerDispatch
 			if numFreeAmbs == 0
 				numQueuedCalls += 1
+				if earliestQueuedCallIndex == nullIndex
+					earliestQueuedCallIndex = event.callIndex
+				end
 			else
 				addEvent!(eventList; form = ambDispatched, time = currentTime)
 			end
 			
 		elseif event.form == ambDispatched
-			if event.time >= cbs.warmUpDuration
-				numFreeAmbsCounts[numFreeAmbs] += 1 # use this if cover bound assumes at least one amb available at dispatch moment (whether queued or not)
+			recordStats = event.time >= cbs.warmUpDuration
+			if earliestQueuedCallIndex == nullIndex # no queued calls
+				recordStats && (numFreeAmbsCount[numFreeAmbs] += 1)
+			else
+				# assume that queued calls are responded to in first-in first-out order
+				queuedDuration = event.time - (callArrivalTimes[earliestQueuedCallIndex] + coverBound.dispatchDelay)
+				@assert(queuedDuration >= 0)
+				recordStats && push!(queuedCallDurations, queuedDuration)
+				earliestQueuedCallIndex = numQueuedCalls == 0 ? nullIndex : earliestQueuedCallIndex + 1
 			end
 			
 			# generate amb busy duration
@@ -565,36 +671,50 @@ function simulateRepCoverBound!(coverBound::CoverBound)
 			if numQueuedCalls >= 1
 				addEvent!(eventList; form = ambDispatched, time = currentTime)
 				numQueuedCalls -= 1
-				# Note that the cover bound ignores the duration for which calls are queued, effectively acting as if they were queued for no time. Otherwise would need to solve MCLP for different response time targets to account for call queueing duration. The lower bound is still valid but may be weaker than it could be, especially if calls are queued often.
 			end
 		else error("Unrecognised event.")
 		end
 	end
 	
-	numFreeAmbsFrac = numFreeAmbsCounts ./ sum(numFreeAmbsCounts)
-	
-	return numFreeAmbsFrac
+	return numCalls, numFreeAmbsCount, queuedCallDurations # numCalls = sum(numFreeAmbsCount) + length(queuedCallDurations)
 end
 
-# mutates: coverBound.sim.reps
+# mutates: coverBound.sim.reps, coverBound.sim.bound
 function simulateCoverBound!(coverBound::CoverBound)
 	coverBound.sim.reps = [CoverBoundSimRep() for i = 1:coverBound.sim.numReps]
 	for rep in coverBound.sim.reps
-		rep.numFreeAmbsFrac = simulateRepCoverBound!(coverBound)
+		rep.numCalls, rep.numFreeAmbsCount, rep.queuedCallDurations = simulateRepCoverBound!(coverBound)
 	end
 	calcCoverBound!(coverBound)
 	return coverBound.sim.bound
 end
 
-# mutates: coverBound.sim.bound
+# mutates: coverBound.sim.bound, rep.bound for rep in coverBound.sim.reps
 function calcCoverBound!(coverBound::CoverBound)
-	# set length of numAmbsMaxCoverageFrac to match maximum(numAmbs, numStations)
-	x = coverBound.numAmbsMaxCoverageFrac # shorthand
-	n = coverBound.sim.numAmbs # shorthand
-	numAmbsMaxCoverageFrac = n <= length(x) ? x[1:n] : vcat(x, fill(x[end], n - length(x)))
+	cb = coverBound # shorthand
+	for (i,rep) in enumerate(cb.sim.reps)
+		@unpack numCalls, numFreeAmbsCount, queuedCallDurations = rep
+		n = min(length(cb.numAmbsMaxCoverageFrac), length(numFreeAmbsCount))
+		coverageFracTotal = sum(cb.numAmbsMaxCoverageFrac[1:n] .* numFreeAmbsCount[1:n]) + cb.numAmbsMaxCoverageFrac[end] * sum(numFreeAmbsCount[n+1:end])
+		if cb.accountForQueuedDurations
+			# account for duration that calls were queued
+			for queuedCallDuration in queuedCallDurations
+				j = binarySearch(cb.queuedDurationsToSample, queuedCallDuration)
+				if j == 0 # queuedCallDuration > queuedDurationsToSample[1], so need to assume call was queued for no time
+					coverageFracTotal += cb.numAmbsMaxCoverageFrac[1] # maximum coverage from one ambulance
+				else # j > 0
+					coverageFracTotal += cb.queuedDurationsMaxCoverageFrac[j] # coverage accounting for queued time
+				end
+			end
+		else
+			# original cover bound, ignores duration for which calls were queued and gives these calls the maximum coverage from one ambulance
+			coverageFracTotal += cb.numAmbsMaxCoverageFrac[1] * length(queuedCallDurations)
+		end
+		rep.bound = coverageFracTotal / numCalls
+	end
 	
-	v = [sum(rep.numFreeAmbsFrac .* numAmbsMaxCoverageFrac) for rep in coverBound.sim.reps]
-	coverBound.sim.bound = MeanAndHalfWidth(mean(v), tDistrHalfWidth(v)) # cover bound result
+	bounds = [rep.bound for rep in cb.sim.reps]
+	cb.sim.bound = MeanAndHalfWidth(mean(bounds), tDistrHalfWidth(bounds))
 	
-	return coverBound.sim.bound
+	return cb.sim.bound
 end
