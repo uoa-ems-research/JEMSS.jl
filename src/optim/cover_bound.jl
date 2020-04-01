@@ -676,7 +676,8 @@ function simulateRepCoverBound!(coverBound::CoverBound)
 		end
 	end
 	
-	return numCalls, numFreeAmbsCount, queuedCallDurations # numCalls = sum(numFreeAmbsCount) + length(queuedCallDurations)
+	numCallsRecorded = sum(numFreeAmbsCount) + length(queuedCallDurations)
+	return numCallsRecorded, numFreeAmbsCount, queuedCallDurations
 end
 
 # mutates: coverBound.sim.reps, coverBound.sim.bound
