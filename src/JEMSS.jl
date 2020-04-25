@@ -82,7 +82,7 @@ export
 export
 	isBusy, isFree, isWorking, isGoingToStation, isTravelling, # ambulance
 	setSimCalls!, # call
-	calcCoverBound!, initCoverBound, approxDistr, convolute, makeCdf, binarySearch, calcAmbBusyDurationProbUpperBounds, calcAmbBusyDurationLowerBoundDistrs!, calcNumAmbsMaxCoverageFrac, calcQueuedDurationsMaxCoverageFrac, initCoverBoundSim, simulateCoverBound!, writeAmbBusyDurationProbUpperBoundsFile, readAmbBusyDurationProbUpperBoundsFile, writeQueuedDurationsMaxCoverageFracFile, readQueuedDurationsMaxCoverageFracFile, # cover bound
+	calcCoverBound!, initCoverBound, approxDistr, convolute, makeCdf, binarySearch, calcAmbBusyDurationProbUpperBounds, calcAmbBusyDurationLowerBoundDistrs!, calcNumAmbsMaxCoverageFrac, calcQueuedDurationsMaxCoverageFrac, initCoverBoundSim, simulateCoverBound!, simulateCoverBoundLowerBound!, writeAmbBusyDurationProbUpperBoundsFile, readAmbBusyDurationProbUpperBoundsFile, writeQueuedDurationsMaxCoverageFracFile, readQueuedDurationsMaxCoverageFracFile, # cover bound
 	initDemand!, initDemandCoverage!, # demand
 	printEvent, # event
 	findNearestNode, # grid

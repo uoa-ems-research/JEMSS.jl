@@ -720,6 +720,48 @@ function calcCoverBound!(coverBound::CoverBound; accountForQueuedDurations::Bool
 	return cb.sim.bound
 end
 
+# Simulate to estimate bound on how much the cover bound value could be reduced if the distributions were not discrete (due to sampling) but continuous.
+# This works by overestimating the ambulance busy duration and underestimating the coverage of queued calls.
+# This requires setting (by knowledge or guess) the maximum duration that an ambulance can be busy (maxAmbBusyDuration).
+# Note that this lower bound will change as coverBound.ambBusyDurationLowerBoundDistrs and coverBound.queuedDurationsMaxCoverageFrac are changed,
+# e.g. from changing the values (durations) to sample or using the relaxed versions of sub-problems such as the p-median problem.
+function simulateCoverBoundLowerBound!(coverBound::CoverBound; maxAmbBusyDuration::Float = coverBound.ambBusyDurationsToSample[end])
+	cb = coverBound # shorthand
+	
+	@assert(maxAmbBusyDuration >= cb.ambBusyDurationsToSample[end])
+	
+	# create backup for some values
+	coverBoundBak = CoverBound()
+	fnames = (:ambBusyDurationsToSample, :ambBusyDurationProbUpperBounds, :ambBusyDurationLowerBoundDistrs, :queuedDurationsMaxCoverageFrac)
+	for fname in fnames
+		setfield!(coverBoundBak, fname, deepcopy(getfield(cb, fname)))
+	end
+	
+	# shift ambBusyDurationProbUpperBounds right (and so change ambBusyDurationLowerBoundDistrs)
+	n = size(cb.ambBusyDurationProbUpperBounds, 2)
+	cb.ambBusyDurationProbUpperBounds = vcat(zeros(1,n), cb.ambBusyDurationProbUpperBounds)
+	if maxAmbBusyDuration > cb.ambBusyDurationsToSample[end]
+		push!(cb.ambBusyDurationsToSample, maxAmbBusyDuration)
+	else
+		@assert(maxAmbBusyDuration == cb.ambBusyDurationsToSample[end])
+		cb.ambBusyDurationProbUpperBounds = cb.ambBusyDurationProbUpperBounds[1:end-1,:]
+	end
+	calcAmbBusyDurationLowerBoundDistrs!(cb) # sets coverBound.ambBusyDurationLowerBoundDistrs
+	
+	# shift queuedDurationsMaxCoverageFrac left
+	cb.queuedDurationsMaxCoverageFrac = vcat(cb.queuedDurationsMaxCoverageFrac[2:end], 0)
+	
+	# simulate
+	simulateCoverBound!(cb)
+	
+	# reset cover bound
+	for fname in fnames
+		setfield!(cb, fname, getfield(coverBoundBak, fname))
+	end
+	
+	return cb.sim.bound
+end
+
 ## read and write files
 # have added the functions to this file instead of in write_sim_files.jl and read_sim_files.jl to make it clear that they are for the cover bound
 
