@@ -140,5 +140,6 @@ end
 	coverBound = calcCoverBound!(sim; coverBoundSim = coverBoundSim, ambBusyDurationsToSample = ambBusyDurationsToSample, queuedDurationsToSample = queuedDurationsToSample)
 	calcCoverBound!(coverBound; accountForQueuedDurations = false) # also calculate bound without accounting for call queueing durations (original cover bound)
 	# @show coverBound.sim.bound # cover bound result
+	simulateCoverBoundLowerBound!(coverBound) # also simulate a lower bound on the cover bound
 	@test true
 end
