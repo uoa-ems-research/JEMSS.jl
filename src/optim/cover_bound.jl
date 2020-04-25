@@ -719,3 +719,40 @@ function calcCoverBound!(coverBound::CoverBound; accountForQueuedDurations::Bool
 	
 	return cb.sim.bound
 end
+
+## read and write files
+# have added the functions to this file instead of in write_sim_files.jl and read_sim_files.jl to make it clear that they are for the cover bound
+
+function writeAmbBusyDurationProbUpperBoundsFile(filename::String, ambBusyDurationsToSample::Vector{Float}, ambBusyDurationProbUpperBounds::Array{Float,2})
+	@assert(issorted(ambBusyDurationsToSample))
+	n = size(ambBusyDurationProbUpperBounds, 2) # should equal numStations
+	table = Table("ambBusyDurationProbUpperBounds", vcat("duration", ["numAmbs_$i" for i = 1:n]),
+		rows = [vcat(ambBusyDurationsToSample[i], ambBusyDurationProbUpperBounds[i,:]) for i = 1:length(ambBusyDurationsToSample)])
+	writeTablesToFile(filename, table)
+end
+function writeAmbBusyDurationProbUpperBoundsFile(filename::String, coverBound::CoverBound)
+	writeAmbBusyDurationProbUpperBoundsFile(filename, coverBound.ambBusyDurationsToSample, coverBound.ambBusyDurationProbUpperBounds)
+end
+
+function readAmbBusyDurationProbUpperBoundsFile(filename::String)
+	table = readTablesFromFile(filename)["ambBusyDurationProbUpperBounds"]
+	ambBusyDurationsToSample = haskey(table.columns, "duration") ? table.columns["duration"] : table.columns["time"] # compat (time)
+	ambBusyDurationProbUpperBounds = table.data[:,2:end]
+	return ambBusyDurationsToSample, ambBusyDurationProbUpperBounds
+end
+
+function writeQueuedDurationsMaxCoverageFracFile(filename::String, queuedDurationsToSample::Vector{Float}, queuedDurationsMaxCoverageFrac::Vector{Float})
+	table = Table("queuedDurationsMaxCoverageFrac", ["duration", "maxCoverageFrac"];
+		rows = [[queuedDurationsToSample[i], queuedDurationsMaxCoverageFrac[i]] for i = 1:length(queuedDurationsToSample)])
+	writeTablesToFile(filename, table)
+end
+function writeQueuedDurationsMaxCoverageFracFile(filename::String, coverBound::CoverBound)
+	writeQueuedDurationsMaxCoverageFracFile(filename, coverBound.queuedDurationsToSample, coverBound.queuedDurationsMaxCoverageFrac)
+end
+
+function readQueuedDurationsMaxCoverageFracFile(filename::String)
+	table = readTablesFromFile(filename)["queuedDurationsMaxCoverageFrac"]
+	queuedDurationsToSample = haskey(table.columns, "duration") ? table.columns["duration"] : table.columns["queuedDuration"] # compat (queuedDuration)
+	queuedDurationsMaxCoverageFrac = table.columns["maxCoverageFrac"]
+	return queuedDurationsToSample, queuedDurationsMaxCoverageFrac
+end
