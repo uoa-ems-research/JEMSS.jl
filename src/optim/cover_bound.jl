@@ -705,7 +705,7 @@ function calcCoverBound!(coverBound::CoverBound; accountForQueuedDurations::Bool
 		if accountForQueuedDurations
 			# account for duration that calls were queued
 			for queuedCallDuration in queuedCallDurations
-				j = binarySearch(cb.queuedDurationsToSample, queuedCallDuration)
+				j = binarySearch(cb.queuedDurationsToSample, queuedCallDuration)[1]
 				if j == 0 # queuedCallDuration < queuedDurationsToSample[1], so need to assume call was queued for no time
 					coverageFracTotal += cb.numAmbsMaxCoverageFrac[1] # maximum coverage from one ambulance
 				else # j > 0
