@@ -303,13 +303,16 @@ function makeCdf(d::DiscreteNonParametric)
 	return y
 end
 
-# Return index i such that xs[i] <= x < xs[i+1], for sorted xs
-function binarySearch(xs::Vector{Float}, x::Float)
+# return indices (i,j) such that xs[i] <= x <= xs[j], for sorted xs
+# if x is outside range of xs, then i = 0 or j = length(xs)+1
+function binarySearch(xs::Vector{Float}, x::Float)::Tuple{Int,Int}
 	# @assert(issorted(xs)) # slow
 	n = length(xs)
 	
-	if x < xs[1] return 0
-	elseif x >= xs[end] return n
+	# edge cases
+	if x < xs[1] return (0,1)
+	elseif x == xs[end] return (n,n)
+	elseif x > xs[end] return (n,n+1)
 	end
 	
 	i = 1; j = n
@@ -318,16 +321,19 @@ function binarySearch(xs::Vector{Float}, x::Float)
 		xs[k] <= x ? i = k : j = k
 	end
 	
-	return i
+	return xs[i] == x ? (i,i) : (i,j)
 end
 
-function binarySearch(d::DiscreteNonParametric, cdf::Vector{Float}, x::Float; xMin::Float = 0.0)
-	@assert(length(d.p) == length(cdf))
-	@assert(d.support[1] >= xMin) # should this be > instead of >= ?
-	i = binarySearch(d.support, x)
-	if i == 0 return xMin end
-	@assert(1 <= i <= length(d.p))
-	return cdf[i]
+# Given distribution and its cdf (vector of non-decreasing probability values) and x,
+# find values (floor in ceil) in domain (d.support) that are closest to x and return corresponding cdf values.
+function binarySearch(d::DiscreteNonParametric, cdf::Vector{Float}, x::Float)::Tuple{Float,Float}
+	n = length(cdf)
+	@assert(length(d.p) == n)
+	(i,j) = binarySearch(d.support, x)
+	if i == 0 return (0.0, cdf[1])
+	elseif j == n+1 return (cdf[end], 1.0)
+	else return (cdf[i], cdf[i+1])
+	end
 end
 
 function calcNodeSetsAmbBusyDurationProbs(sim::Simulation, coverBound::CoverBound, targetAmbBusyDuration::Float)
@@ -368,8 +374,8 @@ function calcNodeSetsAmbBusyDurationProbs(sim::Simulation, coverBound::CoverBoun
 			# calculate the above probabilities and multiply by the probability of that outcome, sum for total probability of amb being busy for time <= targetAmbBusyDuration.
 			t1 = stationsToPointsTimes[i,j]
 			t2 = t1 + pointsToHospitalTimes[j]
-			p1 = binarySearch(d1, cdf1, targetAmbBusyDuration - t1) # probability of amb busy duration <= targetAmbBusyDuration, assuming no transport to hospital
-			p2 = binarySearch(d2, cdf2, targetAmbBusyDuration - t2) # probability of amb busy duration <= targetAmbBusyDuration, assuming transport to hospital
+			p1 = binarySearch(d1, cdf1, targetAmbBusyDuration - t1)[2] # probability of amb busy duration <= targetAmbBusyDuration, assuming no transport to hospital
+			p2 = binarySearch(d2, cdf2, targetAmbBusyDuration - t2)[2] # probability of amb busy duration <= targetAmbBusyDuration, assuming transport to hospital
 			stationsPointsP[i,j] = (1-transportProb) * p1 + (transportProb) * p2
 		end
 		
