@@ -61,6 +61,7 @@ function calcCoverBound!(sim::Simulation;
 	return coverBound
 end
 
+# initialise coverBound based on sim
 # set kwarg pMedianRelax = true if using linear relaxation of p-median problem, false for binary
 function initCoverBound(sim::Simulation; pMedianRelax::Bool = true, doPrint::Bool = false)
 	
@@ -112,7 +113,6 @@ function initCoverBound(sim::Simulation; pMedianRelax::Bool = true, doPrint::Boo
 end
 
 function initCoverBoundMode(sim::Simulation, responseTravelMode::TravelMode)
-	
 	# shorthand
 	currentTime = sim.startTime
 	hospitalTravelPriority = lowPriority # default
@@ -335,6 +335,9 @@ function binarySearch(d::DiscreteNonParametric, cdf::Vector{Float}, x::Float)::T
 	end
 end
 
+# For the given targetAmbBusyDuration, return a dict stationsNodeSetsP, where stationsNodeSetsP[l][j] is an upper bound
+# on the fraction of total demand that can be served by an ambulance that is busy for duration <= targetAmbBusyDuration,
+# by assigning station j to serve node set that has stations ordered by list l (indices of nearest to furthest stations).
 function calcNodeSetsAmbBusyDurationProbs(sim::Simulation, coverBound::CoverBound, targetAmbBusyDuration::Float)
 	@assert(targetAmbBusyDuration >= 0)
 	
@@ -348,7 +351,7 @@ function calcNodeSetsAmbBusyDurationProbs(sim::Simulation, coverBound::CoverBoun
 	@assert(sim.demand.numSets == 1) # otherwise would have to calculate cover bound for each demand set
 	totalDemand = sum(mode -> mode.arrivalRate, sim.demand.modes) # assumes sim.demand.numSets == 1
 	
-	stationsNodeSetsP = Dict{Vector{Int}, Vector{Float}}() # stationsNodeSetsP[i][j] = fraction of total demand that can be served by an ambulance that is busy for duration <= targetAmbBusyDuration, by assigning station j to serve node set that has stationList == i
+	stationsNodeSetsP = Dict{Vector{Int}, Vector{Float}}() # stationsNodeSetsP[l][j] = fraction of total demand that can be served by an ambulance that is busy for duration <= targetAmbBusyDuration, by assigning station j to serve node set that has stationList == l
 	for coverBoundMode in coverBound.modes, stationList in coverBoundMode.nodeSetsStationList
 		get!(stationsNodeSetsP, stationList, zeros(Float, sim.numStations))
 	end
@@ -466,6 +469,7 @@ end
 
 # create amb busy duration distribution
 # requires fields of coverBound to already be populated: ambBusyDurationsToSample, ambBusyDurationProbUpperBounds
+# mutates: coverBound.ambBusyDurationLowerBoundDistrs
 function calcAmbBusyDurationLowerBoundDistrs!(coverBound::CoverBound)
 	coverBound.ambBusyDurationLowerBoundDistrs = Sampleable[]
 	ambBusyDurations = vcat(0, coverBound.ambBusyDurationsToSample)
@@ -495,6 +499,8 @@ function calcNumAmbsMaxCoverageFrac(sim::Simulation)
 	return numAmbsMaxCoverageFrac
 end
 
+# for each call queued duration in queuedDurationsToSample,
+# calculate the maximum coverage achievable within the remaining response time for a single ambulance
 function calcQueuedDurationsMaxCoverageFrac(sim::Simulation, coverBound::CoverBound;
 	queuedDurationsToSample::Vector{Float} = coverBound.queuedDurationsToSample,
 	demandWeights::Dict{Priority,Float} = Dict([p => 1.0 for p in priorities]),
@@ -537,7 +543,7 @@ function calcQueuedDurationsMaxCoverageFrac(sim::Simulation, coverBound::CoverBo
 	maxCoverageFracs = zeros(Float, length(queuedDurationsToSample)) # maxCoverageFracs[i] = mclp value for queuedDurationsToSample[i]
 	# stationsNumAmbsList = []
 	for (i,queuedDuration) in enumerate(queuedDurationsToSample)
-		doPrint && print("\rqueuedDuration $i of $(length(queuedDurationsToSample))")
+		doPrint && print("\rQueued duration $i of $(length(queuedDurationsToSample))")
 		
 		# calculate demand covered by different station sets
 		pointData = Dict{Vector{Bool}, Float}() # pointData[stationsCoverPoint] = pointDemand
@@ -695,6 +701,7 @@ function simulateCoverBound!(coverBound::CoverBound)
 	return coverBound.sim.bound
 end
 
+# calculate cover bound value after simulating
 # mutates: coverBound.sim.bound, rep.bound for rep in coverBound.sim.reps
 function calcCoverBound!(coverBound::CoverBound; accountForQueuedDurations::Bool = coverBound.accountForQueuedDurations)
 	cb = coverBound # shorthand
