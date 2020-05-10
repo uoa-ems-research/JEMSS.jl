@@ -297,8 +297,7 @@ end
 
 function makeCdf(d::DiscreteNonParametric)
 	@assert(issorted(d.support))
-	y = copy(d.p)
-	for i = 2:length(y) y[i] += y[i-1] end
+	y = cumsum(d.p)
 	@assert(isapprox(y[end], 1))
 	return y
 end
