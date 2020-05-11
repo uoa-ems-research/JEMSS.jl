@@ -13,20 +13,14 @@
 # limitations under the License.
 ##########################################################################
 
-using JEMSS
-using Test
-
-cd(@__DIR__) do
-	isdir("temp") || mkpath("temp")
-	runGenConfig("data/cities/small/1/gen_config.xml", overwriteOutputPath = true, doPrint = false)
-	include("test_grid.jl")
-	include("test_network.jl")
-	include("test_route.jl")
-	include("test_demand.jl")
-	include("test_demand_coverage.jl")
-	include("test_zhang_ip.jl")
-	include("test_mclp.jl")
-	include("test_nested_mclp.jl")
-	include("test_binary_search.jl")
-	include("test_code_runs.jl")
+@testset "binary search" begin
+	n = 10
+	x = cumsum(rand(n).+0.1)
+	@assert(issorted(x, lt=<=)) # values should be strictly increasing
+	for i = 1:n
+		@assert(binarySearch(x, x[i]*(1-eps())) == (i-1,i))
+		@assert(binarySearch(x, x[i]) == (i,i))
+		@assert(binarySearch(x, x[i]*(1+eps())) == (i,i+1))
+	end
+	@test true
 end

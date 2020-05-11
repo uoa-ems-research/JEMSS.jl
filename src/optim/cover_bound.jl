@@ -302,10 +302,10 @@ function makeCdf(d::DiscreteNonParametric)
 	return y
 end
 
-# return indices (i,j) such that xs[i] <= x <= xs[j], for sorted xs
+# return indices (i,j) such that xs[i] <= x <= xs[j], for increasing xs
 # if x is outside range of xs, then i = 0 or j = length(xs)+1
 function binarySearch(xs::Vector{Float}, x::Float)::Tuple{Int,Int}
-	# @assert(issorted(xs)) # slow
+	# @assert(issorted(xs, lt=<=)) # values should be strictly increasing # slow
 	n = length(xs)
 	
 	# edge cases
@@ -323,8 +323,8 @@ function binarySearch(xs::Vector{Float}, x::Float)::Tuple{Int,Int}
 	return xs[i] == x ? (i,i) : (i,j)
 end
 
-# Given distribution and its cdf (vector of non-decreasing probability values) and x,
-# find values (floor in ceil) in domain (d.support) that are closest to x and return corresponding cdf values.
+# Given distribution and its cdf (vector of increasing probability values) and x,
+# find values (floor and ceil) in domain (d.support) that are closest to x and return corresponding cdf values.
 function binarySearch(d::DiscreteNonParametric, cdf::Vector{Float}, x::Float)::Tuple{Float,Float}
 	n = length(cdf)
 	@assert(length(d.p) == n)
