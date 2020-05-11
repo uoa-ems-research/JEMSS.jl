@@ -551,7 +551,6 @@ function readPriorityListsFile(filename::String)::Vector{PriorityList}
 	return priorityLists
 end
 
-
 # read raster file using ArchGDAL package, return as custom Raster type
 function readRasterFile(rasterFilename::String)
 	@assert(isfile(rasterFilename))

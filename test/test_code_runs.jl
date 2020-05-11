@@ -128,3 +128,18 @@ end
 	applyDeployment!(sim, deployment)
 	@test true
 end
+
+@testset "cover bound" begin
+	runGenConfig("data/cities/small/7/gen_config.xml", overwriteOutputPath = true, doPrint = false)
+	sim = initSim("data/cities/small/7/sim_config.xml")
+	genConfig = readGenConfig(sim.inputFiles["callGenConfig"].path)
+	coverBoundSim = initCoverBoundSim(numReps = 30, numAmbs = sim.numAmbs, warmUpDuration = 0.1, minLastCallArrivalTime = 0.1 + 10,
+		interarrivalTimeDistrRng = genConfig.interarrivalTimeDistrRng, ambBusyDurationSeed = 1)
+	ambBusyDurationsToSample = [1:60;]/60/24 # 1 minute intervals, up to 1 hour
+	queuedDurationsToSample = [0:maximum(sim.targetResponseDurations)*24*60;]/60/24 # 1 minute intervals
+	coverBound = calcCoverBound!(sim; coverBoundSim = coverBoundSim, ambBusyDurationsToSample = ambBusyDurationsToSample, queuedDurationsToSample = queuedDurationsToSample)
+	calcCoverBound!(coverBound; accountForQueuedDurations = false) # also calculate bound without accounting for call queueing durations (original cover bound)
+	# @show coverBound.sim.bound # cover bound result
+	simulateCoverBoundLowerBound!(coverBound) # also simulate a lower bound on the cover bound
+	@test true
+end

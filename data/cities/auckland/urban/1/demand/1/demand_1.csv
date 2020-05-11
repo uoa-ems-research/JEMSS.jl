@@ -1,6 +1,6 @@
 demandRasters,,,,
 rasterIndex,rasterFilename,note,,
-1,$jemssDir\data\cities\auckland\data\population density\census 2013\rasters\urban\1\auckland-urban-pop-densit-40m.tif,,,
+1,$jemssDir/data/cities/auckland/data/population density/census 2013/rasters/urban/1/auckland-urban-pop-densit-40m.tif,,,
 ,,,,
 demandModes,,,,
 modeIndex,rasterIndex,priority,arrivalRate,note

@@ -70,7 +70,7 @@ export
 	readDlmFileNextLine!, readDlmFile, openNewFile, writeDlmLine!, arrayDict, writeTablesToFile!, writeTablesToFile, readTablesFromFile, readTablesFromData, tableRowsFieldDicts, fileChecksum, serializeToFile, deserializeFile, joinPathIfNotAbs, interpolateString, xmlFileRoot, findElt, eltContent, eltContentVal, eltContentInterpVal, childrenNodeNames, selectXmlFile, # file_io
 	readGenConfig, runGenConfig, runGenConfigCalls, makeCalls, # gen_sim_files
 	readAmbsFile, readArcsFile, readCallsFile, readCompTableFile, readDemandFile, readDemandCoverageFile, readEventsFile, readGeoFile, readHospitalsFile, readMapFile, readNodesFile, readPrioritiesFile, readPriorityListFile, readPriorityListsFile, readRasterFile, readRedispatchFile, readRNetTravelsFile, readStationsFile, readStatsControlFile, readTravelFile, readDeploymentsFile, readZhangIpParamsFile, # read_sim_files
-	writeAmbsFile, writeArcsFile, writeCallsFile, writeDemandFile, writeDemandCoverageFile, writeHospitalsFile, writeMapFile, writeNodesFile, writePrioritiesFile, writePriorityListFile, writePriorityListsFile, writeRedispatchFile, writeRNetTravelsFile, writeStationsFile, writeTravelFile, writeZhangIpParamsFile, openOutputFiles!, writeOutputFiles, writeMiscOutputFiles, closeOutputFiles!, writeEventToFile!, writeDeploymentsFile, writeBatchMeanResponseDurationsFile, # write_sim_files
+	writeAmbsFile, writeArcsFile, writeCallsFile, writeDemandFile, writeDemandCoverageFile, writeHospitalsFile, writeMapFile, writeNodesFile, writePrioritiesFile, writePriorityListFile, writePriorityListsFile, writeRasterFile, writeRedispatchFile, writeRNetTravelsFile, writeStationsFile, writeTravelFile, writeZhangIpParamsFile, openOutputFiles!, writeOutputFiles, writeMiscOutputFiles, closeOutputFiles!, writeEventToFile!, writeDeploymentsFile, writeBatchMeanResponseDurationsFile, # write_sim_files
 	writeStatsFiles, writeAmbsStatsFile, writeCallsStatsFile, writeHospitalsStatsFile, writeStationsStatsFile, writeStatsDictFile # write_sim_files - stats
 
 # move up
@@ -82,6 +82,7 @@ export
 export
 	isBusy, isFree, isWorking, isGoingToStation, isTravelling, # ambulance
 	setSimCalls!, # call
+	calcCoverBound!, initCoverBound, approxDistr, convolute, makeCdf, binarySearch, calcAmbBusyDurationProbUpperBounds, calcAmbBusyDurationLowerBoundDistrs!, calcNumAmbsMaxCoverageFrac, calcQueuedDurationsMaxCoverageFrac, initCoverBoundSim, simulateCoverBound!, simulateCoverBoundLowerBound!, writeAmbBusyDurationProbUpperBoundsFile, readAmbBusyDurationProbUpperBoundsFile, writeQueuedDurationsMaxCoverageFracFile, readQueuedDurationsMaxCoverageFracFile, # cover bound
 	initDemand!, initDemandCoverage!, # demand
 	printEvent, # event
 	findNearestNode, # grid
@@ -93,7 +94,10 @@ export
 	checkCompTable, isCompTableNested, nestCompTable, unnestCompTable, makeRandNestedCompTable, # compliance table
 	makeRandDeployment, makeRandDeployments, deploymentToStationsNumAmbs, stationsNumAmbsToDeployment, getDeployment, getStationsNumAmbs, setAmbStation!, applyDeployment!, applyStationsNumAmbs!, simulateDeployment!, simulateDeployments!, # deployment
 	checkPriorityList, makeRandPriorityList, # priority list
+	solveMclp!, solveMclp, # mclp
 	solveMexclp!, # mexclp
+	solveNestedMclp!, solveNestedMclp, # nested mclp
+	solvePMedian, # p-median
 	flatten, # dict
 	runParallel! # parallel
 
@@ -102,6 +106,7 @@ export
 	Location, Point, Node, Arc, Graph, NetTravel, Network, TravelMode, Travel, Route,
 	Event, Ambulance, Call, Hospital, Station, Redispatch,
 	Map, GridSearchRect, GridRect, Grid, Raster, RasterSampler, DemandMode, Demand, PointsCoverageMode, DemandCoverage,
+	CoverBoundSimRep, CoverBoundSim, CoverBoundMode, CoverBound,
 	CompTableData, DdsmData, DmexclpData, PriorityListData, ZhangIpData, Temp0Data, Temp1Data, Temp2Data, MoveUpData,
 	MeanAndHalfWidth, AmbulanceStats, CallStats, HospitalStats, StationStats, SimPeriodStats, SimStats,
 	File, Table, Resimulation, Simulation,
@@ -180,7 +185,11 @@ include("animation/animation.jl")
 
 include("misc/deployment.jl")
 
+include("optim/mclp.jl")
 include("optim/mexclp.jl")
+include("optim/p_median.jl")
+include("optim/cover_bound.jl")
+include("optim/nested_mclp.jl")
 
 include("deprecated.jl")
 
