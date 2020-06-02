@@ -40,7 +40,7 @@ Controlling the animation is done with buttons and text input in a box at the bo
 To have lines drawn between each ambulance and its destination, check the 'Show routes' box.
 The 'Show arcs' check-box is provided so that the arcs that make up the road network can be hidden, which is useful for reducing computation of drawing while the animation is running.
 
-![animation_frame](https://i.imgur.com/UsUnPIw.png)
+![animation_frame](https://i.imgur.com/MoKqHxD.png)
 
 Notes on animation:
 
