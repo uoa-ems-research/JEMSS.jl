@@ -37,8 +37,8 @@ The call to `animate!` will open a web browser window to `localhost:8001` (other
 The connection may take a few seconds to be established.
 The browser window, using [Mapbox](https://www.mapbox.com/), will show a map containing the `sim` region, the ambulances, hospitals, stations, and roads.
 Controlling the animation is done with buttons and text input in a box at the bottom right of the window.
-To have lines drawn between each ambulance and its destination, check the 'Show routes' box.
-The 'Show arcs' check-box is provided so that the arcs that make up the road network can be hidden, which is useful for reducing computation of drawing while the animation is running.
+To have lines drawn between each ambulance and its destination, check the 'Show destinations' box.
+The 'Show road arcs' check-box is provided so that the road network arcs can be hidden, which reduces the computation required to display the city while the simulation is running.
 
 ![animation_frame](https://i.imgur.com/E2dPboj.png)
 
