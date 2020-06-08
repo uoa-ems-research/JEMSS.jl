@@ -10,7 +10,7 @@ To install and build this package, run the following commands in the Pkg REPL mo
 pkg> add https://github.com/uoa-ems-research/JEMSS.jl
 pkg> build JEMSS
 ```
-The build script unpacks files in JEMSS/data.
+The build script unpacks files in the [data](data) folder.
 
 ## Simulation example
 To run an example script that loads and runs a simulation and then writes statistics to files:
