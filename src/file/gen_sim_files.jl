@@ -276,7 +276,8 @@ function runGenConfig(genConfig::GenConfig; overwriteOutputPath::Bool = false, d
 		stations = makeStations(genConfig)
 		travel = makeTravel(genConfig)
 		
-		graph = LightGraphs.Grid([genConfig.xNodes, genConfig.yNodes]) # grid shaped graph
+		# grid shaped graph
+		graph = pkgVersions["LightGraphs"] >= v"1.3" ? LightGraphs.grid([genConfig.xNodes, genConfig.yNodes]) : LightGraphs.Grid([genConfig.xNodes, genConfig.yNodes])
 		nodes = makeNodes(genConfig, graph)
 		(arcs, travelTimes) = makeArcs(genConfig, graph, nodes)
 		
