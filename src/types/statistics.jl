@@ -64,6 +64,7 @@ function populateSimStats!(sim::Simulation)
 	
 	# populate call statistics
 	callsByPriority = Dict([p => filter(c -> c.priority == p, sim.calls) for p in priorities])
+	sim.stats.responseDurationHistNumBins = floor(Int, maximum(c -> c.responseDuration, sim.calls) / sim.stats.responseDurationHistBinWidth) + 1
 	for i = 1:length(captures)
 		period = i == 1 ? captures[i] : captures[i] - captures[i-1]
 		period.call = CallStats(sim, sim.calls, period.startTime, period.endTime)
@@ -133,6 +134,15 @@ function AmbulanceStats(sim::Simulation, ambulance::Ambulance)::AmbulanceStats
 	return stats
 end
 
+function createResponseDurationHist(responseDurations::Vector{Float}, numBins::Int, binWidth::Float)::Histogram
+	# numBins and binWidth should be the same for all histograms so that the histograms can be easily added and subtracted
+	@assert(numBins >= 0)
+	@assert(binWidth > 0)
+	h = fit(Histogram, responseDurations, (0:numBins)*binWidth)
+	@assert(sum(h.weights) == length(responseDurations)) # otherwise there are durations outside of histogram bins that were not included
+	return h
+end
+
 function CallStats(sim::Simulation, calls::Vector{Call})::CallStats
 	if isempty(calls) return CallStats() end
 	@assert(all(c -> c.status == callProcessed, calls))
@@ -158,6 +168,12 @@ function CallStats(sim::Simulation, calls::Vector{Call})::CallStats
 	stats.totalAmbGoingToCallDuration = sum(c -> c.ambGoingToCallDuration, calls)
 	stats.totalTransportDuration = sum(c -> c.transportDuration, calls)
 	stats.totalServiceDuration = sum(c -> c.serviceDuration, calls)
+	
+	# response duration histogram
+	if sim.stats.recordResponseDurationHist
+		(numBins, binWidth) = (sim.stats.responseDurationHistNumBins, sim.stats.responseDurationHistBinWidth) # shorthand
+		stats.responseDurationHist = createResponseDurationHist([c.responseDuration for c in calls], numBins, binWidth)
+	end
 	
 	if checkMode
 		@assert(all(c -> c.wasQueued || c.queuedDuration == 0, calls))

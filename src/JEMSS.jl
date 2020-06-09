@@ -138,6 +138,7 @@ export
 include("defs.jl")
 
 include("misc/dict.jl")
+include("misc/histogram.jl")
 include("misc/parallel.jl")
 include("misc/rand.jl")
 include("misc/stream.jl")

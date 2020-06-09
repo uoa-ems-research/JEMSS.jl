@@ -969,10 +969,12 @@ mutable struct CallStats
 	totalServiceDuration::Float # duration between call arrival and ambulance finishing with call
 	
 	# totalQueueLengthDuration::OffsetArray{Float,1,Vector{Float}} # totalQueueLengthDuration[k] = total duration spent with k queued calls
+	responseDurationHist::Histogram
 	
 	CallStats() = new(nullIndex, 0,
 		0, 0, 0, 0, 0,
-		0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+		0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+		NullHist())
 end
 
 # statistics for a single hospital, or multiple hospitals
@@ -1048,10 +1050,16 @@ mutable struct SimStats
 	recordDispatchStartLocCounts::Bool # if true, will save starting location of ambulance dispatches in ambulance.dispatchStartLocCounts
 	recordMoveUpStartLocCounts::Bool # if true, will save starting location of ambulance move up in station.moveUpStartLocCounts
 	
+	# response duration histogram
+	recordResponseDurationHist::Bool # if true, will save call response durations to histogram stored in callStats.responseDurationHist
+	responseDurationHistBinWidth::Float # width (duration) of bins for callStats.responseDurationHist
+	responseDurationHistNumBins::Int # number of bins for callStats.responseDurationHist
+	
 	SimStats() = new([], [],
 		true, 0.0, Stateful([]), Inf,
 		nullTime, nullTime, nullTime, nullTime,
-		false, false)
+		false, false,
+		false, nullTime, 0)
 end
 
 mutable struct Simulation
