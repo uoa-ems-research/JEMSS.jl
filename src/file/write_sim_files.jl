@@ -431,7 +431,7 @@ function writeAmbsStatsFile(filename::String, periods::Vector{SimPeriodStats})
 end
 
 function makeCallsStatsTables(periods::Vector{SimPeriodStats})::Vector{Table}
-	fnames = setdiff(fieldnames(CallStats), (:callIndex,))
+	fnames = setdiff(fieldnames(CallStats), (:callIndex, :responseDurationHist))
 	callTable = Table("call", vcat("periodIndex", collect(string.(fnames)));
 		rows = [vcat(i, [getfield(p.call, fname) for fname in fnames]) for (i,p) in enumerate(periods)])
 	
