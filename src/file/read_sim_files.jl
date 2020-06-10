@@ -652,7 +652,7 @@ function readStatsControlFile(filename::String)
 	
 	table = tables["params"]
 	param(s::String) = table.columns[s][1]
-	warmUpDuration = param("warmUpDuration")
+	warmUpDuration = Float(param("warmUpDuration"))
 	periodDurationsString = param("periodDurations")
 	doCyclePeriodDurations = Bool(param("doCyclePeriodDurations"))
 	
