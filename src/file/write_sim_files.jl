@@ -431,18 +431,36 @@ function writeAmbsStatsFile(filename::String, periods::Vector{SimPeriodStats})
 end
 
 function makeCallsStatsTables(periods::Vector{SimPeriodStats})::Vector{Table}
+	tables = Table[]
 	fnames = setdiff(fieldnames(CallStats), (:callIndex, :responseDurationHist))
-	callTable = Table("call", vcat("periodIndex", collect(string.(fnames)));
-		rows = [vcat(i, [getfield(p.call, fname) for fname in fnames]) for (i,p) in enumerate(periods)])
 	
-	callPrioritiesTables = Table[]
+	push!(tables, Table("call", vcat("periodIndex", collect(string.(fnames)));
+		rows = [vcat(i, [getfield(p.call, fname) for fname in fnames]) for (i,p) in enumerate(periods)]))
+	
 	for priority in priorities
-		table = Table("callPriorities[$priority]", vcat("periodIndex", collect(string.(fnames)));
-			rows = [vcat(i, [getfield(p.callPriorities[priority], fname) for fname in fnames]) for (i,p) in enumerate(periods)])
-		push!(callPrioritiesTables, table)
+		push!(tables, Table("callPriorities[$priority]", vcat("periodIndex", collect(string.(fnames)));
+			rows = [vcat(i, [getfield(p.callPriorities[priority], fname) for fname in fnames]) for (i,p) in enumerate(periods)]))
 	end
 	
-	return [callTable, callPrioritiesTables...]
+	# add response duration histogram tables
+	if all(p -> p.call.responseDurationHist != nullHist, periods)
+		# periods may not have same responseDurationHist size if using replications
+		(n,i) = findmax([length(p.call.responseDurationHist.weights) for p in periods])
+		edges = periods[i].call.responseDurationHist.edges[1]
+		@assert(edges[1] == 0) # otherwise binWidth calc is wrong
+		binWidth = edges[2]
+		push!(tables, Table("responseDurationHist_params", ["binWidth"]; rows = [[string(binWidth)]]))
+		
+		for priority in (nullPriority, priorities...) # use nullPriority to make table for all priorities
+			getCallStats(p::SimPeriodStats) = priority == nullPriority ? p.call : p.callPriorities[priority]
+			weights(h::Histogram) = vcat(h.weights, zeros(Int, n-length(h.weights)))
+			name = priority == nullPriority ? "call.responseDurationHist" : "callPriorities[$priority].responseDurationHist"
+			push!(tables, Table(name, vcat("periodIndex", edges[1:n]);
+				rows = [vcat(i, weights(getCallStats(p).responseDurationHist)) for (i,p) in enumerate(periods)]))
+		end
+	end
+	
+	return tables
 end
 
 # for batches in a single simulation replication
