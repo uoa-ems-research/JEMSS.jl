@@ -669,9 +669,8 @@ function readStatsControlFile(filename::String)
 	responseDurationHistBinWidth = nullTime
 	if haskey(tables, "responseDurationHist_params")
 		table = tables["responseDurationHist_params"]
-		param(s::String) = table.columns[s][1]
-		recordResponseDurationHist = Bool(param("doRecord"))
-		binWidth = param("binWidth")
+		recordResponseDurationHist = Bool(table.columns["doRecord"][1])
+		binWidth = table.columns["binWidth"][1]
 		responseDurationHistBinWidth = Float(typeof(binWidth) <: AbstractString ? (binWidth |> Meta.parse |> eval) : binWidth)
 	end
 	
