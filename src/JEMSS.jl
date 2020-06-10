@@ -115,7 +115,7 @@ export
 # defs - consts
 export
 	Float, FloatSpTime, FloatSpDist, IntRNode, IntFadj, # type alias
-	nullIndex, nullX, nullY, nullTime, nullDist, # nulls
+	nullIndex, nullX, nullY, nullTime, nullDist, nullHist, NullHist, # nulls
 	priorities, numPriorities, # priorities
 	Deployment, CompTable, NestedCompTable, PriorityList
 
