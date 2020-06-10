@@ -13,6 +13,8 @@
 # limitations under the License.
 ##########################################################################
 
+using StatsBase
+
 @testset "histogram addition" begin
 	# null histogram
 	h1 = fit(Histogram, [0], 0:1)
