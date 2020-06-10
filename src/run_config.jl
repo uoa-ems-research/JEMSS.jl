@@ -458,7 +458,10 @@ function initSim(configFilename::String;
 		printInitMsg("initialising statistics")
 		stats = sim.stats # shorthand
 		stats.doCapture = true
-		(stats.periodDurationsIter, stats.warmUpDuration) = readStatsControlFile(simFilePath("statsControl"))
+		d = readStatsControlFile(simFilePath("statsControl"))
+		for fname in (:periodDurationsIter, :warmUpDuration, :recordResponseDurationHist, :responseDurationHistBinWidth)
+			setfield!(stats, fname, d[string(fname)])
+		end
 		stats.nextCaptureTime = sim.startTime + (stats.warmUpDuration > 0 ? stats.warmUpDuration : first(stats.periodDurationsIter))
 		printInitTime()
 	end

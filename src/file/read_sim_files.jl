@@ -665,7 +665,24 @@ function readStatsControlFile(filename::String)
 	if doCyclePeriodDurations periodDurations = Iterators.cycle(periodDurations) end
 	periodDurationsIter = Stateful(periodDurations)
 	
-	return periodDurationsIter, warmUpDuration
+	recordResponseDurationHist = false
+	responseDurationHistBinWidth = nullTime
+	if haskey(tables, "responseDurationHist_params")
+		table = tables["responseDurationHist_params"]
+		param(s::String) = table.columns[s][1]
+		recordResponseDurationHist = Bool(param("doRecord"))
+		binWidth = param("binWidth")
+		responseDurationHistBinWidth = Float(typeof(binWidth) <: AbstractString ? (binWidth |> Meta.parse |> eval) : binWidth)
+	end
+	
+	# pack into dict
+	d = Dict{String,Any}()
+	d["periodDurationsIter"] = periodDurationsIter
+	d["warmUpDuration"] = warmUpDuration
+	d["recordResponseDurationHist"] = recordResponseDurationHist
+	d["responseDurationHistBinWidth"] = responseDurationHistBinWidth
+	
+	return d
 end
 
 function readTravelFile(filename::String)
