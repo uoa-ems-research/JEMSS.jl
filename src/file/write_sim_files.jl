@@ -433,13 +433,12 @@ end
 function makeCallsStatsTables(periods::Vector{SimPeriodStats})::Vector{Table}
 	tables = Table[]
 	fnames = setdiff(fieldnames(CallStats), (:callIndex, :responseDurationHist))
+	getCallStats(period::SimPeriodStats, priority::Priority) = priority == nullPriority ? period.call : period.callPriorities[priority]
 	
-	push!(tables, Table("call", vcat("periodIndex", collect(string.(fnames)));
-		rows = [vcat(i, [getfield(p.call, fname) for fname in fnames]) for (i,p) in enumerate(periods)]))
-	
-	for priority in priorities
-		push!(tables, Table("callPriorities[$priority]", vcat("periodIndex", collect(string.(fnames)));
-			rows = [vcat(i, [getfield(p.callPriorities[priority], fname) for fname in fnames]) for (i,p) in enumerate(periods)]))
+	for priority in (nullPriority, priorities...)
+		name = priority == nullPriority ? "call" : "callPriorities[$priority]"
+		push!(tables, Table(name, vcat("periodIndex", collect(string.(fnames)));
+			rows = [vcat(i, [getfield(getCallStats(p, priority), fname) for fname in fnames]) for (i,p) in enumerate(periods)]))
 	end
 	
 	# add response duration histogram tables
@@ -451,12 +450,11 @@ function makeCallsStatsTables(periods::Vector{SimPeriodStats})::Vector{Table}
 		binWidth = edges[2]
 		push!(tables, Table("responseDurationHist_params", ["binWidth"]; rows = [[string(binWidth)]]))
 		
-		for priority in (nullPriority, priorities...) # use nullPriority to make table for all priorities
-			getCallStats(p::SimPeriodStats) = priority == nullPriority ? p.call : p.callPriorities[priority]
+		for priority in (nullPriority, priorities...)
 			weights(h::Histogram) = vcat(h.weights, zeros(Int, n-length(h.weights)))
 			name = priority == nullPriority ? "call.responseDurationHist" : "callPriorities[$priority].responseDurationHist"
 			push!(tables, Table(name, vcat("periodIndex", edges[1:n]);
-				rows = [vcat(i, weights(getCallStats(p).responseDurationHist)) for (i,p) in enumerate(periods)]))
+				rows = [vcat(i, weights(getCallStats(p, priority).responseDurationHist)) for (i,p) in enumerate(periods)]))
 		end
 	end
 	
