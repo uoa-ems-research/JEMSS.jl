@@ -448,7 +448,7 @@ function makeCallsStatsTables(periods::Vector{SimPeriodStats})::Vector{Table}
 		edges = periods[i].call.responseDurationHist.edges[1]
 		@assert(edges[1] == 0) # otherwise binWidth calc is wrong
 		binWidth = edges[2]
-		push!(tables, Table("responseDurationHist_params", ["binWidth"]; rows = [[string(binWidth)]]))
+		push!(tables, Table("responseDurationHist_params", ["binWidth", "binEdges"]; rows = [[string(binWidth), string(edges)]]))
 		
 		for priority in (nullPriority, priorities...)
 			weights(h::Histogram) = vcat(h.weights, zeros(Int, n-length(h.weights)))
