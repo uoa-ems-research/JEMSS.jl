@@ -40,7 +40,7 @@ Controlling the animation is done with buttons and text input in a box at the bo
 To have lines drawn between each ambulance and its destination, check the 'Show destinations' box.
 The 'Show road arcs' check-box is provided so that the road network arcs can be hidden, which reduces the computation required to display the city while the simulation is running.
 
-![animation_frame](https://i.imgur.com/E2dPboj.png)
+![animation_frame](animation-frame.png)
 
 Notes on animation:
 
