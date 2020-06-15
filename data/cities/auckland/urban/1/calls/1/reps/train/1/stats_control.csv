@@ -1,3 +1,7 @@
 params,,
 warmUpDuration,periodDurations,doCyclePeriodDurations
 1.0,[14],false
+,,
+responseDurationHist_params,,
+doRecord,binWidth,
+true,1/60/24,
