@@ -28,5 +28,6 @@ cd(@__DIR__) do
 	include("test_mclp.jl")
 	include("test_nested_mclp.jl")
 	include("test_binary_search.jl")
+	include("test_histogram.jl")
 	include("test_code_runs.jl")
 end

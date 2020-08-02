@@ -56,6 +56,8 @@ const nullX = -200 # outside lat/lon range
 const nullY = -200
 const nullTime = -1.0
 const nullDist = -1.0
+const nullHist = fit(Histogram, [], 0:0)
+NullHist() = deepcopy(nullHist)
 nullFunction() = nothing
 
 # call/travel priorities

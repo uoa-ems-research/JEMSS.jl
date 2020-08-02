@@ -115,7 +115,7 @@ export
 # defs - consts
 export
 	Float, FloatSpTime, FloatSpDist, IntRNode, IntFadj, # type alias
-	nullIndex, nullX, nullY, nullTime, nullDist, # nulls
+	nullIndex, nullX, nullY, nullTime, nullDist, nullHist, NullHist, # nulls
 	priorities, numPriorities, # priorities
 	Deployment, CompTable, NestedCompTable, PriorityList
 
@@ -138,6 +138,7 @@ export
 include("defs.jl")
 
 include("misc/dict.jl")
+include("misc/histogram.jl")
 include("misc/parallel.jl")
 include("misc/rand.jl")
 include("misc/stream.jl")

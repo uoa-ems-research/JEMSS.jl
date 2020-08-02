@@ -47,9 +47,9 @@ using Random
 	@test all(node -> findNearestNode(mp, grid2, nodes, node.location)[1] == node.index, nodes)
 	
 	# check that grid rectangles have some different numbers of nodes, so that different cases will be tested
-	@assert(all(grid -> any(rect -> length(rect.nodeIndices) == 0, grid1.rects), (grid1, grid2)))
-	@assert(all(grid -> any(rect -> length(rect.nodeIndices) == 1, grid1.rects), (grid1, grid2)))
-	@assert(all(grid -> any(rect -> length(rect.nodeIndices) >= 2, grid1.rects), (grid1, grid2)))
+	@assert(all(grid -> any(rect -> length(rect.nodeIndices) == 0, grid.rects), (grid1, grid2)))
+	@assert(all(grid -> any(rect -> length(rect.nodeIndices) == 1, grid.rects), (grid1, grid2)))
+	@assert(all(grid -> any(rect -> length(rect.nodeIndices) >= 2, grid.rects), (grid1, grid2)))
 	
 	# compare findNearestNode function with brute-force method (no grid)
 	grid1pass = grid2pass = true

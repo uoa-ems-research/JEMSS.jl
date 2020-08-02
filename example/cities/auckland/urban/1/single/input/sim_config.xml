@@ -12,6 +12,9 @@
 		<callGenConfig>calls/1/single/train/1/gen_config.xml</callGenConfig>
 		<statsControl>calls/1/single/train/1/stats_control.csv</statsControl>
 		
+		<demand>demand/1/demand_1.csv</demand>
+		<demandCoverage>demand/coverage/1/demand_coverage_1.csv</demandCoverage>
+		
 		<arcs>travel/roads/1/arcs.csv</arcs>
 		<nodes>travel/roads/1/nodes.csv</nodes>
 		<rNetTravels>travel/roads/1/r_net_travels_jl-v$(VERSION).jls</rNetTravels>

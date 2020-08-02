@@ -100,23 +100,22 @@ limitations under the License.
 		<div>Jump to time: <input id="new_sim_time" type="text" value="" size="7" maxlength="10"></input></div>
 		<div>Sim speed: <input id="sim_speed" type="text" value="200" size="5" maxlength="8"></input></div>
 		<div>Frame rate: <input id="fps" type="text" value="30" size="1" maxlength="3"></input></div>
-		<div>Show routes <input type="checkbox" id="show_routes"/></div>
-		<div>Show arcs <input type="checkbox" id="show_arcs"/></div>
+		<div>Show destinations <input type="checkbox" id="show_dests"/></div>
+		<div>Show road arcs <input type="checkbox" id="show_arcs"/></div>
 	</div>
-
+	
 	<script src="https://api.tiles.mapbox.com/mapbox-gl-js/v0.26.0/mapbox-gl.js"></script>
 	<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
 	<script type="text/javascript">
 		
 		////////////////////////////////////////////////////////////////
 		// create map
-
+		
 		L.mapbox.accessToken = 'pk.eyJ1Ijoic2FtdWVscmlkbGVyIiwiYSI6ImNqOGkyeDZ1eDB5aGEycW5hcjRoMnV0MTcifQ.kU7MkMpBNuk_CK58od1q8Q';
-
-		var map = L.mapbox.map('map_id', 'mapbox.streets', {
-			scrollWheelZoom: true,
-			maxZoom: 18
-		}).setView([0, 0], 12);
+		
+		const map = L.mapbox.map('map_id')
+			.setView([0, 0], 12)
+			.addLayer(L.mapbox.styleLayer('mapbox://styles/samuelridler/ck97skckj51t21in2qku0rcco'));
 		
 		var mapBounds = map.getBounds()
 		function resetMapView() {
@@ -168,12 +167,12 @@ limitations under the License.
 				case "add_ambulance":
 					var a = msgObj.ambulance
 					addAmb(a.index, a.currentLoc.y, a.currentLoc.x)
-					updateAmbRoute(a)
+					updateAmbDest(a)
 					break;
 				case "move_ambulance":
 					var a = msgObj.ambulance
 					moveAmb(a.index, a.currentLoc.y, a.currentLoc.x)
-					updateAmbRoute(a)
+					updateAmbDest(a)
 					break;
 				case "add_call":
 					var c = msgObj.call
@@ -237,12 +236,12 @@ limitations under the License.
 			}
 		})
 		
-		show_routes.checked = true
-		$('#show_routes').change(function() {
+		show_dests.checked = true
+		$('#show_dests').change(function() {
 			if (this.checked) {
-				showAmbRoutes()
+				showAmbDests()
 			} else {
-				hideAmbRoutes()
+				hideAmbDests()
 			}
 		});
 		
@@ -504,7 +503,7 @@ limitations under the License.
 				throw new Error("Cannot add ambulance with id " + id + " as it exists already")
 			}
 			ambs[id] = new ambulance(id, lat, lon);
-			addAmbRoute(id, lat, lon);
+			addAmbDest(id, lat, lon);
 		}
 		
 		function ambulance(id, lat, lon) {
@@ -521,16 +520,16 @@ limitations under the License.
 			for (id in ambs) {
 				map.removeLayer(ambs[id].marker)
 			}
-			hideAmbRoutes()
+			hideAmbDests()
 			ambs = {}
 		}
 		
 		////////////////////////////////////////////////////////////////
-		// ambulance routes
+		// ambulance destinations
 		
-		function addAmbRoute(id) {
+		function addAmbDest(id) {
 			amb = ambs[id]
-			amb.routeLine = new L.polyline(
+			amb.destLine = new L.polyline(
 				[], // coords, empty for now
 				{
 					color: "#0033ff",
@@ -538,28 +537,28 @@ limitations under the License.
 					opacity: .5
 				}
 			)
-			if (show_routes.checked) {
-				map.addLayer(amb.routeLine)
+			if (show_dests.checked) {
+				map.addLayer(amb.destLine)
 			}
 		}
 		
-		function updateAmbRoute(a) {
+		function updateAmbDest(a) {
 			// 'a' is ambulance from julia
-			ambs[a.index].routeLine.setLatLngs([
+			ambs[a.index].destLine.setLatLngs([
 				[a.currentLoc.y, a.currentLoc.x],
 				[a.endLoc.y, a.endLoc.x]
 			])
 		}
 		
-		function showAmbRoutes() {
+		function showAmbDests() {
 			for (id in ambs) {
-				map.addLayer(ambs[id].routeLine)
+				map.addLayer(ambs[id].destLine)
 			}
 		}
 		
-		function hideAmbRoutes() {
+		function hideAmbDests() {
 			for (id in ambs) {
-				map.removeLayer(ambs[id].routeLine)
+				map.removeLayer(ambs[id].destLine)
 			}
 		}
 		
