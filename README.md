@@ -52,8 +52,7 @@ Notes on animation:
 ## Misc
 See readme files in subfolders of JEMSS/data/cities/*/data for data sources and license details of files in the respective folder.
 
-For solving linear and integer programs, CBC and GLPK solvers are used, though Gurobi will be used (for difficult problems such as p-median and DDSM in JEMSS) if it is installed as it generally solves faster.
-If you have [Gurobi](https://www.gurobi.com/) installed then you may wish to add the [Gurobi.jl](https://github.com/jump-dev/Gurobi.jl) package.
+For solving linear and integer programs, CBC and GLPK solvers are used, though [Gurobi](https://www.gurobi.com/) will be used (for difficult problems such as p-median and DDSM in JEMSS) if it is installed along with the [Gurobi.jl](https://github.com/jump-dev/Gurobi.jl) package, as Gurobi generally solves faster.
 
 Backslashes are special characters in Julia strings and so if a path includes backslashes (e.g. `"path\to\file.txt"`), it needs to be handled as a raw string (`raw"path\to\file.txt"`) or a substitution string (`String(s"path\to\file.txt")`).
 
