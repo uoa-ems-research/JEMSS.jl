@@ -5,12 +5,10 @@
 [![codecov.io](http://codecov.io/github/uoa-ems-research/JEMSS.jl/coverage.svg?branch=master)](http://codecov.io/github/uoa-ems-research/JEMSS.jl?branch=master)
 
 ## Installation
-To install and build this package, run the following commands in the Pkg REPL mode (entered by pressing `]` from the Julia REPL; press backspace to get back):
+To install and build this package, run the following command in the Pkg REPL mode (entered by pressing `]` from the Julia REPL; press backspace to get back):
 ```julia
 pkg> add https://github.com/uoa-ems-research/JEMSS.jl
-pkg> build JEMSS
 ```
-The build script unpacks files in the [data](data) folder.
 
 ## Simulation example
 To run an example script that loads and runs a simulation and then writes statistics to files:
