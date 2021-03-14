@@ -130,14 +130,9 @@ function solveNestedMclp(pointDemands::Vector{Float}, pointFacilities::Vector{Ve
 	# IP
 	
 	model = Model()
-	jump_ge_0_19 = pkgVersions["JuMP"] >= v"0.19"
 	
 	# use cbc solver; solver speed not tested
-	if jump_ge_0_19
-		set_optimizer(model, with_optimizer(Cbc.Optimizer, logLevel=0))
-	else
-		setsolver(model, CbcSolver())
-	end
+	set_optimizer(model, with_optimizer(Cbc.Optimizer, logLevel=0))
 	
 	@variables(model, begin
 		(x[i=1:f,k=1:f], Bin) # x[i,k] = 1 if facility location i is used when there are k facilities, 0 otherwise
@@ -156,21 +151,12 @@ function solveNestedMclp(pointDemands::Vector{Float}, pointFacilities::Vector{Ve
 	end)
 	
 	# solve
-	xValue = yValue = objVal = nothing # init
-	if jump_ge_0_19
-		@objective(model, Max, weightedCoverage)
-		optimize!(model)
-		@assert(termination_status(model) == MOI.OPTIMAL)
-		xValue = JuMP.value.(x); yValue = JuMP.value.(y) # JuMP and LightXML both export value()
-		objVal = JuMP.value(weightedCoverage)
-		results[:numFacilitiesCoverage] = JuMP.value.(numFacilitiesCoverage)
-	else
-		@objective(model, :Max, weightedCoverage)
-		solve(model)
-		xValue = getvalue(x); yValue = getvalue(y)
-		objVal = getvalue(weightedCoverage)
-		results[:numFacilitiesCoverage] = getvalue(numFacilitiesCoverage)
-	end
+	@objective(model, Max, weightedCoverage)
+	optimize!(model)
+	@assert(termination_status(model) == MOI.OPTIMAL)
+	xValue = JuMP.value.(x); yValue = JuMP.value.(y) # JuMP and LightXML both export value()
+	objVal = JuMP.value(weightedCoverage)
+	results[:numFacilitiesCoverage] = JuMP.value.(numFacilitiesCoverage)
 	
 	results[:objVal] = objVal
 	results[:x] = xValue

@@ -19,7 +19,7 @@
 function initTemp2!(sim::Simulation;
 	busyFraction::Float = 0.5, travelTimeCost::Float = 10.0, maxIdleAmbTravelTime::Float = 1.0, maxNumNearestStations::Int = 99)
 	
-	pkgVersions["JuMP"] >= v"0.19" && @warn("Move up module 'temp2' will not work with JuMP v0.19 and above.")
+	@warn("Move up module 'temp2' will not work with JuMP v0.19 and above.")
 	
 	# shorthand names:
 	tmp = sim.moveUpData.temp2Data

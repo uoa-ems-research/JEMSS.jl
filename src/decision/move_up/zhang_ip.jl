@@ -169,15 +169,8 @@ function solveZhangIp(stationSlots::Vector{Int}, benefitSlots::Vector{Float}, am
 	
 	# using JuMP
 	model = Model()
-	jump_ge_0_19 = pkgVersions["JuMP"] >= v"0.19"
-	if jump_ge_0_19
-		set_optimizer(model, with_optimizer(GLPK.Optimizer)) # faster without presolve; have not compared with other solvers
-		# set_optimizer(model, with_optimizer(Cbc.Optimizer, logLevel=0))
-	else
-		setsolver(model, GLPKSolverMIP(presolve=true)) # presolve does not seem to affect solve time
-		# setsolver(model, CbcSolver()) # slower than glpk
-		# @stdout_silent(setsolver(model, GurobiSolver(OutputFlag=0))) # slower than glpk, with any gurobi presolve value
-	end
+	set_optimizer(model, with_optimizer(GLPK.Optimizer)) # faster without presolve; have not compared with other solvers
+	# set_optimizer(model, with_optimizer(Cbc.Optimizer, logLevel=0))
 	
 	@variable(model, x[i=1:a,j=1:s], Bin)
 	marginalBenefitsDecreasing ? @variable(model, 0 <= y[k=1:n] <= 1) : @variable(model, y[k=1:n], Bin)
@@ -203,20 +196,14 @@ function solveZhangIp(stationSlots::Vector{Int}, benefitSlots::Vector{Float}, am
 	end)
 	
 	# solve
-	if jump_ge_0_19
-		@objective(model, Max, totalBenefitAtStations - totalAmbTravelCosts)
-		@stdout_silent optimize!(model)
-		@assert(termination_status(model) == MOI.OPTIMAL)
-	else
-		@objective(model, :Max, totalBenefitAtStations - totalAmbTravelCosts)
-		status = @stdout_silent solve(model)
-		@assert(status == :Optimal)
-	end
+	@objective(model, Max, totalBenefitAtStations - totalAmbTravelCosts)
+	@stdout_silent optimize!(model)
+	@assert(termination_status(model) == MOI.OPTIMAL)
 	
 	# get solution
 	vals = Dict()
-	vals[:x] = jump_ge_0_19 ? JuMP.value.(x) : getvalue(x)
-	vals[:y] = jump_ge_0_19 ? JuMP.value.(y) : getvalue(y)
+	vals[:x] = JuMP.value.(x)
+	vals[:y] = JuMP.value.(y)
 	
 	# solution
 	sol = convert(Array{Bool,2}, round.(vals[:x]))

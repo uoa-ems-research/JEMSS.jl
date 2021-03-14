@@ -39,17 +39,9 @@ function solvePMedian(n::Int, c::Array{Float,2}; options::Dict{Symbol,T} = pMedi
 	solver = options[:solver]
 	args = options[:solver_args]
 	kwargs = options[:solver_kwargs]
-	jump_ge_0_19 = pkgVersions["JuMP"] >= v"0.19"
-	if jump_ge_0_19
-		if solver == "cbc" set_optimizer(model, with_optimizer(Cbc.Optimizer, logLevel=0, args...; kwargs...))
-		elseif solver == "glpk" set_optimizer(model, with_optimizer(GLPK.Optimizer, args...; kwargs...))
-		elseif solver == "gurobi" @stdout_silent(set_optimizer(model, with_optimizer(Gurobi.Optimizer, OutputFlag=0, args...; kwargs...)))
-		end
-	else
-		if solver == "cbc" setsolver(model, CbcSolver(args...; kwargs...))
-		elseif solver == "glpk" setsolver(model, GLPKSolverMIP(args...; kwargs...))
-		elseif solver == "gurobi" @stdout_silent(setsolver(model, GurobiSolver(OutputFlag=0, args...; kwargs...)))
-		end
+	if solver == "cbc" set_optimizer(model, with_optimizer(Cbc.Optimizer, logLevel=0, args...; kwargs...))
+	elseif solver == "glpk" set_optimizer(model, with_optimizer(GLPK.Optimizer, args...; kwargs...))
+	elseif solver == "gurobi" @stdout_silent(set_optimizer(model, with_optimizer(Gurobi.Optimizer, OutputFlag=0, args...; kwargs...)))
 	end
 	
 	# variables
@@ -67,19 +59,13 @@ function solvePMedian(n::Int, c::Array{Float,2}; options::Dict{Symbol,T} = pMedi
 	end)
 	
 	# solve
-	if jump_ge_0_19
-		@objective(model, Min, cost)
-		@stdout_silent optimize!(model)
-		@assert(termination_status(model) == MOI.OPTIMAL)
-	else
-		@objective(model, :Min, cost)
-		status = @stdout_silent solve(model)
-		@assert(status == :Optimal)
-	end
+	@objective(model, Min, cost)
+	@stdout_silent optimize!(model)
+	@assert(termination_status(model) == MOI.OPTIMAL)
 	
-	results[:cost] = jump_ge_0_19 ? JuMP.value.(cost) : getvalue(cost)
-	results[:x] = jump_ge_0_19 ? JuMP.value.(x) : getvalue(x)
-	results[:y] = jump_ge_0_19 ? JuMP.value.(y) : getvalue(y)
+	results[:cost] = JuMP.value.(cost)
+	results[:x] = JuMP.value.(x)
+	results[:y] = JuMP.value.(y)
 	results[:model] = model
 	
 	solution = convert(Vector{Int}, round.(results[:x])) # solution[i] = 1 if facility location i should be used, 0 otherwise
