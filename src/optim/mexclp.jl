@@ -92,7 +92,6 @@ function solveMexclp!(sim::Simulation;
 	
 	model = Model()
 	
-	# if true
 	if !all(v -> issorted(v, rev=true), pointCoverCountBenefit)
 		set_optimizer(model, with_optimizer(GLPK.Optimizer)) # solve speed not tested
 		
