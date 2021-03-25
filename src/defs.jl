@@ -30,8 +30,6 @@ const sourceDir = @__DIR__
 const sourcePath = sourceDir # for compat
 const jemssDir = realpath(joinpath(sourceDir, ".."))
 
-const pkgVersions = Pkg.installed()
-
 const Deployment = Vector{Int} # deployment[i] gives index of station to deploy ambulance i to
 const CompTable = Array{Int,2} # compTable[i,j] gives number of ambulances to place at station j when there are i free ambulances
 const NestedCompTable = Vector{Int} # nested compliance table can be represented as a list of station indices; nestedCompTable[1:i] gives indices of stations that i free ambulances should be placed at

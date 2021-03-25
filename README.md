@@ -5,12 +5,10 @@
 [![codecov.io](http://codecov.io/github/uoa-ems-research/JEMSS.jl/coverage.svg?branch=master)](http://codecov.io/github/uoa-ems-research/JEMSS.jl?branch=master)
 
 ## Installation
-To install and build this package, run the following commands in the Pkg REPL mode:
+To install and build this package, run the following command in the Pkg REPL mode (entered by pressing `]` from the Julia REPL; press backspace to get back):
 ```julia
 pkg> add https://github.com/uoa-ems-research/JEMSS.jl
-pkg> build JEMSS
 ```
-The build script unpacks files in the [data](data) folder.
 
 ## Simulation example
 To run an example script that loads and runs a simulation and then writes statistics to files:
@@ -51,6 +49,8 @@ Notes on animation:
 
 ## Misc
 See readme files in subfolders of JEMSS/data/cities/*/data for data sources and license details of files in the respective folder.
+
+For solving linear and integer programs, CBC and GLPK solvers are used, though [Gurobi](https://www.gurobi.com/) will be used (for difficult problems such as p-median and DDSM in JEMSS) if it is installed along with the [Gurobi.jl](https://github.com/jump-dev/Gurobi.jl) package, as Gurobi generally solves faster.
 
 Backslashes are special characters in Julia strings and so if a path includes backslashes (e.g. `"path\to\file.txt"`), it needs to be handled as a raw string (`raw"path\to\file.txt"`) or a substitution string (`String(s"path\to\file.txt")`).
 

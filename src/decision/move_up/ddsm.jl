@@ -143,20 +143,12 @@ function ddsmMoveUp(sim::Simulation)
 	
 	# using JuMP
 	model = Model()
-	jump_ge_0_19 = pkgVersions["JuMP"] >= v"0.19"
 	solver = options[:solver] # shorthand
 	args = options[:solver_args] # shorthand
 	kwargs = options[:solver_kwargs] # shorthand
-	if jump_ge_0_19
-		if solver == "cbc" set_optimizer(model, with_optimizer(Cbc.Optimizer, logLevel=0, args...; kwargs...))
-		elseif solver == "glpk" set_optimizer(model, with_optimizer(GLPK.Optimizer, args...; kwargs...))
-		elseif solver == "gurobi" @stdout_silent(set_optimizer(model, with_optimizer(Gurobi.Optimizer, OutputFlag=0, args...; kwargs...)))
-		end
-	else
-		if solver == "cbc" setsolver(model, CbcSolver(args...; kwargs...))
-		elseif solver == "glpk" setsolver(model, GLPKSolverMIP(args...; kwargs...))
-		elseif solver == "gurobi" @stdout_silent(setsolver(model, GurobiSolver(OutputFlag=0, args...; kwargs...)))
-		end
+	if solver == "cbc" set_optimizer(model, with_optimizer(Cbc.Optimizer, logLevel=0, args...; kwargs...))
+	elseif solver == "glpk" set_optimizer(model, with_optimizer(GLPK.Optimizer, args...; kwargs...))
+	elseif solver == "gurobi" @stdout_silent(set_optimizer(model, with_optimizer(Gurobi.Optimizer, OutputFlag=0, args...; kwargs...)))
 	end
 	
 	m = model # shorthand
@@ -202,22 +194,16 @@ function ddsmMoveUp(sim::Simulation)
 	end)
 	
 	# solve
-	if jump_ge_0_19
-		@objective(model, Max, demandCoveredTwiceT1 - totalAmbTravelCost - slackCost)
-		@stdout_silent optimize!(model)
-		@assert(termination_status(model) == MOI.OPTIMAL)
-	else
-		@objective(model, :Max, demandCoveredTwiceT1 - totalAmbTravelCost - slackCost)
-		status = @stdout_silent solve(model)
-		@assert(status == :Optimal)
-	end
+	@objective(model, Max, demandCoveredTwiceT1 - totalAmbTravelCost - slackCost)
+	@stdout_silent optimize!(model)
+	@assert(termination_status(model) == MOI.OPTIMAL)
 	
 	# get solution
 	vals = Dict()
-	vals[:x] = jump_ge_0_19 ? JuMP.value.(x) : getvalue(x)
-	vals[:y11] = jump_ge_0_19 ? JuMP.value.(y11) : getvalue(y11)
-	vals[:y12] = jump_ge_0_19 ? JuMP.value.(y12) : getvalue(y12)
-	vals[:y2] = jump_ge_0_19 ? JuMP.value.(y2) : getvalue(y2)
+	vals[:x] = JuMP.value.(x)
+	vals[:y11] = JuMP.value.(y11)
+	vals[:y12] = JuMP.value.(y12)
+	vals[:y2] = JuMP.value.(y2)
 	
 	sol = convert(Array{Bool,2}, round.(vals[:x]))
 	

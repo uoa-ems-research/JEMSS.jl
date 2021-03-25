@@ -383,16 +383,8 @@ end
 
 # read geographic data from file and apply f to data
 function readGeoFile(f::Function, filename::String)
-	if pkgVersions["ArchGDAL"] >= v"0.3"
-		return ArchGDAL.read(filename) do dataset
-			f(dataset)
-		end
-	else
-		return ArchGDAL.registerdrivers() do
-			ArchGDAL.read(filename) do dataset
-				f(dataset)
-			end
-		end
+	return ArchGDAL.read(filename) do dataset
+		f(dataset)
 	end
 end
 

@@ -138,14 +138,9 @@ function solveMclp(n::Int, pointDemands::Vector{Float}, pointFacilities::Vector{
 	@assert(length(pointFacilities) == p)
 	
 	model = Model()
-	jump_ge_0_19 = pkgVersions["JuMP"] >= v"0.19"
 	
 	# use cbc solver; solve speed not tested
-	if jump_ge_0_19
-		set_optimizer(model, with_optimizer(Cbc.Optimizer, logLevel=0))
-	else
-		setsolver(model, CbcSolver())
-	end
+	set_optimizer(model, with_optimizer(Cbc.Optimizer, logLevel=0))
 	
 	@variables(model, begin
 		(x[i=1:l], Bin) # x[i] = true if facility location i is used, false otherwise
@@ -162,19 +157,11 @@ function solveMclp(n::Int, pointDemands::Vector{Float}, pointFacilities::Vector{
 	end)
 	
 	# solve
-	xValue = yValue = nothing # init
-	if jump_ge_0_19
-		@objective(model, Max, coverage)
-		optimize!(model)
-		@assert(termination_status(model) == MOI.OPTIMAL)
-		xValue = JuMP.value.(x); yValue = JuMP.value.(y) # JuMP and LightXML both export value()
-		objVal = JuMP.value(coverage)
-	else
-		@objective(model, :Max, coverage)
-		solve(model)
-		xValue = getvalue(x); yValue = getvalue(y)
-		objVal = getvalue(coverage)
-	end
+	@objective(model, Max, coverage)
+	optimize!(model)
+	@assert(termination_status(model) == MOI.OPTIMAL)
+	xValue = JuMP.value.(x); yValue = JuMP.value.(y) # JuMP and LightXML both export value()
+	objVal = JuMP.value(coverage)
 	
 	results[:x] = xValue
 	results[:y] = yValue

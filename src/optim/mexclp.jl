@@ -91,14 +91,9 @@ function solveMexclp!(sim::Simulation;
 	p = numPoints
 	
 	model = Model()
-	jump_ge_0_19 = pkgVersions["JuMP"] >= v"0.19"
 	
 	if !all(v -> issorted(v, rev=true), pointCoverCountBenefit)
-		if jump_ge_0_19
-			set_optimizer(model, with_optimizer(GLPK.Optimizer)) # solve speed not tested
-		else
-			setsolver(model, GLPKSolverMIP(presolve=true)) # GLPKSolverMIP solves faster than CbcSolver for this formulation
-		end
+		set_optimizer(model, with_optimizer(GLPK.Optimizer)) # solve speed not tested
 		
 		@variables(model, begin
 			(x[i=1:s] >= 0, Int) # x[i] = number of ambulances assigned to station i
@@ -117,12 +112,7 @@ function solveMexclp!(sim::Simulation;
 		# - can leave out the constraint 'pointCoverOrder'
 		# - could have x variables as non-integer, though if there are multiple solutions then x values might not be naturally integer, so will leave the integer constraint
 		
-		if jump_ge_0_19
-			set_optimizer(model, with_optimizer(Cbc.Optimizer, logLevel=0)) # solve speed not tested
-		else
-			setsolver(model, CbcSolver()) # CbcSolver solves faster than GLPKSolverMIP for this formulation
-			# using CbcSolver here would be faster with presolve, but using this causes a line print when solving
-		end
+		set_optimizer(model, with_optimizer(Cbc.Optimizer, logLevel=0)) # solve speed not tested
 		
 		@variables(model, begin
 			(x[i=1:s] >= 0, Int) # x[i] = number of ambulances assigned to station i
@@ -142,19 +132,11 @@ function solveMexclp!(sim::Simulation;
 	end)
 	
 	# solve
-	xValue = yValue = nothing # init
-	if jump_ge_0_19
-		@objective(model, Max, expectedCoverage)
-		optimize!(model)
-		@assert(termination_status(model) == MOI.OPTIMAL)
-		xValue = JuMP.value.(x); yValue = JuMP.value.(y) # JuMP and LightXML both export value()
-		objVal = JuMP.value(expectedCoverage)
-	else
-		@objective(model, :Max, expectedCoverage)
-		solve(model)
-		xValue = getvalue(x); yValue = getvalue(y)
-		objVal = getvalue(expectedCoverage)
-	end
+	@objective(model, Max, expectedCoverage)
+	optimize!(model)
+	@assert(termination_status(model) == MOI.OPTIMAL)
+	xValue = JuMP.value.(x); yValue = JuMP.value.(y) # JuMP and LightXML both export value()
+	objVal = JuMP.value(expectedCoverage)
 	
 	results[:x] = xValue
 	results[:y] = yValue
