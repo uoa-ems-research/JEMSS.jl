@@ -134,6 +134,7 @@ function animAddAmbs!(client::Client, sim::Simulation)
 	messageDict = createMessageDict("add_ambulance")
 	for amb in sim.ambulances
 		copy!(amb.currentLoc, getRouteCurrentLocation!(sim.net, amb.route, sim.time))
+		copy!(amb.destLoc, amb.currentLoc)
 		messageDict["ambulance"] = amb
 		write(client, json(messageDict))
 	end
@@ -156,6 +157,18 @@ function updateFrame!(client::Client, sim::Simulation, time::Float)
 		else
 			amb.movedLoc = false
 		end
+	end
+	delete!(messageDict, "ambulance")
+	
+	changeMessageDict!(messageDict, "update_ambulance_dest")
+	for amb in sim.ambulances
+		if amb.status == ambMobilising
+			copy!(amb.destLoc, sim.calls[amb.callIndex].location)
+		else
+			copy!(amb.destLoc, amb.route.endLoc)
+		end
+		messageDict["ambulance"] = amb
+		write(client, json(messageDict))
 	end
 	delete!(messageDict, "ambulance")
 	
@@ -404,7 +417,7 @@ end
 # JSON.lower for various types, to reduce length of string returned from json function
 JSON.lower(n::Node) = Dict("index" => n.index, "location" => n.location)
 JSON.lower(a::Arc) = Dict("index" => a.index)
-JSON.lower(a::Ambulance) = Dict("index" => a.index, "currentLoc" => a.currentLoc, "endLoc" => a.route.endLoc)
+JSON.lower(a::Ambulance) = Dict("index" => a.index, "currentLoc" => a.currentLoc, "destLoc" => a.destLoc)
 JSON.lower(c::Call) = Dict("index" => c.index, "currentLoc" => c.currentLoc, "priority" => c.priority)
 JSON.lower(h::Hospital) = Dict("index" => h.index, "location" => h.location)
 JSON.lower(s::Station) = Dict("index" => s.index, "location" => s.location)

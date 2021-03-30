@@ -48,6 +48,12 @@ function findNearestDispatchableAmb!(sim::Simulation, call::Call)
 			(node1, time1) = getRouteNextNode!(sim, amb.route, travelMode.index, sim.time) # next/nearest node in ambulance route
 			travelTime = shortestPathTravelTime(sim.net, travelMode.index, node1, node2) # time spent on network
 			travelTime += time1 + time2 # add time to get on and off network
+			if amb.status == ambIdleAtStation
+				travelTime += sim.mobilisationDelay.expectedDuration
+			elseif amb.status == ambMobilising
+				@assert(amb.event.form == ambMobilised)
+				travelTime += amb.event.time - sim.time # remaining mobilisation delay
+			end
 			if minTime > travelTime
 				ambIndex = amb.index
 				minTime = travelTime

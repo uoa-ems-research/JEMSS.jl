@@ -173,6 +173,7 @@ function simulateEvent!(sim::Simulation, event::Event)
 	elseif form == callArrives simulateEventCallArrives!(sim, event)
 	elseif form == considerDispatch simulateEventConsiderDispatch!(sim, event)
 	elseif form == ambDispatched simulateEventAmbDispatched!(sim, event)
+	elseif form == ambMobilised simulateEventAmbMobilised!(sim, event)
 	elseif form == ambReachesCall simulateEventAmbReachesCall!(sim, event)
 	elseif form == ambGoesToHospital simulateEventAmbGoesToHospital!(sim, event)
 	elseif form == ambReachesHospital simulateEventAmbReachesHospital!(sim, event)
@@ -281,9 +282,14 @@ function simulateEventAmbDispatched!(sim::Simulation, event::Event)
 	call = sim.calls[event.callIndex]
 	@assert(in(call.status, (callScreening, callQueued, callWaitingForAmb))) # callWaitingForAmb if call bumped
 	
-	setAmbStatus!(sim, ambulance, ambGoingToCall, sim.time)
 	ambulance.callIndex = call.index
-	changeRoute!(sim, ambulance.route, sim.responseTravelPriorities[call.priority], sim.time, call.location, call.nearestNodeIndex)
+	mobiliseAmbulance = sim.mobilisationDelay.use && in(ambulance.status, (ambIdleAtStation, ambMobilising))
+	if mobiliseAmbulance
+		setAmbStatus!(sim, ambulance, ambMobilising, sim.time)
+	else
+		setAmbStatus!(sim, ambulance, ambGoingToCall, sim.time)
+		changeRoute!(sim, ambulance.route, sim.responseTravelPriorities[call.priority], sim.time, call.location, call.nearestNodeIndex)
+	end
 	
 	setCallStatus!(call, callWaitingForAmb, sim.time)
 	call.ambIndex = event.ambIndex
@@ -299,13 +305,41 @@ function simulateEventAmbDispatched!(sim::Simulation, event::Event)
 		ambulance.dispatchStartLocCounts[ambLoc] = get(ambulance.dispatchStartLocCounts, ambLoc, 0) + 1
 	end
 	
-	addEvent!(sim.eventList; parentEvent = event, form = ambReachesCall, time = ambulance.route.endTime, ambulance = ambulance, call = call)
+	if mobiliseAmbulance
+		mobilisationDelay = 0.0 # init
+		if ambulance.prevStatus == ambMobilising
+			@assert(ambulance.event.form == ambMobilised)
+			mobilisationDelay = ambulance.event.time - sim.time # remaining mobilisation delay
+		else
+			mobilisationDelay = rand(sim.mobilisationDelay.distrRng)
+		end
+		@assert(mobilisationDelay >= 0)
+		addEvent!(sim.eventList; parentEvent = event, form = ambMobilised, time = sim.time + mobilisationDelay, ambulance = ambulance, call = call)
+	else
+		addEvent!(sim.eventList; parentEvent = event, form = ambReachesCall, time = ambulance.route.endTime, ambulance = ambulance, call = call)
+	end
 	
 	if sim.moveUpData.useMoveUp
 		if in(sim.moveUpData.moveUpModule, (compTableModule, ddsmModule, zhangIpModule, temp0Module, temp1Module, temp2Module))
 			addEvent!(sim.eventList; parentEvent = event, form = considerMoveUp, time = sim.time, ambulance = ambulance, addEventToAmb = false)
 		end
 	end
+end
+
+function simulateEventAmbMobilised!(sim::Simulation, event::Event)
+	@assert(event.form == ambMobilised)
+	ambulance = sim.ambulances[event.ambIndex]
+	@assert(ambulance.status == ambMobilising)
+	call = sim.calls[event.callIndex]
+	@assert(call.status == callWaitingForAmb)
+	@assert(sim.mobilisationDelay.use)
+	
+	setAmbStatus!(sim, ambulance, ambGoingToCall, sim.time)
+	changeRoute!(sim, ambulance.route, sim.responseTravelPriorities[call.priority], sim.time, call.location, call.nearestNodeIndex)
+	
+	# call status unchanged
+	
+	addEvent!(sim.eventList; parentEvent = event, form = ambReachesCall, time = ambulance.route.endTime, ambulance = ambulance, call = call)
 end
 
 function simulateEventAmbReachesCall!(sim::Simulation, event::Event)

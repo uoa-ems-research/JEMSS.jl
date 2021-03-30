@@ -435,6 +435,18 @@ function readMapFile(filename::String)
 	return map
 end
 
+function readMobilisationDelayFile(filename::String)::MobilisationDelay
+	tables = readTablesFromFile(filename)
+
+	table = tables["mobilisationDelay"]
+	use = table.columns["use"][1]
+	distr = table.columns["distribution"][1] |> Meta.parse |> eval
+	seed = table.columns["seed"][1]
+	expectedDuration = table.columns["expectedDuration"][1]
+	
+	return MobilisationDelay(use, DistrRng(distr, seed = seed), expectedDuration)
+end
+
 function readNodesFile(filename::String)
 	tables = readTablesFromFile(filename)
 	

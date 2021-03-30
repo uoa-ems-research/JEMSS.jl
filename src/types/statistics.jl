@@ -89,11 +89,13 @@ function AmbulanceStats(sim::Simulation, ambulance::Ambulance)::AmbulanceStats
 	stats.numCallsTransported = ambulance.numCallsTransported
 	stats.numDispatches = ambulance.numDispatches
 	stats.numDispatchesFromStation = ambulance.numDispatchesFromStation
+	stats.numDispatchesWhileMobilising = ambulance.numDispatchesWhileMobilising
 	stats.numDispatchesOnRoad = ambulance.numDispatchesOnRoad
 	stats.numDispatchesOnFree = ambulance.numDispatchesOnFree
 	stats.numRedispatches = ambulance.numRedispatches
 	stats.numMoveUps = ambulance.numMoveUps
 	stats.numMoveUpsFromStation = ambulance.numMoveUpsFromStation
+	stats.numMoveUpsWhileMobilising = ambulance.numMoveUpsWhileMobilising
 	stats.numMoveUpsOnRoad = ambulance.numMoveUpsOnRoad
 	stats.numMoveUpsOnFree = ambulance.numMoveUpsOnFree
 	stats.numMoveUpsReturnToPrevStation = ambulance.numMoveUpsReturnToPrevStation
@@ -110,8 +112,8 @@ function AmbulanceStats(sim::Simulation, ambulance::Ambulance)::AmbulanceStats
 	end
 	
 	if checkMode
-		@assert(stats.numDispatches == stats.numDispatchesFromStation + stats.numDispatchesOnRoad + stats.numDispatchesOnFree) # numRedispatches already included in numDispatchesOnRoad
-		@assert(stats.numMoveUps == stats.numMoveUpsFromStation + stats.numMoveUpsOnRoad + stats.numMoveUpsOnFree)
+		@assert(stats.numDispatches == stats.numDispatchesFromStation + stats.numDispatchesWhileMobilising + stats.numDispatchesOnRoad + stats.numDispatchesOnFree) # numRedispatches already included in numDispatchesOnRoad
+		@assert(stats.numMoveUps == stats.numMoveUpsFromStation + stats.numMoveUpsWhileMobilising + stats.numMoveUpsOnRoad + stats.numMoveUpsOnFree)
 		
 		ambStatuses = setdiff(instances(AmbStatus), (ambNullStatus,))
 		@assert(isapprox(sum(s -> stats.statusDurations[s], ambStatuses), sim.time - sim.startTime))
@@ -120,13 +122,15 @@ function AmbulanceStats(sim::Simulation, ambulance::Ambulance)::AmbulanceStats
 		travelStatuses = ambStatusSets[ambTravelling]
 		@assert(stats.numCallsTreated == sum(stats.statusTransitionCounts[:, Int(ambAtCall)]))
 		@assert(stats.numCallsTransported == stats.statusTransitionCounts[Int(ambGoingToHospital), Int(ambAtHospital)])
-		@assert(stats.numDispatches == sum(stats.statusTransitionCounts[:, Int(ambGoingToCall)]))
-		@assert(stats.numDispatchesFromStation == stats.statusTransitionCounts[Int(ambIdleAtStation), Int(ambGoingToCall)])
+		@assert(stats.numDispatches == sum(stats.statusTransitionCounts[:, Int(ambMobilising)]) + sum(stats.statusTransitionCounts[:, Int(ambGoingToCall)]) - stats.statusTransitionCounts[Int(ambMobilising), Int(ambGoingToCall)])
+		@assert(stats.numDispatchesFromStation == sum(stats.statusTransitionCounts[Int(ambIdleAtStation), [Int(ambMobilising), Int(ambGoingToCall)]]))
+		@assert(stats.numDispatchesWhileMobilising == stats.statusTransitionCounts[Int(ambMobilising), Int(ambMobilising)])
 		@assert(stats.numDispatchesOnRoad == sum(s -> stats.statusTransitionCounts[Int(s), Int(ambGoingToCall)], travelStatuses))
 		@assert(stats.numDispatchesOnFree == stats.statusTransitionCounts[Int(ambFreeAfterCall), Int(ambGoingToCall)])
-		@assert(stats.numRedispatches == stats.statusTransitionCounts[Int(ambGoingToCall), Int(ambGoingToCall)])
+		@assert(stats.numRedispatches == sum(stats.statusTransitionCounts[[Int(ambMobilising), Int(ambGoingToCall)], [Int(ambMobilising), Int(ambGoingToCall)]]) - stats.statusTransitionCounts[Int(ambMobilising), Int(ambGoingToCall)])
 		@assert(stats.numMoveUps == sum(stats.statusTransitionCounts[:, Int(ambMovingUpToStation)]))
 		@assert(stats.numMoveUpsFromStation == stats.statusTransitionCounts[Int(ambIdleAtStation), Int(ambMovingUpToStation)])
+		@assert(stats.numMoveUpsWhileMobilising == stats.statusTransitionCounts[Int(ambMobilising), Int(ambMovingUpToStation)])
 		@assert(stats.numMoveUpsOnRoad == sum(s -> stats.statusTransitionCounts[Int(s), Int(ambMovingUpToStation)], travelStatuses))
 		@assert(stats.numMoveUpsOnFree == stats.statusTransitionCounts[Int(ambFreeAfterCall), Int(ambMovingUpToStation)])
 	end

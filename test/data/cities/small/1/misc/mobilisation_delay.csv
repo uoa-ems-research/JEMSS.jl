@@ -1,0 +1,3 @@
+mobilisationDelay,
+use,distribution,seed,expectedDuration
+true,"truncated(Normal(1/60/24, 0.2/60/24), 0, Inf)",0,0.000694445

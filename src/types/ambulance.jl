@@ -84,11 +84,25 @@ function setAmbStatus!(sim::Simulation, ambulance::Ambulance, status::AmbStatus,
 	ambulance.statusTransitionCounts[Int(prevStatus), Int(status)] += 1
 	
 	# stats
-	if status == ambGoingToCall
+	if status == ambMobilising
 		# dispatch stats
 		ambulance.numDispatches += 1
 		if prevStatus == ambIdleAtStation
 			ambulance.numDispatchesFromStation += 1
+		elseif prevStatus == ambMobilising # can happen for redispatch
+			ambulance.numDispatchesWhileMobilising += 1
+			ambulance.numRedispatches += 1
+		else error()
+		end
+	elseif status == ambGoingToCall
+		# dispatch stats
+		if prevStatus != ambMobilising # already counted dispatches where prevStatus == ambMobilising
+			ambulance.numDispatches += 1
+		end
+		if prevStatus == ambIdleAtStation
+			ambulance.numDispatchesFromStation += 1
+		elseif prevStatus == ambMobilising
+		# 	ambulance.numDispatchesWhileMobilising += 1 # removed; this is already counted
 		elseif isGoingToStation(prevStatus)
 			ambulance.numDispatchesOnRoad += 1
 		elseif prevStatus == ambGoingToCall
@@ -107,6 +121,8 @@ function setAmbStatus!(sim::Simulation, ambulance::Ambulance, status::AmbStatus,
 		ambulance.numMoveUps += 1
 		if prevStatus == ambIdleAtStation
 			ambulance.numMoveUpsFromStation += 1
+		elseif prevStatus == ambMobilising
+			ambulance.numMoveUpsWhileMobilising += 1
 		elseif isGoingToStation(prevStatus)
 			ambulance.numMoveUpsOnRoad += 1
 		elseif prevStatus == ambFreeAfterCall
@@ -120,7 +136,7 @@ function setAmbStatus!(sim::Simulation, ambulance::Ambulance, status::AmbStatus,
 	end
 end
 
-isBusy(s::AmbStatus)::Bool = in(s, (ambGoingToCall, ambAtCall, ambGoingToHospital, ambAtHospital))
+isBusy(s::AmbStatus)::Bool = in(s, (ambMobilising, ambGoingToCall, ambAtCall, ambGoingToHospital, ambAtHospital))
 isFree(s::AmbStatus)::Bool = in(s, (ambIdleAtStation, ambFreeAfterCall, ambReturningToStation, ambMovingUpToStation))
 isWorking(s::AmbStatus)::Bool = !in(s, (ambNullStatus, ambSleeping)) # ambulance is operational, whether busy or free; should return same value as isBusy(s) || isFree(s)
 isGoingToStation(s::AmbStatus)::Bool = in(s, (ambReturningToStation, ambMovingUpToStation))

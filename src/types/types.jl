@@ -265,17 +265,20 @@ mutable struct Ambulance
 	# for animation:
 	currentLoc::Location
 	movedLoc::Bool
+	destLoc::Location # destination
 	
 	# count statistics:
 	numCallsTreated::Int # total number of calls that ambulance provided treatment on scene
 	numCallsTransported::Int # total number of calls transported to hospital
 	numDispatches::Int
 	numDispatchesFromStation::Int # total number of dispatches while at station
+	numDispatchesWhileMobilising::Int # total number of dispatches while mobilising
 	numDispatchesOnRoad::Int # total number of dispatches while on road
 	numDispatchesOnFree::Int # total number of dispatches after ambulance becomes free
 	numRedispatches::Int # number of times that ambulance is redispatched from one call to another
 	numMoveUps::Int
 	numMoveUpsFromStation::Int
+	numMoveUpsWhileMobilising::Int
 	numMoveUpsOnRoad::Int
 	numMoveUpsOnFree::Int
 	numMoveUpsReturnToPrevStation::Int # number of times that ambulance is told to return to the station from which it started move up (see moveUpFromStationIndex)
@@ -302,8 +305,8 @@ mutable struct Ambulance
 	# redispatchCounts::Array{Int,2} # redispatchCounts[Int(p1),Int(p2)] gives number of redispatches from call of priority p1 to call of priority p2
 	
 	Ambulance() = new(nullIndex, ambNullStatus, nullIndex, nullIndex, Route(), Event(), nullAmbClass,
-		Location(), false,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+		Location(), false, Location(),
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 		Dict(), Dict(), Array{Int,2}(undef,0,0),
 		nullTime, ambNullStatus, nullIndex,
 		Dict())
@@ -398,6 +401,16 @@ mutable struct Station
 	Station() = new(nullIndex, Location(), 0, nullIndex, nullDist,
 		OffsetVector(Float[],0), 0, nullTime,
 		Dict())
+end
+
+mutable struct MobilisationDelay
+	use::Bool # true if using mobilisation delay
+	
+	distrRng::DistrRng
+	expectedDuration::Float
+	
+	MobilisationDelay() = new(false, DistrRng(Normal(0,0), seed = 0), 0.0)
+	MobilisationDelay(use, distrRng, expectedDuration) = new(use, distrRng, expectedDuration)
 end
 
 # conditions that determine ambulance redispatch behaviour
@@ -924,12 +937,14 @@ mutable struct AmbulanceStats
 	
 	numDispatches::Int # all dispatches
 	numDispatchesFromStation::Int # total number of dispatches while at station
+	numDispatchesWhileMobilising::Int # total number of dispatches while mobilising
 	numDispatchesOnRoad::Int # total number of dispatches while on road
 	numDispatchesOnFree::Int # total number of dispatches after ambulance becomes free
 	numRedispatches::Int # number of times that ambulance is redispatched from one call to another
 	
 	numMoveUps::Int
 	numMoveUpsFromStation::Int
+	numMoveUpsWhileMobilising::Int
 	numMoveUpsOnRoad::Int
 	numMoveUpsOnFree::Int
 	numMoveUpsReturnToPrevStation::Int
@@ -940,8 +955,8 @@ mutable struct AmbulanceStats
 	
 	AmbulanceStats() = new(nullIndex,
 		0, 0,
-		0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0,
 		Dict(), Dict(), Array{Int,2}(undef,0,0))
 end
 
@@ -1090,6 +1105,8 @@ mutable struct Simulation
 	
 	resim::Resimulation
 	
+	mobilisationDelay::MobilisationDelay
+	
 	# decision logic
 	addCallToQueue!::Function
 	findAmbToDispatch!::Function
@@ -1137,6 +1154,7 @@ mutable struct Simulation
 		0, 0, 0, 0,
 		[], 0, [],
 		Resimulation(),
+		MobilisationDelay(),
 		nullFunction, nullFunction, Redispatch(Val{:default}), MoveUpData(),
 		Demand(), DemandCoverage(),
 		Dict(), [],

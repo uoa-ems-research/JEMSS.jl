@@ -20,7 +20,7 @@ function writeAmbsFile(filename::String, ambulances::Vector{Ambulance}; writeOut
 	row1(a::Ambulance) = [a.index, a.stationIndex, Int(a.class)]
 	
 	if writeOutputFields
-		counts = (:numCallsTreated, :numCallsTransported, :numDispatches, :numDispatchesFromStation, :numDispatchesOnRoad, :numDispatchesOnFree, :numRedispatches, :numMoveUps, :numMoveUpsFromStation, :numMoveUpsOnRoad, :numMoveUpsOnFree, :numMoveUpsReturnToPrevStation)
+		counts = (:numCallsTreated, :numCallsTransported, :numDispatches, :numDispatchesFromStation, :numDispatchesWhileMobilising, :numDispatchesOnRoad, :numDispatchesOnFree, :numRedispatches, :numMoveUps, :numMoveUpsFromStation, :numMoveUpsWhileMobilising, :numMoveUpsOnRoad, :numMoveUpsOnFree, :numMoveUpsReturnToPrevStation)
 		countHeaders = [string(c) for c in counts]
 		
 		statuses = (setdiff(instances(AmbStatus), (ambNullStatus,))..., instances(AmbStatusSet)...)
@@ -59,6 +59,7 @@ function writeCallsFile(filename::String, startTime::Float, calls::Vector{Call};
 	
 	if writeOutputFields
 		header = vcat(header, ["dispatchTime", "ambArrivalTime", "hospitalArrivalTime", "numBumps", "wasQueued", "ambDispatchLoc.x", "ambDispatchLoc.y", "ambStatusBeforeDispatch", "chosenHospitalIndex", "queuedDuration", "bumpedDuration", "waitingForAmbDuration", "responseDuration", "ambGoingToCallDuration", "transportDuration", "serviceDuration"])
+		# add mobilisation delay?
 		row2(c::Call) = [c.dispatchTime, c.ambArrivalTime, c.hospitalArrivalTime, c.numBumps, Int(c.wasQueued), c.ambDispatchLoc.x, c.ambDispatchLoc.y, string(c.ambStatusBeforeDispatch), c.chosenHospitalIndex, c.queuedDuration, c.bumpedDuration, c.waitingForAmbDuration, c.responseDuration, c.ambGoingToCallDuration, c.transportDuration, c.serviceDuration]
 	end
 	
@@ -386,7 +387,7 @@ function makeAmbsStatsTables(periods::Vector{SimPeriodStats})::Vector{Table}
 	@assert(all(p -> length(p.ambulances) == numAmbs, periods))
 	
 	ambulanceTables = Table[]
-	counts = (:numCallsTreated, :numCallsTransported, :numDispatches, :numDispatchesFromStation, :numDispatchesOnRoad, :numDispatchesOnFree, :numRedispatches, :numMoveUps, :numMoveUpsFromStation, :numMoveUpsOnRoad, :numMoveUpsOnFree, :numMoveUpsReturnToPrevStation)
+	counts = (:numCallsTreated, :numCallsTransported, :numDispatches, :numDispatchesFromStation, :numDispatchesWhileMobilising, :numDispatchesOnRoad, :numDispatchesOnFree, :numRedispatches, :numMoveUps, :numMoveUpsFromStation, :numMoveUpsWhileMobilising, :numMoveUpsOnRoad, :numMoveUpsOnFree, :numMoveUpsReturnToPrevStation)
 	statuses = (setdiff(instances(AmbStatus), (ambNullStatus,))..., instances(AmbStatusSet)...)
 	travelStatuses = (sort(collect(ambStatusSets[ambTravelling]))..., instances(AmbStatusSet)...)
 	countHeaders = [string(c) for c in counts]

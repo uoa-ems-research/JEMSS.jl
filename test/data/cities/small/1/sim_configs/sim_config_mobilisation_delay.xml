@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<simConfig>
+	<!-- paths: -->
+	<inputPath>$jemssDir/test/data/cities/small/1/generated</inputPath>
+	<outputPath/>
+	
+	<simFiles>
+		<!-- <path>inputPath</path> -->
+		<ambulances>ambulances.csv</ambulances>
+		<arcs>arcs.csv</arcs>
+		<calls>calls.csv</calls>
+		<hospitals>hospitals.csv</hospitals>
+		<map>map.csv</map>
+		<mobilisationDelay>../misc/mobilisation_delay.csv</mobilisationDelay>
+		<nodes>nodes.csv</nodes>
+		<priorities>priorities.csv</priorities>
+		<rNetTravels>r_net_travels.jls</rNetTravels>
+		<redispatch>../misc/redispatch.csv</redispatch>
+		<stations>stations.csv</stations>
+		<travel>../travel.csv</travel>
+	</simFiles>
+	
+	<writeOutput>false</writeOutput>
+	<outputFiles/>
+	
+	<resim>false</resim>
+	
+	<decision>
+		<callQueueing>addCallToQueueSortPriorityThenTime!</callQueueing>
+		<dispatch>findNearestDispatchableAmb!</dispatch>
+		<moveUp>
+			<module>none</module>
+		</moveUp>
+	</decision>
+	
+</simConfig>
