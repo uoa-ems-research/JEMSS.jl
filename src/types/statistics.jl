@@ -95,7 +95,6 @@ function AmbulanceStats(sim::Simulation, ambulance::Ambulance)::AmbulanceStats
 	stats.numRedispatches = ambulance.numRedispatches
 	stats.numMoveUps = ambulance.numMoveUps
 	stats.numMoveUpsFromStation = ambulance.numMoveUpsFromStation
-	stats.numMoveUpsWhileMobilising = ambulance.numMoveUpsWhileMobilising
 	stats.numMoveUpsOnRoad = ambulance.numMoveUpsOnRoad
 	stats.numMoveUpsOnFree = ambulance.numMoveUpsOnFree
 	stats.numMoveUpsReturnToPrevStation = ambulance.numMoveUpsReturnToPrevStation
@@ -113,7 +112,7 @@ function AmbulanceStats(sim::Simulation, ambulance::Ambulance)::AmbulanceStats
 	
 	if checkMode
 		@assert(stats.numDispatches == stats.numDispatchesFromStation + stats.numDispatchesWhileMobilising + stats.numDispatchesOnRoad + stats.numDispatchesOnFree) # numRedispatches already included in numDispatchesOnRoad
-		@assert(stats.numMoveUps == stats.numMoveUpsFromStation + stats.numMoveUpsWhileMobilising + stats.numMoveUpsOnRoad + stats.numMoveUpsOnFree)
+		@assert(stats.numMoveUps == stats.numMoveUpsFromStation + stats.numMoveUpsOnRoad + stats.numMoveUpsOnFree)
 		
 		ambStatuses = setdiff(instances(AmbStatus), (ambNullStatus,))
 		@assert(isapprox(sum(s -> stats.statusDurations[s], ambStatuses), sim.time - sim.startTime))
@@ -130,7 +129,6 @@ function AmbulanceStats(sim::Simulation, ambulance::Ambulance)::AmbulanceStats
 		@assert(stats.numRedispatches == sum(stats.statusTransitionCounts[[Int(ambMobilising), Int(ambGoingToCall)], [Int(ambMobilising), Int(ambGoingToCall)]]) - stats.statusTransitionCounts[Int(ambMobilising), Int(ambGoingToCall)])
 		@assert(stats.numMoveUps == sum(stats.statusTransitionCounts[:, Int(ambMovingUpToStation)]))
 		@assert(stats.numMoveUpsFromStation == stats.statusTransitionCounts[Int(ambIdleAtStation), Int(ambMovingUpToStation)])
-		@assert(stats.numMoveUpsWhileMobilising == stats.statusTransitionCounts[Int(ambMobilising), Int(ambMovingUpToStation)])
 		@assert(stats.numMoveUpsOnRoad == sum(s -> stats.statusTransitionCounts[Int(s), Int(ambMovingUpToStation)], travelStatuses))
 		@assert(stats.numMoveUpsOnFree == stats.statusTransitionCounts[Int(ambFreeAfterCall), Int(ambMovingUpToStation)])
 	end

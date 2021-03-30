@@ -20,7 +20,7 @@ function writeAmbsFile(filename::String, ambulances::Vector{Ambulance}; writeOut
 	row1(a::Ambulance) = [a.index, a.stationIndex, Int(a.class)]
 	
 	if writeOutputFields
-		counts = (:numCallsTreated, :numCallsTransported, :numDispatches, :numDispatchesFromStation, :numDispatchesWhileMobilising, :numDispatchesOnRoad, :numDispatchesOnFree, :numRedispatches, :numMoveUps, :numMoveUpsFromStation, :numMoveUpsWhileMobilising, :numMoveUpsOnRoad, :numMoveUpsOnFree, :numMoveUpsReturnToPrevStation)
+		counts = (:numCallsTreated, :numCallsTransported, :numDispatches, :numDispatchesFromStation, :numDispatchesWhileMobilising, :numDispatchesOnRoad, :numDispatchesOnFree, :numRedispatches, :numMoveUps, :numMoveUpsFromStation, :numMoveUpsOnRoad, :numMoveUpsOnFree, :numMoveUpsReturnToPrevStation)
 		countHeaders = [string(c) for c in counts]
 		
 		statuses = (setdiff(instances(AmbStatus), (ambNullStatus,))..., instances(AmbStatusSet)...)
@@ -387,7 +387,7 @@ function makeAmbsStatsTables(periods::Vector{SimPeriodStats})::Vector{Table}
 	@assert(all(p -> length(p.ambulances) == numAmbs, periods))
 	
 	ambulanceTables = Table[]
-	counts = (:numCallsTreated, :numCallsTransported, :numDispatches, :numDispatchesFromStation, :numDispatchesWhileMobilising, :numDispatchesOnRoad, :numDispatchesOnFree, :numRedispatches, :numMoveUps, :numMoveUpsFromStation, :numMoveUpsWhileMobilising, :numMoveUpsOnRoad, :numMoveUpsOnFree, :numMoveUpsReturnToPrevStation)
+	counts = (:numCallsTreated, :numCallsTransported, :numDispatches, :numDispatchesFromStation, :numDispatchesWhileMobilising, :numDispatchesOnRoad, :numDispatchesOnFree, :numRedispatches, :numMoveUps, :numMoveUpsFromStation, :numMoveUpsOnRoad, :numMoveUpsOnFree, :numMoveUpsReturnToPrevStation)
 	statuses = (setdiff(instances(AmbStatus), (ambNullStatus,))..., instances(AmbStatusSet)...)
 	travelStatuses = (sort(collect(ambStatusSets[ambTravelling]))..., instances(AmbStatusSet)...)
 	countHeaders = [string(c) for c in counts]

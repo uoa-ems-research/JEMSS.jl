@@ -121,8 +121,6 @@ function setAmbStatus!(sim::Simulation, ambulance::Ambulance, status::AmbStatus,
 		ambulance.numMoveUps += 1
 		if prevStatus == ambIdleAtStation
 			ambulance.numMoveUpsFromStation += 1
-		elseif prevStatus == ambMobilising
-			ambulance.numMoveUpsWhileMobilising += 1
 		elseif isGoingToStation(prevStatus)
 			ambulance.numMoveUpsOnRoad += 1
 		elseif prevStatus == ambFreeAfterCall

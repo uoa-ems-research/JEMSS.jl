@@ -373,7 +373,6 @@ function statsDictFromPeriodStatsList(periods::Vector{SimPeriodStats}; conf = 0.
 	d["ambs"]["avgDailyNumRedispatches"] = getAmbsStat(:numRedispatches)
 	d["ambs"]["avgDailyNumMoveUps"] = getAmbsStat(:numMoveUps)
 	d["ambs"]["avgDailyNumMoveUpsFromStation"] = getAmbsStat(:numMoveUpsFromStation)
-	d["ambs"]["avgDailyNumMoveUpsWhileMobilising"] = getAmbsStat(:numMoveUpsWhileMobilising)
 	d["ambs"]["avgDailyNumMoveUpsOnRoad"] = getAmbsStat(:numMoveUpsOnRoad)
 	d["ambs"]["avgDailyNumMoveUpsOnFree"] = getAmbsStat(:numMoveUpsOnFree)
 	d["ambs"]["avgDailyNumMoveUpsReturnToPrevStation"] = getAmbsStat(:numMoveUpsReturnToPrevStation)

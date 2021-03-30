@@ -278,7 +278,6 @@ mutable struct Ambulance
 	numRedispatches::Int # number of times that ambulance is redispatched from one call to another
 	numMoveUps::Int
 	numMoveUpsFromStation::Int
-	numMoveUpsWhileMobilising::Int
 	numMoveUpsOnRoad::Int
 	numMoveUpsOnFree::Int
 	numMoveUpsReturnToPrevStation::Int # number of times that ambulance is told to return to the station from which it started move up (see moveUpFromStationIndex)
@@ -306,7 +305,7 @@ mutable struct Ambulance
 	
 	Ambulance() = new(nullIndex, ambNullStatus, nullIndex, nullIndex, Route(), Event(), nullAmbClass,
 		Location(), false, Location(),
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 		Dict(), Dict(), Array{Int,2}(undef,0,0),
 		nullTime, ambNullStatus, nullIndex,
 		Dict())
@@ -944,7 +943,6 @@ mutable struct AmbulanceStats
 	
 	numMoveUps::Int
 	numMoveUpsFromStation::Int
-	numMoveUpsWhileMobilising::Int
 	numMoveUpsOnRoad::Int
 	numMoveUpsOnFree::Int
 	numMoveUpsReturnToPrevStation::Int
@@ -956,7 +954,7 @@ mutable struct AmbulanceStats
 	AmbulanceStats() = new(nullIndex,
 		0, 0,
 		0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0,
 		Dict(), Dict(), Array{Int,2}(undef,0,0))
 end
 
