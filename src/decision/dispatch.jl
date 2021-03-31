@@ -18,7 +18,7 @@ function isAmbDispatchable(sim::Simulation, ambulance::Ambulance, call::Call)
 	status = ambulance.status
 	if isFree(status)
 		return true
-	elseif status == ambGoingToCall
+	elseif in(status, (ambMobilising, ambGoingToCall))
 		return isAmbRedispatchable(sim, ambulance, sim.calls[ambulance.callIndex], call)
 	end
 	return false
@@ -26,7 +26,7 @@ end
 
 # return true if ambulance may be redispatched from its current call to a different call, false otherwise.
 function isAmbRedispatchable(sim::Simulation, ambulance::Ambulance, fromCall::Call, toCall::Call)
-	@assert(ambulance.status == ambGoingToCall)
+	@assert(in(ambulance.status, (ambMobilising, ambGoingToCall)))
 	@assert(ambulance.callIndex == fromCall.index)
 	sim.redispatch.allow || return false
 	return sim.redispatch.conditions[Int(fromCall.priority), Int(toCall.priority)]
@@ -51,8 +51,8 @@ function findNearestDispatchableAmb!(sim::Simulation, call::Call)
 			if amb.status == ambIdleAtStation
 				travelTime += sim.mobilisationDelay.expectedDuration
 			elseif amb.status == ambMobilising
-				@assert(amb.event.form == ambMobilised)
-				travelTime += amb.event.time - sim.time # remaining mobilisation delay
+				@assert(amb.mobilisationTime >= sim.time)
+				travelTime += amb.mobilisationTime - sim.time # remaining mobilisation delay
 			end
 			if minTime > travelTime
 				ambIndex = amb.index

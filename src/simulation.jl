@@ -256,7 +256,7 @@ function simulateEventConsiderDispatch!(sim::Simulation, event::Event)
 		# remove any previously scheduled events
 		if isGoingToStation(ambulance.status)
 			deleteEvent!(sim.eventList, ambulance.event)
-		elseif ambulance.status == ambGoingToCall
+		elseif in(ambulance.status, (ambMobilising, ambGoingToCall))
 			# if ambulance was going to call, redirect ambulance
 			deleteEvent!(sim.eventList, ambulance.event)
 			
@@ -278,7 +278,7 @@ function simulateEventAmbDispatched!(sim::Simulation, event::Event)
 	@assert(event.form == ambDispatched)
 	ambulance = sim.ambulances[event.ambIndex]
 	status = ambulance.status # shorthand
-	@assert(isFree(status) || status == ambGoingToCall)
+	@assert(isFree(status) || in(status, (ambMobilising, ambGoingToCall)))
 	call = sim.calls[event.callIndex]
 	@assert(in(call.status, (callScreening, callQueued, callWaitingForAmb))) # callWaitingForAmb if call bumped
 	
@@ -308,13 +308,13 @@ function simulateEventAmbDispatched!(sim::Simulation, event::Event)
 	if mobiliseAmbulance
 		mobilisationDelay = 0.0 # init
 		if ambulance.prevStatus == ambMobilising
-			@assert(ambulance.event.form == ambMobilised)
-			mobilisationDelay = ambulance.event.time - sim.time # remaining mobilisation delay
+			# ambulance.mobilisation time unchanged
+			@assert(ambulance.mobilisationTime != nullTime)
 		else
-			mobilisationDelay = rand(sim.mobilisationDelay.distrRng)
+			ambulance.mobilisationTime = sim.time + rand(sim.mobilisationDelay.distrRng)
 		end
-		@assert(mobilisationDelay >= 0)
-		addEvent!(sim.eventList; parentEvent = event, form = ambMobilised, time = sim.time + mobilisationDelay, ambulance = ambulance, call = call)
+		@assert(ambulance.mobilisationTime >= sim.time)
+		addEvent!(sim.eventList; parentEvent = event, form = ambMobilised, time = ambulance.mobilisationTime, ambulance = ambulance, call = call)
 	else
 		addEvent!(sim.eventList; parentEvent = event, form = ambReachesCall, time = ambulance.route.endTime, ambulance = ambulance, call = call)
 	end
@@ -336,6 +336,7 @@ function simulateEventAmbMobilised!(sim::Simulation, event::Event)
 	
 	setAmbStatus!(sim, ambulance, ambGoingToCall, sim.time)
 	changeRoute!(sim, ambulance.route, sim.responseTravelPriorities[call.priority], sim.time, call.location, call.nearestNodeIndex)
+	ambulance.mobilisationTime = nullTime # reset
 	
 	# call status unchanged
 	
