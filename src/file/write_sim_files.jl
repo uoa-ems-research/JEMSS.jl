@@ -59,7 +59,6 @@ function writeCallsFile(filename::String, startTime::Float, calls::Vector{Call};
 	
 	if writeOutputFields
 		header = vcat(header, ["dispatchTime", "ambArrivalTime", "hospitalArrivalTime", "numBumps", "wasQueued", "ambDispatchLoc.x", "ambDispatchLoc.y", "ambStatusBeforeDispatch", "chosenHospitalIndex", "queuedDuration", "bumpedDuration", "waitingForAmbDuration", "responseDuration", "ambGoingToCallDuration", "transportDuration", "serviceDuration"])
-		# add mobilisation delay?
 		row2(c::Call) = [c.dispatchTime, c.ambArrivalTime, c.hospitalArrivalTime, c.numBumps, Int(c.wasQueued), c.ambDispatchLoc.x, c.ambDispatchLoc.y, string(c.ambStatusBeforeDispatch), c.chosenHospitalIndex, c.queuedDuration, c.bumpedDuration, c.waitingForAmbDuration, c.responseDuration, c.ambGoingToCallDuration, c.transportDuration, c.serviceDuration]
 	end
 	
