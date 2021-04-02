@@ -729,7 +729,7 @@ mutable struct CoverBound
 	accountForQueuedDurations::Bool # for queued calls, calculate maximum coverage according to time remaining to reach call on time; set to false for original cover bound which calculates coverage of queued calls as if the call was queued for no time
 	queuedDurationsToSample::Vector{Float} # will solve MCLP for different coverage times based on how long the calls were queued; use if accountForQueuedDurations == true
 	
-	dispatchDelay::Float
+	dispatchDelay::Float # assumed constant for simpler modelling; add any mobilisation delay to this
 	
 	# amb busy duration
 	ambBusyDurationProbUpperBounds::Array{Float,2} # ambBusyDurationProbUpperBounds[i,j] = upper bound on probability of dispatched amb being busy for duration <= ambBusyDurationsToSample[i] for j free ambulances

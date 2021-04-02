@@ -54,7 +54,7 @@ end
 
 function dmexclpMoveUp(sim::Simulation, newlyFreedAmb::Ambulance)
 	@assert(sim.moveUpData.useMoveUp)
-	@assert(newlyFreedAmb.status != ambGoingToCall)
+	@assert(newlyFreedAmb.status == ambFreeAfterCall)
 	@assert(sim.demand.initialised && sim.demandCoverage.initialised)
 	
 	# shorthand names:
