@@ -37,26 +37,32 @@ function findNearestDispatchableAmb!(sim::Simulation, call::Call)
 	
 	# nearest node to call, this is independent of chosen ambulance
 	(node2, dist2) = (call.nearestNodeIndex, call.nearestNodeDist)
-	travelMode = getTravelMode!(sim.travel, sim.responseTravelPriorities[call.priority], sim.time)
-	time2 = offRoadTravelTime(travelMode, dist2) # time to reach nearest node
 	
 	# for ambulances that can be dispatched, find the one with shortest travel time to call
 	ambIndex = nullIndex # nearest free ambulance
-	minTime = Inf
+	minDuration = Inf
 	for amb in sim.ambulances
 		if isAmbDispatchable(sim, amb, call)
-			(node1, time1) = getRouteNextNode!(sim, amb.route, travelMode.index, sim.time) # next/nearest node in ambulance route
-			travelTime = shortestPathTravelTime(sim.net, travelMode.index, node1, node2) # time spent on network
-			travelTime += time1 + time2 # add time to get on and off network
+			# get time that ambulance will mobilise
+			mobilisationTime = sim.time
 			if amb.status == ambIdleAtStation
-				travelTime += sim.mobilisationDelay.expectedDuration
+				mobilisationTime += sim.mobilisationDelay.expectedDuration
 			elseif amb.status == ambMobilising
 				@assert(amb.mobilisationTime >= sim.time)
-				travelTime += amb.mobilisationTime - sim.time # remaining mobilisation delay
+				mobilisationTime = amb.mobilisationTime
 			end
-			if minTime > travelTime
+			responseDuration = mobilisationTime - sim.time # will add travel time next
+			
+			# duration on network
+			travelMode = getTravelMode!(sim.travel, sim.responseTravelPriorities[call.priority], sim.time; startTime = mobilisationTime)
+			(node1, time1) = getRouteNextNode!(sim, amb.route, travelMode.index, sim.time) # next/nearest node in ambulance route
+			responseDuration += shortestPathTravelTime(sim.net, travelMode.index, node1, node2) # time spent on network
+			time2 = offRoadTravelTime(travelMode, dist2) # time to reach nearest node
+			responseDuration += time1 + time2 # add time to get on and off network
+			
+			if minDuration > responseDuration
 				ambIndex = amb.index
-				minTime = travelTime
+				minDuration = responseDuration
 			end
 		end
 	end
