@@ -45,11 +45,13 @@ function findNearestDispatchableAmb!(sim::Simulation, call::Call)
 		if isAmbDispatchable(sim, amb, call)
 			# get time that ambulance will mobilise
 			mobilisationTime = sim.time
-			if amb.status == ambIdleAtStation
-				mobilisationTime += sim.mobilisationDelay.expectedDuration
-			elseif amb.status == ambMobilising
-				@assert(amb.mobilisationTime >= sim.time)
-				mobilisationTime = amb.mobilisationTime
+			if sim.mobilisationDelay.use
+				if amb.status == ambIdleAtStation
+					mobilisationTime += sim.mobilisationDelay.expectedDuration
+				elseif amb.status == ambMobilising
+					@assert(amb.mobilisationTime >= sim.time)
+					mobilisationTime = amb.mobilisationTime
+				end
 			end
 			responseDuration = mobilisationTime - sim.time # will add travel time next
 			
