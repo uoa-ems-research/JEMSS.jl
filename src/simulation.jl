@@ -311,6 +311,7 @@ function simulateEventAmbDispatched!(sim::Simulation, event::Event)
 			# ambulance.mobilisation time unchanged
 			@assert(ambulance.mobilisationTime != nullTime)
 		else
+			@assert(ambulance.prevStatus == ambIdleAtStation)
 			ambulance.mobilisationTime = sim.time + rand(sim.mobilisationDelay.distrRng)
 		end
 		@assert(ambulance.mobilisationTime >= sim.time)
