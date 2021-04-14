@@ -688,6 +688,12 @@ function readStatsControlFile(filename::String)
 	return d
 end
 
+function readStatsDictFile(filename::String)
+	table = readTablesFromFile(filename)["statsDict"]
+	cols = table.columns # shorthand
+	return Dict([string(cols["stat"][i]) => MeanAndHalfWidth(cols["mean"][i], cols["halfWidth"][i]) for i = 1:size(table.data, 1)])
+end
+
 function readTravelFile(filename::String)
 	tables = readTablesFromFile(filename)
 	
