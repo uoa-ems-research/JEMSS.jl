@@ -172,8 +172,10 @@ limitations under the License.
 				case "move_ambulance":
 					var a = msgObj.ambulance
 					moveAmb(a.index, a.currentLoc.y, a.currentLoc.x)
-					updateAmbDest(a)
 					break;
+				case "update_ambulance_dest":
+					var a = msgObj.ambulance
+					updateAmbDest(a)
 				case "add_call":
 					var c = msgObj.call
 					addCall(c.index, c.currentLoc.y, c.currentLoc.x, c.priority)
@@ -546,7 +548,7 @@ limitations under the License.
 			// 'a' is ambulance from julia
 			ambs[a.index].destLine.setLatLngs([
 				[a.currentLoc.y, a.currentLoc.x],
-				[a.endLoc.y, a.endLoc.x]
+				[a.destLoc.y, a.destLoc.x]
 			])
 		}
 		

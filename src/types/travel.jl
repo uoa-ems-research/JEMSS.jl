@@ -14,12 +14,16 @@
 ##########################################################################
 
 # get travel mode for given time and priority
-function getTravelMode!(travel::Travel, priority::Priority, startTime::Float)
-	@assert(startTime != nullTime)
+# currentTime is sim.time, startTime is time that travel starts (>= sim.time)
+function getTravelMode!(travel::Travel, priority::Priority, currentTime::Float; startTime::Float = currentTime)
+	@assert(currentTime != nullTime)
 	@assert(priority != nullPriority)
+	@assert(currentTime <= startTime)
 	
-	updateTravelToTime!(travel, startTime) # update travel.recentSetsStartTimesIndex for given start time
-	travelSetIndex = travel.setsTimeOrder[travel.recentSetsStartTimesIndex]
+	travel.recentSetsStartTimesIndex = getTravelSetsStartTimesIndex(travel, currentTime)
+	
+	i = getTravelSetsStartTimesIndex(travel, startTime)
+	travelSetIndex = travel.setsTimeOrder[i]
 	travelModeIndex = travel.modeLookup[travelSetIndex, Int(priority)]
 	
 	return travel.modes[travelModeIndex]
@@ -31,8 +35,8 @@ end
 	# return travelMode.index
 # end
 
-# update travel.recentSetsStartTimesIndex up to given travel start time
-function updateTravelToTime!(travel::Travel, startTime::Float)
+# get travel setsStartTimes index for given travel start time
+function getTravelSetsStartTimesIndex(travel::Travel, startTime::Float)
 	# shorthand:
 	setsStartTimes = travel.setsStartTimes
 	i = travel.recentSetsStartTimesIndex
@@ -40,16 +44,12 @@ function updateTravelToTime!(travel::Travel, startTime::Float)
 	
 	@assert(setsStartTimes[i] <= startTime) # otherwise, have gone back in time?
 	
-	if i == n || startTime < setsStartTimes[i+1]
-		return # do nothing
-	end
-	
-	# use linear search to update position in setsStartTimes
+	# use linear search to find position in setsStartTimes
 	while i < n && setsStartTimes[i+1] <= startTime
 		i += 1
 	end
 	
-	travel.recentSetsStartTimesIndex = i
+	return i
 end
 
 # find nearest hospital to call location, given the travel priority

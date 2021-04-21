@@ -47,12 +47,17 @@ Notes on animation:
 - For the timing control, 'Sim speed' is the ratio of simulation time to real time; speed of 1 gives real-time (real slow) simulation. This requires the input files to have time units in days.
 - Input files should have (latitude, longitude) coordinates, these correspond with the y and x fields in the input files.
 
-## Misc
-See readme files in subfolders of JEMSS/data/cities/*/data for data sources and license details of files in the respective folder.
+## City data
 
+Data to simulate Auckland can be found in [data/cities/auckland](data/cities/auckland).
+Additional cities can be added and should follow the same folder structure, with a data folder containing the raw data along with any sources and licenses, and another folder containing the input files for the calls, stations, road network, etc.
+If you have a city model that you would like to add, please submit a pull request.
+Note that any large files should be compressed as a .gz file using `BinaryProvider.package(dir)`.
+
+## Misc
 For solving linear and integer programs, CBC and GLPK solvers are used, though [Gurobi](https://www.gurobi.com/) will be used (for difficult problems such as p-median and DDSM in JEMSS) if it is installed along with the [Gurobi.jl](https://github.com/jump-dev/Gurobi.jl) package, as Gurobi generally solves faster.
 
-Backslashes are special characters in Julia strings and so if a path includes backslashes (e.g. `"path\to\file.txt"`), it needs to be handled as a raw string (`raw"path\to\file.txt"`) or a substitution string (`String(s"path\to\file.txt")`).
+Backslashes are special characters in Julia strings and so if a path includes backslashes (e.g. `"path\to\file.txt"`), it needs to be handled as a raw string (`raw"path\to\file.txt"`).
 
 ## License
 This project is licensed under the Apache License 2.0 - see the [LICENSE.md](LICENSE.md) file for details.

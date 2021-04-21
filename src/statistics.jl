@@ -380,6 +380,7 @@ function statsDictFromPeriodStatsList(periods::Vector{SimPeriodStats}; conf = 0.
 	# durations - status
 	d["ambs"]["avgDailySleepingDurationHours"] = getAmbsDurationStat(ambSleeping) * 24
 	d["ambs"]["avgDailyIdleAtStationDurationHours"] = getAmbsDurationStat(ambIdleAtStation) * 24
+	d["ambs"]["avgDailyMobilisingDurationHours"] = getAmbsDurationStat(ambMobilising) * 24
 	d["ambs"]["avgDailyGoingToCallDurationHours"] = getAmbsDurationStat(ambGoingToCall) * 24
 	d["ambs"]["avgDailyAtCallDurationHours"] = getAmbsDurationStat(ambAtCall) * 24
 	d["ambs"]["avgDailyGoingToHospitalDurationHours"] = getAmbsDurationStat(ambGoingToHospital) * 24

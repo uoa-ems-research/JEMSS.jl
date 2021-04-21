@@ -1,0 +1,8 @@
+Notes on each folder:
+1 - Used for tests in files: test_code_runs.jl, test_demand_coverage.jl, test_route.jl.
+2 - Used for testing example script transient.jl.
+3 - Used for testing various call gen configs.
+4 - Used in test_route.jl; road is straight line with one intersection.
+5 - Used for testing the running of sim replications.
+6 - Used for testing several example scripts.
+7 - Used for testing cover bound.

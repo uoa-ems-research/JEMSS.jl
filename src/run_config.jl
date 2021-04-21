@@ -159,6 +159,9 @@ function initSim(configFilename::String;
 	if hasInputFile("demandCoverage")
 		sim.demandCoverage = readDemandCoverageFile(simFilePath("demandCoverage"))
 	end
+	if hasInputFile("mobilisationDelay")
+		sim.mobilisationDelay = readMobilisationDelayFile(simFilePath("mobilisationDelay"))
+	end
 	
 	printInitTime()
 	

@@ -435,6 +435,18 @@ function readMapFile(filename::String)
 	return map
 end
 
+function readMobilisationDelayFile(filename::String)::MobilisationDelay
+	tables = readTablesFromFile(filename)
+
+	table = tables["mobilisationDelay"]
+	use = table.columns["use"][1]
+	distr = table.columns["distribution"][1] |> Meta.parse |> eval
+	seed = table.columns["seed"][1]
+	expectedDuration = table.columns["expectedDuration"][1]
+	
+	return MobilisationDelay(use, DistrRng(distr, seed = seed), expectedDuration)
+end
+
 function readNodesFile(filename::String)
 	tables = readTablesFromFile(filename)
 	
@@ -674,6 +686,12 @@ function readStatsControlFile(filename::String)
 	d["responseDurationHistBinWidth"] = responseDurationHistBinWidth
 	
 	return d
+end
+
+function readStatsDictFile(filename::String)
+	table = readTablesFromFile(filename)["statsDict"]
+	cols = table.columns # shorthand
+	return Dict([string(cols["stat"][i]) => MeanAndHalfWidth(cols["mean"][i], cols["halfWidth"][i]) for i = 1:size(table.data, 1)])
 end
 
 function readTravelFile(filename::String)

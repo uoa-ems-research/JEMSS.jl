@@ -261,16 +261,20 @@ mutable struct Ambulance
 	event::Event # next/current event, useful for deleting next event from eventList
 	class::AmbClass # class/type of ambulance
 	# schedule::Schedule # to be added
+	dispatchTime::Float # time at which amb was dispatched
+	mobilisationTime::Float # time at which amb will mobilise if there is mobilisation delay; = nullTime if not mobilising
 	
 	# for animation:
 	currentLoc::Location
 	movedLoc::Bool
+	destLoc::Location # destination
 	
 	# count statistics:
 	numCallsTreated::Int # total number of calls that ambulance provided treatment on scene
 	numCallsTransported::Int # total number of calls transported to hospital
 	numDispatches::Int
 	numDispatchesFromStation::Int # total number of dispatches while at station
+	numDispatchesWhileMobilising::Int # total number of dispatches while mobilising
 	numDispatchesOnRoad::Int # total number of dispatches while on road
 	numDispatchesOnFree::Int # total number of dispatches after ambulance becomes free
 	numRedispatches::Int # number of times that ambulance is redispatched from one call to another
@@ -301,9 +305,9 @@ mutable struct Ambulance
 	# # redispatch statistics
 	# redispatchCounts::Array{Int,2} # redispatchCounts[Int(p1),Int(p2)] gives number of redispatches from call of priority p1 to call of priority p2
 	
-	Ambulance() = new(nullIndex, ambNullStatus, nullIndex, nullIndex, Route(), Event(), nullAmbClass,
-		Location(), false,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	Ambulance() = new(nullIndex, ambNullStatus, nullIndex, nullIndex, Route(), Event(), nullAmbClass, nullTime, nullTime,
+		Location(), false, Location(),
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 		Dict(), Dict(), Array{Int,2}(undef,0,0),
 		nullTime, ambNullStatus, nullIndex,
 		Dict())
@@ -398,6 +402,16 @@ mutable struct Station
 	Station() = new(nullIndex, Location(), 0, nullIndex, nullDist,
 		OffsetVector(Float[],0), 0, nullTime,
 		Dict())
+end
+
+mutable struct MobilisationDelay
+	use::Bool # true if using mobilisation delay
+	
+	distrRng::DistrRng
+	expectedDuration::Float
+	
+	MobilisationDelay() = new(false, DistrRng(Normal(0,0), seed = 0), 0.0)
+	MobilisationDelay(use, distrRng, expectedDuration) = new(use, distrRng, expectedDuration)
 end
 
 # conditions that determine ambulance redispatch behaviour
@@ -716,7 +730,7 @@ mutable struct CoverBound
 	accountForQueuedDurations::Bool # for queued calls, calculate maximum coverage according to time remaining to reach call on time; set to false for original cover bound which calculates coverage of queued calls as if the call was queued for no time
 	queuedDurationsToSample::Vector{Float} # will solve MCLP for different coverage times based on how long the calls were queued; use if accountForQueuedDurations == true
 	
-	dispatchDelay::Float
+	dispatchDelay::Float # assumed constant for simpler modelling; add any mobilisation delay to this
 	
 	# amb busy duration
 	ambBusyDurationProbUpperBounds::Array{Float,2} # ambBusyDurationProbUpperBounds[i,j] = upper bound on probability of dispatched amb being busy for duration <= ambBusyDurationsToSample[i] for j free ambulances
@@ -924,6 +938,7 @@ mutable struct AmbulanceStats
 	
 	numDispatches::Int # all dispatches
 	numDispatchesFromStation::Int # total number of dispatches while at station
+	numDispatchesWhileMobilising::Int # total number of dispatches while mobilising
 	numDispatchesOnRoad::Int # total number of dispatches while on road
 	numDispatchesOnFree::Int # total number of dispatches after ambulance becomes free
 	numRedispatches::Int # number of times that ambulance is redispatched from one call to another
@@ -940,7 +955,7 @@ mutable struct AmbulanceStats
 	
 	AmbulanceStats() = new(nullIndex,
 		0, 0,
-		0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0,
 		0, 0, 0, 0, 0,
 		Dict(), Dict(), Array{Int,2}(undef,0,0))
 end
@@ -1090,6 +1105,8 @@ mutable struct Simulation
 	
 	resim::Resimulation
 	
+	mobilisationDelay::MobilisationDelay
+	
 	# decision logic
 	addCallToQueue!::Function
 	findAmbToDispatch!::Function
@@ -1137,6 +1154,7 @@ mutable struct Simulation
 		0, 0, 0, 0,
 		[], 0, [],
 		Resimulation(),
+		MobilisationDelay(),
 		nullFunction, nullFunction, Redispatch(Val{:default}), MoveUpData(),
 		Demand(), DemandCoverage(),
 		Dict(), [],
