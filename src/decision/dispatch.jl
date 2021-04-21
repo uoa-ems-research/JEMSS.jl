@@ -49,8 +49,8 @@ function findNearestDispatchableAmb!(sim::Simulation, call::Call)
 				if amb.status == ambIdleAtStation
 					mobilisationTime += sim.mobilisationDelay.expectedDuration
 				elseif amb.status == ambMobilising
-					@assert(amb.mobilisationTime >= sim.time)
-					mobilisationTime = amb.mobilisationTime
+					# dispatcher does not have perfect knowledge of actual dispatch duration
+					mobilisationTime += max(0, sim.mobilisationDelay.expectedDuration - (sim.time - amb.dispatchTime))
 				end
 			end
 			responseDuration = mobilisationTime - sim.time # will add travel time next

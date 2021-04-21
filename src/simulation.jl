@@ -283,6 +283,7 @@ function simulateEventAmbDispatched!(sim::Simulation, event::Event)
 	@assert(in(call.status, (callScreening, callQueued, callWaitingForAmb))) # callWaitingForAmb if call bumped
 	
 	ambulance.callIndex = call.index
+	ambulance.dispatchTime = sim.time
 	mobiliseAmbulance = sim.mobilisationDelay.use && in(ambulance.status, (ambIdleAtStation, ambMobilising))
 	if mobiliseAmbulance
 		setAmbStatus!(sim, ambulance, ambMobilising, sim.time)
