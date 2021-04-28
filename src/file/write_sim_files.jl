@@ -181,8 +181,8 @@ function writeRasterFile(filename::String, raster::Raster)
 end
 
 function writeStationsFile(filename::String, stations::Vector{Station})
-	table = Table("stations", ["index", "x", "y", "capacity"];
-		rows = [[s.index, s.location.x, s.location.y, s.capacity] for s in stations])
+	table = Table("stations", ["index", "x", "y", "capacity", "attributes"];
+		rows = [[s.index, s.location.x, s.location.y, s.capacity, json(s.attributes)] for s in stations])
 	writeTablesToFile(filename, table)
 end
 

@@ -395,6 +395,8 @@ mutable struct Station
 	index::Int
 	location::Location
 	capacity::Int # maximum number of ambulances that station can hold
+	attributes::Dict{String,Any}
+	
 	nearestNodeIndex::Int
 	nearestNodeDist::Float
 	
@@ -406,7 +408,8 @@ mutable struct Station
 	# move up statistics:
 	moveUpStartLocCounts::Dict{Location,Int} # locations (and counts) from which ambulances have started move up towards this station
 	
-	Station() = new(nullIndex, Location(), 0, nullIndex, nullDist,
+	Station() = new(nullIndex, Location(), 0, Dict(),
+		nullIndex, nullDist,
 		OffsetVector(Float[],0), 0, nullTime,
 		Dict())
 end

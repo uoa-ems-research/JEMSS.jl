@@ -642,6 +642,7 @@ function readStationsFile(filename::String)
 	
 	# create stations from data in table
 	columns = table.columns # shorthand
+	attributes = parseAttributesColumn(table)
 	stations = Vector{Station}(undef, n)
 	for i = 1:n
 		stations[i] = Station()
@@ -649,6 +650,7 @@ function readStationsFile(filename::String)
 		stations[i].location.x = columns["x"][i]
 		stations[i].location.y = columns["y"][i]
 		stations[i].capacity = columns["capacity"][i]
+		stations[i].attributes = attributes[i]
 		
 		@assert(stations[i].index == i)
 		@assert(stations[i].capacity >= 0)
