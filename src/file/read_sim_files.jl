@@ -25,11 +25,13 @@ function readAmbsFile(filename::String)
 	# create ambulances from data in table
 	ambulances = Vector{Ambulance}(undef, n)
 	columns = table.columns # shorthand
+	attributes = parseAttributesColumn(table)
 	for i = 1:n
 		ambulances[i] = Ambulance()
 		ambulances[i].index = columns["index"][i]
 		ambulances[i].stationIndex = columns["stationIndex"][i]
 		ambulances[i].class = AmbClass(columns["class"][i])
+		ambulances[i].attributes = attributes[i]
 		@assert(ambulances[i].index == i)
 	end
 	

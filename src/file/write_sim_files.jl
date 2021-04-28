@@ -16,8 +16,8 @@
 # write sim object and output files
 
 function writeAmbsFile(filename::String, ambulances::Vector{Ambulance}; writeOutputFields::Bool = false)
-	header = ["index", "stationIndex", "class"]
-	row1(a::Ambulance) = [a.index, a.stationIndex, Int(a.class)]
+	header = ["index", "stationIndex", "class", "attributes"]
+	row1(a::Ambulance) = [a.index, a.stationIndex, Int(a.class), json(a.attributes)]
 	
 	if writeOutputFields
 		counts = (:numCallsTreated, :numCallsTransported, :numDispatches, :numDispatchesFromStation, :numDispatchesWhileMobilising, :numDispatchesOnRoad, :numDispatchesOnFree, :numRedispatches, :numMoveUps, :numMoveUpsFromStation, :numMoveUpsOnRoad, :numMoveUpsOnFree, :numMoveUpsReturnToPrevStation)

@@ -260,7 +260,9 @@ mutable struct Ambulance
 	route::Route
 	event::Event # next/current event, useful for deleting next event from eventList
 	class::AmbClass # class/type of ambulance
+	attributes::Dict{String,Any}
 	# schedule::Schedule # to be added
+
 	dispatchTime::Float # time at which amb was dispatched
 	mobilisationTime::Float # time at which amb will mobilise if there is mobilisation delay; = nullTime if not mobilising
 	
@@ -305,7 +307,8 @@ mutable struct Ambulance
 	# # redispatch statistics
 	# redispatchCounts::Array{Int,2} # redispatchCounts[Int(p1),Int(p2)] gives number of redispatches from call of priority p1 to call of priority p2
 	
-	Ambulance() = new(nullIndex, ambNullStatus, nullIndex, nullIndex, Route(), Event(), nullAmbClass, nullTime, nullTime,
+	Ambulance() = new(nullIndex, ambNullStatus, nullIndex, nullIndex, Route(), Event(), nullAmbClass, Dict(),
+		nullTime, nullTime,
 		Location(), false, Location(),
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 		Dict(), Dict(), Array{Int,2}(undef,0,0),
