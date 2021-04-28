@@ -129,6 +129,7 @@ function readCallsFile(filename::String)
 	@assert(n >= 1)
 	c = table.columns # shorthand
 	(indexCol = c["index"]); (priorityCol = c["priority"]); (xCol = c["x"]); (yCol = c["y"]); (arrivalTimeCol = c["arrivalTime"]); (dispatchDelayCol = c["dispatchDelay"]); (onSceneDurationCol = c["onSceneDuration"]); (hospitalIndexCol = c["hospitalIndex"]) # shorthand, to avoid repeated dict lookups
+	attributes = parseAttributesColumn(table)
 	if haskey(c, "transport") && haskey(c, "handoverDuration")
 		(transportCol = c["transport"]); (handoverDurationCol = c["handoverDuration"]);
 	else # compat
@@ -150,6 +151,7 @@ function readCallsFile(filename::String)
 		calls[i].transport = transportCol[i]
 		calls[i].handoverDuration = calls[i].transport ? handoverDurationCol[i] : 0.0
 		calls[i].hospitalIndex = hospitalIndexCol[i]
+		calls[i].attributes = attributes[i]
 		
 		@assert(calls[i].index == i)
 		@assert(calls[i].priority != nullPriority)

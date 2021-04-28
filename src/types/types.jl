@@ -322,6 +322,7 @@ mutable struct Call
 	transport::Bool # true if requires transport to hospital
 	hospitalIndex::Int # hospital that call should be transported to. If hospitalIndex == nullIndex, will transport to nearest hospital. See also chosenHospitalIndex
 	location::Location # where call occurs
+	attributes::Dict{String,Any}
 	
 	# time/duration params:
 	arrivalTime::Float # time at which call arrives
@@ -363,7 +364,7 @@ mutable struct Call
 	# for calculating statistics:
 	statusSetTime::Float # time at which status was last set, even if set to same status value
 	
-	Call() = new(nullIndex, nullPriority, true, nullIndex, Location(),
+	Call() = new(nullIndex, nullPriority, true, nullIndex, Location(), Dict(),
 		nullTime, nullTime, nullTime, nullTime,
 		nullIndex, nullDist,
 		callNullStatus, nullIndex,
