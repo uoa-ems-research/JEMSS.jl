@@ -102,8 +102,8 @@ function writeDemandCoverageFile(filename::String, demandCoverage::DemandCoverag
 end
 
 function writeHospitalsFile(filename::String, hospitals::Vector{Hospital}; writeOutputFields::Bool = false)
-	header = ["index", "x", "y"]
-	row1(h::Hospital) = [h.index, h.location.x, h.location.y]
+	header = ["index", "x", "y", "attributes"]
+	row1(h::Hospital) = [h.index, h.location.x, h.location.y, json(h.attributes)]
 	
 	if writeOutputFields
 		header = vcat(header, ["numCalls"])

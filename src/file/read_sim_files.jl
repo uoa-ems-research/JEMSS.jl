@@ -401,12 +401,14 @@ function readHospitalsFile(filename::String)
 	
 	# create hospitals from table data
 	columns = table.columns # shorthand
+	attributes = parseAttributesColumn(table)
 	hospitals = Vector{Hospital}(undef, n)
 	for i = 1:n
 		hospitals[i] = Hospital()
 		hospitals[i].index = columns["index"][i]
 		hospitals[i].location.x = columns["x"][i]
 		hospitals[i].location.y = columns["y"][i]
+		hospitals[i].attributes = attributes[i]
 		@assert(hospitals[i].index == i)
 	end
 	

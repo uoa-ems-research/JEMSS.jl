@@ -377,6 +377,8 @@ end
 mutable struct Hospital
 	index::Int
 	location::Location
+	attributes::Dict{String,Any}
+	
 	nearestNodeIndex::Int
 	nearestNodeDist::Float
 	
@@ -384,7 +386,8 @@ mutable struct Hospital
 	numCalls::Int # total number of calls taken to hospital
 	# numCallsTotalHandoverDuration::OffsetArray{Float,1,Vector{Float}} # numCallsTotalHandoverDuration[k] gives total duration that hospital had k calls for handover
 	
-	Hospital() = new(nullIndex, Location(), nullIndex, nullDist,
+	Hospital() = new(nullIndex, Location(), Dict(),
+		nullIndex, nullDist,
 		0)
 end
 
