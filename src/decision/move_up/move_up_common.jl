@@ -61,7 +61,6 @@ function createStationPairs(sim::Simulation, travelMode::TravelMode;
 	
 	# shorthand:
 	@unpack net, travel, map, stations, numStations = sim
-	priority = lowPriority # default travel priority for this function
 	
 	maxPairsPerStation = min(maxPairsPerStation, numStations)
 	
