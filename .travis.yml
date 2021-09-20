@@ -19,4 +19,4 @@ jobs:
 notifications:
   email: false
 codecov: true
-coveralls: true
+# coveralls: true
