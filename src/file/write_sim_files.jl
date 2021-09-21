@@ -16,8 +16,8 @@
 # write sim object and output files
 
 function writeAmbsFile(filename::String, ambulances::Vector{Ambulance}; writeOutputFields::Bool = false)
-	header = ["index", "stationIndex", "class"]
-	row1(a::Ambulance) = [a.index, a.stationIndex, Int(a.class)]
+	header = ["index", "stationIndex", "class", "attributes"]
+	row1(a::Ambulance) = [a.index, a.stationIndex, Int(a.class), json(a.attributes)]
 	
 	if writeOutputFields
 		counts = (:numCallsTreated, :numCallsTransported, :numDispatches, :numDispatchesFromStation, :numDispatchesWhileMobilising, :numDispatchesOnRoad, :numDispatchesOnFree, :numRedispatches, :numMoveUps, :numMoveUpsFromStation, :numMoveUpsOnRoad, :numMoveUpsOnFree, :numMoveUpsReturnToPrevStation)
@@ -54,8 +54,8 @@ function writeCallsFile(filename::String, startTime::Float, calls::Vector{Call};
 	@assert(length(calls) >= 1)
 	miscTable = Table("miscData", ["startTime"]; rows = [[startTime]])
 	
-	header = ["index", "priority", "x", "y", "arrivalTime", "dispatchDelay", "onSceneDuration", "transport", "hospitalIndex", "handoverDuration"]
-	row1(c::Call) = [c.index, Int(c.priority), c.location.x, c.location.y, c.arrivalTime, c.dispatchDelay, c.onSceneDuration, Int(c.transport), c.hospitalIndex, c.handoverDuration]
+	header = ["index", "priority", "x", "y", "arrivalTime", "dispatchDelay", "onSceneDuration", "transport", "hospitalIndex", "handoverDuration", "attributes"]
+	row1(c::Call) = [c.index, Int(c.priority), c.location.x, c.location.y, c.arrivalTime, c.dispatchDelay, c.onSceneDuration, Int(c.transport), c.hospitalIndex, c.handoverDuration, json(c.attributes)]
 	
 	if writeOutputFields
 		header = vcat(header, ["dispatchTime", "ambArrivalTime", "hospitalArrivalTime", "numBumps", "wasQueued", "ambDispatchLoc.x", "ambDispatchLoc.y", "ambStatusBeforeDispatch", "chosenHospitalIndex", "queuedDuration", "bumpedDuration", "waitingForAmbDuration", "responseDuration", "ambGoingToCallDuration", "transportDuration", "serviceDuration"])
@@ -102,8 +102,8 @@ function writeDemandCoverageFile(filename::String, demandCoverage::DemandCoverag
 end
 
 function writeHospitalsFile(filename::String, hospitals::Vector{Hospital}; writeOutputFields::Bool = false)
-	header = ["index", "x", "y"]
-	row1(h::Hospital) = [h.index, h.location.x, h.location.y]
+	header = ["index", "x", "y", "attributes"]
+	row1(h::Hospital) = [h.index, h.location.x, h.location.y, json(h.attributes)]
 	
 	if writeOutputFields
 		header = vcat(header, ["numCalls"])
@@ -181,8 +181,8 @@ function writeRasterFile(filename::String, raster::Raster)
 end
 
 function writeStationsFile(filename::String, stations::Vector{Station})
-	table = Table("stations", ["index", "x", "y", "capacity"];
-		rows = [[s.index, s.location.x, s.location.y, s.capacity] for s in stations])
+	table = Table("stations", ["index", "x", "y", "capacity", "attributes"];
+		rows = [[s.index, s.location.x, s.location.y, s.capacity, json(s.attributes)] for s in stations])
 	writeTablesToFile(filename, table)
 end
 

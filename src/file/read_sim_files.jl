@@ -25,11 +25,13 @@ function readAmbsFile(filename::String)
 	# create ambulances from data in table
 	ambulances = Vector{Ambulance}(undef, n)
 	columns = table.columns # shorthand
+	attributes = parseAttributesColumn(table)
 	for i = 1:n
 		ambulances[i] = Ambulance()
 		ambulances[i].index = columns["index"][i]
 		ambulances[i].stationIndex = columns["stationIndex"][i]
 		ambulances[i].class = AmbClass(columns["class"][i])
+		ambulances[i].attributes = attributes[i]
 		@assert(ambulances[i].index == i)
 	end
 	
@@ -127,6 +129,7 @@ function readCallsFile(filename::String)
 	@assert(n >= 1)
 	c = table.columns # shorthand
 	(indexCol = c["index"]); (priorityCol = c["priority"]); (xCol = c["x"]); (yCol = c["y"]); (arrivalTimeCol = c["arrivalTime"]); (dispatchDelayCol = c["dispatchDelay"]); (onSceneDurationCol = c["onSceneDuration"]); (hospitalIndexCol = c["hospitalIndex"]) # shorthand, to avoid repeated dict lookups
+	attributes = parseAttributesColumn(table)
 	if haskey(c, "transport") && haskey(c, "handoverDuration")
 		(transportCol = c["transport"]); (handoverDurationCol = c["handoverDuration"]);
 	else # compat
@@ -148,6 +151,7 @@ function readCallsFile(filename::String)
 		calls[i].transport = transportCol[i]
 		calls[i].handoverDuration = calls[i].transport ? handoverDurationCol[i] : 0.0
 		calls[i].hospitalIndex = hospitalIndexCol[i]
+		calls[i].attributes = attributes[i]
 		
 		@assert(calls[i].index == i)
 		@assert(calls[i].priority != nullPriority)
@@ -397,12 +401,14 @@ function readHospitalsFile(filename::String)
 	
 	# create hospitals from table data
 	columns = table.columns # shorthand
+	attributes = parseAttributesColumn(table)
 	hospitals = Vector{Hospital}(undef, n)
 	for i = 1:n
 		hospitals[i] = Hospital()
 		hospitals[i].index = columns["index"][i]
 		hospitals[i].location.x = columns["x"][i]
 		hospitals[i].location.y = columns["y"][i]
+		hospitals[i].attributes = attributes[i]
 		@assert(hospitals[i].index == i)
 	end
 	
@@ -636,6 +642,7 @@ function readStationsFile(filename::String)
 	
 	# create stations from data in table
 	columns = table.columns # shorthand
+	attributes = parseAttributesColumn(table)
 	stations = Vector{Station}(undef, n)
 	for i = 1:n
 		stations[i] = Station()
@@ -643,6 +650,7 @@ function readStationsFile(filename::String)
 		stations[i].location.x = columns["x"][i]
 		stations[i].location.y = columns["y"][i]
 		stations[i].capacity = columns["capacity"][i]
+		stations[i].attributes = attributes[i]
 		
 		@assert(stations[i].index == i)
 		@assert(stations[i].capacity >= 0)

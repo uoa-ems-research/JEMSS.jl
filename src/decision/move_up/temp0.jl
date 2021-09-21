@@ -69,7 +69,7 @@ function temp0MoveUp(sim::Simulation)
 	
 	# limit ambulance move-up to nearest stations
 	numNearestStations = min(maxNumNearestStations, numStations)
-	sortedTimes = sort(ambToStationTimes, 2) # sortedTimes[i,:] gives travel times for ith movable ambulance to all other stations, sorted
+	sortedTimes = sort(ambToStationTimes, dims = 2) # sortedTimes[i,:] gives travel times for ith movable ambulance to all other stations, sorted
 	ambMovableToStation = (ambMovableToStation .* (ambToStationTimes .<= sortedTimes[:, numNearestStations]))
 	
 	# for ambulances idle at station, limit travel time

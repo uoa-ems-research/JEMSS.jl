@@ -214,6 +214,15 @@ function tableRowsFieldDicts(table::Table, fieldNames::Vector{T}) where T
 	return rowsFieldDicts
 end
 
+# parse json attributes column from table
+function parseAttributesColumn(table::Table)
+	if haskey(table.columns, "attributes")
+		return [isempty(s) ? Dict{String,Any}() : JSON.parse(s) for s in table.columns["attributes"]]
+	else
+		return [Dict{String,Any}() for i = 1:size(table.data, 1)]
+	end
+end
+
 # crc checksum
 function fileChecksum(filename::String)
 	return CRC32c.crc32c(Mmap.mmap(filename))
