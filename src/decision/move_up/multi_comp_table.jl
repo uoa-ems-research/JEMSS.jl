@@ -22,7 +22,7 @@ function initMultiCompTable!(sim::Simulation, multiCompTable::MultiCompTable)
 	mctd = sim.moveUpData.multiCompTableData
 	
 	# set multi-compliance table
-	# checkMultiCompTable(multiCompTable, sim) # not checking station capacities
+	checkMultiCompTable(multiCompTable, sim) # not checking station capacities
 	mctd.multiCompTable = multiCompTable
 end
 function initMultiCompTable!(sim::Simulation, multiCompTableFilename::String)
