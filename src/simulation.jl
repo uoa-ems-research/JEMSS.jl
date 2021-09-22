@@ -322,7 +322,7 @@ function simulateEventAmbDispatched!(sim::Simulation, event::Event)
 	end
 	
 	if sim.moveUpData.useMoveUp
-		if in(sim.moveUpData.moveUpModule, (compTableModule, ddsmModule, zhangIpModule, temp0Module, temp1Module, temp2Module))
+		if in(sim.moveUpData.moveUpModule, (compTableModule, ddsmModule, multiCompTableModule, zhangIpModule, temp0Module, temp1Module, temp2Module))
 			addEvent!(sim.eventList; parentEvent = event, form = considerMoveUp, time = sim.time, ambulance = ambulance, addEventToAmb = false)
 		end
 	end
@@ -436,7 +436,7 @@ function simulateEventAmbBecomesFree!(sim::Simulation, event::Event)
 		# consider move up
 		# note that this event is created after above ambReturnsToStation event, so that it will happen first and can delete the ambReturnsToStation event if needed
 		if sim.moveUpData.useMoveUp
-			if in(sim.moveUpData.moveUpModule, (compTableModule, dmexclpModule, priorityListModule, zhangIpModule, temp0Module, temp1Module, temp2Module))
+			if in(sim.moveUpData.moveUpModule, (compTableModule, dmexclpModule, multiCompTableModule, priorityListModule, zhangIpModule, temp0Module, temp1Module, temp2Module))
 				addEvent!(sim.eventList; parentEvent = event, form = considerMoveUp, time = sim.time, ambulance = ambulance, addEventToAmb = false)
 			end
 		end
@@ -488,6 +488,8 @@ function simulateEventConsiderMoveUp!(sim::Simulation, event::Event)
 			(movableAmbs, ambStations) = ddsmMoveUp(sim)
 		elseif mud.moveUpModule == dmexclpModule
 			(movableAmbs, ambStations) = dmexclpMoveUp(sim, ambulance)
+		elseif mud.moveUpModule == multiCompTableModule
+			(movableAmbs, ambStations) = multiCompTableMoveUp(sim)
 		elseif mud.moveUpModule == priorityListModule
 			(movableAmbs, ambStations) = priorityListMoveUp(sim, ambulance)
 		elseif mud.moveUpModule == zhangIpModule

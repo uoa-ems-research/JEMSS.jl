@@ -392,6 +392,12 @@ function initSim(configFilename::String;
 			mud.moveUpModule = dmexclpModule
 			dmexclpElt = findElt(moveUpElt, "dmexclp")
 			initDmexclp!(sim; busyFraction = eltContentVal(dmexclpElt, "busyFraction"))
+		
+		elseif moveUpModuleName == "multi_comp_table"
+			mud.moveUpModule = multiCompTableModule
+			multiCompTableElt = findElt(moveUpElt, "multiCompTable")
+			multiCompTableFilename = joinPathIfNotAbs(sim.inputPath, eltContentInterpVal(multiCompTableElt, "filename"))
+			initMultiCompTable!(sim, multiCompTableFilename)
 			
 		elseif moveUpModuleName == "priority_list"
 			mud.moveUpModule = priorityListModule

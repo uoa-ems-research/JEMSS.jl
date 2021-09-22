@@ -453,6 +453,41 @@ function readMobilisationDelayFile(filename::String)::MobilisationDelay
 	return MobilisationDelay(use, DistrRng(distr, seed = seed), expectedDuration)
 end
 
+function readMultiCompTableFile(filename::String)
+	tables = readTablesFromFile(filename)
+	
+	table = tables["miscData"]
+	numAmbs = table.columns["numAmbs"][1]
+	numStations = table.columns["numStations"][1]
+	
+	table = tables["multiCompTable"]
+	columns = table.columns # shorthand
+	n = size(table.data,1)
+	
+	# check that numAmbs column in table contains all ambulance counts at least once
+	@assert(all(in(columns["numAmbs"]), 1:numAmbs))
+	
+	# check that table header contains all stations
+	@assert(all(j -> in("station_$j", table.header), 1:numStations))
+	
+	# create multi-compliance table
+	mct = [Vector{Vector{Int}}() for i = 1:numAmbs] # mct[i][j][k] is jth option for number of ambs to assign to station k with i free ambs
+	@assert(isa(mct, MultiCompTable))
+	for (i,numAmbs) in enumerate(columns["numAmbs"])
+		state = zeros(Int, numStations)
+		for j = 1:numStations
+			state[j] = columns["station_$j"][i]
+		end
+		if !in(state, mct[numAmbs])
+			push!(mct[numAmbs], state)
+		end
+	end
+	
+	checkMultiCompTable(mct, numAmbs = numAmbs, numStations = numStations)
+	
+	return mct
+end
+
 function readNodesFile(filename::String)
 	tables = readTablesFromFile(filename)
 	
