@@ -32,6 +32,7 @@ const jemssDir = realpath(joinpath(sourceDir, ".."))
 
 const Deployment = Vector{Int} # deployment[i] gives index of station to deploy ambulance i to
 const CompTable = Array{Int,2} # compTable[i,j] gives number of ambulances to place at station j when there are i free ambulances
+const MultiCompTable = Vector{Vector{Vector{Int}}} # multiCompTable[i][j][k] is jth option for number of ambs to assign to station k with i free ambs
 const NestedCompTable = Vector{Int} # nested compliance table can be represented as a list of station indices; nestedCompTable[1:i] gives indices of stations that i free ambulances should be placed at
 const PriorityList = Vector{Int} # a priority list gives the order of preference for which ambulances should be redeployed (moved up) to stations; priorityList[1] has the index of the station with highest priority
 
@@ -79,4 +80,4 @@ const numPriorities = length(priorities)
 # route statuses
 @enum RouteStatus routeNullStatus routeBeforeStartNode routeOnPath routeAfterEndNode
 
-@enum MoveUpModule nullMoveUpModule compTableModule ddsmModule dmexclpModule priorityListModule zhangIpModule temp0Module temp1Module temp2Module
+@enum MoveUpModule nullMoveUpModule compTableModule ddsmModule dmexclpModule multiCompTableModule priorityListModule zhangIpModule temp0Module temp1Module temp2Module

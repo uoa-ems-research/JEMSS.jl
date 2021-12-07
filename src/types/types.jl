@@ -813,6 +813,14 @@ mutable struct DmexclpData <: MoveUpDataType
 		[], [])
 end
 
+# multi-compliance table data
+mutable struct MultiCompTableData <: MoveUpDataType
+	# parameters:
+	multiCompTable::MultiCompTable # multiCompTable[i][j][k] is jth option for number of ambs to assign to station k with i free ambs
+	
+	MultiCompTableData() = new(MultiCompTable())
+end
+
 mutable struct PriorityListData <: MoveUpDataType
 	# parameters:
 	priorityList::Vector{Int} # priorityList[i] gives station index that the ith free ambulance should be moved to
@@ -894,6 +902,7 @@ mutable struct MoveUpData
 	compTableData::CompTableData
 	ddsmData::DdsmData
 	dmexclpData::DmexclpData
+	multiCompTableData::MultiCompTableData
 	priorityListData::PriorityListData
 	zhangIpData::ZhangIpData
 	temp0Data::Temp0Data
@@ -901,7 +910,7 @@ mutable struct MoveUpData
 	temp2Data::Temp2Data
 	
 	MoveUpData() = new(false, nullMoveUpModule,
-		CompTableData(), DdsmData(), DmexclpData(), PriorityListData(), ZhangIpData(), Temp0Data(), Temp1Data(), Temp2Data())
+		CompTableData(), DdsmData(), DmexclpData(), MultiCompTableData(), PriorityListData(), ZhangIpData(), Temp0Data(), Temp1Data(), Temp2Data())
 end
 
 mutable struct File

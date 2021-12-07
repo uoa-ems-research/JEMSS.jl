@@ -121,6 +121,17 @@ function writeMapFile(filename::String, map::Map)
 	writeTablesToFile(filename, table)
 end
 
+function writeMultiCompTableFile(filename::String, multiCompTable::MultiCompTable)
+	mct = multiCompTable # shorthand
+	checkMultiCompTable(mct)
+	numAmbs = length(mct)
+	numStations = length(mct[1][1])
+	miscTable = Table("miscData", ["numAmbs", "numStations"], rows = [[numAmbs, numStations]])
+	table = Table("multiCompTable", vcat("numAmbs", ["station_$j" for j = 1:numStations]...);
+		rows = vcat([[[i, row...] for row in mct[i]] for i=1:length(mct)]...))
+	writeTablesToFile(filename, [miscTable, table])
+end
+
 function writeNodesFile(filename::String, nodes::Vector{Node})
 	mainHeaders = ["index", "x", "y", "offRoadAccess"]
 	fieldNames = setdiff(collect(keys(nodes[1].fields)), mainHeaders) # assume fields are same for all nodes

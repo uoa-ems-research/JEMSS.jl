@@ -148,7 +148,7 @@ end
 
 # solve the compliance table problem with the Hungarian algorithm (for the assignment problem),
 # this can only be used if the objective is to minimise the sum of individual ambulance redeployment costs
-function solveCompTableAssignmentProblem(stationSlots::Vector{Int}, ambToStationCost::Array{Float,2})
+function solveCompTableAssignmentProblem(stationSlots::Vector{Int}, ambToStationCost::Array{Float,2}; results::Dict = Dict())
 	# stationSlots gives the indices of stations as many times as the number of ambulances required at the station
 	# ambToStationCost[i,j] is the cost of assigning movable ambulance i to station j
 	# formulated as an assignment problem and solved with the Hungarian algorithm
@@ -173,6 +173,8 @@ function solveCompTableAssignmentProblem(stationSlots::Vector{Int}, ambToStation
 		# check that compliance table is followed
 		# @assert(Set(ambStationIndices) == Set(stationSlots)) # this may be slow
 	# end
+	
+	results[:objVal] = sum(weights[I])
 	
 	return ambStationIndices
 end
