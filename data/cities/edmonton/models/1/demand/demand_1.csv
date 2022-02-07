@@ -1,0 +1,17 @@
+demandRasters,,,,
+rasterIndex,rasterFilename,,,
+1,$jemssDir/data/cities/edmonton/data/population density/census 2016/rasters/edmonton_pop_densit_50m.tif,,,
+,,,,
+demandModes,,,,
+modeIndex,rasterIndex,priority,arrivalRate,note
+1,1,highPriority,144,= 192 x 75%
+2,1,medPriority,0,= 192 x 0%
+3,1,lowPriority,48,= 192 x 25%
+,,,,
+demandSets,,,,
+setIndex,modeIndices,,,
+1,[1; 2; 3],,,
+,,,,
+demandSetsTiming,,,,
+startTime,setIndex,,,
+0,1,,,
