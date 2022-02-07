@@ -1,0 +1,19 @@
+stations,,,,,,,,,
+index,x,y,capacity,,station #,name (AHS EMS ___ station),address,,coordinates from address (using www.gps-coordinates.net)
+1,-113.493309,53.560819,5,,5,Spruce,"11169 101 St NW, Edmonton, AB T5G 2A3, Canada",,Latitude: 53.560819 | Longitude: -113.493309
+2,-113.591074,53.459373,5,,24,Terwillegar,"131 Haddow Close NW, Edmonton, AB T6R 3E5, Canada",,Latitude: 53.459373 | Longitude: -113.591074
+3,-113.420168,53.596919,5,,25,Belvedere,"5402 136 Ave NW, Edmonton, AB T5A 0E4, Canada",,Latitude: 53.596919 | Longitude: -113.420168
+4,-113.393065,53.458361,5,,26,Meadows,"2803 34 St NW, Edmonton, AB T6T 1R1, Canada",,Latitude: 53.458361 | Longitude: -113.393065
+5,-113.593065,53.540513,5,,27,Glenwood,"15732 100a Ave NW, Edmonton, AB T5P 3Z5, Canada",,Latitude: 53.540513 | Longitude: -113.593065
+6,-113.456783,53.524711,5,,28,Bonnie Doon,"8939 83 St NW, Edmonton, AB T6C 1N9, Canada",,Latitude: 53.524711 | Longitude: -113.456783
+7,-113.628936,53.501455,5,,29,Callingwood,"6655 178 St NW, Edmonton, AB T5T 4J5, Canada",,Latitude: 53.501455 | Longitude: -113.628936
+8,-113.539335,53.6162,5,,30,Oxford,"12623 153 Ave NW, Edmonton, AB T5X 5X8, Canada",,Latitude: 53.6162 | Longitude: -113.539335
+9,-113.45906,53.576052,5,,31,Fort Road,"4H2, 12139 Fort Rd NW, Edmonton, AB T5B 4H2, Canada",,Latitude: 53.576052 | Longitude: -113.45906
+10,-113.517286,53.496447,5,,32,Lendrum,"5874 111 St NW, Edmonton, AB T6H 3G1, Canada",,Latitude: 53.496447 | Longitude: -113.517286
+11,-113.465073,53.599942,5,,33,Kildare,"8120 137 Ave NW, Edmonton, AB T5C 2L7, Canada",,Latitude: 53.599942 | Longitude: -113.465073
+12,-113.565264,53.548177,5,,34,Glenora,"10527 142 St NW, Edmonton, AB T5N 2P5, Canada",,Latitude: 53.548177 | Longitude: -113.565264
+13,-113.494986,53.491966,5,,35,Gateway,"5425 Calgary Trail NW, Edmonton, AB T6H 6A1, Canada",,Latitude: 53.491966 | Longitude: -113.494986
+14,-113.41756,53.493017,5,,36,Pylypow,"5535 50 St NW, Edmonton, AB T6B 3P1, Canada",,Latitude: 53.493017 | Longitude: -113.41756
+15,-113.525529,53.553621,5,,39,Mary Park,"11737 108 Ave NW, Edmonton, AB T5H 1B8, Canada",,Latitude: 53.553621 | Longitude: -113.525529
+16,-113.500589,53.548412,5,,42,Central,"10539 105 St NW, Edmonton, AB T5H 2W8, Canada",,Latitude: 53.548412 | Longitude: -113.500589
+17,-113.407889,53.570662,5,,-,Beacon Heights,"4304 118 Ave NW, Edmonton, AB T5W 1A6, Canada",,Latitude: 53.570662 | Longitude: -113.407889
