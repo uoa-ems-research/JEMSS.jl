@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<genConfig>
+	<outputPath></outputPath>
+	
+	<mode>calls</mode>
+	
+	<numCallsFiles>40</numCallsFiles>
+	
+	<sim>
+		<startTime>0.0</startTime>
+		<!-- <numCalls></numCalls> -->
+		<!-- <maxCallArrivalTime></maxCallArrivalTime> -->
+		<minLastCallArrivalTime>1 + 250 + 0.1</minLastCallArrivalTime>
+		
+		<!-- seeds validate 1.1: [579388590 166839762 4098111357 1121989032 3953377639 532974749 1227360161 1684011498] -->
+		<callDistributions>
+			<interarrivalTime seed="579388590">Exponential(1/(8*24))</interarrivalTime>
+			<priority seed="166839762">Categorical([0.75, 0, 0.25])</priority>
+			<dispatchDelay seed="4098111357">Normal(40/60/60/24,0)</dispatchDelay>
+			<onSceneDuration seed="1121989032">Exponential(12/60/24)</onSceneDuration>
+			<transport seed="3953377639">Bernoulli(0.75)</transport>
+			<handoverDuration seed="532974749">Weibull(2.5, 34.3/60/24)</handoverDuration>
+		</callDistributions>
+		
+		<callDensityRaster cellSeed="1227360161" cellLocSeed="1684011498">
+			<filename>$jemssDir/data/cities/edmonton/data/population density/census 2016/rasters/edmonton_pop_densit_50m.tif</filename>
+			<cropRaster>false</cropRaster>
+		</callDensityRaster>
+	</sim>
+	
+</genConfig>
