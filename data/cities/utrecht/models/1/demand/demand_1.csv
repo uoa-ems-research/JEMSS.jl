@@ -1,0 +1,17 @@
+demandRasters,,,,
+rasterIndex,rasterFilename,note,,
+1,$jemssDir/data/cities/utrecht/data/population density/postcodes 2013/rasters/utrecht-pop-densit-50m.tif,,,
+,,,,
+demandModes,,,,
+modeIndex,rasterIndex,priority,arrivalRate,note
+1,1,highPriority,101.304, = 6.3 x 24 x 67%
+2,1,medPriority,0,
+3,1,lowPriority,49.896, = 6.3 x 24 x 33%
+,,,,
+demandSets,,,,
+setIndex,modeIndices,,,
+1,[1; 2; 3],,,
+,,,,
+demandSetsTiming,,,,
+startTime,setIndex,,,
+0,1,,,
