@@ -15,5 +15,8 @@ include("$(JEMSS.jemssDir)/example/cities/edmonton/1/reps/example.jl")
 # Manhattan, with multiple replications.
 include("$(JEMSS.jemssDir)/example/cities/manhattan/1/reps/example.jl")
 
+# Utrecht, with multiple replications.
+include("$(JEMSS.jemssDir)/example/cities/utrecht/1/reps/example.jl")
+
 # Small and artificially generated example; sim loads relatively quickly.
 include("$(JEMSS.jemssDir)/example/cities/generated/small/1/example.jl")
