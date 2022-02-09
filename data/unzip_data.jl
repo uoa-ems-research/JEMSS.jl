@@ -19,7 +19,7 @@ end
 
 cd(@__DIR__) do
 	# unpack all zip files
-	for folder in ("auckland", "edmonton")
+	for folder in ("auckland", "edmonton", "manhattan")
 		path = joinpath(pwd(), "cities", folder)
 		pathrecursion(path, unzip)
 	end
