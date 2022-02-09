@@ -1,0 +1,5 @@
+priorities,3,,
+priority,name,targetResponseTime,note
+1,highPriority,0.010416667,15/60/24
+2,medPriority,0.010416667,15/60/24
+3,lowPriority,0.020833333,30/60/24
