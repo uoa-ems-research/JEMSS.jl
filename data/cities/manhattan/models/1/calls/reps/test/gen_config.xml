@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<genConfig>
+	<outputPath></outputPath>
+	
+	<mode>calls</mode>
+	
+	<numCallsFiles>40</numCallsFiles>
+	
+	<sim>
+		<startTime>0.0</startTime>
+		<!-- <numCalls></numCalls> -->
+		<!-- <maxCallArrivalTime></maxCallArrivalTime> -->
+		<minLastCallArrivalTime>1 + 250 + 0.1</minLastCallArrivalTime>
+		
+		<!-- seeds test 1.1: [689824638 2965649135 2322657568 3215048128 3201753069 561770759 2268950370 2721971364] -->
+		<callDistributions>
+			<interarrivalTime seed="689824638">Exponential(1/(18.8*24))</interarrivalTime>
+			<priority seed="2965649135">Categorical([0.42, 0, 0.58])</priority>
+			<dispatchDelay seed="2322657568">Normal(2.5/60/24, 0)</dispatchDelay>
+			<onSceneDuration seed="3215048128">Exponential(7.6/60/24)</onSceneDuration>
+			<transport seed="3201753069">Bernoulli(0.85)</transport>
+			<handoverDuration seed="561770759">Exponential(4/60/24)</handoverDuration>
+		</callDistributions>
+		
+		<callDensityRaster cellSeed="2268950370" cellLocSeed="2721971364">
+			<filename>$jemssDir/data/cities/manhattan/data/population density/census 2000/rasters/manhattan_pop_densit_20m.tif</filename>
+			<cropRaster>false</cropRaster>
+		</callDensityRaster>
+	</sim>
+	
+</genConfig>
