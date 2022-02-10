@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <simConfig>
-	<inputPath>$jemssDir/data/cities/auckland/urban/1</inputPath>
+	<inputPath>$jemssDir/data/cities/auckland/models/1</inputPath>
 	<outputPath>../output</outputPath>
 	
 	<simFiles>

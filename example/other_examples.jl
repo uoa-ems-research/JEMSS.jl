@@ -3,11 +3,11 @@
 # Auckland, with single replication.
 # This is the same as the example script: JEMSS/example/example.jl.
 # To animate (after sim is loaded), run: animate!(sim)
-include("$(JEMSS.jemssDir)/example/cities/auckland/urban/1/single/example.jl")
+include("$(JEMSS.jemssDir)/example/cities/auckland/models/1/single/example.jl")
 
 # Auckland, with multiple replications.
 # Multiple replications cannot be animated.
-include("$(JEMSS.jemssDir)/example/cities/auckland/urban/1/reps/example.jl")
+include("$(JEMSS.jemssDir)/example/cities/auckland/models/1/reps/example.jl")
 
 # Edmonton, with multiple replications.
 include("$(JEMSS.jemssDir)/example/cities/edmonton/1/reps/example.jl")

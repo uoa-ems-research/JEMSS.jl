@@ -21,7 +21,7 @@
 		</callDistributions>
 		
 		<callDensityRaster cellSeed="1227360161" cellLocSeed="1684011498">
-			<filename>$jemssDir/data/cities/auckland/data/population density/census 2013/rasters/urban/1/auckland-urban-pop-densit-40m.tif</filename>
+			<filename>$jemssDir/data/cities/auckland/data/population density/census 2013/rasters/models/1/auckland-urban-pop-densit-40m.tif</filename>
 		</callDensityRaster>
 	</sim>
 </genConfig>

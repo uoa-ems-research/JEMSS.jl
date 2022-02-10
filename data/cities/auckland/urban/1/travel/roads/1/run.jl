@@ -33,13 +33,13 @@ spTagClass = [true, true, true, true, true, false, false, false]
 
 # keep nodes and arcs that provide shortest paths from/to nodes near important locations
 # like hospitals and stations, even if spTagClass would have them thrown away
-folder = joinpath(jemssDir, "data/cities/auckland/urban/1")
+folder = joinpath(jemssDir, "data/cities/auckland/models/1")
 hospitalsFilename = joinpath(folder, "hospitals/1/hospitals_1.csv")
 stationsFilename = joinpath(folder, "stations/1/stations_1.csv")
 mapFilename = joinpath(folder, "maps/1/map_1.csv")
 
 # shapefile of region border
-borderFilename = joinpath(jemssDir, "data/cities/auckland/data/border/urban/1/auckland_urban_border.shp")
+borderFilename = joinpath(jemssDir, "data/cities/auckland/data/border/models/1/auckland_urban_border.shp")
 
 # divide arcs that are long into multiple arcs, according to maxArcTravelTime value
 maxArcTravelTime = 10/60/60/24 # convert seconds to days
