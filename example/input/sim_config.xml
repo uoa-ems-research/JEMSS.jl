@@ -4,25 +4,25 @@
 	<outputPath>../output</outputPath>
 	
 	<simFiles>
-		<ambulances>$configFileDir/ambulances.csv</ambulances>
-		<hospitals>hospitals/1/hospitals_1.csv</hospitals>
-		<stations>stations/1/stations_1.csv</stations>
+		<ambulances>ambulances/ambulances_1.csv</ambulances>
+		<hospitals>hospitals/hospitals_1.csv</hospitals>
+		<stations>stations/stations_1.csv</stations>
 		
 		<!-- <calls>calls.csv</calls> -->
-		<callGenConfig>calls/1/single/train/1/gen_config.xml</callGenConfig>
-		<statsControl>calls/1/single/train/1/stats_control.csv</statsControl>
+		<callGenConfig>calls/single/train/gen_config.xml</callGenConfig>
+		<statsControl>calls/single/train/stats_control.csv</statsControl>
 		
-		<arcs>travel/roads/1/arcs.csv</arcs>
-		<nodes>travel/roads/1/nodes.csv</nodes>
-		<rNetTravels>travel/roads/1/r_net_travels_jl-v$(VERSION).jls</rNetTravels>
-		<travel>travel/travel/1/travel_1.csv</travel>
+		<demand>demand/demand_1.csv</demand>
+		<demandCoverage>demand/coverage/demand_coverage_1.csv</demandCoverage>
 		
-		<map>maps/1/map_1.csv</map>
-		<priorities>misc/call priorities/1/priorities_1.csv</priorities>
-		<redispatch>misc/redispatch/1/redispatch_lower_to_high.csv</redispatch>
+		<arcs>travel/roads/arcs.csv</arcs>
+		<nodes>travel/roads/nodes.csv</nodes>
+		<rNetTravels>travel/roads/r_net_travels_jl-v$(VERSION).jls</rNetTravels>
+		<travel>travel/travel/travel_1.csv</travel>
 		
-		<demand>demand/1/demand_1.csv</demand>
-		<demandCoverage>demand/coverage/1/demand_coverage_1.csv</demandCoverage>
+		<map>maps/map_1.csv</map>
+		<priorities>misc/call priorities/priorities_1.csv</priorities>
+		<redispatch>misc/redispatch/redispatch_lower_to_high.csv</redispatch>
 	</simFiles>
 	
 	<writeOutput>false</writeOutput>
