@@ -1,0 +1,20 @@
+stations,,,"Locations provided by Caroline Jagtenberg. Locations (now updated) from: Jagtenberg, C. J. (2017). Efficiency and fairness in ambulance planning (Doctoral dissertation, VU Amsterdam).",,,,,,
+index,x,y,capacity,,type,city,address,PC,PC_4
+1,5.068168,52.028054,5,,Standplaats,Nieuwegein,Nevelgaarde 1,3436 ZZ,3436
+2,4.892001,52.081593,5,,Standplaats,Woerden,Polanerbaan 5,3447 GN,3447
+3,5.114536,52.10901,5,,Standplaats,Vader Rijndreef (Utrecht Noord),Vader Rijndreef 1,3561 XB,3561
+4,5.137605,52.081752,5,,Standplaats,Diakonessenhuis (Utrecht Centrum),Burg. Fockema Andreaelaan 90,3582 KT,3582
+5,5.034784,52.121826,5,,Standplaats,Maarssen,Floraweg 17,3608 BW,3608
+6,4.933293,52.216703,5,,Standplaats,Vinkeveen,Herenweg 105,3645 DJ,3645
+7,5.260797,52.090607,5,,Standplaats,Zeist,Jagersingel 3,3707 HL,3707
+8,5.384485,52.151563,5,,Standplaats,Amersfoort Centrum,Zonnehof 10,3811 ND,3811
+9,5.406514,52.189922,5,,Standplaats,Amersfoort Noord,t Hofslot 1A,3823 VV,3823
+10,5.543916,52.003314,5,,Standplaats,Rhenen-Veenendaal,Cuneraweg 354,3911 RV,3911
+11,5.337727,52.0343,5,,Standplaats,Doorn,Korte Molenweg 1,3941 PW,3941
+12,5.453166,52.002278,5,,Steunpunt,Amerongen,Industrieweg - zuid 22,3958 VX,3958
+13,5.277078,52.214833,5,,Steunpunt,Baarn,Molenweg 2,3743 KM,3743
+14,5.159671,52.024096,5,,Steunpunt,Houten,De Brug 2b,3991 LN,3991
+15,4.929294,52.029716,5,,Steunpunt,Montfoort,Willeskop 94,3417 ME,3417
+16,5.278013,52.121282,5,,Steunpunt,Soesterberg,Stemerdingweg 13,3769 CE,3769
+17,4.913298,52.163685,5,,Steunpunt,Wilnis,Geerkade 23,3648 NX,3648
+18,5.423934,52.075302,5,,Steunpunt,Woudenberg,Europaweg 4,3931 NJ,3931

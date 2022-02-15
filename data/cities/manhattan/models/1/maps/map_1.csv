@@ -1,0 +1,3 @@
+map,1,,,,xScale = 40075/360*cosd(40.79)
+xMin,xMax,yMin,yMax,xScale,yScale
+-74.0472,-73.906,40.6795,40.8821,84.28,111.32

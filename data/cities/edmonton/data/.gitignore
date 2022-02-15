@@ -1,0 +1,13 @@
+# shapefile
+*.cpg
+*.dbf
+*.prj
+*.qpj
+*.shp
+*.shx
+
+# raster
+*.tif
+
+# openstreetmap
+*.osm

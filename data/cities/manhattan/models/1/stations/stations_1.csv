@@ -1,0 +1,10 @@
+stations,,,source: google maps,,,,
+index,x,y,capacity,,station #,address,note
+1,-73.986203,40.710077,5,,4,"Pier 36, South St, New York, NY 10002, USA",
+2,-74.004678,40.74781,5,,7,"512 W 23rd St, New York, NY 10011, USA",
+3,-73.975216,40.738121,5,,8,"435 E 26th St, New York, NY 10016, USA",
+4,-73.942787,40.784381,5,,10,"98 1 FDR Dr., New York, NY 10029, USA","closed, according to Wikipedia"
+5,-73.935231,40.842443,5,,13,"501 W 172nd St, New York, NY 10032, USA",
+6,-73.93762,40.813892,5,,16,"15 W 136th St, New York, NY 10037, USA",
+7,-73.978912,40.772673,5,,,,artificial,
+8,-73.961996,40.805512,5,,,,artificial,

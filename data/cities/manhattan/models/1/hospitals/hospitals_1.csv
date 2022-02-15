@@ -1,0 +1,12 @@
+hospitals,,,,,,
+index,x,y,,Name,address,coordinates (approx) from google maps
+1,-73.932997,40.849282,,NewYork-Presbyterian Hospital,"575 W 181st St, New York, NY 10033, USA","40.849282, -73.932997"
+2,-73.939827,40.814112,,NYC Health + Hospitals/Harlem,"506 Lenox Ave, New York, NY 10037, USA","40.814112, -73.939827"
+3,-73.948886,40.809692,,New York City Health & Hospital,"215 W 125th St, New York, NY 10027, USA","40.809692, -73.948886"
+4,-73.952754,40.790141,,The Mount Sinai Hospital,"1468 Madison Ave, New York, NY 10029, USA","40.790141, -73.952754"
+5,-73.945028,40.785234,,NYC Health + Hospitals/Metropolitan,"1901 1st Avenue, New York, NY 10029, USA","40.785234, -73.945028"
+6,-73.98588,40.770079,,Mount Sinai,"425 W 59th St, New York, NY 10019, USA","40.770079, -73.985880"
+7,-73.959177,40.760636,,New York Presbyterian Hospital,"425 E 61st St, New York, NY 10065, USA","40.760636, -73.959177"
+8,-73.979041,40.760342,,NewYork Presbyterian Hospital,"51 W 51st St, New York, NY 10019, USA","40.760342, -73.979041"
+9,-73.975017,40.739074,,Bellevue Hospital Center,"462 1st Avenue, New York, NY 10016, USA","40.739074, -73.975017"
+10,-74.005102,40.710361,,NewYork-Presbyterian Lower Manhattan Hospital,"170 William St, New York, NY 10038, USA","40.710361, -74.005102"

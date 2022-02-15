@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<simConfig>
+	<inputPath>$jemssDir/data/cities/edmonton/models/1</inputPath>
+	<outputPath>../output</outputPath>
+	
+	<simFiles>
+		<ambulances>ambulances/ambulances_1.csv</ambulances>
+		<hospitals>hospitals/hospitals_1.csv</hospitals>
+		<stations>stations/stations_1.csv</stations>
+		
+		<!-- <calls>calls.csv</calls> -->
+		<callGenConfig>calls/reps/train/gen_config.xml</callGenConfig>
+		<statsControl>calls/reps/train/stats_control.csv</statsControl>
+		
+		<demand>demand/demand_1.csv</demand>
+		<demandCoverage>demand/coverage/demand_coverage_1.csv</demandCoverage>
+		
+		<arcs>travel/roads/arcs.csv</arcs>
+		<nodes>travel/roads/nodes.csv</nodes>
+		<rNetTravels>travel/roads/r_net_travels_jl-v$(VERSION).jls</rNetTravels>
+		<travel>travel/travel/travel_1.csv</travel>
+		
+		<map>maps/map_1.csv</map>
+		<priorities>misc/call priorities/priorities_1.csv</priorities>
+		<redispatch>misc/redispatch/redispatch_low_to_higher.csv</redispatch>
+	</simFiles>
+	
+	<writeOutput>false</writeOutput>
+	<outputFiles>
+		<events>events.csv</events>
+		
+		<ambulances>ambulances.csv</ambulances>
+		<calls>calls.csv</calls>
+		<hospitals>hospitals.csv</hospitals>
+		
+		<ambulancesStats>ambulances_stats.csv</ambulancesStats>
+		<callsStats>calls_stats.csv</callsStats>
+		<hospitalsStats>hospitals_stats.csv</hospitalsStats>
+		<stationsStats>stations_stats.csv</stationsStats>
+		<statsDict>stats_dict.csv</statsDict>
+	</outputFiles>
+	
+	<resim>false</resim>
+	
+	<decision>
+		<callQueueing>addCallToQueueSortPriorityThenTime!</callQueueing>
+		<dispatch>findNearestDispatchableAmb!</dispatch>
+		<moveUp>
+			<module>none</module>
+		</moveUp>
+	</decision>
+	
+</simConfig>

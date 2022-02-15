@@ -1,0 +1,17 @@
+demandRasters,,,,
+rasterIndex,rasterFilename,,,
+1,$jemssDir/data/cities/manhattan/data/population density/census 2000/rasters/manhattan_pop_densit_20m.tif,,,
+,,,,
+demandModes,,,,
+modeIndex,rasterIndex,priority,arrivalRate,note
+1,1,highPriority,189.5," =451.2 x 42%"
+2,1,medPriority,0," =451.2 x 0%"
+3,1,lowPriority,261.7," =451.2 x 58%"
+,,,,
+demandSets,,,,
+setIndex,modeIndices,,,
+1,[1; 2; 3],,,
+,,,,
+demandSetsTiming,,,,
+startTime,setIndex,,,
+0,1,,,

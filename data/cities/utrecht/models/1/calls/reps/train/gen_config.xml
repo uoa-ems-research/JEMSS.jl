@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<genConfig>
+	<outputPath></outputPath>
+	
+	<mode>calls</mode>
+	
+	<numCallsFiles>30</numCallsFiles>
+	
+	<sim>
+		<startTime>0.0</startTime>
+		<!-- <numCalls></numCalls> -->
+		<!-- <maxCallArrivalTime></maxCallArrivalTime> -->
+		<minLastCallArrivalTime>1 + 14 + 0.1</minLastCallArrivalTime>
+		
+		<!-- seeds train 1.1: [1217248832 199894915 293110701 2023374599 1427137433 1330644641 1442623348 1963951879] -->
+		<callDistributions>
+			<interarrivalTime seed="1217248832">Exponential(1/(6.3*24))</interarrivalTime>
+			<priority seed="199894915">Categorical([0.67, 0.0, 0.33])</priority>
+			<dispatchDelay seed="293110701">Normal(3/60/24,0)</dispatchDelay>
+			<onSceneDuration seed="2023374599">Exponential(12/60/24)</onSceneDuration>
+			<transport seed="1427137433">Bernoulli(0.8)</transport>
+			<handoverDuration seed="1330644641">Weibull(1.5, 18/60/24)</handoverDuration>
+		</callDistributions>
+		
+		<callDensityRaster cellSeed="1442623348" cellLocSeed="1963951879">
+			<filename>$jemssDir/data/cities/utrecht/data/population density/postcodes 2013/rasters/utrecht-pop-densit-50m.tif</filename>
+			<cropRaster>false</cropRaster>
+		</callDensityRaster>
+	</sim>
+	
+</genConfig>
