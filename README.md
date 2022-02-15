@@ -1,4 +1,5 @@
 # JEMSS.jl
+Julia package for Emergency Medical Services Simulation
 
 <!-- [![Build Status](https://travis-ci.com/uoa-ems-research/JEMSS.jl.svg?branch=master)](https://travis-ci.com/uoa-ems-research/JEMSS.jl) -->
 <!-- [![Coverage Status](https://coveralls.io/repos/github/uoa-ems-research/JEMSS.jl/badge.svg?branch=master)](https://coveralls.io/github/uoa-ems-research/JEMSS.jl?branch=master) -->
@@ -24,6 +25,12 @@ After this script has been run, the simulation can be animated with `animate!(si
 
 A list of further example scripts that may be useful can be found in [example/other_examples.jl](example/other_examples.jl).
 
+## Cities
+The package includes these city (/island/region) models: Auckland, New Zealand; Edmonton, Alberta, Canada; Manhattan Island, New York, USA; and Utrecht, Netherlands.
+Example scripts to simulate these cities can be found in [example/other_examples.jl](example/other_examples.jl).
+The models are not exact replicas of the cities, but they are at least city-like.
+More information on the city models (sources, simulation results) is available in this [pdf document (on Google drive)](https://tinyurl.com/2p8m9a8p).
+
 ## Animation
 To animate a simulation:
 ```julia
@@ -47,17 +54,16 @@ Notes on animation:
 - For the timing control, 'Sim speed' is the ratio of simulation time to real time; speed of 1 gives real-time (real slow) simulation. This requires the input files to have time units in days.
 - Input files should have (latitude, longitude) coordinates, these correspond with the y and x fields in the input files.
 
-## City data
-
-Data to simulate Auckland can be found in [data/cities/auckland](data/cities/auckland).
-Additional cities can be added and should follow the same folder structure, with a data folder containing the raw data along with any sources and licenses, and another folder containing the input files for the calls, stations, road network, etc.
-If you have a city model that you would like to add, please submit a pull request.
-Note that any large files should be compressed as a .gz file using `BinaryProvider.package(dir)`.
-
 ## Misc
 For solving linear and integer programs, CBC and GLPK solvers are used, though [Gurobi](https://www.gurobi.com/) will be used (for difficult problems such as p-median and DDSM in JEMSS) if it is installed along with the [Gurobi.jl](https://github.com/jump-dev/Gurobi.jl) package, as Gurobi generally solves faster.
+JEMSS does not have Gurobi.jl listed as a required package because not everyone has a Gurobi license, so there is a warning printed when JEMSS is loaded: ``Warning: Package JEMSS does not have Gurobi in its dependencies``.
 
 Backslashes are special characters in Julia strings and so if a path includes backslashes (e.g. `"path\to\file.txt"`), it needs to be handled as a raw string (`raw"path\to\file.txt"`).
+
+### Adding cities
+If you have a city model that you would like to add, please submit a pull request.
+Cities should follow the same folder structure as those existing (in [data/cities](data/cities)), with a data folder containing the raw data along with any sources and licenses, and a model folder containing the input files for the calls, stations, road network, etc.
+Note that any large files should be compressed as a .gz file using `BinaryProvider.package(dir)`.
 
 ## License
 This project is licensed under the Apache License 2.0 - see the [LICENSE.md](LICENSE.md) file for details.
