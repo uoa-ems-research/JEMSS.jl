@@ -25,17 +25,17 @@ Dict{String,Any} with 2 entries:
   "a"   => 1
 ```
 """
-function flatten(dict::Dict{String,T}; delim = "_") where T <: Any
-	dflat = Dict{String,Any}()
-	function recurse(d; s = nothing)
-		if isa(d, Dict{String,T} where T <: Any)
-			for (k,v) in d
-				recurse(v; s = s == nothing ? k : string(s, delim, k))
-			end
-		else
-			dflat[s] = d
-		end
-	end
-	recurse(dict)
-	return dflat
+function flatten(dict::Dict{String,T}; delim="_") where {T<:Any}
+    dflat = Dict{String,Any}()
+    function recurse(d; s=nothing)
+        if isa(d, Dict{String,T} where {T<:Any})
+            for (k, v) in d
+                recurse(v; s=s == nothing ? k : string(s, delim, k))
+            end
+        else
+            dflat[s] = d
+        end
+    end
+    recurse(dict)
+    return dflat
 end

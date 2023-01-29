@@ -16,11 +16,11 @@
 # Run the function on the given items, using multi-threading.
 # Kwarg `numThreads` can be set to reduce cpu usage, though this is only approximate.
 # Requires environment variable JULIA_NUM_THREADS to be set before starting julia.
-function runParallel!(f::Function, items...; numThreads::Int = maxNumThreads)
-	@assert(numThreads >= 1)
-	@threads for i = 1:numThreads
-		for j = i:numThreads:length(items)
-			f(items[j])
-		end
-	end
+function runParallel!(f::Function, items...; numThreads::Int=maxNumThreads)
+    @assert(numThreads >= 1)
+    @threads for i = 1:numThreads
+        for j = i:numThreads:length(items)
+            f(items[j])
+        end
+    end
 end

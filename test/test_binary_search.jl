@@ -14,13 +14,13 @@
 ##########################################################################
 
 @testset "binary search" begin
-	n = 10
-	x = cumsum(rand(n).+0.1)
-	@assert(issorted(x, lt=<=)) # values should be strictly increasing
-	for i = 1:n
-		@assert(binarySearch(x, x[i]*(1-eps())) == (i-1,i))
-		@assert(binarySearch(x, x[i]) == (i,i))
-		@assert(binarySearch(x, x[i]*(1+eps())) == (i,i+1))
-	end
-	@test true
+    n = 10
+    x = cumsum(rand(n) .+ 0.1)
+    @assert(issorted(x, lt=<=)) # values should be strictly increasing
+    for i = 1:n
+        @assert(binarySearch(x, x[i] * (1 - eps())) == (i - 1, i))
+        @assert(binarySearch(x, x[i]) == (i, i))
+        @assert(binarySearch(x, x[i] * (1 + eps())) == (i, i + 1))
+    end
+    @test true
 end

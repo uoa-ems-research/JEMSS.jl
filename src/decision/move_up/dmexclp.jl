@@ -29,71 +29,71 @@ Initialise data for the Dynamic Maximum Expected Coverage Location Problem (DMEX
 Mutates: `sim.moveUpData.dmexclpData`
 """
 function initDmexclp!(sim::Simulation;
-	busyFraction::Float = 0.5,
-	demandWeights::Dict{Priority,Float} = Dict([p => 1.0 for p in priorities]))
-	
-	# initialise demand and demand coverage data if not already initialised
-	sim.demand.initialised || initDemand!(sim)
-	sim.demandCoverage.initialised || initDemandCoverage!(sim)
-	
-	# shorthand
-	@unpack numAmbs, numStations = sim
-	
-	dcd = sim.moveUpData.dmexclpData # shorthand
-	dcd.busyFraction = busyFraction
-	dcd.demandWeights = demandWeights
-	
-	# calculate cover benefit values, for single demand
-	dcd.marginalBenefit = (busyFraction.^[0:numAmbs-1;])*(1-busyFraction)
-	
-	# values that will be calculated when needed
-	dcd.stationNumFreeAmbs = zeros(Int, numStations)
-	dcd.stationMarginalCoverages = zeros(Float, numStations) # stationMarginalCoverages[i] gives extra coverage provided from placing newly freed ambulance at station i
-	# dcd.pointSetsCoverCounts = [zeros(Int, length(pointsCoverageMode.pointSets)) for pointsCoverageMode in sim.demandCoverage.pointsCoverageModes] # pointSetsCoverCounts[i][j] = number of free ambulances covering node set j, for demand.pointsCoverageModes i
+    busyFraction::Float=0.5,
+    demandWeights::Dict{Priority,Float}=Dict([p => 1.0 for p in priorities]))
+
+    # initialise demand and demand coverage data if not already initialised
+    sim.demand.initialised || initDemand!(sim)
+    sim.demandCoverage.initialised || initDemandCoverage!(sim)
+
+    # shorthand
+    @unpack numAmbs, numStations = sim
+
+    dcd = sim.moveUpData.dmexclpData # shorthand
+    dcd.busyFraction = busyFraction
+    dcd.demandWeights = demandWeights
+
+    # calculate cover benefit values, for single demand
+    dcd.marginalBenefit = (busyFraction .^ [0:numAmbs-1;]) * (1 - busyFraction)
+
+    # values that will be calculated when needed
+    dcd.stationNumFreeAmbs = zeros(Int, numStations)
+    dcd.stationMarginalCoverages = zeros(Float, numStations) # stationMarginalCoverages[i] gives extra coverage provided from placing newly freed ambulance at station i
+    # dcd.pointSetsCoverCounts = [zeros(Int, length(pointsCoverageMode.pointSets)) for pointsCoverageMode in sim.demandCoverage.pointsCoverageModes] # pointSetsCoverCounts[i][j] = number of free ambulances covering node set j, for demand.pointsCoverageModes i
 end
 
 function dmexclpMoveUp(sim::Simulation, newlyFreedAmb::Ambulance)
-	@assert(sim.moveUpData.useMoveUp)
-	@assert(newlyFreedAmb.status == ambFreeAfterCall)
-	@assert(sim.demand.initialised && sim.demandCoverage.initialised)
-	
-	# shorthand names:
-	dcd = sim.moveUpData.dmexclpData
-	@unpack ambulances, stations, numStations = sim
-	
-	# calculate the number of free ambulances at (or travelling to) each station
-	dcd.stationNumFreeAmbs[:] .= 0
-	for (i,ambulance) in enumerate(ambulances)
-		# do not count newly freed ambulance, it has not been assigned a station
-		if isAmbMovable(ambulance) && i != newlyFreedAmb.index
-			dcd.stationNumFreeAmbs[ambulance.stationIndex] += 1
-		end
-	end
-	
-	# ignoring newly freed amb, count number of ambulances covering each point set
-	demandsPointSetsCoverCounts = calcPointSetsCoverCounts!(sim, sim.time, dcd.stationNumFreeAmbs)
-	
-	# find station allocation for newly freed ambulance that gives greatest
-	# increase in expected demand coverage
-	dcd.stationMarginalCoverages[:] .= 0.0
-	for demandPriority in priorities
-		if !haskey(dcd.demandWeights, demandPriority) || dcd.demandWeights[demandPriority] == 0
-			continue
-		end
-		pointSetsCoverCounts = demandsPointSetsCoverCounts[demandPriority]
-		pointsCoverageMode = getPointsCoverageMode!(sim, demandPriority, sim.time)
-		demandMode = getDemandMode!(sim.demand, demandPriority, sim.time)
-		pointSetsDemands = sim.demandCoverage.pointSetsDemands[pointsCoverageMode.index, demandMode.rasterIndex]
-		# to do: if marginal coverage has already been calculated for the combination of pointsCoverageMode and rasterIndex (but for a different demand priority), the marginal coverage value should be reused (accounting for differences in old and new values of demandMode.rasterMultiplier and dcd.demandWeights[demandPriority]) to save on computation.
-		for i = 1:length(pointsCoverageMode.pointSets)
-			pointSetDemand = pointSetsDemands[i] * demandMode.rasterMultiplier
-			pointSetMarginalCoverage = pointSetDemand * dcd.marginalBenefit[pointSetsCoverCounts[i]+1] * dcd.demandWeights[demandPriority]
-			for j in pointsCoverageMode.stationSets[i]
-				dcd.stationMarginalCoverages[j] += pointSetMarginalCoverage
-			end
-		end
-	end
-	(bestMarginalCoverage, bestStationIndex) = findmax(dcd.stationMarginalCoverages)
-	
-	return [newlyFreedAmb], [stations[bestStationIndex]]
+    @assert(sim.moveUpData.useMoveUp)
+    @assert(newlyFreedAmb.status == ambFreeAfterCall)
+    @assert(sim.demand.initialised && sim.demandCoverage.initialised)
+
+    # shorthand names:
+    dcd = sim.moveUpData.dmexclpData
+    @unpack ambulances, stations, numStations = sim
+
+    # calculate the number of free ambulances at (or travelling to) each station
+    dcd.stationNumFreeAmbs[:] .= 0
+    for (i, ambulance) in enumerate(ambulances)
+        # do not count newly freed ambulance, it has not been assigned a station
+        if isAmbMovable(ambulance) && i != newlyFreedAmb.index
+            dcd.stationNumFreeAmbs[ambulance.stationIndex] += 1
+        end
+    end
+
+    # ignoring newly freed amb, count number of ambulances covering each point set
+    demandsPointSetsCoverCounts = calcPointSetsCoverCounts!(sim, sim.time, dcd.stationNumFreeAmbs)
+
+    # find station allocation for newly freed ambulance that gives greatest
+    # increase in expected demand coverage
+    dcd.stationMarginalCoverages[:] .= 0.0
+    for demandPriority in priorities
+        if !haskey(dcd.demandWeights, demandPriority) || dcd.demandWeights[demandPriority] == 0
+            continue
+        end
+        pointSetsCoverCounts = demandsPointSetsCoverCounts[demandPriority]
+        pointsCoverageMode = getPointsCoverageMode!(sim, demandPriority, sim.time)
+        demandMode = getDemandMode!(sim.demand, demandPriority, sim.time)
+        pointSetsDemands = sim.demandCoverage.pointSetsDemands[pointsCoverageMode.index, demandMode.rasterIndex]
+        # to do: if marginal coverage has already been calculated for the combination of pointsCoverageMode and rasterIndex (but for a different demand priority), the marginal coverage value should be reused (accounting for differences in old and new values of demandMode.rasterMultiplier and dcd.demandWeights[demandPriority]) to save on computation.
+        for i = 1:length(pointsCoverageMode.pointSets)
+            pointSetDemand = pointSetsDemands[i] * demandMode.rasterMultiplier
+            pointSetMarginalCoverage = pointSetDemand * dcd.marginalBenefit[pointSetsCoverCounts[i]+1] * dcd.demandWeights[demandPriority]
+            for j in pointsCoverageMode.stationSets[i]
+                dcd.stationMarginalCoverages[j] += pointSetMarginalCoverage
+            end
+        end
+    end
+    (bestMarginalCoverage, bestStationIndex) = findmax(dcd.stationMarginalCoverages)
+
+    return [newlyFreedAmb], [stations[bestStationIndex]]
 end

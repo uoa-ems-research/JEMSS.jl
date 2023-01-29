@@ -13,14 +13,14 @@
 # limitations under the License.
 ##########################################################################
 
-function updateStationStats!(station::Station; numIdleAmbsChange::Int = 0, time::Float = nullTime)
-	if numIdleAmbsChange != 0
-		@assert(time != nullTime)
-		@assert(time >= station.currentNumIdleAmbsSetTime)
-		
-		# stats
-		station.numIdleAmbsTotalDuration[station.currentNumIdleAmbs] += time - station.currentNumIdleAmbsSetTime
-		station.currentNumIdleAmbs += numIdleAmbsChange
-		station.currentNumIdleAmbsSetTime = time
-	end
+function updateStationStats!(station::Station; numIdleAmbsChange::Int=0, time::Float=nullTime)
+    if numIdleAmbsChange != 0
+        @assert(time != nullTime)
+        @assert(time >= station.currentNumIdleAmbsSetTime)
+
+        # stats
+        station.numIdleAmbsTotalDuration[station.currentNumIdleAmbs] += time - station.currentNumIdleAmbsSetTime
+        station.currentNumIdleAmbs += numIdleAmbsChange
+        station.currentNumIdleAmbsSetTime = time
+    end
 end

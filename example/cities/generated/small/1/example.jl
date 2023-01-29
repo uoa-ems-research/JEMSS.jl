@@ -20,7 +20,7 @@ path = @__DIR__
 # generate artificial simulation input files
 println("\n=== Generating files ===")
 genConfigFilename = joinpath(path, "gen_config.xml")
-runGenConfig(genConfigFilename; overwriteOutputPath = true)
+runGenConfig(genConfigFilename; overwriteOutputPath=true)
 
 # create and run simulation using generated files
 println("\n=== Simulating with generated files ===")
@@ -41,7 +41,7 @@ simulate!(sim)
 # create and run simulation again, this time writing output files
 println("\n=== Simulating with generated files, writing output ===")
 simConfigFilename = joinpath(path, "sim_config.xml")
-sim = initSim(simConfigFilename; allowWriteOutput = true)
+sim = initSim(simConfigFilename; allowWriteOutput=true)
 openOutputFiles!(sim)
 simulate!(sim)
 writeOutputFiles(sim)
@@ -49,7 +49,7 @@ closeOutputFiles!(sim)
 
 # create and run simulation again, resimulating based on previously created events output file
 println("\n=== Resimulating based on output/events file ===")
-sim = initSim(simConfigFilename; allowResim = true)
+sim = initSim(simConfigFilename; allowResim=true)
 simulate!(sim)
 
 nothing # return value
