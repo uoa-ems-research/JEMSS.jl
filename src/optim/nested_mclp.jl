@@ -16,9 +16,9 @@
 # Maximal Coverage Location Problem applied to creating a nested compliance table
 
 """
-	solveNestedMclp!(sim::Simulation, numFreeAmbsWeights::Vector{Float};
-		demandWeights::Dict{Priority,Float} = Dict([p => 1.0 for p in priorities]),
-		results::Dict{Any,Any} = Dict())
+    solveNestedMclp!(sim::Simulation, numFreeAmbsWeights::Vector{Float};
+        demandWeights::Dict{Priority,Float} = Dict([p => 1.0 for p in priorities]),
+        results::Dict{Any,Any} = Dict())
 Solves combined Maximal Coverage Location Problems (MCLP) to create a nested compliance table.
 `numFreeAmbsWeights[k]` gives the weight to apply to the objective function for MCLP with `k` ambulances; this can be used to reflect the probability of having `k` ambulances free at any moment.
 Ambulance travel time between states (i.e. rows) of the compliance table is not accounted for.
@@ -74,7 +74,7 @@ function solveNestedMclp!(sim::Simulation, numFreeAmbsWeights::Vector{Float};
 end
 
 """
-	solveNestedMclp(pointDemands::Vector{Float}, coverMatrix::Array{Bool,2}, weights::Vector{Float}; results::Dict{Any,Any} = Dict())
+    solveNestedMclp(pointDemands::Vector{Float}, coverMatrix::Array{Bool,2}, weights::Vector{Float}; results::Dict{Any,Any} = Dict())
 Solves combined Maximal Coverage Location Problems (MCLP) to create a nested compliance table.
 `pointDemands[i]` is the demand at point `i` and `coverMatrix[i,j] = true` if facility location `i` can cover point `j`.
 `weights[k]` gives the weight to apply to the objective function for MCLP with `k` facilities.
@@ -112,7 +112,7 @@ function solveNestedMclp(pointDemands::Vector{Float}, coverMatrix::Array{Bool,2}
 end
 
 """
-	solveNestedMclp(pointDemands::Vector{Float}, pointFacilities::Vector{Vector{Int}}, weights::Vector{Float}; results::Dict{Any,Any} = Dict())
+    solveNestedMclp(pointDemands::Vector{Float}, pointFacilities::Vector{Vector{Int}}, weights::Vector{Float}; results::Dict{Any,Any} = Dict())
 Solves combined Maximal Coverage Location Problems (MCLP) to create a nested compliance table.
 `pointDemands[i]` is the demand at point `i` and `pointFacilities[i]` are the indices of facility locations that cover point `i`.
 `weights[k]` gives the weight to apply to the objective function for MCLP with `k` facilities.

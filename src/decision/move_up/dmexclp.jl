@@ -17,9 +17,9 @@
 # From paper: "An efficient heuristic for real-time ambulance redeployment"
 
 """
-	function initDmexclp!(sim::Simulation;
-		busyFraction::Float = 0.5,
-		demandWeights::Dict{Priority,Float} = Dict([p => 1.0 for p in priorities]))
+    function initDmexclp!(sim::Simulation;
+        busyFraction::Float = 0.5,
+        demandWeights::Dict{Priority,Float} = Dict([p => 1.0 for p in priorities]))
 Initialise data for the Dynamic Maximum Expected Coverage Location Problem (DMEXCLP).
 
 # Keyword arguments

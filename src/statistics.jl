@@ -126,8 +126,8 @@ function printHospitalsStats(sim::Simulation)
 end
 
 """
-	function calcBatchMeans(values::Vector{Float}, batchSize::Int;
-		batchGapSize::Int = 0, rmPartialBatch::Bool = false, returnBatchSizes::Bool = false)
+    function calcBatchMeans(values::Vector{Float}, batchSize::Int;
+        batchGapSize::Int = 0, rmPartialBatch::Bool = false, returnBatchSizes::Bool = false)
 Returns the batch means of `values` batched by size `batchSize`.
 
 # Keyword arguments
@@ -174,9 +174,9 @@ function calcBatchMeans(values::Vector{Float}, batchSize::Int;
 end
 
 """
-	function calcBatchMeans(values::Vector{Float}, times::Vector{Float}, batchTime::Float;
-		startTime::Float = minimum(times), endTime::Float = maximum(times)*(1+eps(Float)),
-		batchGapTime::Float = 0.0, rmPartialBatch::Bool = false, returnBatchSizes::Bool = false)
+    function calcBatchMeans(values::Vector{Float}, times::Vector{Float}, batchTime::Float;
+        startTime::Float = minimum(times), endTime::Float = maximum(times)*(1+eps(Float)),
+        batchGapTime::Float = 0.0, rmPartialBatch::Bool = false, returnBatchSizes::Bool = false)
 Returns the batch means of `values` batched by time, where `values[i]` corresponds with `times[i]`.
 Each batch will batch values in a time interval `[t, t + batchTime)` for some `t`.
 Empty batches have mean `NaN`.

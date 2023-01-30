@@ -14,7 +14,7 @@
 ##########################################################################
 
 """
-	flatten(dict::Dict{String,T}; delim = "_") where T <: Any
+    flatten(dict::Dict{String,T}; delim = "_") where T <: Any
 Given a dict of nested dicts with string keys, return a dict that is flattened (not nested) with keys between root and leaf concatenated by `delim`.
 
 # Example

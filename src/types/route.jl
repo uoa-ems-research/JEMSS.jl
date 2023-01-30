@@ -543,10 +543,10 @@ function setRouteStateAfterEndFNode!(route::Route, time::Float)
 end
 
 """
-	shortestRouteTravelTime!(sim::Simulation;
-		startLoc::Location, firstNode::Int, dist1::Float, time1::Float, route::Route,
-		endLoc::Location, lastNode::Int, dist2::Float, time2::Float,
-		travelMode::TravelMode, travelPriority::Priority, startTime::Float)
+    shortestRouteTravelTime!(sim::Simulation;
+        startLoc::Location, firstNode::Int, dist1::Float, time1::Float, route::Route,
+        endLoc::Location, lastNode::Int, dist2::Float, time2::Float,
+        travelMode::TravelMode, travelPriority::Priority, startTime::Float)
 Returns the travel time of the shortest route, given information about the start and end.
 
 # Keyword arguments

@@ -17,12 +17,12 @@
 # From paper: "A maximum expected covering location model: formulation, properties and heuristic solution"
 
 """
-	solveMexclp!(sim::Simulation;
-		numAmbs::Int = sim.numAmbs,
-		busyFraction::Float = 0.5,
-		demandWeights::Dict{Priority,Float} = Dict([p => 1.0 for p in priorities]),
-		stationCapacities::Vector{Int} = [station.capacity for station in sim.stations],
-		results::Dict = Dict())
+    solveMexclp!(sim::Simulation;
+        numAmbs::Int = sim.numAmbs,
+        busyFraction::Float = 0.5,
+        demandWeights::Dict{Priority,Float} = Dict([p => 1.0 for p in priorities]),
+        stationCapacities::Vector{Int} = [station.capacity for station in sim.stations],
+        results::Dict = Dict())
 Solves the Maximum Expected Coverage Location Problem (MEXCLP) for `sim` and returns the number of ambulances to assign to each station, also the converse is returned - a station index for each ambulance.
 The problem assumes that all ambulances are equivalent.
 

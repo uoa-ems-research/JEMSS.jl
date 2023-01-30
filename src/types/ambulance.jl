@@ -107,7 +107,7 @@ function setAmbStatus!(sim::Simulation, ambulance::Ambulance, status::AmbStatus,
         if prevStatus == ambIdleAtStation
             ambulance.numDispatchesFromStation += 1
         elseif prevStatus == ambMobilising
-            # 	ambulance.numDispatchesWhileMobilising += 1 # removed; this is already counted
+            # ambulance.numDispatchesWhileMobilising += 1 # removed; this is already counted
         elseif isGoingToStation(prevStatus)
             ambulance.numDispatchesOnRoad += 1
         elseif prevStatus == ambGoingToCall

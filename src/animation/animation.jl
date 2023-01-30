@@ -332,8 +332,8 @@ function animateClient(client::Client)
 end
 
 """
-	function animate!(sim::Union{Simulation,Nothing} = nothing;
-		configFilename::String = "", port::Int = 8001, openWindow::Bool = true)
+    function animate!(sim::Union{Simulation,Nothing} = nothing;
+        configFilename::String = "", port::Int = 8001, openWindow::Bool = true)
 Open a web browser window to animate the simulation.
 Will animate for either `sim` or `configFilename`. If neither of these are given then there will be a prompt for the simulation configuration filename once the browser window has opened.
 

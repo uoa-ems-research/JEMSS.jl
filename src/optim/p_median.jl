@@ -23,7 +23,7 @@ catch
 end
 
 """
-	solvePMedian(n::Int, c::Array{Float,2}; options::Dict{Symbol,T} = pMedianDefaultOptions, results::Dict = Dict()) where T <: Any
+    solvePMedian(n::Int, c::Array{Float,2}; options::Dict{Symbol,T} = pMedianDefaultOptions, results::Dict = Dict()) where T <: Any
 Solves the p-median problem for `n` facilities and costs `c` where `c[i,j]` is the cost of serving demand point `j` from facility location `i`.
 The p-median problem is to locate facilities in order to minimise the total cost of serving demand, where each demand point is served by the facility which can serve the point at lowest cost.
 Returns a vector indicating which facility locations to use.

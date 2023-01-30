@@ -16,9 +16,9 @@
 # run simulation
 
 """
-	function simulate!(sim::Simulation;
-		time::Float = Inf, duration::Float = Inf, numEvents::Int = -1,
-		doPrint::Bool = false, printingInterval::Float = 1.0)
+    function simulate!(sim::Simulation;
+        time::Float = Inf, duration::Float = Inf, numEvents::Int = -1,
+        doPrint::Bool = false, printingInterval::Float = 1.0)
 Run the simulation to completion, or to any specified stopping point (according to `time`, `duration`, or `numEvents`), whichever comes first. Returns `true` if simulation is complete; `false` otherwise.
 
 # Keyword arguments

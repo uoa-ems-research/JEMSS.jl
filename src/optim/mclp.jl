@@ -17,10 +17,10 @@
 # From paper: "The maximal covering location problem"
 
 """
-	solveMclp!(sim::Simulation;
-		numAmbs::Int = sim.numAmbs,
-		demandWeights::Dict{Priority,Float} = Dict([p => 1.0 for p in priorities]),
-		results::Dict = Dict())
+    solveMclp!(sim::Simulation;
+        numAmbs::Int = sim.numAmbs,
+        demandWeights::Dict{Priority,Float} = Dict([p => 1.0 for p in priorities]),
+        results::Dict = Dict())
 Solves the Maximal Covering Location Problem (MCLP) to locate `numAmbs` ambulances at stations for `sim` and returns the number of ambulances to assign to each station, also the converse is returned - a station index for each ambulance.
 The problem assumes that all ambulances are equivalent.
 
@@ -70,7 +70,7 @@ function solveMclp!(sim::Simulation;
 end
 
 """
-	solveMclp(n::Int, pointDemands::Vector{Float}, coverMatrix::Array{Bool,2}; results::Dict = Dict())
+    solveMclp(n::Int, pointDemands::Vector{Float}, coverMatrix::Array{Bool,2}; results::Dict = Dict())
 Solves the Maximal Covering Location Problem (MCLP) to locate `n` facilities, where `pointDemands[j]` is the demand at point `j` and `coverMatrix[i,j] = true` if facility location `i` can cover point `j`.
 
 `results` will store results of mclp such as the objective value and decision variable values (though the decision variables may have changed from the given problem as duplicate columns in `coverMatrix` are removed).
@@ -125,7 +125,7 @@ function solveMclp(n::Int, pointDemands::Vector{Float}, coverMatrix::Array{Bool,
 end
 
 """
-	solveMclp(n::Int, pointDemands::Vector{Float}, pointFacilities::Vector{Vector{Int}}; results::Dict = Dict())
+    solveMclp(n::Int, pointDemands::Vector{Float}, pointFacilities::Vector{Vector{Int}}; results::Dict = Dict())
 Solves the Maximal Covering Location Problem (MCLP) to locate `n` facilities, where `pointDemands[i]` is the demand at point `i` and `pointFacilities[i]` are the indices of facility locations that cover point `i`.
 
 `results` will store results of mclp such as the objective value and decision variable values.
