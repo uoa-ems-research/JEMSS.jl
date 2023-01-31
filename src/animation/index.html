@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ----------------------------------------------------------------------->
 <html>
+
 <head>
 	<meta charset='utf-8' />
 	<title>JEMSS</title>
@@ -21,16 +22,18 @@ limitations under the License.
 	<link href='https://api.mapbox.com/mapbox.js/v2.4.0/mapbox.css' rel='stylesheet' />
 	<style>
 		body {
-			margin:0;
-			padding:0;
+			margin: 0;
+			padding: 0;
 		}
+
 		.map {
-			position:absolute;
-			top:0;
-			bottom:0;
-			width:100%;
+			position: absolute;
+			top: 0;
+			bottom: 0;
+			width: 100%;
 			z-index: 0;
 		}
+
 		.legend {
 			top: 10px;
 			right: 10px;
@@ -46,12 +49,14 @@ limitations under the License.
 			padding-right: 15px;
 			z-index: 1;
 		}
+
 		.legend div img {
 			display: inline-block;
 			height: 15px;
 			margin-right: 5px;
 			width: 15px;
 		}
+
 		.menu {
 			bottom: 30px;
 			right: 10px;
@@ -65,9 +70,11 @@ limitations under the License.
 			padding: 10px;
 			z-index: 1;
 		}
+
 		.menu div {
 			padding: 5px
 		}
+
 		.button {
 			background-color: white;
 			border-color: grey;
@@ -79,17 +86,20 @@ limitations under the License.
 		}
 	</style>
 </head>
+
 <body>
 	<div id="map_id" class="map"></div>
 	<div id="map_legend" class="legend">
-		<div><h3>Legend</h3></div>
-		<div><img id="image_ambulance"/>ambulance</div>
-		<div><img id="image_hospital"/>hospital</div>
-		<div><img id="image_station"/>station</div>
+		<div>
+			<h3>Legend</h3>
+		</div>
+		<div><img id="image_ambulance" />ambulance</div>
+		<div><img id="image_hospital" />hospital</div>
+		<div><img id="image_station" />station</div>
 		<div>call priorities:</div>
-		<div><img id="image_call_high"/>high</div>
-		<div><img id="image_call_med"/>medium</div>
-		<div><img id="image_call_low"/>low</div>
+		<div><img id="image_call_high" />high</div>
+		<div><img id="image_call_med" />medium</div>
+		<div><img id="image_call_low" />low</div>
 	</div>
 	<div id="menu" class="menu">
 		<div align="center">
@@ -100,35 +110,35 @@ limitations under the License.
 		<div>Jump to time: <input id="new_sim_time" type="text" value="" size="7" maxlength="10"></input></div>
 		<div>Sim speed: <input id="sim_speed" type="text" value="200" size="5" maxlength="8"></input></div>
 		<div>Frame rate: <input id="fps" type="text" value="30" size="1" maxlength="3"></input></div>
-		<div>Show destinations <input type="checkbox" id="show_dests"/></div>
-		<div>Show road arcs <input type="checkbox" id="show_arcs"/></div>
+		<div>Show destinations <input type="checkbox" id="show_dests" /></div>
+		<div>Show road arcs <input type="checkbox" id="show_arcs" /></div>
 	</div>
-	
+
 	<script src="https://api.tiles.mapbox.com/mapbox-gl-js/v0.26.0/mapbox-gl.js"></script>
 	<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
 	<script type="text/javascript">
-		
+
 		////////////////////////////////////////////////////////////////
 		// create map
-		
+
 		L.mapbox.accessToken = 'pk.eyJ1Ijoic2FtdWVscmlkbGVyIiwiYSI6ImNqOGkyeDZ1eDB5aGEycW5hcjRoMnV0MTcifQ.kU7MkMpBNuk_CK58od1q8Q';
-		
+
 		const map = L.mapbox.map('map_id')
 			.setView([0, 0], 12)
 			.addLayer(L.mapbox.styleLayer('mapbox://styles/samuelridler/ck97skckj51t21in2qku0rcco'));
-		
+
 		var mapBounds = map.getBounds()
 		function resetMapView() {
 			map.fitBounds(mapBounds);
 		}
-		
+
 		////////////////////////////////////////////////////////////////
 		// websocket connection
-		
-		var connection = new WebSocket('ws://'+window.location.host);
-		
+
+		var connection = new WebSocket('ws://' + window.location.host);
+
 		// read messages from Julia
-		connection.onmessage = function( message ){
+		connection.onmessage = function (message) {
 			msgObj = JSON.parse(message.data)
 			switch (msgObj.message) {
 				case "set_map_view":
@@ -208,20 +218,20 @@ limitations under the License.
 					throw new Error("Undefined message type")
 			}
 		}
-		
+
 		// window closing
-		window.onbeforeunload = function() {
+		window.onbeforeunload = function () {
 			console.log("disconnecting")
-			connection.onclose = function () {}; // disable onclose handler first
+			connection.onclose = function () { }; // disable onclose handler first
 			connection.send("disconnect")
 			connection.close()
 		}
-		
+
 		////////////////////////////////////////////////////////////////
 		// buttons etc.
-		
+
 		var state = "stopped" // can be: running, paused, stopped, jumping
-		$('#run_pause_button').on('click', function(){
+		$('#run_pause_button').on('click', function () {
 			if (this.value == "Run") {
 				if (state == "paused" || state == "stopped") {
 					runAnimation()
@@ -232,40 +242,40 @@ limitations under the License.
 				}
 			}
 		})
-		$('#stop_button').on('click', function(){
+		$('#stop_button').on('click', function () {
 			if (state == "running" || state == "paused") {
 				stopAnimation();
 			}
 		})
-		
+
 		show_dests.checked = true
-		$('#show_dests').change(function() {
+		$('#show_dests').change(function () {
 			if (this.checked) {
 				showAmbDests()
 			} else {
 				hideAmbDests()
 			}
 		});
-		
+
 		show_arcs.checked = false
-		$('#show_arcs').change(function() {
+		$('#show_arcs').change(function () {
 			if (this.checked) {
 				showArcs()
 			} else {
 				hideArcs()
 			}
 		});
-		
+
 		////////////////////////////////////////////////////////////////
 		// sim/animation states
-		
+
 		doLogState = false
 		function logState() {
 			if (doLogState) {
 				console.log(state)
 			}
 		}
-		
+
 		function runAnimation() {
 			state = "running"
 			logState()
@@ -273,14 +283,14 @@ limitations under the License.
 			prepareNextFrame()
 			document.getElementById("run_pause_button").value = "Pause";
 		}
-		
+
 		function pauseAnimation() {
 			state = "paused"
 			logState()
 			connection.send("pause");
 			document.getElementById("run_pause_button").value = "Run";
 		}
-		
+
 		function stopAnimation() {
 			state = "stopped"
 			logState()
@@ -290,7 +300,7 @@ limitations under the License.
 			connection.send("stop");
 			document.getElementById("run_pause_button").value = "Run";
 		}
-		
+
 		function jumpAnimation() {
 			var prevState = state
 			if (newSimTime < simTime) {
@@ -312,34 +322,34 @@ limitations under the License.
 				pauseAnimation()
 			}
 		}
-		
+
 		////////////////////////////////////////////////////////////////
 		// simulation timing
-		
+
 		var simStartTime = 0
 		var simTime = 0 // current simulation time
 		var frameSimTime // time between frames in simulation time
 		calcFrameSimTime()
 		var nextSimTime // time of next frame in sim time
-		
+
 		function setSimStartTime(time) {
 			simStartTime = time
 			updateSimTime(time)
 			newSimTime = time
 			$('#new_sim_time').val(newSimTime)
 		}
-		
+
 		function updateSimTime(time) {
 			simTime = time;
-			$("#sim_time").text( (simTime).toFixed(5) );
+			$("#sim_time").text((simTime).toFixed(5));
 			calcFrameSimTime();
 			nextSimTime = simTime + frameSimTime;
 		}
-		
+
 		var simSpeed = parseFloat($('#sim_speed').val()) // real time to sim time speed factor
 		var minSimSpeed = 1
-		var secondsToDays = 1/(24*60*60) // needed because sim time is in days, not seconds
-		$("#sim_speed").bind('blur keyup',function(e) {
+		var secondsToDays = 1 / (24 * 60 * 60) // needed because sim time is in days, not seconds
+		$("#sim_speed").bind('blur keyup', function (e) {
 			if (e.type == 'blur' || e.keyCode == '13') {
 				simSpeed = parseFloat($('#sim_speed').val()) || simSpeed
 				simSpeed = Math.max(simSpeed, minSimSpeed)
@@ -347,16 +357,16 @@ limitations under the License.
 				calcFrameSimTime()
 			}
 		})
-		
+
 		function calcFrameSimTime() {
-			frameSimTime = simSpeed * secondsToDays * frameTime/1000 // frameTime is in milliseconds, need seconds
+			frameSimTime = simSpeed * secondsToDays * frameTime / 1000 // frameTime is in milliseconds, need seconds
 			if (state != "running") {
 				nextSimTime = simTime + frameSimTime;
 			}
 		}
-		
+
 		var newSimTime // used if sim is jumped to a different time
-		$("#new_sim_time").bind('blur keyup',function(e) {
+		$("#new_sim_time").bind('blur keyup', function (e) {
 			if (e.keyCode == '13') {
 				newSimTime = isNaN(parseFloat($('#new_sim_time').val())) ?
 					newSimTime : parseFloat($('#new_sim_time').val())
@@ -365,7 +375,7 @@ limitations under the License.
 				jumpToNewSimTime()
 			}
 		})
-		
+
 		function jumpToNewSimTime() {
 			if (newSimTime < simStartTime) {
 				throw new Error("Cannot jump to time before simulation start time")
@@ -376,30 +386,30 @@ limitations under the License.
 				jumpAnimation()
 			}
 		}
-		
+
 		function jumpToSimTime(time) {
 			newSimTime = time
 			jumpToNewSimTime()
 		}
-		
+
 		////////////////////////////////////////////////////////////////
 		// frame timing
-		
-		var frameTime = 1000/parseFloat($('#fps').val()) // time between frames in milliseconds
+
+		var frameTime = 1000 / parseFloat($('#fps').val()) // time between frames in milliseconds
 		var minFrameRate = 1
 		var maxFrameRate = 100
 		var lastFrameTime = getCurrentTime(); // time that last frame was shown
-		$("#fps").bind('blur keyup',function(e) {
+		$("#fps").bind('blur keyup', function (e) {
 			if (e.type == 'blur' || e.keyCode == '13') {
-				frameRate = parseFloat($('#fps').val()) || 1000/frameTime
+				frameRate = parseFloat($('#fps').val()) || 1000 / frameTime
 				frameRate = Math.max(frameRate, minFrameRate)
 				frameRate = Math.min(frameRate, maxFrameRate)
 				$('#fps').val(frameRate)
-				frameTime = 1000/frameRate // convert fps to frame time in ms
+				frameTime = 1000 / frameRate // convert fps to frame time in ms
 				calcFrameSimTime()
 			}
 		})
-		
+
 		function prepareNextFrame() {
 			if (state == "running" || state == "jumping") {
 				connection.send("prepare_next_frame " + nextSimTime);
@@ -407,11 +417,11 @@ limitations under the License.
 				stopAnimation();
 			}
 		}
-		
+
 		function getNextFrame(jlSimTime) {
 			// jlSimTime = where sim time is for julia, for next frame
 			waitTime = frameTime - (getCurrentTime() - lastFrameTime) - 1 // -1 for "good measure"...
-			setTimeout(function(){
+			setTimeout(function () {
 				lastFrameTime = getCurrentTime()
 				if (nextSimTime == jlSimTime && (state == "running" || state == "paused" || state == "jumping")) {
 					connection.send("get_next_frame " + nextSimTime)
@@ -420,20 +430,19 @@ limitations under the License.
 				// if state == "stopped", do nothing
 			}, waitTime)
 		}
-		
+
 		// returns current time in milliseconds
 		function getCurrentTime() {
 			d = new Date();
 			return d.getTime();
 		}
-		
+
 		////////////////////////////////////////////////////////////////
 		// icons
-		
+
 		var icons = {};
 		function setIcons(iconsObj) {
-			for (iconName in iconsObj)
-			{
+			for (iconName in iconsObj) {
 				// create icon
 				icon = L.icon();
 				options = iconsObj[iconName]["options"];
@@ -441,43 +450,43 @@ limitations under the License.
 					icon.options[optionName] = options[optionName];
 				}
 				icons[iconName] = icon;
-				
+
 				// set icon image in map legend
 				imgId = "image_" + iconName;
 				setImgSrc(imgId, options.iconUrl);
-				scaleDownImgWithinMaxDims(imgId, options.iconSize, [15,15]);
+				scaleDownImgWithinMaxDims(imgId, options.iconSize, [15, 15]);
 			}
-			
+
 			updateMarkerIcons();
 		}
-		
+
 		function setImgSrc(imgId, src) {
 			var elt = document.getElementById(imgId);
 			elt.src = src
 		}
-		
+
 		function scaleDownImgWithinMaxDims(imgId, dims, maxDims) {
 			// scale down height and width (dims) to fit in maxDims
 			// resulting dims have min value 1 (pixel)
 			// no scaling if dims already fits in maxDims
-			var s = Math.min(1, maxDims[0]/dims[0], maxDims[1]/dims[1]); // scale factor
-			var width = Math.max(1, dims[0]*s);
-			var height = Math.max(1, dims[1]*s);
+			var s = Math.min(1, maxDims[0] / dims[0], maxDims[1] / dims[1]); // scale factor
+			var width = Math.max(1, dims[0] * s);
+			var height = Math.max(1, dims[1] * s);
 			var elt = document.getElementById(imgId);
 			elt.style.width = width + "px";
 			elt.style.height = height + "px";
 		}
-		
+
 		function markerIcon(icon, lat, lon, popup) {
 			return L.marker([lat, lon],
-					{icon: icon}
-				).addTo(map).bindPopup(popup);
+				{ icon: icon }
+			).addTo(map).bindPopup(popup);
 		}
-		
+
 		function updateIcons() {
 			connection.send("update_icons");
 		}
-		
+
 		function updateMarkerIcons() {
 			// set icons of existing markers
 			for (id in ambs) {
@@ -494,12 +503,12 @@ limitations under the License.
 				stations[id].marker.setIcon(icons.station);
 			}
 		}
-		
+
 		////////////////////////////////////////////////////////////////
 		// ambulances
-		
+
 		var ambs = {}
-		
+
 		function addAmb(id, lat, lon) {
 			if (id in ambs) {
 				throw new Error("Cannot add ambulance with id " + id + " as it exists already")
@@ -507,17 +516,17 @@ limitations under the License.
 			ambs[id] = new ambulance(id, lat, lon);
 			addAmbDest(id, lat, lon);
 		}
-		
+
 		function ambulance(id, lat, lon) {
 			this.id = id;
 			this.marker = markerIcon(icons.ambulance, lat, lon, "Ambulance " + id);
 		}
-		
+
 		function moveAmb(id, lat, lon) {
 			var amb = ambs[id]
 			amb.marker.setLatLng([lat, lon])
 		}
-		
+
 		function removeAmbs() {
 			for (id in ambs) {
 				map.removeLayer(ambs[id].marker)
@@ -525,10 +534,10 @@ limitations under the License.
 			hideAmbDests()
 			ambs = {}
 		}
-		
+
 		////////////////////////////////////////////////////////////////
 		// ambulance destinations
-		
+
 		function addAmbDest(id) {
 			amb = ambs[id]
 			amb.destLine = new L.polyline(
@@ -543,7 +552,7 @@ limitations under the License.
 				map.addLayer(amb.destLine)
 			}
 		}
-		
+
 		function updateAmbDest(a) {
 			// 'a' is ambulance from julia
 			ambs[a.index].destLine.setLatLngs([
@@ -551,24 +560,24 @@ limitations under the License.
 				[a.destLoc.y, a.destLoc.x]
 			])
 		}
-		
+
 		function showAmbDests() {
 			for (id in ambs) {
 				map.addLayer(ambs[id].destLine)
 			}
 		}
-		
+
 		function hideAmbDests() {
 			for (id in ambs) {
 				map.removeLayer(ambs[id].destLine)
 			}
 		}
-		
+
 		////////////////////////////////////////////////////////////////
 		// calls
-		
+
 		var calls = {}
-		
+
 		// add call
 		function addCall(id, lat, lon, priority) {
 			if (id in calls) {
@@ -576,7 +585,7 @@ limitations under the License.
 			}
 			calls[id] = new call(id, lat, lon, priority)
 		}
-		
+
 		function call(id, lat, lon, priority) {
 			this.id = id;
 			this.iconName = "";
@@ -592,87 +601,87 @@ limitations under the License.
 			callIcon = icons[this.iconName]
 			this.marker = markerIcon(callIcon, lat, lon, "Call " + id);
 		}
-		
+
 		function moveCall(id, lat, lon) {
 			calls[id].marker.setLatLng([lat, lon])
 		}
-		
+
 		function removeCall(id) {
 			map.removeLayer(calls[id].marker)
 			delete calls[id]
 		}
-		
+
 		function removeCalls() {
 			for (id in calls) {
 				removeCall(id)
 			}
 			// calls = {}
 		}
-		
+
 		////////////////////////////////////////////////////////////////
 		// hospitals
-		
+
 		var hospitals = {}
-		
+
 		function addHospital(id, lat, lon) {
 			if (id in hospitals) {
 				throw new Error("Cannot add hospital with id " + id + " as it exists already")
 			}
 			hospitals[id] = new hospital(id, lat, lon);
 		}
-		
+
 		function hospital(id, lat, lon) {
 			this.id = id;
 			this.marker = markerIcon(icons.hospital, lat, lon, "Hospital " + id);
 		}
-		
+
 		////////////////////////////////////////////////////////////////
 		// stations
-		
+
 		var stations = {}
-		
+
 		function addStation(id, lat, lon) {
 			if (id in stations) {
 				throw new Error("Cannot add station with id " + id + " as it exists already")
 			}
 			stations[id] = new station(id, lat, lon);
 		}
-		
+
 		function station(id, lat, lon) {
 			this.id = id;
 			this.marker = markerIcon(icons.station, lat, lon, "Station " + id);
 		}
-		
+
 		////////////////////////////////////////////////////////////////
 		// nodes
-		
+
 		nodes = []
-		
+
 		function addNode(id, lat, lon) {
 			if (id != nodes.length + 1) {
 				throw new Error("Nodes should be added in order")
 			}
 			nodes[nodes.length] = new node(id, lat, lon);
 		}
-		
+
 		function node(id, lat, lon) {
 			this.id = id
 			this.lat = lat
 			this.lon = lon
 		}
-		
+
 		////////////////////////////////////////////////////////////////
 		// arcs
-		
+
 		arcs = []
-		
+
 		function addArc(id, nodeIds) {
 			if (id != arcs.length + 1) {
 				throw new Error("Arcs should be added in order")
 			}
 			arcs[arcs.length] = new arc(id, nodeIds);
 		}
-		
+
 		function arc(id, nodeIds) {
 			if (nodeIds.length < 2) {
 				throw new Error("Arcs should contain two or more nodes")
@@ -680,15 +689,15 @@ limitations under the License.
 			if (min(nodeIds) < 1 || max(nodeIds) > nodes.length) {
 				throw new Error("Arc has node ids outside of range")
 			}
-			
+
 			this.id = id
 			this.nodeIds = nodeIds
 			this.speed = 0;
-			
+
 			// get node lat lon values
 			var nodeLatLons = []
 			for (i in nodeIds) {
-				var node = nodes[nodeIds[i]-1]
+				var node = nodes[nodeIds[i] - 1]
 				nodeLatLons.push([node.lat, node.lon])
 			}
 			this.nodeLatLons = nodeLatLons
@@ -701,13 +710,13 @@ limitations under the License.
 				}
 			).addTo(map).bringToBack();
 		}
-		
+
 		function getArcs() {
 			if (arcs.length == 0) {
 				connection.send("get_arcs")
 			}
 		}
-		
+
 		function showArcs() {
 			getArcs()
 			for (i in arcs) {
@@ -715,17 +724,17 @@ limitations under the License.
 				arcs[i].marker.bringToBack();
 			}
 		}
-		
+
 		function hideArcs() {
 			for (i in arcs) {
 				map.removeLayer(arcs[i].marker);
 			}
 		}
-		
+
 		function setArcSpeed(id, speed) {
-			arcs[id-1].speed = speed;
+			arcs[id - 1].speed = speed;
 		}
-		
+
 		function highlightArcsAboveSpeed(speed) {
 			for (i in arcs) {
 				if (arcs[i].speed >= speed) {
@@ -741,10 +750,10 @@ limitations under the License.
 				}
 			}
 		}
-		
+
 		////////////////////////////////////////////////////////////////
 		// misc
-		
+
 		function circleMarker(lat, lon, size, color, opacity, popup) {
 			return L.circle([lat, lon], size, {
 				fillColor: color,
@@ -755,28 +764,28 @@ limitations under the License.
 				weight: 5
 			}).addTo(map).bindPopup(popup);
 		}
-		
+
 		function idToIndex(id) {
 			// convert julia index to js index
-			return id-1;
+			return id - 1;
 		}
-		
+
 		function indexToId(index) {
 			// convert js index to julia index
-			return index+1;
+			return index + 1;
 		}
-		
+
 		function min(array) {
 			return Math.min(...array);
 		}
-		
+
 		function max(array) {
 			return Math.max(...array);
 		}
-		
+
 		////////////////////////////////////////////////////////////////
 		// debugging
-		
+
 		var popup = L.popup();
 		function onMapClick(e) {
 			popup
@@ -785,7 +794,7 @@ limitations under the License.
 				.openOn(map);
 		}
 		map.on('click', onMapClick);
-		
+
 		function showLatLon(lat, lon) {
 			latlng = new L.LatLng(lat, lon)
 			popup
@@ -793,9 +802,9 @@ limitations under the License.
 				.setContent(latlng.toString())
 				.openOn(map);
 		}
-		
+
 		var miscMarkers = {}
-		
+
 		function addMiscMarker(key, popup, lat, lon) {
 			if (key in miscMarkers) {
 				throw new Error("Key already exists")
@@ -803,26 +812,26 @@ limitations under the License.
 			}
 			miscMarkers[key] = new miscMarker(popup, lat, lon);
 		}
-		
+
 		function miscMarker(popup, lat, lon) {
 			this.marker = circleMarker(lat, lon, 10, 'grey', 0.8, popup)
 		}
-		
+
 		function removeMiscMarker(key) {
 			if (key in miscMarkers) {
 				map.removeLayer(miscMarkers[key].marker)
 				delete miscMarkers[key]
 			}
 		}
-		
+
 		function removeMiscMarkers() {
 			for (m in miscMarkers) {
 				removeMiscMarker(m)
 			}
 		}
-		
+
 		var miscLines = {}
-		
+
 		function addMiscLine(key, popup, latLonPairs) {
 			if (key in miscLines) {
 				throw new Error("Key already exists")
@@ -830,7 +839,7 @@ limitations under the License.
 			}
 			miscLines[key] = new miscLine(popup, latLonPairs);
 		}
-		
+
 		function miscLine(popup, latLonPairs) {
 			this.marker = L.polyline(
 				latLonPairs,
@@ -841,35 +850,35 @@ limitations under the License.
 				}
 			).addTo(map);
 		}
-		
+
 		function removeMiscLine(key) {
 			if (key in miscLines) {
 				map.removeLayer(miscLines[key].marker)
 				delete miscLines[key]
 			}
 		}
-		
+
 		function removeMiscLines() {
 			for (m in miscLines) {
 				removeMiscLine(m)
 			}
 		}
-		
+
 		function addMiscLinesBetweenAllNodePairs(nodeIdPairs) {
 			for (i in nodeIdPairs) {
 				var nodeIdPair = nodeIdPairs[i];
-				var fromNode = nodes[nodeIdPair[0]-1];
-				var toNode = nodes[nodeIdPair[1]-1];
+				var fromNode = nodes[nodeIdPair[0] - 1];
+				var toNode = nodes[nodeIdPair[1] - 1];
 				addMiscLine("node id pair: " + fromNode.id + " " + toNode.id, String(i),
 					[[fromNode.lat, fromNode.lon], [toNode.lat, toNode.lon]])
 			}
 		}
-		
+
 		function approxDist(lat1, lon1, lat2, lon2) {
 			var c = Math.cos(lat1 / 180 * Math.PI)
 			return Math.sqrt(Math.pow(lat1 - lat2, 2) + Math.pow(c * (lon1 - lon2), 2)) * 40000 / 360 // approximate distance, km, for two nearby locations
 		}
-		
+
 		function findNodeNearestToLatLon(lat, lon) {
 			var nearestNode = 0;
 			var nearestDist = Infinity;
@@ -884,22 +893,23 @@ limitations under the License.
 			}
 			return nodes[nearestNode]
 		}
-		
+
 		function showNodeByIndex(nodeIndex) {
 			var node = nodes[nodeIndex]
 			showLatLon(node.lat, node.lon)
 		}
-		
+
 		function showNodeById(nodeId) {
 			showNodeByIndex(idToIndex(nodeId))
 		}
-		
+
 		function show(object) {
 			// object could be: ambulance, call, hospital, station
 			object.marker.openPopup()
 		}
-		
+
 	</script>
 
 </body>
+
 </html>

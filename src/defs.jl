@@ -60,12 +60,12 @@ NullHist() = deepcopy(nullHist)
 nullFunction() = nothing
 
 # call/travel priorities
-@enum Priority nullPriority=0 highPriority=1 medPriority=2 lowPriority=3
+@enum Priority nullPriority = 0 highPriority = 1 medPriority = 2 lowPriority = 3
 const priorities = setdiff([instances(Priority)...], [nullPriority])
 const numPriorities = length(priorities)
 
 # ambulance classes
-@enum AmbClass nullAmbClass=0 als=1 bls=2 # als = advanced life support, bls = basic life support
+@enum AmbClass nullAmbClass = 0 als = 1 bls = 2 # als = advanced life support, bls = basic life support
 
 # event types/forms
 @enum EventForm nullEvent ambGoesToSleep ambWakesUp callArrives considerDispatch ambDispatched ambMobilised ambReachesCall ambGoesToHospital ambReachesHospital ambBecomesFree ambReturnsToStation ambReachesStation considerMoveUp ambMoveUpToStation

@@ -14,16 +14,16 @@
 ##########################################################################
 
 macro stdout_silent(f)
-	ex = quote
-		stdouttemp = stdout
-		redirect_stdout()
-		try
-			$f
-		catch e
-			throw(e)
-		finally
-			redirect_stdout(stdouttemp)
-		end
-	end
-	return esc(ex)
+    ex = quote
+        stdouttemp = stdout
+        redirect_stdout()
+        try
+            $f
+        catch e
+            throw(e)
+        finally
+            redirect_stdout(stdouttemp)
+        end
+    end
+    return esc(ex)
 end

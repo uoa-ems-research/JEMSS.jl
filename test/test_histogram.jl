@@ -16,34 +16,34 @@
 using StatsBase
 
 @testset "histogram addition" begin
-	# null histogram
-	h1 = fit(Histogram, [0], 0:1)
-	h2 = NullHist()
-	h3 = h1+h2
-	@test h3 == h1
-	@test h3 == h2+h1 # commutative
-	
-	# histograms with UnitRange edges
-	h1 = fit(Histogram, [0], 0:2)
-	h2 = fit(Histogram, [0,2], 0:3)
-	h3 = h1+h2
-	@test h3 == h2+h1 # commutative
-	@test h3.edges == h2.edges
-	@test h3.weights == [2,0,1] # [1,0] + [1,0,1]
-	
-	# histograms with StepRange edges
-	h1 = fit(Histogram, [0], 0:2:4)
-	h2 = fit(Histogram, [0,5], 0:2:6)
-	h3 = h1+h2
-	@test h3 == h2+h1 # commutative
-	@test h3.edges == h2.edges
-	@test h3.weights == [2,0,1] # [1,0] + [1,0,1]
-	
-	# histograms with StepRangeLen edges
-	h1 = fit(Histogram, [0], 0.0:2.0)
-	h2 = fit(Histogram, [0,2], 0.0:3.0)
-	h3 = h1+h2
-	@test h3 == h2+h1 # commutative
-	@test h3.edges == h2.edges
-	@test h3.weights == [2,0,1] # [1,0] + [1,0,1]
+    # null histogram
+    h1 = fit(Histogram, [0], 0:1)
+    h2 = NullHist()
+    h3 = h1 + h2
+    @test h3 == h1
+    @test h3 == h2 + h1 # commutative
+
+    # histograms with UnitRange edges
+    h1 = fit(Histogram, [0], 0:2)
+    h2 = fit(Histogram, [0, 2], 0:3)
+    h3 = h1 + h2
+    @test h3 == h2 + h1 # commutative
+    @test h3.edges == h2.edges
+    @test h3.weights == [2, 0, 1] # [1,0] + [1,0,1]
+
+    # histograms with StepRange edges
+    h1 = fit(Histogram, [0], 0:2:4)
+    h2 = fit(Histogram, [0, 5], 0:2:6)
+    h3 = h1 + h2
+    @test h3 == h2 + h1 # commutative
+    @test h3.edges == h2.edges
+    @test h3.weights == [2, 0, 1] # [1,0] + [1,0,1]
+
+    # histograms with StepRangeLen edges
+    h1 = fit(Histogram, [0], 0.0:2.0)
+    h2 = fit(Histogram, [0, 2], 0.0:3.0)
+    h3 = h1 + h2
+    @test h3 == h2 + h1 # commutative
+    @test h3.edges == h2.edges
+    @test h3.weights == [2, 0, 1] # [1,0] + [1,0,1]
 end

@@ -49,7 +49,9 @@ using JuMP
 using Cbc
 using GLPK
 using GLPKMathProgInterface
-if haskey(Pkg.installed(), "Gurobi") && haskey(ENV, "GUROBI_HOME") using Gurobi end
+if haskey(Pkg.installed(), "Gurobi") && haskey(ENV, "GUROBI_HOME")
+    using Gurobi
+end
 
 # statistics
 using Distributions
@@ -59,82 +61,82 @@ using StatsFuns
 
 # simulation functions
 export
-	initSim, runConfig, # run_config
-	simulate!, simulateToTime!, simulateToEnd!, backup!, reset!, simulateNextEvent!, # simulation
-	setSimReps!, simulateRep!, simulateReps!, resetRep!, resetReps!, makeRepsRunnable!, # replication
-	animate!, animate, # animation
-	backupSim!, resetSim! # compat
+    initSim, runConfig, # run_config
+    simulate!, simulateToTime!, simulateToEnd!, backup!, reset!, simulateNextEvent!, # simulation
+    setSimReps!, simulateRep!, simulateReps!, resetRep!, resetReps!, makeRepsRunnable!, # replication
+    animate!, animate, # animation
+    backupSim!, resetSim! # compat
 
 # file functions
 export
-	readDlmFileNextLine!, readDlmFile, openNewFile, writeDlmLine!, arrayDict, writeTablesToFile!, writeTablesToFile, readTablesFromFile, readTablesFromData, tableRowsFieldDicts, fileChecksum, serializeToFile, deserializeFile, joinPathIfNotAbs, interpolateString, xmlFileRoot, findElt, eltContent, eltContentVal, eltContentInterpVal, childrenNodeNames, selectXmlFile, # file_io
-	readGenConfig, runGenConfig, runGenConfigCalls, makeCalls, # gen_sim_files
-	readAmbsFile, readArcsFile, readCallsFile, readCompTableFile, readDemandFile, readDemandCoverageFile, readEventsFile, readGeoFile, readHospitalsFile, readMapFile, readMobilisationDelayFile, readMultiCompTableFile, readNodesFile, readPrioritiesFile, readPriorityListFile, readPriorityListsFile, readRasterFile, readRedispatchFile, readRNetTravelsFile, readStationsFile, readStatsControlFile, readStatsDictFile, readTravelFile, readDeploymentsFile, readZhangIpParamsFile, # read_sim_files
-	writeAmbsFile, writeArcsFile, writeCallsFile, writeDemandFile, writeDemandCoverageFile, writeHospitalsFile, writeMapFile, writeMultiCompTableFile, writeNodesFile, writePrioritiesFile, writePriorityListFile, writePriorityListsFile, writeRasterFile, writeRedispatchFile, writeRNetTravelsFile, writeStationsFile, writeTravelFile, writeZhangIpParamsFile, openOutputFiles!, writeOutputFiles, writeMiscOutputFiles, closeOutputFiles!, writeEventToFile!, writeDeploymentsFile, writeBatchMeanResponseDurationsFile, # write_sim_files
-	writeStatsFiles, writeAmbsStatsFile, writeCallsStatsFile, writeHospitalsStatsFile, writeStationsStatsFile, writeStatsDictFile # write_sim_files - stats
+    readDlmFileNextLine!, readDlmFile, openNewFile, writeDlmLine!, arrayDict, writeTablesToFile!, writeTablesToFile, readTablesFromFile, readTablesFromData, tableRowsFieldDicts, fileChecksum, serializeToFile, deserializeFile, joinPathIfNotAbs, interpolateString, xmlFileRoot, findElt, eltContent, eltContentVal, eltContentInterpVal, childrenNodeNames, selectXmlFile, # file_io
+    readGenConfig, runGenConfig, runGenConfigCalls, makeCalls, # gen_sim_files
+    readAmbsFile, readArcsFile, readCallsFile, readCompTableFile, readDemandFile, readDemandCoverageFile, readEventsFile, readGeoFile, readHospitalsFile, readMapFile, readMobilisationDelayFile, readMultiCompTableFile, readNodesFile, readPrioritiesFile, readPriorityListFile, readPriorityListsFile, readRasterFile, readRedispatchFile, readRNetTravelsFile, readStationsFile, readStatsControlFile, readStatsDictFile, readTravelFile, readDeploymentsFile, readZhangIpParamsFile, # read_sim_files
+    writeAmbsFile, writeArcsFile, writeCallsFile, writeDemandFile, writeDemandCoverageFile, writeHospitalsFile, writeMapFile, writeMultiCompTableFile, writeNodesFile, writePrioritiesFile, writePriorityListFile, writePriorityListsFile, writeRasterFile, writeRedispatchFile, writeRNetTravelsFile, writeStationsFile, writeTravelFile, writeZhangIpParamsFile, openOutputFiles!, writeOutputFiles, writeMiscOutputFiles, closeOutputFiles!, writeEventToFile!, writeDeploymentsFile, writeBatchMeanResponseDurationsFile, # write_sim_files
+    writeStatsFiles, writeAmbsStatsFile, writeCallsStatsFile, writeHospitalsStatsFile, writeStationsStatsFile, writeStatsDictFile # write_sim_files - stats
 
 # move up
 export
-	initCompTable!, initDmexclp!, initMultiCompTable!, initPriorityList!, initZhangIp!, initTemp0!, initTemp1!, initTemp2!,
-	setMoveUpModule!
+    initCompTable!, initDmexclp!, initMultiCompTable!, initPriorityList!, initZhangIp!, initTemp0!, initTemp1!, initTemp2!,
+    setMoveUpModule!
 
 # misc functions
 export
-	isBusy, isFree, isWorking, isGoingToStation, isTravelling, # ambulance
-	setSimCalls!, # call
-	calcCoverBound!, initCoverBound, approxDistr, convolute, makeCdf, binarySearch, calcAmbBusyDurationProbUpperBounds, calcAmbBusyDurationLowerBoundDistrs!, calcNumAmbsMaxCoverageFrac, calcQueuedDurationsMaxCoverageFrac, initCoverBoundSim, simulateCoverBound!, simulateCoverBoundLowerBound!, writeAmbBusyDurationProbUpperBoundsFile, readAmbBusyDurationProbUpperBoundsFile, writeQueuedDurationsMaxCoverageFracFile, readQueuedDurationsMaxCoverageFracFile, # cover bound
-	initDemand!, initDemandCoverage!, # demand
-	printEvent, # event
-	findNearestNode, # grid
-	squareDist, normDist, offRoadTravelTime, linearInterpLocation, randLocation, # location
-	isFNodeInRGraph, shortestPathNextRNode, shortestPathNextRArc, shortestPathData, shortestPathTravelTime, shortestPathDistance, shortestPath, findRArcFromFNodeToFNode, # network
-	rasterRandLocations, printRasterSize, # raster
-	shortestRouteTravelTime!, # route
-	getCallResponseDurations, getAvgCallResponseDuration, getCallsReachedInTime, countCallsReachedInTime, printSimStats, printAmbsStats, printCallsStats, printHospitalsStats, calcBatchMeans, calcBatchMeanResponseDurations, meanErrorPlot, calcAR0DurbinWatsonTestPValue, tDistrHalfWidth, confInterval, getPeriodStatsList, getRepsPeriodStatsList, getRepPeriodStats, statsDictFromPeriodStatsList, # statistics
-	checkCompTable, isCompTableNested, nestCompTable, unnestCompTable, makeRandNestedCompTable, # compliance table
-	checkMultiCompTable, # multi-compliance table
-	makeRandDeployment, makeRandDeployments, deploymentToStationsNumAmbs, stationsNumAmbsToDeployment, getDeployment, getStationsNumAmbs, setAmbStation!, applyDeployment!, applyStationsNumAmbs!, simulateDeployment!, simulateDeployments!, # deployment
-	checkPriorityList, makeRandPriorityList, # priority list
-	solveMclp!, solveMclp, # mclp
-	solveMexclp!, # mexclp
-	solveNestedMclp!, solveNestedMclp, # nested mclp
-	solvePMedian, # p-median
-	flatten, # dict
-	runParallel! # parallel
+    isBusy, isFree, isWorking, isGoingToStation, isTravelling, # ambulance
+    setSimCalls!, # call
+    calcCoverBound!, initCoverBound, approxDistr, convolute, makeCdf, binarySearch, calcAmbBusyDurationProbUpperBounds, calcAmbBusyDurationLowerBoundDistrs!, calcNumAmbsMaxCoverageFrac, calcQueuedDurationsMaxCoverageFrac, initCoverBoundSim, simulateCoverBound!, simulateCoverBoundLowerBound!, writeAmbBusyDurationProbUpperBoundsFile, readAmbBusyDurationProbUpperBoundsFile, writeQueuedDurationsMaxCoverageFracFile, readQueuedDurationsMaxCoverageFracFile, # cover bound
+    initDemand!, initDemandCoverage!, # demand
+    printEvent, # event
+    findNearestNode, # grid
+    squareDist, normDist, offRoadTravelTime, linearInterpLocation, randLocation, # location
+    isFNodeInRGraph, shortestPathNextRNode, shortestPathNextRArc, shortestPathData, shortestPathTravelTime, shortestPathDistance, shortestPath, findRArcFromFNodeToFNode, # network
+    rasterRandLocations, printRasterSize, # raster
+    shortestRouteTravelTime!, # route
+    getCallResponseDurations, getAvgCallResponseDuration, getCallsReachedInTime, countCallsReachedInTime, printSimStats, printAmbsStats, printCallsStats, printHospitalsStats, calcBatchMeans, calcBatchMeanResponseDurations, meanErrorPlot, calcAR0DurbinWatsonTestPValue, tDistrHalfWidth, confInterval, getPeriodStatsList, getRepsPeriodStatsList, getRepPeriodStats, statsDictFromPeriodStatsList, # statistics
+    checkCompTable, isCompTableNested, nestCompTable, unnestCompTable, makeRandNestedCompTable, # compliance table
+    checkMultiCompTable, # multi-compliance table
+    makeRandDeployment, makeRandDeployments, deploymentToStationsNumAmbs, stationsNumAmbsToDeployment, getDeployment, getStationsNumAmbs, setAmbStation!, applyDeployment!, applyStationsNumAmbs!, simulateDeployment!, simulateDeployments!, # deployment
+    checkPriorityList, makeRandPriorityList, # priority list
+    solveMclp!, solveMclp, # mclp
+    solveMexclp!, # mexclp
+    solveNestedMclp!, solveNestedMclp, # nested mclp
+    solvePMedian, # p-median
+    flatten, # dict
+    runParallel! # parallel
 
 # types
 export
-	Location, Point, Node, Arc, Graph, NetTravel, Network, TravelMode, Travel, Route,
-	Event, Ambulance, Call, Hospital, Station, Redispatch,
-	Map, GridSearchRect, GridRect, Grid, Raster, RasterSampler, DemandMode, Demand, PointsCoverageMode, DemandCoverage,
-	CoverBoundSimRep, CoverBoundSim, CoverBoundMode, CoverBound,
-	CompTableData, DdsmData, DmexclpData, MultiCompTableData, PriorityListData, ZhangIpData, Temp0Data, Temp1Data, Temp2Data, MoveUpData,
-	MeanAndHalfWidth, AmbulanceStats, CallStats, HospitalStats, StationStats, SimPeriodStats, SimStats,
-	File, Table, Resimulation, Simulation,
-	DistrRng, GenConfig, MobilisationDelay
+    Location, Point, Node, Arc, Graph, NetTravel, Network, TravelMode, Travel, Route,
+    Event, Ambulance, Call, Hospital, Station, Redispatch,
+    Map, GridSearchRect, GridRect, Grid, Raster, RasterSampler, DemandMode, Demand, PointsCoverageMode, DemandCoverage,
+    CoverBoundSimRep, CoverBoundSim, CoverBoundMode, CoverBound,
+    CompTableData, DdsmData, DmexclpData, MultiCompTableData, PriorityListData, ZhangIpData, Temp0Data, Temp1Data, Temp2Data, MoveUpData,
+    MeanAndHalfWidth, AmbulanceStats, CallStats, HospitalStats, StationStats, SimPeriodStats, SimStats,
+    File, Table, Resimulation, Simulation,
+    DistrRng, GenConfig, MobilisationDelay
 
 # defs - consts
 export
-	Float, FloatSpTime, FloatSpDist, IntRNode, IntFadj, # type alias
-	nullIndex, nullX, nullY, nullTime, nullDist, nullHist, NullHist, # nulls
-	priorities, numPriorities, # priorities
-	Deployment, CompTable, MultiCompTable, NestedCompTable, PriorityList
+    Float, FloatSpTime, FloatSpDist, IntRNode, IntFadj, # type alias
+    nullIndex, nullX, nullY, nullTime, nullDist, nullHist, NullHist, # nulls
+    priorities, numPriorities, # priorities
+    Deployment, CompTable, MultiCompTable, NestedCompTable, PriorityList
 
 # defs - enums
 export
-	Priority, nullPriority, highPriority, medPriority, lowPriority, # priorities
-	AmbClass, nullAmbClass, als, bls, # ambulance classes
-	EventForm, nullEvent, ambGoesToSleep, ambWakesUp, callArrives, considerDispatch, ambDispatched, ambMobilised, ambReachesCall, ambGoesToHospital, ambReachesHospital, ambBecomesFree, ambReturnsToStation, ambReachesStation, considerMoveUp, ambMoveUpToStation,
-	AmbStatus, ambNullStatus, ambSleeping, ambIdleAtStation, ambMobilising, ambGoingToCall, ambAtCall, ambGoingToHospital, ambAtHospital, ambFreeAfterCall, ambReturningToStation, ambMovingUpToStation,
-	AmbStatusSet, ambWorking, ambBusy, ambFree, ambTravelling, ambGoingToStation,
-	CallStatus, callNullStatus, callScreening, callQueued, callWaitingForAmb, callOnSceneTreatment, callGoingToHospital, callAtHospital, callProcessed,
-	RouteStatus, routeNullStatus, routeBeforeStartNode, routeOnPath, routeAfterEndNode,
-	MoveUpModule, nullMoveUpModule, compTableModule, dmexclpModule, multiCompTableModule, priorityListModule, zhangIpModule, temp0Module, temp1Module, temp2Module
+    Priority, nullPriority, highPriority, medPriority, lowPriority, # priorities
+    AmbClass, nullAmbClass, als, bls, # ambulance classes
+    EventForm, nullEvent, ambGoesToSleep, ambWakesUp, callArrives, considerDispatch, ambDispatched, ambMobilised, ambReachesCall, ambGoesToHospital, ambReachesHospital, ambBecomesFree, ambReturnsToStation, ambReachesStation, considerMoveUp, ambMoveUpToStation,
+    AmbStatus, ambNullStatus, ambSleeping, ambIdleAtStation, ambMobilising, ambGoingToCall, ambAtCall, ambGoingToHospital, ambAtHospital, ambFreeAfterCall, ambReturningToStation, ambMovingUpToStation,
+    AmbStatusSet, ambWorking, ambBusy, ambFree, ambTravelling, ambGoingToStation,
+    CallStatus, callNullStatus, callScreening, callQueued, callWaitingForAmb, callOnSceneTreatment, callGoingToHospital, callAtHospital, callProcessed,
+    RouteStatus, routeNullStatus, routeBeforeStartNode, routeOnPath, routeAfterEndNode,
+    MoveUpModule, nullMoveUpModule, compTableModule, dmexclpModule, multiCompTableModule, priorityListModule, zhangIpModule, temp0Module, temp1Module, temp2Module
 
 # deprecated
 export
-	Depol, makeRandDeploymentPolicy, makeRandDeploymentPolicies, applyDeploymentPolicy!, simulateDeploymentPolicy!, simulateDeploymentPolicies!, writeDeploymentPoliciesFile, readDeploymentPoliciesFile, # renamed "deployment policy" to "deployment"
-	isSameLocation, findNearestNodeInGrid
+    Depol, makeRandDeploymentPolicy, makeRandDeploymentPolicies, applyDeploymentPolicy!, simulateDeploymentPolicy!, simulateDeploymentPolicies!, writeDeploymentPoliciesFile, readDeploymentPoliciesFile, # renamed "deployment policy" to "deployment"
+    isSameLocation, findNearestNodeInGrid
 
 include("defs.jl")
 

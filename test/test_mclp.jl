@@ -16,30 +16,33 @@
 # Maximal Covering Location Problem (MCLP)
 
 @testset "mclp" begin
-	## tiny
-	pointDemands = [1.0]
-	coverMatrix = fill(true, 1, 1)
-	results = Dict()
-	@test solveMclp(0, pointDemands, coverMatrix, results = results) == [0]
-	@test solveMclp(1, pointDemands, coverMatrix, results = results) == [1]
-	
-	## small
-	pointDemands = Float[2, 2, 1, 1]
-	coverMatrix = convert(Array{Bool,2}, [ # coverMatrix[i,j] = true if facility location i can cover point j
-		1 1 0 0
-		0 1 1 0
-		1 0 0 1
-	])
-	
-	@test solveMclp(0, pointDemands, coverMatrix, results = results) == [0, 0, 0]
-	@test results[:objVal] == 0
-	
-	@test solveMclp(1, pointDemands, coverMatrix, results = results) == [1, 0, 0]
-	@test results[:objVal] == 4
-	
-	@test solveMclp(2, pointDemands, coverMatrix, results = results) == [0, 1, 1]
-	@test results[:objVal] == 6
-	
-	@test solveMclp(3, pointDemands, coverMatrix, results = results) == [1, 1, 1]
-	@test results[:objVal] == 6
+    ## tiny
+    pointDemands = [1.0]
+    coverMatrix = fill(true, 1, 1)
+    results = Dict()
+    @test solveMclp(0, pointDemands, coverMatrix, results=results) == [0]
+    @test solveMclp(1, pointDemands, coverMatrix, results=results) == [1]
+
+    ## small
+    pointDemands = Float[2, 2, 1, 1]
+    coverMatrix = convert(
+        Array{Bool,2},
+        [ # coverMatrix[i,j] = true if facility location i can cover point j
+            1 1 0 0
+            0 1 1 0
+            1 0 0 1
+        ]
+    )
+
+    @test solveMclp(0, pointDemands, coverMatrix, results=results) == [0, 0, 0]
+    @test results[:objVal] == 0
+
+    @test solveMclp(1, pointDemands, coverMatrix, results=results) == [1, 0, 0]
+    @test results[:objVal] == 4
+
+    @test solveMclp(2, pointDemands, coverMatrix, results=results) == [0, 1, 1]
+    @test results[:objVal] == 6
+
+    @test solveMclp(3, pointDemands, coverMatrix, results=results) == [1, 1, 1]
+    @test results[:objVal] == 6
 end
