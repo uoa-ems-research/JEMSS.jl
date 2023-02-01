@@ -7,7 +7,7 @@ Julia package for Emergency Medical Services Simulation
 
 ## Installation
 To install and build this package, run the following command in the Pkg REPL mode (entered by pressing `]` from the Julia REPL; press backspace to get back):
-```julia
+```
 pkg> add https://github.com/uoa-ems-research/JEMSS.jl
 ```
 
