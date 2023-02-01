@@ -801,7 +801,7 @@ function writeAmbBusyDurationProbUpperBoundsFile(filename::String, ambBusyDurati
     @assert(issorted(ambBusyDurationsToSample))
     n = size(ambBusyDurationProbUpperBounds, 2) # should equal numStations
     table = Table("ambBusyDurationProbUpperBounds", vcat("duration", ["numAmbs_$i" for i = 1:n]),
-        rows=[vcat(ambBusyDurationsToSample[i], ambBusyDurationProbUpperBounds[i, :]) for i = 1:length(ambBusyDurationsToSample)])
+        rows=[vcat(ambBusyDurationsToSample[i], ambBusyDurationProbUpperBounds[i, :]) for i in eachindex(ambBusyDurationsToSample)])
     writeTablesToFile(filename, table)
 end
 function writeAmbBusyDurationProbUpperBoundsFile(filename::String, coverBound::CoverBound)
@@ -817,7 +817,7 @@ end
 
 function writeQueuedDurationsMaxCoverageFracFile(filename::String, queuedDurationsToSample::Vector{Float}, queuedDurationsMaxCoverageFrac::Vector{Float})
     table = Table("queuedDurationsMaxCoverageFrac", ["duration", "maxCoverageFrac"];
-        rows=[[queuedDurationsToSample[i], queuedDurationsMaxCoverageFrac[i]] for i = 1:length(queuedDurationsToSample)])
+        rows=[[queuedDurationsToSample[i], queuedDurationsMaxCoverageFrac[i]] for i in eachindex(queuedDurationsToSample)])
     writeTablesToFile(filename, table)
 end
 function writeQueuedDurationsMaxCoverageFracFile(filename::String, coverBound::CoverBound)

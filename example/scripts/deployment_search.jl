@@ -140,7 +140,7 @@ end
 
 # print number of ambulances at each station
 function printStationsNumAmbs(stationsNumAmbs::StationsNumAmbs)
-    for i = 1:length(stationsNumAmbs)
+    for i in eachindex(stationsNumAmbs)
         println("station ", i, ": ", stationsNumAmbs[i], " ambulance(s)")
     end
 end

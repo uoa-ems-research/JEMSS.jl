@@ -102,7 +102,7 @@ function animSetArcSpeeds(client::Client, map::Map, net::Network)
 
         # select minimum travel time
         arcTime = Inf
-        for i = 1:length(rNetTravels)
+        for i in eachindex(rNetTravels)
             if arcTime > rNetTravels[i].arcTimes[arc.index]
                 arcTime = rNetTravels[i].arcTimes[arc.index]
             end

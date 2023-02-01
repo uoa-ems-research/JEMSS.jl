@@ -51,9 +51,9 @@ end
 
 # create dict with array entries as keys, indices as values
 function arrayDict(array::Vector{Any})
-    # return Dict(array[i] => i for i = 1:length(array)) # slower for some reason?
+    # return Dict(array[i] => i for i in eachindex(array)) # slower for some reason?
     dict = Dict()
-    for i = 1:length(array)
+    for i in eachindex(array)
         dict[array[i]] = i
     end
     return dict

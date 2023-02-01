@@ -173,7 +173,7 @@ function convertOsmNetworkExample!(nodes::Vector{Node}, arcs::Vector{Arc})
         [110, 110, 60, 60, 60, 60, 60, 60], # travel mode 1, classes 1:8
         [90, 90, 45, 45, 45, 45, 45, 45] # travel mode 2, classes 1:8
     ]
-    classSpeeds = [Dict([j => Float(v[i][j]) for j = 1:length(v[i])]) for i = 1:length(v)]
+    classSpeeds = [Dict([j => Float(v[i][j]) for j in eachindex(v[i])]) for i in eachindex(v)]
 
     # whether nodes along road can be used to get on-road and off-road
     # where set to true, will set both ends of arc to be accessible

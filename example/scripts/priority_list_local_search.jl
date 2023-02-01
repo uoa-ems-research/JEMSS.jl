@@ -181,7 +181,7 @@ function applyPriorityList!(sim::Simulation, priorityList::PriorityList)
 end
 
 function printPriorityList(priorityList::PriorityList)
-    for i = 1:length(priorityList)
+    for i in eachindex(priorityList)
         println("item ", i, ": station ", priorityList[i])
     end
 end
@@ -256,7 +256,7 @@ function repeatedLocalSearch!(sim::Simulation, priorityLists::Vector{PriorityLis
         global minNumReps, maxNumRepsList
         numReps = minNumReps # init
         resetPriorityListsPeriodStatsList!()
-        for j = 1:length(maxNumRepsList)
+        for j in eachindex(maxNumRepsList)
             maxNumReps = maxNumRepsList[j] < sim.numReps ? Int(maxNumRepsList[j]) : sim.numReps
             logFileDict["maxNumRepsListIndex"] = j
             logFileDict["maxNumReps"] = maxNumReps

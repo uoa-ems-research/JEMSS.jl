@@ -187,7 +187,7 @@ function applyNestedCompTable!(sim::Simulation, nestedCompTable::NestedCompTable
 end
 
 function printNestedCompTable(nestedCompTable::NestedCompTable)
-    for i = 1:length(nestedCompTable)
+    for i in eachindex(nestedCompTable)
         println("item ", i, ": station ", nestedCompTable[i])
     end
 end
@@ -262,7 +262,7 @@ function repeatedLocalSearch!(sim::Simulation, nestedCompTables::Vector{NestedCo
         global minNumReps, maxNumRepsList
         numReps = minNumReps # init
         resetNestedCompTablesPeriodStatsList!()
-        for j = 1:length(maxNumRepsList)
+        for j in eachindex(maxNumRepsList)
             maxNumReps = maxNumRepsList[j] < sim.numReps ? Int(maxNumRepsList[j]) : sim.numReps
             logFileDict["maxNumRepsListIndex"] = j
             logFileDict["maxNumReps"] = maxNumReps

@@ -93,7 +93,7 @@ function calcAvgResponseDurations(callBatches::Vector{Vector{Call}})
     # for callBatches that have already been used in simulation, calculate avgResponseDurations,
     # where avgResponseDurations[i] is the average response duration of call i from all batches
     @assert(all(callBatch -> all(call -> call.responseDuration != nullTime, callBatch), callBatches))
-    avgResponseDurations = [mean([callBatches[i][j].responseDuration for i = 1:length(callBatches)]) for j = 1:length(callBatches[1])] * (24 * 60)
+    avgResponseDurations = [mean([callBatches[i][j].responseDuration for i in eachindex(callBatches)]) for j in eachindex(callBatches[1])] * (24 * 60)
     return avgResponseDurations
 end
 

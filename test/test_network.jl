@@ -97,7 +97,7 @@ end
     for testFolderName in readdir(testNetworksFolder)
         folder = joinpath(testNetworksFolder, testFolderName)
         net = readNetworkFiles(joinpath(folder, "nodes.csv"), joinpath(folder, "arcs.csv"))
-        for travelModeIndex = 1:length(net.fNetTravels)
+        for travelModeIndex in eachindex(net.fNetTravels)
             rtol = eps(FloatSpTime)
             atol = 2 * maximum(net.rNetTravels[travelModeIndex].arcTimes) * eps(FloatSpTime) # in NetTravel type, precision of fNodeToRNodeTime and fNodeFromRNodeTime (used in sp time calculation) are affected by rArc travel time. Multiplied by 2 since this can affect the travel time at both the start and end of the path.
 
@@ -138,7 +138,7 @@ end
     for testFolderName in readdir(testNetworksFolder)
         folder = joinpath(testNetworksFolder, testFolderName)
         net = readNetworkFiles(joinpath(folder, "nodes.csv"), joinpath(folder, "arcs.csv"))
-        for travelModeIndex = 1:length(net.fNetTravels)
+        for travelModeIndex in eachindex(net.fNetTravels)
             # compare shortestPathDistance and shortestPathDistance2 for each pair of nodes in fGraph
             spTimes, spSuccs = fNetTravelShortestPathData(net, travelModeIndex)
             numNodes = length(net.fGraph.nodes) # shorthand

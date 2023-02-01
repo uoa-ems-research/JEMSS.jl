@@ -22,11 +22,11 @@ v = [
     v2 * 1.1, # travel mode 1
     v2 # travel mode 2
 ]
-classSpeeds = [Dict([j => Float(v[i][j]) for j = 1:length(v[i])]) for i = 1:length(v)]
+classSpeeds = [Dict([j => Float(v[i][j]) for j in eachindex(v[i])]) for i in eachindex(v)]
 
 # tag which nodes can be used for off-road access
 v = [false, false, true, true, true, true, true, true] # v[i] is true if node at either end of arc with class = i can be used for off-road access, false otherwise
-classOffRoadAccess = Dict([i => v[i] for i = 1:length(v)])
+classOffRoadAccess = Dict([i => v[i] for i in eachindex(v)])
 
 # only keep nodes and arcs that provide a shortest path between a hospital/station and arcs of given classes
 spTagClass = [true, true, true, true, true, false, false, false]
@@ -90,7 +90,7 @@ function pointInRings(pt::Vector{Float}, rings::Vector{Vector{Vector{Float}}})::
     return isodd(count)
 end
 println("Checking which nodes (of $(length(nodes))) are inside border")
-for i = 1:length(nodes)
+for i in eachindex(nodes)
     mod(i, 1000) == 0 ? print("\r node: $i") : nothing
     if nodeChosen[i]
         location = nodes[i].location

@@ -522,7 +522,7 @@ function simulateEventConsiderMoveUp!(sim::Simulation, event::Event)
         end
     end
 
-    for i = 1:length(movableAmbs)
+    for i in eachindex(movableAmbs)
         ambulance = movableAmbs[i]
         station = ambStations[i]
 
