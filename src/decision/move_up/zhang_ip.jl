@@ -246,12 +246,13 @@ function solveZhangIpAssignmentProblem(stationSlots::Vector{Int}, benefitSlots::
     @assert(numStationSlots == length(benefitSlots))
     @assert(all(in(1:numStations), stationSlots))
 
-    if checkMode && false # skip this check, it is slow
-        for j = 1:numStations
-            # check that benefit of ambulance k at station j is > benefit of ambulance k+1, otherwise cannot solve as assignment problem
-            @assert(issorted(benefitSlots[findall(stationSlots .== j)], lt=<=, rev=true))
-        end
-    end
+    # # skip this check, it is slow
+    # if checkMode
+    #     for j = 1:numStations
+    #         # check that benefit of ambulance k at station j is > benefit of ambulance k+1, otherwise cannot solve as assignment problem
+    #         @assert(issorted(benefitSlots[findall(stationSlots .== j)], lt=<=, rev=true))
+    #     end
+    # end
 
     # shorthand
     a = numMoveUpAmbs
@@ -282,18 +283,17 @@ function solveZhangIpAssignmentProblem(stationSlots::Vector{Int}, benefitSlots::
     if checkMode
         @assert(!any(isequal(nullIndex), movableAmbStations)) # make sure that no movable ambs are assigned to dummy stations
 
-        if false # skip this check, it is slow
-            # check that station slots are filled in correct order
-            stationSlotsFilled = fill(false, numStationSlots)
-            for i in stationSlotIndices
-                if i <= numStationSlots
-                    stationSlotsFilled[i] = true
-                end
-            end
-            for j = 1:numStations
-                @assert(issorted(stationSlotsFilled[findall(stationSlots .== j)], rev=true))
-            end
-        end
+        # # skip this check, it is slow
+        # # check that station slots are filled in correct order
+        # stationSlotsFilled = fill(false, numStationSlots)
+        # for i in stationSlotIndices
+        #     if i <= numStationSlots
+        #         stationSlotsFilled[i] = true
+        #     end
+        # end
+        # for j = 1:numStations
+        #     @assert(issorted(stationSlotsFilled[findall(stationSlots .== j)], rev=true))
+        # end
     end
 
     return movableAmbStations, atHospitalAmbStations # atHospitalAmbStations[i] == nullIndex if amb i (of those at hospital) is not moved

@@ -28,7 +28,8 @@
 end
 
 # test the scripts in /example/scripts
-if true
+runExampleScripts = false
+if !runExampleScripts
     @info("Skipped testing of example scripts") # default is to not run this test set
 else
     @testset "example scripts" begin

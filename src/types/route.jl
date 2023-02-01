@@ -385,9 +385,10 @@ end
 # minIndex is an optional lower bound on the index
 function findMaxIndexLeqTime(times::Vector{Float}, time::Float, minIndex::Int=1)
 
-    if checkMode && false # skip this check, it is slow
-        @assert(issorted(times, lt=<=)) # values should be strictly increasing
-    end
+    # # skip this check, it is slow
+    # if checkMode
+    #     @assert(issorted(times, lt=<=)) # values should be strictly increasing
+    # end
 
     n = length(times)
     @assert(1 <= minIndex < n)

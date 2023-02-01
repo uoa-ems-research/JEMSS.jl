@@ -497,11 +497,11 @@ function calcRNetTravelShortestPaths!(net::Network, rNetTravel::NetTravel)
         spFadjIndex[i, j] = (i == j ? nullIndex : findfirst(isequal(spSuccs[i, j]), fadjList[i]))
     end
 
-    # check stored shortest path times are same as those from traversing stored shortest paths
-    # this can be slow, and should not be necessary unless shortest path code above has changed
-    if checkMode && false
-        checkRNetTravelShortestPathTimes(net, rNetTravel)
-    end
+    # # check stored shortest path times are same as those from traversing stored shortest paths
+    # # this can be slow, and should not be necessary unless shortest path code above has changed
+    # if checkMode
+    #     checkRNetTravelShortestPathTimes(net, rNetTravel)
+    # end
 
     # check assumptions:
     for i = 1:numRNodes, j = [1:i-1; i+1:numRNodes]
