@@ -201,7 +201,7 @@ end
 function CallStats(sim::Simulation, calls::Vector{Call}, startTime::Float, endTime::Float)::CallStats
     # filter calls by arrivalTime within [startTime, endTime)
     i = findfirst(c -> c.arrivalTime >= startTime, calls)
-    if i == nothing
+    if i === nothing
         return CallStats()
     end # no calls in time period
     j = something(findnext(c -> c.arrivalTime >= endTime, calls, i), length(calls) + 1) - 1

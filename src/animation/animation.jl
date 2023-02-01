@@ -344,10 +344,10 @@ Will animate for either `sim` or `configFilename`. If neither of these are given
 """
 function animate!(sim::Union{Simulation,Nothing}=nothing;
     configFilename::String="", port::Int=8001, openWindow::Bool=true)
-    @assert(sim == nothing || configFilename == "", "can only set one of: sim, configFilename")
+    @assert(sim === nothing || configFilename == "", "can only set one of: sim, configFilename")
     global animSimQueue
     if runAnimServer(port)
-        if sim != nothing
+        if sim !== nothing
             push!(animSimQueue, sim)
         elseif configFilename != ""
             push!(animSimQueue, configFilename)

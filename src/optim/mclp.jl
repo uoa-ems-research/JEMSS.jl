@@ -108,7 +108,7 @@ function solveMclp(n::Int, pointDemands::Vector{Float}, coverMatrix::Array{Bool,
 
     # # remove point set that cannot be covered
     # i = findfirst(isempty, pointSetFacilities)
-    # if i != nothing
+    # if i !== nothing
     # deleteat!(pointSetFacilities, i)
     # deleteat!(pointSetDemands, i)
     # end

@@ -30,7 +30,7 @@ include("graph_tools.jl")
 function readOsmNetworkFile(osmFilename::String;
     levels::Union{Set{Int},Nothing}=nothing, boundsLLA::Union{OSM.Bounds{OSM.LLA},Nothing}=nothing)
 
-    if levels == nothing
+    if levels === nothing
         levels = OSM.ROAD_CLASSES |> values |> Set
     end
 
@@ -44,7 +44,7 @@ function readOsmNetworkFile(osmFilename::String;
     @assert(typeof(first(nodesENU)[2]) == OSM.ENU)
 
     # crop map within bounds
-    if boundsLLA == nothing
+    if boundsLLA === nothing
         boundsLLA = osmData.bounds
         @assert(boundsLLA != OSM.Bounds{OSM.LLA}(0.0, 0.0, 0.0, 0.0), "missing bounds")
     end
@@ -111,7 +111,7 @@ function convertOsmNetwork!(nodes::Vector{Node}, arcs::Vector{Arc};
 
     numTravelModes = length(classSpeeds)
 
-    if levels == nothing
+    if levels === nothing
         levels = OSM.ROAD_CLASSES |> values |> Set
     end
 

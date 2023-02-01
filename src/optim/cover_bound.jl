@@ -27,9 +27,9 @@ function calcCoverBound!(sim::Simulation;
     @assert(ambBusyDurationsToSample != [] && all(ambBusyDurationsToSample .> 0))
     @assert(issorted(ambBusyDurationsToSample))
 
-    if coverBound == nothing
+    if coverBound === nothing
         coverBound = initCoverBound(sim, doPrint=doPrint)
-        @assert(coverBoundSim != nothing)
+        @assert(coverBoundSim !== nothing)
         coverBound.sim = coverBoundSim
     end
     cb = coverBound # shorthand
@@ -602,7 +602,7 @@ end
 
 function initCoverBoundSim(; numReps::Int=1, numAmbs::Int=0, warmUpDuration::Float=0.0, minLastCallArrivalTime::Float=nullTime,
     interarrivalTimeDistrRng::Union{DistrRng,Nothing}=nothing,
-    arrivalRate::Float=0.0, interarrivalTimeSeed::Int=0, # use these if interarrivalTimeDistrRng == nothing
+    arrivalRate::Float=0.0, interarrivalTimeSeed::Int=0, # use these if interarrivalTimeDistrRng === nothing
     ambBusyDurationSeed::Int=1)
 
     @assert(numReps >= 1)
@@ -610,7 +610,7 @@ function initCoverBoundSim(; numReps::Int=1, numAmbs::Int=0, warmUpDuration::Flo
     @assert(warmUpDuration >= 0)
     @assert(minLastCallArrivalTime > warmUpDuration)
 
-    if interarrivalTimeDistrRng == nothing
+    if interarrivalTimeDistrRng === nothing
         @assert(arrivalRate > 0)
         interarrivalTimeDistrRng = DistrRng(Exponential(1 / arrivalRate), seed=interarrivalTimeSeed)
     else
@@ -630,7 +630,7 @@ end
 function simulateRepCoverBound!(coverBound::CoverBound)
     cbs = coverBound.sim # shorthand
     @assert(cbs.warmUpDuration > 0)
-    @assert(cbs.interarrivalTimeDistrRng != nothing)
+    @assert(cbs.interarrivalTimeDistrRng !== nothing)
     @assert(cbs.numAmbs >= 1)
     @assert(0 <= cbs.warmUpDuration < cbs.minLastCallArrivalTime)
 

@@ -20,15 +20,15 @@ function addEvent!(eventList::Vector{Event};
     addEventToAmb::Bool=true)
 
     event = Event()
-    event.parentIndex = parentEvent == nothing ? nullIndex : parentEvent.index
+    event.parentIndex = parentEvent === nothing ? nullIndex : parentEvent.index
     event.form = form
     event.time = time
-    event.ambIndex = ambulance == nothing ? nullIndex : ambulance.index
-    event.callIndex = call == nothing ? nullIndex : call.index
-    event.stationIndex = station == nothing ? nullIndex : station.index
+    event.ambIndex = ambulance === nothing ? nullIndex : ambulance.index
+    event.callIndex = call === nothing ? nullIndex : call.index
+    event.stationIndex = station === nothing ? nullIndex : station.index
 
     # set next event of ambulance
-    if addEventToAmb && ambulance != nothing
+    if addEventToAmb && ambulance !== nothing
         ambulance.event = event
     end
 
@@ -69,7 +69,7 @@ end
 # delete event in eventList
 function deleteEvent!(eventList::Vector{Event}, event::Event)
     i = something(findfirst(isequal(event), eventList))
-    @assert(i != nothing)
-    @assert(findnext(e -> e == event, eventList, i + 1) == nothing)
+    @assert(i !== nothing)
+    @assert(findnext(e -> e == event, eventList, i + 1) === nothing)
     deleteat!(eventList, i)
 end

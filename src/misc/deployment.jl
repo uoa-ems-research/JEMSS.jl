@@ -22,7 +22,7 @@ function makeRandDeployment(numAmbs::Int, numStations::Int;
     rng::AbstractRNG=GLOBAL_RNG)::Deployment
 
     @assert(numStations > 0)
-    if stationCapacities == nothing
+    if stationCapacities === nothing
         return sort(rand(rng, 1:numStations, numAmbs))
     else
         @assert(numStations == length(stationCapacities))

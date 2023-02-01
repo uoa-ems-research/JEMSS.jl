@@ -253,7 +253,7 @@ interpolateString(s::SubString{String}) = interpolateString(String(s))
 xmlFileRoot(filename::String) = root(parse_file(interpolateString(filename)))
 findElt = find_element # shorthand
 xName(x) = LightXML.name(x) # to avoid conflict with JuMP.name
-containsElt(parentElt::XMLElement, eltString::String) = findElt(parentElt, eltString) != nothing
+containsElt(parentElt::XMLElement, eltString::String) = findElt(parentElt, eltString) !== nothing
 eltContent(elt::XMLElement) = content(elt)
 eltContentVal(elt::XMLElement) = eval(Meta.parse(eltContent(elt)))
 eltContentInterpVal(elt::XMLElement) = interpolateString(eltContent(elt))

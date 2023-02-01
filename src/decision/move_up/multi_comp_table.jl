@@ -101,7 +101,7 @@ function checkMultiCompTable(multiCompTable::MultiCompTable;
             @assert(length(state) == numStations)
             @assert(all(x -> x >= 0, state))
             @assert(sum(state) == i) # match number of ambs
-            if stationCapacities !== nothing
+            if stationCapacities !=== nothing
                 @assert(all(state .<= stationCapacities))
             end
         end

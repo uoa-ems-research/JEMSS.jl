@@ -445,7 +445,7 @@ function localSearch!(sim::Simulation, priorityList::PriorityList, priorityListN
                 iter += 1
             end
 
-            if newBestFound || endPoint == nothing
+            if newBestFound || endPoint === nothing
                 endPoint = (i, j, move)
             elseif endPoint == (i, j, move)
                 doPrint && println("Found local optimum.")
