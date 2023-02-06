@@ -206,7 +206,7 @@ end
 
 function isCompTableNested(compTable::CompTable)
     checkCompTable(compTable)
-    for i = 1:size(compTable)-1
+    for i = 1:size(compTable, 1)-1
         if count(!iszero, compTable[i+1, :] - compTable[i, :]) != 1 # should only have one change between rows
             return false
         end
