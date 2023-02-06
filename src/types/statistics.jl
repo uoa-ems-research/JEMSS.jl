@@ -69,7 +69,7 @@ function populateSimStats!(sim::Simulation)
     # populate call statistics
     callsByPriority = Dict([p => filter(c -> c.priority == p, sim.calls) for p in priorities])
     sim.stats.responseDurationHistNumBins = floor(Int, maximum(c -> c.responseDuration, sim.calls) / sim.stats.responseDurationHistBinWidth) + 1
-    for i = 1:length(captures)
+    for i in eachindex(captures)
         period = i == 1 ? captures[i] : captures[i] - captures[i-1]
         period.call = CallStats(sim, sim.calls, period.startTime, period.endTime)
         for priority in priorities
@@ -201,7 +201,7 @@ end
 function CallStats(sim::Simulation, calls::Vector{Call}, startTime::Float, endTime::Float)::CallStats
     # filter calls by arrivalTime within [startTime, endTime)
     i = findfirst(c -> c.arrivalTime >= startTime, calls)
-    if i == nothing
+    if i === nothing
         return CallStats()
     end # no calls in time period
     j = something(findnext(c -> c.arrivalTime >= endTime, calls, i), length(calls) + 1) - 1

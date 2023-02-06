@@ -385,9 +385,10 @@ end
 # minIndex is an optional lower bound on the index
 function findMaxIndexLeqTime(times::Vector{Float}, time::Float, minIndex::Int=1)
 
-    if checkMode && false # skip this check, it is slow
-        @assert(issorted(times, lt=<=)) # values should be strictly increasing
-    end
+    # # skip this check, it is slow
+    # if checkMode
+    #     @assert(issorted(times, lt=<=)) # values should be strictly increasing
+    # end
 
     n = length(times)
     @assert(1 <= minIndex < n)
@@ -573,7 +574,7 @@ function shortestRouteTravelTime!(sim::Simulation;
     travelMode::Union{TravelMode,Nothing}=nothing, travelPriority::Priority=nullPriority, startTime::Float=nullTime)
 
     # determine travel mode
-    if travelMode == nothing
+    if travelMode === nothing
         @assert(startTime != nullTime)
         @assert(travelPriority != nullPriority)
         travelMode = getTravelMode!(sim.travel, travelPriority, startTime)
@@ -581,13 +582,13 @@ function shortestRouteTravelTime!(sim::Simulation;
 
     # find firstNode, and time to reach it from startLoc
     fNodes = sim.net.fGraph.nodes # shorthand
-    if route == nothing
+    if route === nothing
         if firstNode == nullIndex
             (firstNode, dist1) = findNearestNode(sim.map, sim.grid, fNodes, startLoc)
         end
         if time1 == nullTime
             if dist1 == nullDist
-                @assert(startLoc != nothing)
+                @assert(startLoc !== nothing)
                 dist1 = normDist(sim.map, startLoc, fNodes[firstNode].location)
             end
             time1 = offRoadTravelTime(travelMode, dist1)
@@ -603,7 +604,7 @@ function shortestRouteTravelTime!(sim::Simulation;
     end
     if time2 == nullTime
         if dist2 == nullDist
-            @assert(endLoc != nothing)
+            @assert(endLoc !== nothing)
             dist2 = normDist(sim.map, endLoc, fNodes[lastNode].location)
         end
         time2 = offRoadTravelTime(travelMode, dist2)

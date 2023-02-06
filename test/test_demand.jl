@@ -41,7 +41,7 @@
         # check demand sets
         @test d.modeLookup == [1 2 3; 4 5 6]
         @test demand.setsStartTimes == sort(vcat(0, [0.7:1:10;], [0.3:1:10;]))
-        @test demand.setsTimeOrder == [2 - isodd(i) for i = 1:length(demand.setsTimeOrder)]
+        @test demand.setsTimeOrder == [2 - isodd(i) for i in eachindex(demand.setsTimeOrder)]
     end
 end
 

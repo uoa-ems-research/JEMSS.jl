@@ -38,7 +38,7 @@ function initResim!(sim::Simulation; doPrint::Bool=false)
 
     # check that checksum values of input files are same as in events file
     allMatch = true
-    for i = 1:length(inputFiles)
+    for i in eachindex(inputFiles)
         if inputFiles[i] == "statsControl"
             continue
         end # allow this file to change, should not affect sim events

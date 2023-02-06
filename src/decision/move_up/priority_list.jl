@@ -87,7 +87,7 @@ function checkPriorityList(priorityList::PriorityList;
     @assert(numAmbs == nullIndex || numAmbs == m)
     @assert(all(v -> v >= 1, priorityList)) # need positive integers (station indices)
     @assert(numStations == nullIndex || maximum(priorityList) <= numStations)
-    if stationCapacities != nothing
+    if stationCapacities !== nothing
         n = length(stationCapacities) # number of stations
         @assert(numStations == nullIndex || numStations == n)
         # check that priority list does not violate station capacity constraints
@@ -107,7 +107,7 @@ function makeRandPriorityList(numAmbs::Int, numStations::Int;
     rng::AbstractRNG=GLOBAL_RNG)::PriorityList
 
     @assert(numStations > 0)
-    if stationCapacities == nothing
+    if stationCapacities === nothing
         return rand(rng, 1:numStations, numAmbs)
     else
         @assert(numStations == length(stationCapacities))

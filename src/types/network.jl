@@ -90,7 +90,7 @@ function createRGraphFromFGraph!(net::Network)
 
     # special consideration: need to add one decision node to any loop with currently only one rNode
     # Otherwise, fNodes in the loop still have a decision as to how to reach the rNode
-    for ri = 1:length(rGraph.nodes)
+    for ri in eachindex(rGraph.nodes)
         fi = net.rNodeFNode[ri]
         for fj = fNodesOut[fi] # fNodes outgoing from fNode[fi]
             firstFNode = fj
@@ -114,7 +114,7 @@ function createRGraphFromFGraph!(net::Network)
 
     rGraph.nodes = deepcopy(fNodes[keepNode])
     # renumber rNode indices
-    for i = 1:length(rGraph.nodes)
+    for i in eachindex(rGraph.nodes)
         rGraph.nodes[i].index = i
     end
     net.rNodeFNode = findall(keepNode)
@@ -497,11 +497,11 @@ function calcRNetTravelShortestPaths!(net::Network, rNetTravel::NetTravel)
         spFadjIndex[i, j] = (i == j ? nullIndex : findfirst(isequal(spSuccs[i, j]), fadjList[i]))
     end
 
-    # check stored shortest path times are same as those from traversing stored shortest paths
-    # this can be slow, and should not be necessary unless shortest path code above has changed
-    if checkMode && false
-        checkRNetTravelShortestPathTimes(net, rNetTravel)
-    end
+    # # check stored shortest path times are same as those from traversing stored shortest paths
+    # # this can be slow, and should not be necessary unless shortest path code above has changed
+    # if checkMode
+    #     checkRNetTravelShortestPathTimes(net, rNetTravel)
+    # end
 
     # check assumptions:
     for i = 1:numRNodes, j = [1:i-1; i+1:numRNodes]

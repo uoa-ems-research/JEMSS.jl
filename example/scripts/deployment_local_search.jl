@@ -111,7 +111,7 @@ end
 
 # print number of ambulances at each station
 function printStationsNumAmbs(stationsNumAmbs::StationsNumAmbs)
-    for i = 1:length(stationsNumAmbs)
+    for i in eachindex(stationsNumAmbs)
         println("station ", i, ": ", stationsNumAmbs[i], " ambulance(s)")
     end
 end
@@ -302,7 +302,7 @@ function localSearch!(sim::Simulation, stationsNumAmbs::StationsNumAmbs, logFile
                 iter += 1
             end
 
-            if newBestFound || endPoint == nothing
+            if newBestFound || endPoint === nothing
                 endPoint = (i, j)
             elseif endPoint == (i, j)
                 doPrint && println("Found local optimum.")

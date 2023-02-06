@@ -149,7 +149,7 @@ function readGenConfigAll!(genConfig::GenConfig, rootElt::XMLElement)
     genConfig.offRoadSpeed = eltContentVal(simElt, "offRoadSpeed") # km / day
     genConfig.stationCapacity = eltContentVal(simElt, "stationCapacity")
     travelModeSpeedsElt = findElt(simElt, "travelModeSpeeds")
-    genConfig.travelModeSpeeds = (travelModeSpeedsElt == nothing ? [1.5 * genConfig.offRoadSpeed] : eltContentVal(travelModeSpeedsElt))
+    genConfig.travelModeSpeeds = (travelModeSpeedsElt === nothing ? [1.5 * genConfig.offRoadSpeed] : eltContentVal(travelModeSpeedsElt))
 
     # some defaults - should move to config file sometime
     genConfig.ambStationRng = MersenneTwister(0)
@@ -183,7 +183,7 @@ function readGenConfigCalls!(genConfig::GenConfig, rootElt::XMLElement)
         distrElt = findElt(callDistrsElt, distrName)
         distr = eltContentVal(distrElt)
         seedAttr = attribute(distrElt, "seed")
-        seed = (seedAttr == nothing ? nullIndex : eval(Meta.parse(seedAttr)))
+        seed = (seedAttr === nothing ? nullIndex : eval(Meta.parse(seedAttr)))
         return DistrRng(distr; seed=seed)
     end
     genConfig.interarrivalTimeDistrRng = callDistrsEltContent("interarrivalTime")
@@ -217,7 +217,7 @@ function readGenConfigCalls!(genConfig::GenConfig, rootElt::XMLElement)
     # seeds
     function callRasterSeedVal(seedName::String)
         seedAttr = attribute(callDensityRasterElt, seedName)
-        return seedAttr == nothing ? nullIndex : eval(Meta.parse(seedAttr))
+        return seedAttr === nothing ? nullIndex : eval(Meta.parse(seedAttr))
     end
     genConfig.callRasterCellSeed = callRasterSeedVal("cellSeed")
     genConfig.callRasterCellLocSeed = callRasterSeedVal("cellLocSeed")
@@ -370,7 +370,7 @@ end
 
 # make calls that are spatially randomly uniform in map, or distributed according to raster
 function makeCalls(genConfig::GenConfig; rasterSampler::Union{RasterSampler,Nothing}=nothing)
-    if (rasterSampler == nothing && isdefined(genConfig, :callRasterSampler))
+    if (rasterSampler === nothing && isdefined(genConfig, :callRasterSampler))
         rasterSampler = genConfig.callRasterSampler
     end
     calls = Call[]
@@ -393,7 +393,7 @@ function makeCalls(genConfig::GenConfig; rasterSampler::Union{RasterSampler,Noth
         if !call.transport
             call.handoverDuration = 0.0
         end
-        if rasterSampler == nothing
+        if rasterSampler === nothing
             call.location = randLocation(genConfig.map; trim=genConfig.mapTrim, rng=genConfig.callLocRng)
         else
             call.location = rasterRandLocations(rasterSampler, 1)[1]

@@ -61,23 +61,23 @@ using Random
     @test grid1pass
     @test grid2pass
 
-    # plot of nearest node from sample locations
-    # this is not a test, but I wanted visual confirmation that the findNearestNode function was working
-    false && begin
-        # sample locations
-        xs = range(0; length=100 * nx + 1, stop=1)
-        ys = range(0; length=100 * ny + 1, stop=1)
-        z = zeros(Int, length(ys), length(xs))
-        for (ix, x) in enumerate(xs), (iy, y) in enumerate(ys)
-            location = Location(x, y)
-            z[iy, ix] = findNearestNode(mp, grid2, nodes, location)[1]
-        end
+    # # plot of nearest node from sample locations
+    # # this is not a test, but I wanted visual confirmation that the findNearestNode function was working
+    # begin
+    #     # sample locations
+    #     xs = range(0; length=100 * nx + 1, stop=1)
+    #     ys = range(0; length=100 * ny + 1, stop=1)
+    #     z = zeros(Int, length(ys), length(xs))
+    #     for (ix, x) in enumerate(xs), (iy, y) in enumerate(ys)
+    #         location = Location(x, y)
+    #         z[iy, ix] = findNearestNode(mp, grid2, nodes, location)[1]
+    #     end
 
-        using Plots
-        Plots.plotly()
-        plt = heatmap(xs, ys, z, aspect_ratio=1)
-        x = [node.location.x for node in nodes]
-        y = [node.location.y for node in nodes]
-        Plots.scatter!(plt, x, y)
-    end
+    #     using Plots
+    #     Plots.plotly()
+    #     plt = heatmap(xs, ys, z, aspect_ratio=1)
+    #     x = [node.location.x for node in nodes]
+    #     y = [node.location.y for node in nodes]
+    #     Plots.scatter!(plt, x, y)
+    # end
 end

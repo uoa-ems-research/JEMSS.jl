@@ -85,7 +85,7 @@ function writeDemandFile(filename::String, demand::Demand)
     startTimes = demand.setsStartTimes # shorthand
     setIndices = demand.setsTimeOrder # shorthand
     demandSetsTimingTable = Table("demandSetsTiming", ["startTime", "setIndex"];
-        rows=[[startTimes[i], setIndices[i]] for i = 1:length(startTimes)])
+        rows=[[startTimes[i], setIndices[i]] for i in eachindex(startTimes)])
 
     writeTablesToFile(filename, [demandRastersTable, demandModesTable, demandSetsTable, demandSetsTimingTable])
 end
@@ -128,7 +128,7 @@ function writeMultiCompTableFile(filename::String, multiCompTable::MultiCompTabl
     numStations = length(mct[1][1])
     miscTable = Table("miscData", ["numAmbs", "numStations"], rows=[[numAmbs, numStations]])
     table = Table("multiCompTable", vcat("numAmbs", ["station_$j" for j = 1:numStations]...);
-        rows=vcat([[[i, row...] for row in mct[i]] for i = 1:length(mct)]...))
+        rows=vcat([[[i, row...] for row in mct[i]] for i in eachindex(mct)]...))
     writeTablesToFile(filename, [miscTable, table])
 end
 
@@ -161,7 +161,7 @@ end
 
 function writePrioritiesFile(filename::String, targetResponseDurations::Vector{Float})
     table = Table("priorities", ["priority", "name", "targetResponseDuration"];
-        rows=[[i, string(Priority(i)), targetResponseDurations[i]] for i = 1:length(targetResponseDurations)])
+        rows=[[i, string(Priority(i)), targetResponseDurations[i]] for i in eachindex(targetResponseDurations)])
     writeTablesToFile(filename, table)
 end
 
@@ -212,7 +212,7 @@ function writeTravelFile(filename::String, travel::Travel)
     startTimes = travel.setsStartTimes # shorthand
     setIndices = travel.setsTimeOrder # shorthand
     travelSetsTimingTable = Table("travelSetsTiming", ["startTime", "travelSetIndex"];
-        rows=[[startTimes[i], setIndices[i]] for i = 1:length(startTimes)])
+        rows=[[startTimes[i], setIndices[i]] for i in eachindex(startTimes)])
 
     writeTablesToFile(filename, [travelModesTable, travelSetsTable, travelSetsTimingTable])
 end
@@ -233,7 +233,7 @@ function writeZhangIpParamsFile(filename::String, zhangIpData::ZhangIpData)
     maxNumSlots = maximum(stationCapacities)
     mb = Array{Any,2}(undef, numStations, maxNumSlots)
     mb[:] .= ""
-    for i = 1:numStations, j = 1:length(marginalBenefits[i])
+    for i = 1:numStations, j in eachindex(marginalBenefits[i])
         mb[i, j] = marginalBenefits[i][j]
     end
     marginalBenefitsTable = Table("stationMarginalBenefits", ["stationIndex", ["slot_$i" for i = 1:maxNumSlots]...];

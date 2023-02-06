@@ -18,11 +18,11 @@ levels = Set(1:6) # osm classes 1:8 : motorway, trunk, primary, secondary, terti
 # arc speed (km/hr) for each travel mode and each arc class
 v2 = [72, 35, 25, 22, 11, 11] # travel mode 2, classes 1:6
 v = [v2 * 4 / 3, v2] # travel modes 1 and 2
-classSpeeds = [Dict([j => Float(v[i][j]) for j = 1:length(v[i])]) for i = 1:length(v)]
+classSpeeds = [Dict([j => Float(v[i][j]) for j in eachindex(v[i])]) for i in eachindex(v)]
 
 # tag which nodes can be used for off-road access
 v = [false, false, true, true, true, true, true, true] # v[i] is true if node at either end of arc with class = i can be used for off-road access, false otherwise
-classOffRoadAccess = Dict([i => v[i] for i = 1:length(v)])
+classOffRoadAccess = Dict([i => v[i] for i in eachindex(v)])
 
 # shapefile of region border
 borderFilename = joinpath(jemssDir, "data/cities/manhattan/data/border/census 2010/manhattan_border.shp")
@@ -49,7 +49,7 @@ function pointInRings(pt::Vector{Float}, rings::Vector{Vector{Vector{Float}}})::
     return isodd(count)
 end
 println("Checking which nodes (of $(length(nodes))) are inside border")
-for i = 1:length(nodes)
+for i in eachindex(nodes)
     mod(i, 1000) == 0 ? print("\r node: $i") : nothing
     location = nodes[i].location
     nodeInBorder[i] = pointInRings([location.x, location.y], rings)

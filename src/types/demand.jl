@@ -219,14 +219,14 @@ function getPointsCoverageMode!(sim::Simulation, demandPriority::Priority, curre
     travelMode = getTravelMode!(sim.travel, travelPriority, currentTime)
     coverTime = sim.demandCoverage.coverTimes[demandPriority]
     pointsCoverageMode = getPointsCoverageMode(sim.demandCoverage, travelMode, coverTime)
-    @assert(pointsCoverageMode != nothing)
+    @assert(pointsCoverageMode !== nothing)
     return pointsCoverageMode
 end
 
 # mutates: sim.travel and sim.demand states
 function getPointSetsDemands!(sim::Simulation, demandPriority::Priority, currentTime::Float;
     pointsCoverageMode::Union{PointsCoverageMode,Nothing}=nothing)
-    if pointsCoverageMode == nothing
+    if pointsCoverageMode === nothing
         pointsCoverageMode = getPointsCoverageMode!(sim, demandPriority, currentTime)
     end
     demandMode = getDemandMode!(sim.demand, demandPriority, currentTime)
@@ -245,7 +245,7 @@ Mutates: `sim.demand`, `sim.demandCoverage`
 """
 function initDemand!(sim::Simulation, demand::Union{Demand,Nothing}=nothing;
     demandFilename::String="")
-    if demand == nothing
+    if demand === nothing
         if demandFilename != ""
             demand = readDemandFile(demandFilename)
         elseif sim.demand.numSets == nullIndex
@@ -320,7 +320,7 @@ function initDemandCoverage!(sim::Simulation;
 
     # set demand coverage params
     oldDemandCoverage = sim.demandCoverage
-    if coverTimes != nothing
+    if coverTimes !== nothing
         sim.demandCoverage = DemandCoverage(coverTimes, rasterCellNumRows, rasterCellNumCols)
     else # use old params
         @assert(!isempty(oldDemandCoverage.coverTimes))

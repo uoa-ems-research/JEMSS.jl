@@ -191,7 +191,7 @@ function checkCompTable(compTable::CompTable;
     end
     @assert(numAmbs == nullIndex || numAmbs == m)
     @assert(numStations == nullIndex || numStations == n)
-    if stationCapacities != nothing
+    if stationCapacities !== nothing
         @assert(length(stationCapacities) == n)
         for j = 1:n
             @assert(all(v -> v <= stationCapacities[j], compTable[:, j]))
@@ -206,8 +206,8 @@ end
 
 function isCompTableNested(compTable::CompTable)
     checkCompTable(compTable)
-    for i = 2:size(compTable, 1)
-        if count(!iszero, compTable[i, :] - compTable[i-1, :]) != 1 # should only have one change between rows
+    for i = 1:size(compTable, 1)-1
+        if count(!iszero, compTable[i+1, :] - compTable[i, :]) != 1 # should only have one change between rows
             return false
         end
     end
@@ -244,7 +244,7 @@ function makeRandNestedCompTable(numAmbs::Int, numStations::Int;
     rng::AbstractRNG=GLOBAL_RNG)::NestedCompTable
 
     @assert(numStations > 0)
-    if stationCapacities == nothing
+    if stationCapacities === nothing
         return rand(rng, 1:numStations, numAmbs)
     else
         @assert(numStations == length(stationCapacities))

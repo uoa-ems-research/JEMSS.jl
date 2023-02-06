@@ -442,7 +442,7 @@ function simulateEventAmbBecomesFree!(sim::Simulation, event::Event)
     # otherwise return to station
     if length(sim.queuedCallList) > 0
         call = getNextCall!(sim.queuedCallList)
-        @assert(call != nothing)
+        @assert(call !== nothing)
 
         # dispatch ambulance
         addEvent!(sim.eventList; parentEvent=event, form=ambDispatched, time=sim.time, ambulance=ambulance, call=call)
@@ -522,7 +522,7 @@ function simulateEventConsiderMoveUp!(sim::Simulation, event::Event)
         end
     end
 
-    for i = 1:length(movableAmbs)
+    for i in eachindex(movableAmbs)
         ambulance = movableAmbs[i]
         station = ambStations[i]
 
