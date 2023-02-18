@@ -44,7 +44,7 @@
     @test result
 
     # check that getTravelMode!() updates travel.recentSetsStartTimesIndex
-    function f(t::Float)
+    function g(t::Float)
         JEMSS.getTravelMode!(travel, highPriority, t)
         return travel.recentSetsStartTimesIndex
     end
@@ -52,7 +52,7 @@
     travelSetsStartTimes = [0, 0.2, 0.5, 0.8]
     for t = 0:0.01:1.0
         expectedValue = findlast(t .>= travelSetsStartTimes)
-        result &= f(t) == expectedValue
+        result &= g(t) == expectedValue
     end
     @test result
 end
