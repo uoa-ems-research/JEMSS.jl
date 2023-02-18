@@ -93,7 +93,7 @@ function solveMexclp!(sim::Simulation;
     model = Model()
 
     if !all(v -> issorted(v, rev=true), pointCoverCountBenefit)
-        set_optimizer(model, with_optimizer(GLPK.Optimizer)) # solve speed not tested
+        set_optimizer(model, optimizer_with_attributes(GLPK.Optimizer, "msg_lev" => GLPK.GLP_MSG_OFF)) # solve speed not tested
 
         @variables(model, begin
             (x[i=1:s] >= 0, Int) # x[i] = number of ambulances assigned to station i
@@ -112,7 +112,7 @@ function solveMexclp!(sim::Simulation;
         # - can leave out the constraint 'pointCoverOrder'
         # - could have x variables as non-integer, though if there are multiple solutions then x values might not be naturally integer, so will leave the integer constraint
 
-        set_optimizer(model, with_optimizer(Cbc.Optimizer, logLevel=0)) # solve speed not tested
+        set_optimizer(model, optimizer_with_attributes(Cbc.Optimizer, "logLevel" => 0)) # solve speed not tested
 
         @variables(model, begin
             (x[i=1:s] >= 0, Int) # x[i] = number of ambulances assigned to station i
@@ -133,7 +133,7 @@ function solveMexclp!(sim::Simulation;
 
     # solve
     @objective(model, Max, expectedCoverage)
-    optimize!(model)
+    @stdout_silent optimize!(model)
     @assert(termination_status(model) == MOI.OPTIMAL)
     xValue = JuMP.value.(x)
     yValue = JuMP.value.(y) # JuMP and LightXML both export value()

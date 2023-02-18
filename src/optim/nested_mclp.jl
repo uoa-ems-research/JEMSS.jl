@@ -132,7 +132,7 @@ function solveNestedMclp(pointDemands::Vector{Float}, pointFacilities::Vector{Ve
     model = Model()
 
     # use cbc solver; solver speed not tested
-    set_optimizer(model, with_optimizer(Cbc.Optimizer, logLevel=0))
+    set_optimizer(model, optimizer_with_attributes(Cbc.Optimizer, "logLevel" => 0))
 
     @variables(model, begin
         (x[i=1:f, k=1:f], Bin) # x[i,k] = 1 if facility location i is used when there are k facilities, 0 otherwise
@@ -152,7 +152,7 @@ function solveNestedMclp(pointDemands::Vector{Float}, pointFacilities::Vector{Ve
 
     # solve
     @objective(model, Max, weightedCoverage)
-    optimize!(model)
+    @stdout_silent optimize!(model)
     @assert(termination_status(model) == MOI.OPTIMAL)
     xValue = JuMP.value.(x)
     yValue = JuMP.value.(y) # JuMP and LightXML both export value()

@@ -96,8 +96,8 @@ function solveCompTableIP(compTableRow::Vector{Int}, ambToStationCost::Array{Flo
 
     # using JuMP
     model = Model()
-    set_optimizer(model, with_optimizer(GLPK.Optimizer)) # solve speed not tested
-    # set_optimizer(model, with_optimizer(Cbc.Optimizer)) # not sure how to mute output from cbc
+    set_optimizer(model, optimizer_with_attributes(GLPK.Optimizer, "msg_lev" => GLPK.GLP_MSG_OFF)) # solve speed not tested
+    # set_optimizer(model, optimizer_with_attributes(Cbc.Optimizer, "LogLevel"=>0))
 
     @variables(model, begin
         (x[i=1:a, j=1:s], Bin) # x[i,j] = 1 if ambulance: movableAmbs[i] should be moved to station: stations[j]
@@ -121,7 +121,7 @@ function solveCompTableIP(compTableRow::Vector{Int}, ambToStationCost::Array{Flo
 
     # solve
     @objective(model, Min, totalAmbTravelCost) # or maxTravelCost
-    optimize!(model)
+    @stdout_silent optimize!(model)
     @assert(termination_status(model) == MOI.OPTIMAL)
     xValue = JuMP.value.(x) # JuMP and LightXML both export value()
 

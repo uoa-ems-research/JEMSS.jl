@@ -34,7 +34,7 @@
 				<travelTimeCost>50.0</travelTimeCost>
 				<slackWeight>1000.0</slackWeight>
 				<coverTimeDemandPriorities>[highPriority, lowPriority]</coverTimeDemandPriorities>
-				<options>[:solver => "glpk", :solver_kwargs => [:presolve => true], :v => v"2"]</options>
+				<options>[:solver => "glpk", :solver_args => ["presolve" => true], :v => v"2"]</options>
 			</ddsm>
 		</moveUp>
 	</decision>
