@@ -16,7 +16,7 @@
 # EMS simulation animation
 
 # global variables; hacky...
-const Client = HTTP.WebSockets.WebSocket{HTTP.ConnectionPool.Transaction{Sockets.TCPSocket}}
+const Client = Any # HTTP.WebSockets.WebSocket{HTTP.ConnectionPool.Transaction{Sockets.TCPSocket}}
 global animClients = [] # store open connections
 global animSimQueue = Vector{Union{Simulation,String}}() # to store sims and sim filenames between animation request and start
 global animPorts = Set{Int}() # localhost ports for animation, to be set
