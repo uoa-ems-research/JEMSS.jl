@@ -276,6 +276,9 @@ end
 # Return half-width of two-sided confidence interval of estimate of mean.
 # Samples should come from a normal distribution, standard deviation is assumed to be unknown.
 function tDistrHalfWidth(x::Vector{T}; conf=0.95) where {T<:Real}
+    if length(x) <= 1
+        return NaN
+    end
     t = StatsFuns.tdistinvcdf(length(x) - 1, 1 - (1 - conf) / 2) # t-value, for two sided confidence interval
     return t * sem(x)
 end
