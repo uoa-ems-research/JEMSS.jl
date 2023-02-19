@@ -69,13 +69,9 @@ function ddsmOptions!(sim, options::Dict{Symbol,T}) where {T<:Any}
     @assert(typeof(options[:z_var]) == Bool)
     @assert(0 < options[:bin_tol] < 0.1)
 
-    if options[:solver] == "gurobi"
-        try
-            Gurobi
-        catch
-            options[:solver] = "cbc"
-            @warn("Failed to use Gurobi, using Cbc instead.")
-        end
+    if options[:solver] == "gurobi" && !hasGurobi
+        options[:solver] = "cbc"
+        @warn("Failed to use Gurobi, using Cbc instead.")
     end
 
     # options[:v] == v"0" # do nothing, values should already be set in options if using this

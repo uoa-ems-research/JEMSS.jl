@@ -41,6 +41,13 @@ const maxNumThreads = nthreads() # value set by environment variable JULIA_NUM_T
 # run modes
 const checkMode = true # for data checking, e.g. assertions that are checked frequently
 
+const hasGurobi = try
+    Gurobi.Optimizer()
+    true
+catch
+    false
+end
+
 # file chars
 const delimiter = ','
 const newline = "\r\n"

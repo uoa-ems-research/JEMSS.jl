@@ -48,9 +48,7 @@ using Base.Threads
 using JuMP
 using Cbc
 using GLPK
-if haskey(Pkg.installed(), "Gurobi") && haskey(ENV, "GUROBI_HOME")
-    using Gurobi
-end
+using Gurobi
 
 # statistics
 using Distributions

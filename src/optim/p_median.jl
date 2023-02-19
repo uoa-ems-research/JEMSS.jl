@@ -15,12 +15,7 @@
 
 # P-median problem
 
-pMedianDefaultOptions = Dict([:x_bin => true, :y_bin => false, :solver => "gurobi", :solver_args => []])
-try
-    Gurobi
-catch
-    pMedianDefaultOptions[:solver] = "cbc"
-end
+pMedianDefaultOptions = Dict([:x_bin => true, :y_bin => false, :solver => hasGurobi ? "gurobi" : "cbc", :solver_args => []])
 
 """
     solvePMedian(n::Int, c::Array{Float,2}; options::Dict{Symbol,T} = pMedianDefaultOptions, results::Dict = Dict()) where T <: Any
