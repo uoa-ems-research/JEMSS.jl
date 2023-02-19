@@ -55,6 +55,7 @@ end
 # statistics
 using Distributions
 using HypothesisTests
+using Statistics
 using StatsBase
 using StatsFuns
 
