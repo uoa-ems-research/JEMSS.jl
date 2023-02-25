@@ -15,12 +15,7 @@
 
 # P-median problem
 
-pMedianDefaultOptions = Dict([:x_bin => true, :y_bin => false, :solver => "gurobi", :solver_args => [], :solver_kwargs => []])
-try
-    Gurobi
-catch
-    pMedianDefaultOptions[:solver] = "cbc"
-end
+pMedianDefaultOptions = Dict([:x_bin => true, :y_bin => false, :solver => hasGurobi ? "gurobi" : "cbc", :solver_args => []])
 
 """
     solvePMedian(n::Int, c::Array{Float,2}; options::Dict{Symbol,T} = pMedianDefaultOptions, results::Dict = Dict()) where T <: Any
@@ -42,13 +37,12 @@ function solvePMedian(n::Int, c::Array{Float,2}; options::Dict{Symbol,T}=pMedian
     # solver
     solver = options[:solver]
     args = options[:solver_args]
-    kwargs = options[:solver_kwargs]
     if solver == "cbc"
-        set_optimizer(model, with_optimizer(Cbc.Optimizer, logLevel=0, args...; kwargs...))
+        set_optimizer(model, optimizer_with_attributes(Cbc.Optimizer, "logLevel" => 0, args...))
     elseif solver == "glpk"
-        set_optimizer(model, with_optimizer(GLPK.Optimizer, args...; kwargs...))
+        set_optimizer(model, optimizer_with_attributes(GLPK.Optimizer, "msg_lev" => GLPK.GLP_MSG_OFF, args...))
     elseif solver == "gurobi"
-        @stdout_silent(set_optimizer(model, with_optimizer(Gurobi.Optimizer, OutputFlag=0, args...; kwargs...)))
+        @stdout_silent(set_optimizer(model, optimizer_with_attributes(Gurobi.Optimizer, "OutputFlag" => 0, args...)))
     end
 
     # variables

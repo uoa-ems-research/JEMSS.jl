@@ -27,9 +27,9 @@
 			<interarrivalTime seed="0">Exponential(1/100)</interarrivalTime>
 			<priority seed="1">Categorical([0.57, 0.245, 0.185])</priority>
 			<dispatchDelay seed="2">Normal(1/60/24, 0)</dispatchDelay>
-			<onSceneDuration seed="3">Truncated(Exponential(12/60/24), 2/60/24, 30/60/24)</onSceneDuration>
+			<onSceneDuration seed="3">truncated(Exponential(12/60/24), 2/60/24, 30/60/24)</onSceneDuration>
 			<transport seed="4">Bernoulli(0.8)</transport>
-			<handoverDuration seed="5">Truncated(Exponential(12/60/24), 2/60/24, 30/60/24)</handoverDuration>
+			<handoverDuration seed="5">truncated(Exponential(12/60/24), 2/60/24, 30/60/24)</handoverDuration>
 		</callDistributions>
 		
 		<!-- if mode = calls, will only generate calls, using call density raster -->

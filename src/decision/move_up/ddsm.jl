@@ -47,7 +47,6 @@ function initDdsm!(sim::Simulation;
     ddsmd = sim.moveUpData.ddsmData # shorthand
     ddsmd.options[:solver] = "cbc" # can be slower than glpk, but more reliable for some reason
     ddsmd.options[:solver_args] = []
-    ddsmd.options[:solver_kwargs] = []
     ddsmd.options[:v] = v"1"
     ddsmd.options[:z_var] = true
     ddsmd.options[:bin_tol] = 1e-5
@@ -70,13 +69,9 @@ function ddsmOptions!(sim, options::Dict{Symbol,T}) where {T<:Any}
     @assert(typeof(options[:z_var]) == Bool)
     @assert(0 < options[:bin_tol] < 0.1)
 
-    if options[:solver] == "gurobi"
-        try
-            Gurobi
-        catch
-            options[:solver] = "cbc"
-            @warn("Failed to use Gurobi, using Cbc instead.")
-        end
+    if options[:solver] == "gurobi" && !hasGurobi
+        options[:solver] = "cbc"
+        @warn("Failed to use Gurobi, using Cbc instead.")
     end
 
     # options[:v] == v"0" # do nothing, values should already be set in options if using this
@@ -158,13 +153,12 @@ function ddsmMoveUp(sim::Simulation)
     model = Model()
     solver = options[:solver] # shorthand
     args = options[:solver_args] # shorthand
-    kwargs = options[:solver_kwargs] # shorthand
     if solver == "cbc"
-        set_optimizer(model, with_optimizer(Cbc.Optimizer, logLevel=0, args...; kwargs...))
+        set_optimizer(model, optimizer_with_attributes(Cbc.Optimizer, "logLevel" => 0, args...))
     elseif solver == "glpk"
-        set_optimizer(model, with_optimizer(GLPK.Optimizer, args...; kwargs...))
+        set_optimizer(model, optimizer_with_attributes(GLPK.Optimizer, "msg_lev" => GLPK.GLP_MSG_OFF, args...))
     elseif solver == "gurobi"
-        @stdout_silent(set_optimizer(model, with_optimizer(Gurobi.Optimizer, OutputFlag=0, args...; kwargs...)))
+        @stdout_silent(set_optimizer(model, optimizer_with_attributes(Gurobi.Optimizer, "OutputFlag" => 0, args...)))
     end
 
     m = model # shorthand

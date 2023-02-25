@@ -48,14 +48,12 @@ using Base.Threads
 using JuMP
 using Cbc
 using GLPK
-using GLPKMathProgInterface
-if haskey(Pkg.installed(), "Gurobi") && haskey(ENV, "GUROBI_HOME")
-    using Gurobi
-end
+using Gurobi
 
 # statistics
 using Distributions
 using HypothesisTests
+using Statistics
 using StatsBase
 using StatsFuns
 

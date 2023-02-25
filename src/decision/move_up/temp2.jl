@@ -186,7 +186,7 @@ function temp2MoveUp(sim::Simulation)
     # using JuMP
     model = Model()
 
-    setsolver(model, GLPKSolverMIP(presolve=true))
+    set_optimizer(model, optimizer_with_attributes(GLPK.Optimizer, "msg_lev" => GLPK.GLP_MSG_OFF))
 
     @variables(model, begin
         (x[k=1:m], Bin) # x[k] = 1 if ambulance: ambList[k] should be moved to station: stationList[k]

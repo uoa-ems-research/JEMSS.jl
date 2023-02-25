@@ -173,8 +173,8 @@ function solveZhangIp(stationSlots::Vector{Int}, benefitSlots::Vector{Float}, am
 
     # using JuMP
     model = Model()
-    set_optimizer(model, with_optimizer(GLPK.Optimizer)) # faster without presolve; have not compared with other solvers
-    # set_optimizer(model, with_optimizer(Cbc.Optimizer, logLevel=0))
+    set_optimizer(model, optimizer_with_attributes(GLPK.Optimizer, "msg_lev" => GLPK.GLP_MSG_OFF)) # faster without presolve; have not compared with other solvers
+    # set_optimizer(model, optimizer_with_attributes(Cbc.Optimizer, "logLevel" => 0))
 
     @variable(model, x[i=1:a, j=1:s], Bin)
     marginalBenefitsDecreasing ? @variable(model, 0 <= y[k=1:n] <= 1) : @variable(model, y[k=1:n], Bin)

@@ -140,7 +140,7 @@ function solveMclp(n::Int, pointDemands::Vector{Float}, pointFacilities::Vector{
     model = Model()
 
     # use cbc solver; solve speed not tested
-    set_optimizer(model, with_optimizer(Cbc.Optimizer, logLevel=0))
+    set_optimizer(model, optimizer_with_attributes(Cbc.Optimizer, "logLevel" => 0))
 
     @variables(model, begin
         (x[i=1:l], Bin) # x[i] = true if facility location i is used, false otherwise
@@ -158,7 +158,7 @@ function solveMclp(n::Int, pointDemands::Vector{Float}, pointFacilities::Vector{
 
     # solve
     @objective(model, Max, coverage)
-    optimize!(model)
+    @stdout_silent optimize!(model)
     @assert(termination_status(model) == MOI.OPTIMAL)
     xValue = JuMP.value.(x)
     yValue = JuMP.value.(y) # JuMP and LightXML both export value()
