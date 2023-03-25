@@ -62,7 +62,7 @@ Backslashes are special characters in Julia strings and so if a path includes ba
 ### Adding cities
 If you have a city model that you would like to add, please submit a pull request.
 Cities should follow the same folder structure as those existing (in [data/cities](data/cities)), with a data folder containing the raw data along with any sources and licenses, and a model folder containing the input files for the calls, stations, road network, etc.
-Note that any large files should be compressed as a .gz file using `BinaryProvider.package(dir)`.
+Note that any large files should be compressed as a .zip file.
 
 ## License
 This project is licensed under the Apache License 2.0 - see the [LICENSE.md](LICENSE.md) file for details.
