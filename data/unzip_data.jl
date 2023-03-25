@@ -1,6 +1,4 @@
-using BinaryProvider
-
-# Zip files should have been created using BinaryProvider.package(), otherwise unzipping may result in an error.
+using ZipFile
 
 function pathrecursion(path::String, f::Function=x -> x)
     if isfile(path)
@@ -11,9 +9,19 @@ function pathrecursion(path::String, f::Function=x -> x)
 end
 
 function unzip(path::String)
-    if isfile(path) && endswith(path, ".gz")
-        println("Unzipping: ", path)
-        unpack(path, dirname(path))
+    if isfile(path) && endswith(path, ".zip")
+        try
+            println("Unzipping: ", path)
+            reader = ZipFile.Reader(path)
+            for file in reader.files
+                open(joinpath(dirname(path), file.name), "w") do f
+                    write(f, read(file))
+                end
+            end
+            close(reader)
+        catch
+            println("Failed to unzip.")
+        end
     end
 end
 
