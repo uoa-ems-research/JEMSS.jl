@@ -1,11 +1,10 @@
 name = "JEMSS"
 uuid = "da3c27b9-5cdd-52db-94a3-a4eefd7acbab"
-version = "1.3.4"
+version = "1.3.5"
 
 [deps]
 ArchGDAL = "c9ce4bd3-c3d5-55b8-8973-c0e20141b8c3"
 Base64 = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
-BinaryProvider = "b99e7846-7c00-51b0-8f62-c81ae34c0232"
 CRC32c = "8bf52ea8-c179-5cab-976a-9e18b702a9bc"
 Cbc = "9961bab8-2fa3-5c5a-9d89-47fab24efd76"
 DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
@@ -32,6 +31,7 @@ Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 StatsFuns = "4c63d2b9-4356-54db-8cca-17b64c39e42c"
 WebSockets = "104b5d7c-a370-577a-8038-80a2059c5097"
+ZipFile = "a5390f91-8eb1-5f08-bee0-b1d1ffed6cea"
 
 [compat]
 ArchGDAL = "≥ 0.3.0"
