@@ -418,6 +418,13 @@ function openLocalhost(port::Int)
     openUrl("http://localhost:$(port)")
 end
 
+function setMapboxAccessToken(mapboxAccessToken::String)
+    # set contents of mapbox_access_token.txt in animation folder
+    open("$sourceDir/animation/mapbox_access_token.txt", "w") do file
+        write(file, mapboxAccessToken)
+    end
+end
+
 # JSON.lower for various types, to reduce length of string returned from json function
 JSON.lower(n::Node) = Dict("index" => n.index, "location" => n.location)
 JSON.lower(a::Arc) = Dict("index" => a.index)

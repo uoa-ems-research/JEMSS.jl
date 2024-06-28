@@ -62,7 +62,7 @@ export
     initSim, runConfig, # run_config
     simulate!, simulateToTime!, simulateToEnd!, backup!, reset!, simulateNextEvent!, # simulation
     setSimReps!, simulateRep!, simulateReps!, resetRep!, resetReps!, makeRepsRunnable!, # replication
-    animate!, animate, # animation
+    animate!, animate, setMapboxAccessToken, # animation
     backupSim!, resetSim! # compat
 
 # file functions
