@@ -20,6 +20,7 @@ const Client = HTTP.WebSockets.WebSocket{HTTP.ConnectionPool.Transaction{Sockets
 global animClients = [] # store open connections
 global animSimQueue = Vector{Union{Simulation,String}}() # to store sims and sim filenames between animation request and start
 global animPorts = Set{Int}() # localhost ports for animation, to be set
+const mapboxAccessTokenFilename = "$sourceDir/animation/mapbox_access_token.txt"
 
 function decodeMessage(msg)
     return String(msg)
@@ -365,6 +366,14 @@ end
 function runAnimServer(port::Int)
     @assert(port >= 0)
 
+    # get mapbox token
+    @assert(isfile(mapboxAccessTokenFilename), "Mapbox access token not found. See the animation setup instructions in the JEMSS readme file.")
+    mapboxAccessToken = read(mapboxAccessTokenFilename, String)
+
+    # read html and insert mapbox token
+    onepage = read("$sourceDir/animation/index.html", String)
+    onepage = replace(onepage, "MAPBOX_ACCESS_TOKEN" => mapboxAccessToken)
+
     # check if port already in use
     global animPorts
     if in(port, animPorts)
@@ -380,7 +389,6 @@ function runAnimServer(port::Int)
     end
 
     # create and run server
-    onepage = read("$sourceDir/animation/index.html", String)
     @async HTTP.listen(Sockets.localhost, port, readtimeout=0) do http::HTTP.Stream
         if HTTP.WebSockets.is_upgrade(http.message)
             HTTP.WebSockets.upgrade(http) do client
@@ -412,6 +420,12 @@ end
 # opens browser window for localhost:port
 function openLocalhost(port::Int)
     openUrl("http://localhost:$(port)")
+end
+
+function setMapboxAccessToken(mapboxAccessToken::String)
+    open(mapboxAccessTokenFilename, "w") do file
+        write(file, mapboxAccessToken)
+    end
 end
 
 # JSON.lower for various types, to reduce length of string returned from json function
