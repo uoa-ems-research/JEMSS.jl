@@ -23,7 +23,7 @@ This [example](example/example.jl) is for Auckland city, focusing on the urban a
 The simulation is initialised from a configuration file ([sim_config.xml](example/input/sim_config.xml)) which contains a list of input files (files for ambulances, calls, stations, road network, etc.) and other parameters.
 The output files will be written to the folder example/output.
 The first time that this script is run it will take an additional minute or so to compute and serialise the all-pairs shortest-path data for the road network; subsequent runs will be faster as they read the serialised data.
-After this script has been run, the simulation can be animated with `animate!(sim)`.
+After this script has been run, the simulation can be animated with `animate!(sim)` provided that the [animation setup](#animation-setup) steps have been completed.
 
 A list of further example scripts that may be useful can be found in [example/other_examples.jl](example/other_examples.jl).
 
@@ -37,18 +37,18 @@ More information on the city models (sources, simulation results) is available i
 
 ### Setup
 In order to use the animation tool, you will need a mapbox access token.
-First create a mapbox account at [mapbox.com](https://www.mapbox.com/) then create an access token, the default settings should be sufficient.
+First create an account at [mapbox.com](https://www.mapbox.com/) then create an access token, the default settings should be sufficient.
 Then copy the token and:
 - For JEMSS version >= 1.3.6:
-Call `JEMSS.setMapboxAccessToken("your mapbox access token here")` which will save the token to JEMSS/src/animation/mapbox_access_token.txt.
+Call `JEMSS.setMapboxAccessToken("your token here")` which will save the token to JEMSS/src/animation/mapbox_access_token.txt.
 - For JEMSS version < v1.3.6:
 Paste the token into JEMSS/src/animation/index.html, search for and replace the value of `L.mapbox.accessToken`.
 
 You should now be able to use the animation tool.
-As of writing (June 2024) the use of mapbox is free up to 200,000 free tile requests per month which should be plenty; I average under 1,000 per month.
+As of writing (June 2024) the use of mapbox is free up to 200,000 tile requests per month which should be plenty; I average under 1,000 per month.
 
 I had previously put my own mapbox access token in the open source code but this is a big no-no.
-I have now deleted this token from my mapbox account, if the animation tool does not show the map anymore then this is why, my apologies.
+I have now deleted this token from my mapbox account, if the animation tool no longer shows the map then this may be the reason, my apologies.
 
 ### Run
 To animate a simulation:
