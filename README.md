@@ -35,13 +35,13 @@ More information on the city models (sources, simulation results) is available i
 
 ## Animation
 
-### Setup
+### Animation setup
 In order to use the animation tool, you will need a mapbox access token.
 First create an account at [mapbox.com](https://www.mapbox.com/) then create an access token, the default settings should be sufficient.
 Then copy the token and:
 - For JEMSS version >= 1.3.6:
 Call `JEMSS.setMapboxAccessToken("your token here")` which will save the token to JEMSS/src/animation/mapbox_access_token.txt.
-- For JEMSS version < v1.3.6:
+- For JEMSS version < 1.3.6:
 Paste the token into JEMSS/src/animation/index.html, search for and replace the value of `L.mapbox.accessToken`.
 
 You should now be able to use the animation tool.
@@ -50,8 +50,8 @@ As of writing (June 2024) the use of mapbox is free up to 200,000 tile requests 
 I had previously put my own mapbox access token in the open source code but this is a big no-no.
 I have now deleted this token from my mapbox account, if the animation tool no longer shows the map then this may be the reason, my apologies.
 
-### Run
-To animate a simulation:
+### Animation run
+To run the animation:
 ```julia
 using JEMSS
 sim = initSim("config_filename");
