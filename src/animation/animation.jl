@@ -379,7 +379,7 @@ function runAnimServer(port::Int)
     catch
     end
 
-    # read html
+    # read html and insert mapbox token
     onepage = read("$sourceDir/animation/index.html", String)
     mapboxAccessToken = read("$sourceDir/animation/mapbox_access_token.txt", String)
     onepage = replace(onepage, "MAPBOX_ACCESS_TOKEN" => mapboxAccessToken)
@@ -419,7 +419,6 @@ function openLocalhost(port::Int)
 end
 
 function setMapboxAccessToken(mapboxAccessToken::String)
-    # set contents of mapbox_access_token.txt in animation folder
     open("$sourceDir/animation/mapbox_access_token.txt", "w") do file
         write(file, mapboxAccessToken)
     end
