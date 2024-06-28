@@ -379,8 +379,12 @@ function runAnimServer(port::Int)
     catch
     end
 
-    # create and run server
+    # read html
     onepage = read("$sourceDir/animation/index.html", String)
+    mapboxAccessToken = read("$sourceDir/animation/mapbox_access_token.txt", String)
+    onepage = replace(onepage, "MAPBOX_ACCESS_TOKEN" => mapboxAccessToken)
+
+    # create and run server
     @async HTTP.listen(Sockets.localhost, port, readtimeout=0) do http::HTTP.Stream
         if HTTP.WebSockets.is_upgrade(http.message)
             HTTP.WebSockets.upgrade(http) do client
